@@ -1,0 +1,54 @@
+name: PR validation
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, edited]
+    branches:
+      - master
+      - dev
+
+jobs:
+  validate_pr:
+    name: PR validation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+
+    steps:
+      # Check if PR source branch is allowed to target master directly
+      - name: Check if PR is valid
+        id: check_branch
+        run: |
+          # If target is dev, always allow
+          if [[ "${{ github.base_ref }}" == "dev" ]]; then
+            echo "Target is dev branch, PR is valid"
+            exit 0
+          fi
+
+          # If target is master, check branch rules
+          if [[ "${{ github.base_ref }}" == "master" ]]; then
+            if [[ "${{ github.head_ref }}" == "dev" || "${{ github.head_ref }}" =~ ^imgbot || "${{ github.head_ref }}" =~ ^hotfix/ || "${{ github.head_ref }}" =~ ^release/ ]]; then
+              echo "Branch is allowed to target master directly"
+              exit 0
+            else
+              echo "Branch must target dev first"
+              exit 1
+            fi
+          fi
+
+      # Only runs if the check above failed (PR is not valid)
+      - name: Add comment for invalid PR
+        if: ${{ failure() }}
+        uses: peter-evans/create-or-update-comment@v4.0.0
+        with:
+          issue-number: ${{ github.event.number }}
+          body: |
+            Hey @${{ github.actor }}, 👋
+
+            Thanks for opening this PR! Just a quick heads-up — it looks like this one is targeting the `master` branch.  
+            To keep things consistent with our workflow, could you please update it to point to the `dev` branch instead?
+
+            Let us know if you need any help. Appreciate your work on this! 👍
+          reactions: eyes

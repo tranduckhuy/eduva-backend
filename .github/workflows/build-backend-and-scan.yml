@@ -1,0 +1,131 @@
+name: Backend Build and Sonar Scan
+
+on:
+  pull_request:
+    paths:
+      - backend/**
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  build:
+    name: Build Backend and SonarQube Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      # Cache NuGet packages
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      # Cache SonarQube scanner
+      - name: Cache SonarQube scanner
+        uses: actions/cache@v4
+        with:
+          path: ~/.dotnet/tools
+          key: ${{ runner.os }}-sonar-scanner
+          restore-keys: |
+            ${{ runner.os }}-sonar-scanner
+
+      - name: Install dotnet-sonarscanner
+        run: dotnet tool install --global dotnet-sonarscanner --no-cache
+
+      - name: Add dotnet tools to PATH
+        shell: bash
+        run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
+      - name: Install code coverage tools
+        run: dotnet tool install --global dotnet-coverage
+
+      - name: Start SonarQube analysis
+        run: >
+          dotnet-sonarscanner begin
+          /k:"Eduva-Backend"
+          /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+          /d:sonar.host.url="${{ secrets.SONAR_HOST_URL }}"
+          /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml
+          /d:sonar.coverage.exclusions="**/Program.cs,**/*Extension*.cs,**/Migrations/**/*.cs,**/*.Test.cs"
+          /d:sonar.cs.opencover.reportsPaths=coverage.opencover.xml
+
+      - name: Build solution
+        run: dotnet build backend/backend.sln --no-incremental
+
+      - name: Run Tests with Coverage
+        run: |
+          cd backend
+          dotnet test --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults/ --logger "trx;LogFileName=test_results.trx"
+          dotnet-coverage collect -f xml -o coverage.xml "dotnet test --no-build"
+          dotnet-coverage collect -f opencover -o coverage.opencover.xml "dotnet test --no-build"
+
+      - name: End SonarQube analysis
+        if: always()
+        run: dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+
+      - name: Run SonarQube Scanner for brief report
+        if: success()
+        id: sonar_scan_report
+        run: |
+          # Extract top issues from SonarQube API
+          SONAR_PROJECT_KEY="Eduva-Backend"
+          SONAR_TOKEN="${{ secrets.SONAR_TOKEN }}"
+          SONAR_HOST_URL="${{ secrets.SONAR_HOST_URL }}"
+
+          # Wait a moment for SonarQube to process results
+          sleep 15
+
+          # Get issues count by severity and code coverage
+          ISSUES_SUMMARY=$(curl -s -u "${SONAR_TOKEN}:" "${SONAR_HOST_URL}/api/issues/search?componentKeys=${SONAR_PROJECT_KEY}&resolved=false&ps=1" | jq -r '.total')
+          BUGS_COUNT=$(curl -s -u "${SONAR_TOKEN}:" "${SONAR_HOST_URL}/api/issues/search?componentKeys=${SONAR_PROJECT_KEY}&types=BUG&resolved=false&ps=1" | jq -r '.total')
+          VULNERABILITIES=$(curl -s -u "${SONAR_TOKEN}:" "${SONAR_HOST_URL}/api/issues/search?componentKeys=${SONAR_PROJECT_KEY}&types=VULNERABILITY&resolved=false&ps=1" | jq -r '.total')
+          CODE_SMELLS=$(curl -s -u "${SONAR_TOKEN}:" "${SONAR_HOST_URL}/api/issues/search?componentKeys=${SONAR_PROJECT_KEY}&types=CODE_SMELL&resolved=false&ps=1" | jq -r '.total')
+
+          # Try multiple approaches to get code coverage
+          # First attempt with component measures API
+          CODE_COVERAGE=$(curl -s -u "${SONAR_TOKEN}:" "${SONAR_HOST_URL}/api/measures/component?componentKey=${SONAR_PROJECT_KEY}&metricKeys=coverage" | jq -r '.component.measures[0].value // "N/A"')
+
+          # If coverage is still N/A, try with the measures search API
+          if [ "$CODE_COVERAGE" = "N/A" ] || [ -z "$CODE_COVERAGE" ]; then
+            echo "Trying alternative approach to get coverage..."
+            CODE_COVERAGE=$(curl -s -u "${SONAR_TOKEN}:" "${SONAR_HOST_URL}/api/measures/search?projectKeys=${SONAR_PROJECT_KEY}&metricKeys=coverage" | jq -r '.measures[0].value // "N/A"')
+          fi
+
+          # If coverage is still N/A, try with a longer wait time and retry
+          if [ "$CODE_COVERAGE" = "N/A" ] || [ -z "$CODE_COVERAGE" ]; then
+            echo "Waiting longer for coverage data to be processed..."
+            sleep 30
+            CODE_COVERAGE=$(curl -s -u "${SONAR_TOKEN}:" "${SONAR_HOST_URL}/api/measures/component?componentKey=${SONAR_PROJECT_KEY}&metricKeys=coverage" | jq -r '.component.measures[0].value // "N/A"')
+          fi
+
+          # Create issue summary as output
+          ISSUE_SUMMARY="Total issues: $ISSUES_SUMMARY\n- 🐛 Bugs: $BUGS_COUNT\n- 🔒 Vulnerabilities: $VULNERABILITIES\n- 🧹 Code Smells: $CODE_SMELLS\n- 📊 Code Coverage: $CODE_COVERAGE%"
+          echo "issue_summary<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$ISSUE_SUMMARY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Add SonarQube summary to PR
+        if: success()
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ## SonarQube Analysis Complete ✅
+
+            ${{ steps.sonar_scan_report.outputs.issue_summary }}
+
+            [View detailed analysis results on SonarQube](${{ secrets.SONAR_HOST_URL }}/dashboard?id=Eduva-Backend)
