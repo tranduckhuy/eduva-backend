@@ -1,7 +1,10 @@
-﻿namespace Eduva.Domain.Common
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Eduva.Domain.Common
 {
     public abstract class BaseEntity<TKey> : IEntity<TKey>
     {
-        public TKey ID { get; set; } = default!;
+        [Key]
+        public TKey Id { get; set; } = default!;
     }
 }

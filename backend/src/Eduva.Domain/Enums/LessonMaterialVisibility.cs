@@ -3,6 +3,6 @@
     public enum LessonMaterialVisibility
     {
         Private,
-        Department
+        School
     }
 }
