@@ -1,6 +1,8 @@
 using Eduva.Domain.Entities;
 using Eduva.Infrastructure.Extensions;
+using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
@@ -55,6 +57,7 @@ builder.Services.AddCors(o => o.AddPolicy("AllowAll", builder =>
 
 
 builder.Services.AddApplicationIdentity<ApplicationUser>();
+builder.Services.AddJwtAuthentication(builder.Configuration);
 
 builder.Services.AddAuthorization();
 
@@ -64,6 +67,7 @@ builder.Services.Configure<DataProtectionTokenProviderOptions>(opt =>
 });
 
 builder.Services.AddInfrastructureServices(builder.Configuration);
+
 
 var app = builder.Build();
 
@@ -78,8 +82,18 @@ await app.MigrationsDatabaseAsync();
 
 app.UseHttpsRedirection();
 
+app.UseCors("AllowAll");
+
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapHealthChecks("/health", new HealthCheckOptions()
+{
+    Predicate = _ => true,
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
+
 
 await app.RunAsync();
