@@ -1,0 +1,270 @@
+﻿using Eduva.Application.Common.Exceptions;
+using Eduva.Application.Common.Interfaces;
+using Eduva.Application.Exceptions.Auth;
+using Eduva.Application.Features.Auth.DTOs;
+using Eduva.Domain.Entities;
+using Eduva.Domain.Enums;
+using Eduva.Infrastructure.Email;
+using Eduva.Infrastructure.Identity.Interfaces;
+using Eduva.Infrastructure.Services;
+using Eduva.Shared.Enums;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+
+namespace Eduva.Infrastructure.Identity
+{
+    public class AuthService : IAuthService
+    {
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IEmailSender _emailSender;
+        private readonly ILogger<AuthService> _logger;
+        private readonly JwtHandler _jwtHandler;
+        private readonly ITokenBlackListService _tokenBlackListService;
+
+        public AuthService(UserManager<ApplicationUser> userManager, IEmailSender emailSender, ILogger<AuthService> logger,
+            JwtHandler jwtHandler, ITokenBlackListService tokenBlackListService)
+        {
+            _userManager = userManager;
+            _emailSender = emailSender;
+            _logger = logger;
+            _jwtHandler = jwtHandler;
+            _tokenBlackListService = tokenBlackListService;
+        }
+
+        public async Task<CustomCode> RegisterAsync(RegisterRequestDto request)
+        {
+            var existingUser = await _userManager.FindByEmailAsync(request.Email);
+            if (existingUser != null)
+            {
+                _logger.LogWarning("Attempt to register with existing email: {email}.", request.Email);
+                throw new EmailAlreadyExistsException();
+            }
+
+            var userId = Guid.NewGuid();
+
+            var newUser = new ApplicationUser
+            {
+                Id = userId,
+                Email = request.Email,
+                PhoneNumber = request.PhoneNumber,
+                UserName = request.Email,
+                FullName = request.FullName,
+            };
+
+            var result = await _userManager.CreateAsync(newUser, request.Password);
+
+            if (!result.Succeeded)
+            {
+                var errors = result.Errors.Select(e => e.Description).ToList();
+                _logger.LogError("Failed to create user. Errors: {errors}", string.Join(", ", errors));
+                throw new AppException(CustomCode.ProvidedInformationIsInValid, errors);
+            }
+
+            await _userManager.AddToRoleAsync(newUser, nameof(Role.Student));
+
+            _ = SendConfirmEmailMessage(request.ClientUrl, newUser);
+
+            return CustomCode.ConfirmationEmailSent;
+        }
+
+        private async Task SendConfirmEmailMessage(string clientUrl, ApplicationUser newUser)
+        {
+            var token = await _userManager.GenerateEmailConfirmationTokenAsync(newUser);
+
+            var message = MailMessageHelper.CreateMessage(newUser, token, clientUrl, "Confirm Email", "confirm your email");
+
+            _logger.LogInformation("Sending email to '{email}' to confirm email.", newUser.Email);
+
+            //_ = _emailSender.SendEmailBrevoAsync(newUser.Email!, newUser.FirstName + " " + newUser.LastName, message.Subject, message.Content);
+
+            _ = _emailSender.SendEmailAsync(message);
+        }
+
+        public async Task<(CustomCode, AuthResultDto)> LoginAsync(LoginRequestDto request)
+        {
+            var user = await _userManager.FindByEmailAsync(request.Email) ?? throw new UserNotExistsException();
+
+            if (!user.EmailConfirmed)
+            {
+                _logger.LogWarning("Attempt to login with unconfirmed email: {email}.", request.Email);
+                throw new UserNotConfirmedException();
+            }
+
+            if (!await _userManager.CheckPasswordAsync(user, request.Password))
+            {
+                _logger.LogWarning("Attempt to login with invalid password for email: {email}.", request.Email);
+                throw new InvalidCredentialsException();
+            }
+
+            // Check if user account is locked
+            if (await _userManager.IsLockedOutAsync(user))
+            {
+                _logger.LogWarning("Attempt to login with locked account for email: {email}.", request.Email);
+                throw new UserAccountLockedException();
+            }
+
+            var userRoles = await _userManager.GetRolesAsync(user);
+
+            var userClaims = await _userManager.GetClaimsAsync(user);
+
+            var authResponse = await GenerateToken(user, userRoles, userClaims, true);
+
+            return (CustomCode.Success, authResponse);
+        }
+
+        private async Task<AuthResultDto> GenerateToken(ApplicationUser user, IList<string> roles, IList<Claim> userClaims, bool populateExp)
+        {
+            var signingCredentials = _jwtHandler.GetSigningCredentials();
+            var claims = TokenHelper.GetClaims(user, roles, userClaims);
+
+            var tokenOptions = _jwtHandler.GenerateTokenOptions(signingCredentials, claims);
+
+            var refreshToken = TokenHelper.GenerateRefreshToken();
+
+            user.RefreshToken = refreshToken;
+
+            if (populateExp)
+            {
+                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(30);
+            }
+
+            await _userManager.UpdateAsync(user);
+
+            var accessToken = new JwtSecurityTokenHandler().WriteToken(tokenOptions);
+
+            return new AuthResultDto
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshToken,
+                ExpiresIn = _jwtHandler.GetExpiryInSecond()
+            };
+        }
+
+        public async Task<CustomCode> ForgotPasswordAsync(ForgotPasswordRequestDto request)
+        {
+            var user = await _userManager.FindByEmailAsync(request.Email) ?? throw new UserNotExistsException();
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+            var message = MailMessageHelper.CreateMessage(user, token, request.ClientUrl, "Reset Password", "reset your password");
+
+            //_ = _emailSender.SendEmailBrevoAsync(user.Email!, user.FirstName + " " + user.LastName, message.Subject, message.Content);
+
+            _ = _emailSender.SendEmailAsync(message);
+
+            return CustomCode.ResetPasswordEmailSent;
+        }
+
+        public async Task<CustomCode> ResetPasswordAsync(ResetPasswordRequestDto request)
+        {
+            var user = await _userManager.FindByEmailAsync(request.Email) ?? throw new UserNotExistsException();
+
+            var result = await _userManager.ResetPasswordAsync(user, request.Token, request.Password);
+
+            if (!result.Succeeded)
+            {
+                var errors = result.Errors.Select(e => e.Description).ToList();
+                _logger.LogError("Failed to reset password. Errors: {errors}", string.Join(", ", errors));
+                throw new AppException(CustomCode.Unauthorized, errors);
+            }
+
+            return CustomCode.PasswordResetSuccessful;
+        }
+
+        public async Task<CustomCode> ConfirmEmailAsync(ConfirmEmailRequestDto request)
+        {
+            var user = await _userManager.FindByEmailAsync(request.Email) ?? throw new UserNotExistsException();
+
+            var result = await _userManager.ConfirmEmailAsync(user, request.Token);
+            if (!result.Succeeded)
+            {
+                var errors = result.Errors.Select(e => e.Description).ToList();
+                _logger.LogError("Failed to confirm email. Errors: {errors}", string.Join(", ", errors));
+                throw new AppException(CustomCode.ConfirmEmailTokenInvalidOrExpired, errors);
+            }
+
+            return CustomCode.Success;
+        }
+
+        public async Task<CustomCode> ResendConfirmationEmailAsync(ResendConfirmationEmailRequestDto request)
+        {
+            var user = await _userManager.FindByEmailAsync(request.Email) ?? throw new UserNotExistsException();
+
+            if (user.EmailConfirmed)
+            {
+                _logger.LogWarning("Attempt to resend confirmation email for already confirmed email: {email}.", request.Email);
+                throw new UserAlreadyConfirmedException();
+            }
+
+            _ = SendConfirmEmailMessage(request.ClientUrl, user);
+
+            return CustomCode.ConfirmationEmailSent;
+        }
+
+        public async Task<(CustomCode, AuthResultDto)> RefreshTokenAsync(RefreshTokenDto request)
+        {
+            var principal = _jwtHandler.GetPrincipalFromExpiredToken(request.AccessToken);
+
+            var username = principal.Identity?.Name ?? throw new InvalidTokenException();
+
+            var user = await _userManager.FindByNameAsync(username);
+
+            if (user == null || user.RefreshToken != request.RefreshToken || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
+            {
+                throw new InvalidTokenException(["Refresh token is invalid or expired."]);
+            }
+
+            // Check if user account is locked
+            if (await _userManager.IsLockedOutAsync(user))
+            {
+                _logger.LogWarning("Attempt to login with locked account for email: {email}.", user.Email);
+                throw new UserAccountLockedException();
+            }
+
+            var userRoles = await _userManager.GetRolesAsync(user);
+
+            var userClaims = await _userManager.GetClaimsAsync(user);
+
+            var authResponse = await GenerateToken(user, userRoles, userClaims, false);
+
+            return (CustomCode.Success, authResponse);
+        }
+
+        public async Task Logout(string userId, string accessToken)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user != null)
+            {
+                user.RefreshToken = null!;
+                user.RefreshTokenExpiryTime = null;
+                await _userManager.UpdateAsync(user);
+            }
+
+            var expiry = TokenHelper.GetTokenExpiry(accessToken);
+
+            if (expiry > DateTime.UtcNow)
+            {
+                await _tokenBlackListService.BlacklistTokenAsync(accessToken, expiry);
+            }
+        }
+
+        public async Task<CustomCode> ChangePasswordAsync(ChangePasswordRequestDto dto)
+        {
+            var user = await _userManager.FindByIdAsync(dto.UserId.ToString()) ?? throw new UserNotExistsException();
+
+            var result = await _userManager.ChangePasswordAsync(user, dto.CurrentPassword, dto.NewPassword);
+
+            if (!result.Succeeded)
+            {
+                var errors = result.Errors.Select(e => e.Description).ToList();
+                _logger.LogError("Failed to change password. Errors: {errors}", string.Join(", ", errors));
+                throw new AppException(CustomCode.Unauthorized, errors);
+            }
+
+            return CustomCode.Success;
+        }
+    }
+}
