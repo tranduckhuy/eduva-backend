@@ -11,7 +11,7 @@ namespace Eduva.Domain.Entities
 
         // Navigation properties
         public virtual School School { get; set; } = default!;
-        public virtual User Teacher { get; set; } = default!;
+        public virtual ApplicationUser Teacher { get; set; } = default!;
         public virtual ICollection<StudentClass> StudentClasses { get; set; } = [];
         public virtual ICollection<Folder> ClassFolders { get; set; } = [];
     }

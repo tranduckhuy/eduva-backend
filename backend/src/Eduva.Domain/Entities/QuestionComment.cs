@@ -10,7 +10,7 @@ namespace Eduva.Domain.Entities
         public Guid CreatedBy { get; set; } // User ID of the creator
 
         // Navigation properties
-        public virtual User CreatedByUser { get; set; } = default!;
+        public virtual ApplicationUser CreatedByUser { get; set; } = default!;
         public virtual LessonMaterialQuestion Question { get; set; } = default!;
         public virtual QuestionComment? ParentComment { get; set; }
         public virtual ICollection<QuestionComment> Replies { get; set; } = [];

@@ -12,7 +12,7 @@ namespace Eduva.Domain.Entities
         public string? Feedback {  get; set; }
 
         // Navigation properties
-        public virtual User Approver { get; set; } = default!;
+        public virtual ApplicationUser Approver { get; set; } = default!;
         public virtual LessonMaterial LessonMaterial { get; set; } = default!;
     }
 }

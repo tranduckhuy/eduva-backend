@@ -54,7 +54,7 @@ builder.Services.AddCors(o => o.AddPolicy("AllowAll", builder =>
 }));
 
 
-builder.Services.AddApplicationIdentity<User>();
+builder.Services.AddApplicationIdentity<ApplicationUser>();
 
 builder.Services.AddAuthorization();
 

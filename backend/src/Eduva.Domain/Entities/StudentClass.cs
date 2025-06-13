@@ -10,7 +10,7 @@ namespace Eduva.Domain.Entities
         public DateTimeOffset EnrolledAt { get; set; } = DateTimeOffset.UtcNow;
 
         // Navigation properties
-        public virtual User Student { get; set; } = null!;
+        public virtual ApplicationUser Student { get; set; } = null!;
         public virtual Classroom Class { get; set; } = null!;
     }
 }

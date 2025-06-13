@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eduva.Infrastructure.Persistence.DbContext
 {
     public class AppDbContext : IdentityDbContext<
-        User,
+        ApplicationUser,
         IdentityRole<Guid>,
         Guid,
         IdentityUserClaim<Guid>,

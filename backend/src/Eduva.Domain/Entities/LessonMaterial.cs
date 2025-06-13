@@ -18,7 +18,7 @@ namespace Eduva.Domain.Entities
         public Guid CreatedBy { get; set; } // User ID of the creator
 
         // Navigation Properties
-        public virtual User CreatedByUser { get; set; } = default!;
+        public virtual ApplicationUser CreatedByUser { get; set; } = default!;
         public virtual School? School { get; set; } // Nullable
         public virtual ICollection<FolderLessonMaterial> FolderLessonMaterials { get; set; } = new List<FolderLessonMaterial>();
         public virtual ICollection<LessonMaterialApproval> LessonMaterialApprovals { get; set; } = new List<LessonMaterialApproval>();

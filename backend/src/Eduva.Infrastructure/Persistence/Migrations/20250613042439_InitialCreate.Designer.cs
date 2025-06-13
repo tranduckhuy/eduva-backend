@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Eduva.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250612162920_InitialCreate")]
+    [Migration("20250613042439_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -55,6 +55,101 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("AIUsageLogs");
+                });
+
+            modelBuilder.Entity("Eduva.Domain.Entities.ApplicationUser", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AccessFailedCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("AvatarUrl")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("DOB")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("FullName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<bool>("LockoutEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("LockoutEnd")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("NormalizedEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("NormalizedUserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("RefreshToken")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("RefreshTokenExpiryTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("SchoolId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SecurityStamp")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("TwoFactorEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedEmail")
+                        .HasDatabaseName("EmailIndex");
+
+                    b.HasIndex("NormalizedUserName")
+                        .IsUnique()
+                        .HasDatabaseName("UserNameIndex");
+
+                    b.HasIndex("SchoolId");
+
+                    b.HasIndex("UserName")
+                        .IsUnique();
+
+                    b.ToTable("AspNetUsers", (string)null);
                 });
 
             modelBuilder.Entity("Eduva.Domain.Entities.Classroom", b =>
@@ -556,111 +651,6 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.ToTable("SubscriptionPlans");
                 });
 
-            modelBuilder.Entity("Eduva.Domain.Entities.User", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("AccessFailedCount")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("AvatarUrl")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasColumnType("text");
-
-                    b.Property<DateTimeOffset?>("DOB")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Email")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<bool>("EmailConfirmed")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("FirstName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<bool>("LockoutEnabled")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTimeOffset?>("LockoutEnd")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("NormalizedEmail")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("NormalizedUserName")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("PasswordHash")
-                        .HasColumnType("text");
-
-                    b.Property<string>("PhoneNumber")
-                        .HasColumnType("text");
-
-                    b.Property<bool>("PhoneNumberConfirmed")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("RefreshToken")
-                        .HasColumnType("text");
-
-                    b.Property<DateTimeOffset?>("RefreshTokenExpiryTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int?>("SchoolId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("SecurityStamp")
-                        .HasColumnType("text");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("TwoFactorEnabled")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("UserName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("Username")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("NormalizedEmail")
-                        .HasDatabaseName("EmailIndex");
-
-                    b.HasIndex("NormalizedUserName")
-                        .IsUnique()
-                        .HasDatabaseName("UserNameIndex");
-
-                    b.HasIndex("SchoolId");
-
-                    b.HasIndex("UserName")
-                        .IsUnique();
-
-                    b.ToTable("AspNetUsers", (string)null);
-                });
-
             modelBuilder.Entity("Eduva.Domain.Entities.UserNotification", b =>
                 {
                     b.Property<int>("Id")
@@ -819,13 +809,23 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Eduva.Domain.Entities.AIUsageLog", b =>
                 {
-                    b.HasOne("Eduva.Domain.Entities.User", "User")
+                    b.HasOne("Eduva.Domain.Entities.ApplicationUser", "User")
                         .WithMany("AIUsageLogs")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Eduva.Domain.Entities.ApplicationUser", b =>
+                {
+                    b.HasOne("Eduva.Domain.Entities.School", "School")
+                        .WithMany("Users")
+                        .HasForeignKey("SchoolId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("School");
                 });
 
             modelBuilder.Entity("Eduva.Domain.Entities.Classroom", b =>
@@ -836,7 +836,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Eduva.Domain.Entities.User", "Teacher")
+                    b.HasOne("Eduva.Domain.Entities.ApplicationUser", "Teacher")
                         .WithMany("ClassesAsTeacher")
                         .HasForeignKey("TeacherId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -854,7 +854,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                         .HasForeignKey("ClassId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("Eduva.Domain.Entities.User", "User")
+                    b.HasOne("Eduva.Domain.Entities.ApplicationUser", "User")
                         .WithMany("PersonalFolders")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade);
@@ -885,7 +885,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Eduva.Domain.Entities.LessonMaterial", b =>
                 {
-                    b.HasOne("Eduva.Domain.Entities.User", "CreatedByUser")
+                    b.HasOne("Eduva.Domain.Entities.ApplicationUser", "CreatedByUser")
                         .WithMany("CreatedLessonMaterials")
                         .HasForeignKey("CreatedBy")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -903,7 +903,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Eduva.Domain.Entities.LessonMaterialApproval", b =>
                 {
-                    b.HasOne("Eduva.Domain.Entities.User", "Approver")
+                    b.HasOne("Eduva.Domain.Entities.ApplicationUser", "Approver")
                         .WithMany("ApprovedLessonMaterials")
                         .HasForeignKey("ApproverId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -922,7 +922,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Eduva.Domain.Entities.LessonMaterialQuestion", b =>
                 {
-                    b.HasOne("Eduva.Domain.Entities.User", "CreatedByUser")
+                    b.HasOne("Eduva.Domain.Entities.ApplicationUser", "CreatedByUser")
                         .WithMany("CreatedLessonMaterialQuestions")
                         .HasForeignKey("CreatedBy")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -941,7 +941,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Eduva.Domain.Entities.QuestionComment", b =>
                 {
-                    b.HasOne("Eduva.Domain.Entities.User", "CreatedByUser")
+                    b.HasOne("Eduva.Domain.Entities.ApplicationUser", "CreatedByUser")
                         .WithMany("CreatedQuestionComments")
                         .HasForeignKey("CreatedBy")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -992,7 +992,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Eduva.Domain.Entities.User", "Student")
+                    b.HasOne("Eduva.Domain.Entities.ApplicationUser", "Student")
                         .WithMany("StudentClasses")
                         .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1003,16 +1003,6 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.Navigation("Student");
                 });
 
-            modelBuilder.Entity("Eduva.Domain.Entities.User", b =>
-                {
-                    b.HasOne("Eduva.Domain.Entities.School", "School")
-                        .WithMany("Users")
-                        .HasForeignKey("SchoolId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("School");
-                });
-
             modelBuilder.Entity("Eduva.Domain.Entities.UserNotification", b =>
                 {
                     b.HasOne("Eduva.Domain.Entities.Notification", "Notification")
@@ -1021,7 +1011,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Eduva.Domain.Entities.User", "TargetUser")
+                    b.HasOne("Eduva.Domain.Entities.ApplicationUser", "TargetUser")
                         .WithMany("ReceivedNotifications")
                         .HasForeignKey("TargetUserID")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1043,7 +1033,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<System.Guid>", b =>
                 {
-                    b.HasOne("Eduva.Domain.Entities.User", null)
+                    b.HasOne("Eduva.Domain.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1052,7 +1042,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<System.Guid>", b =>
                 {
-                    b.HasOne("Eduva.Domain.Entities.User", null)
+                    b.HasOne("Eduva.Domain.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1067,7 +1057,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Eduva.Domain.Entities.User", null)
+                    b.HasOne("Eduva.Domain.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1076,11 +1066,32 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<System.Guid>", b =>
                 {
-                    b.HasOne("Eduva.Domain.Entities.User", null)
+                    b.HasOne("Eduva.Domain.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Eduva.Domain.Entities.ApplicationUser", b =>
+                {
+                    b.Navigation("AIUsageLogs");
+
+                    b.Navigation("ApprovedLessonMaterials");
+
+                    b.Navigation("ClassesAsTeacher");
+
+                    b.Navigation("CreatedLessonMaterialQuestions");
+
+                    b.Navigation("CreatedLessonMaterials");
+
+                    b.Navigation("CreatedQuestionComments");
+
+                    b.Navigation("PersonalFolders");
+
+                    b.Navigation("ReceivedNotifications");
+
+                    b.Navigation("StudentClasses");
                 });
 
             modelBuilder.Entity("Eduva.Domain.Entities.Classroom", b =>
@@ -1133,27 +1144,6 @@ namespace Eduva.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Eduva.Domain.Entities.SubscriptionPlan", b =>
                 {
                     b.Navigation("SchoolSubscriptions");
-                });
-
-            modelBuilder.Entity("Eduva.Domain.Entities.User", b =>
-                {
-                    b.Navigation("AIUsageLogs");
-
-                    b.Navigation("ApprovedLessonMaterials");
-
-                    b.Navigation("ClassesAsTeacher");
-
-                    b.Navigation("CreatedLessonMaterialQuestions");
-
-                    b.Navigation("CreatedLessonMaterials");
-
-                    b.Navigation("CreatedQuestionComments");
-
-                    b.Navigation("PersonalFolders");
-
-                    b.Navigation("ReceivedNotifications");
-
-                    b.Navigation("StudentClasses");
                 });
 #pragma warning restore 612, 618
         }

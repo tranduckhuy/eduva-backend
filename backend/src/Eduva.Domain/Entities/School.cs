@@ -14,7 +14,7 @@ namespace Eduva.Domain.Entities
 
         // Navigation properties
         public virtual ICollection<SchoolSubscription> SchoolSubscriptions { get; set; } = [];
-        public virtual ICollection<User> Users { get; set; } = [];
+        public virtual ICollection<ApplicationUser> Users { get; set; } = [];
         public virtual ICollection<Classroom> Classes { get; set; } = [];
         public virtual ICollection<LessonMaterial> LessonMaterials { get; set; } = [];
     }

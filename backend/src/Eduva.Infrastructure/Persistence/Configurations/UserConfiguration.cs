@@ -4,17 +4,12 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Eduva.Infrastructure.Persistence.Configurations
 {
-    public class UserConfiguration : IEntityTypeConfiguration<User>
+    public class UserConfiguration : IEntityTypeConfiguration<ApplicationUser>
     {
-        public void Configure(EntityTypeBuilder<User> builder)
+        public void Configure(EntityTypeBuilder<ApplicationUser> builder)
         {
-            builder.Property(u => u.FirstName)
-                .HasMaxLength(100)
-                .IsRequired();
-
-            builder.Property(u => u.LastName)
-                .HasMaxLength(100)
-                .IsRequired();
+            builder.Property(u => u.FullName)
+                .HasMaxLength(100);
 
             builder.Property(u => u.UserName)
                 .HasMaxLength(100)

@@ -2,7 +2,7 @@
 {
     public enum PaymentMethod
     {
-        VNPAY,
-        PayOS
+        VNPAY = 0,
+        PayOS = 1
     }
 }

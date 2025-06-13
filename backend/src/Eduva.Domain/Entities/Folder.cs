@@ -11,7 +11,7 @@ namespace Eduva.Domain.Entities
         public string Name { get; set; } = string.Empty;
         public int Order {  get; set; }
 
-        public virtual User? User { get; set; }
+        public virtual ApplicationUser? User { get; set; }
         public virtual Classroom? Class { get; set; }
         public virtual ICollection<FolderLessonMaterial> FolderLessonMaterials { get; set; } = [];
     }

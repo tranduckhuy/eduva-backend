@@ -9,7 +9,7 @@ namespace Eduva.Domain.Entities
         public bool IsRead { get; set; }
 
         // Navigation properties
-        public virtual User TargetUser { get; set; } = default!;
+        public virtual ApplicationUser TargetUser { get; set; } = default!;
         public virtual Notification Notification { get; set; } = default!;
     }
 }

@@ -2,7 +2,7 @@
 {
     public enum LessonMaterialVisibility
     {
-        Private,
-        School
+        Private = 0,
+        School = 1
     }
 }

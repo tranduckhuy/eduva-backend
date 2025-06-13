@@ -110,9 +110,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Username = table.Column<string>(type: "text", nullable: false),
-                    FirstName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    LastName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    FullName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     AvatarUrl = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     SchoolId = table.Column<int>(type: "integer", nullable: true),
                     DOB = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
