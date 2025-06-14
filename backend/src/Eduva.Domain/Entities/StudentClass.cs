@@ -1,5 +1,4 @@
 ﻿using Eduva.Domain.Common;
-using System.Security.Claims;
 
 namespace Eduva.Domain.Entities
 {

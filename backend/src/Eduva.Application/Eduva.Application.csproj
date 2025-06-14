@@ -7,6 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="14.0.0" />
+    <PackageReference Include="MediatR" Version="12.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Eduva.Domain\Eduva.Domain.csproj" />
     <ProjectReference Include="..\Eduva.Shared\Eduva.Shared.csproj" />
   </ItemGroup>

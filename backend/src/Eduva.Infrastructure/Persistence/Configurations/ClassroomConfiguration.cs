@@ -1,5 +1,4 @@
-﻿using Eduva.Domain.Common;
-using Eduva.Domain.Entities;
+﻿using Eduva.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
