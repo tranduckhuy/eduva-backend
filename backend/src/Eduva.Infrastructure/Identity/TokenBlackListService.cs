@@ -39,7 +39,7 @@ namespace Eduva.Infrastructure.Identity
         {
             try
             {
-                var tokenData = await _distributedCache.GetStringAsync($"blacklist_{token}");
+                var tokenData = await _distributedCache.GetStringAsync($"blacklist:{token}");
                 return !string.IsNullOrEmpty(tokenData);
             }
             catch (Exception ex)

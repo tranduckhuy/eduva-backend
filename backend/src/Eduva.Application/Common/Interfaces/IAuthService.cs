@@ -11,8 +11,9 @@ namespace Eduva.Application.Common.Interfaces
         Task<CustomCode> ResetPasswordAsync(ResetPasswordRequestDto resetPasswordRequestDto);
         Task<CustomCode> ConfirmEmailAsync(ConfirmEmailRequestDto confirmEmailRequestDto);
         Task<CustomCode> ResendConfirmationEmailAsync(ResendConfirmationEmailRequestDto resendConfirmationEmailRequestDto);
-        Task<(CustomCode, AuthResultDto)> RefreshTokenAsync(RefreshTokenDto request);
-        Task Logout(string userId, string accessToken);
+        Task<(CustomCode, AuthResultDto)> RefreshTokenAsync(RefreshTokenRequestDto request);
+        Task LogoutAsync(string userId, string accessToken);
         Task<CustomCode> ChangePasswordAsync(ChangePasswordRequestDto dto);
+        Task InvalidateAllUserTokensAsync(string userId);
     }
 }

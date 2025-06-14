@@ -203,7 +203,7 @@ namespace Eduva.Infrastructure.Identity
             return CustomCode.ConfirmationEmailSent;
         }
 
-        public async Task<(CustomCode, AuthResultDto)> RefreshTokenAsync(RefreshTokenDto request)
+        public async Task<(CustomCode, AuthResultDto)> RefreshTokenAsync(RefreshTokenRequestDto request)
         {
             var principal = _jwtHandler.GetPrincipalFromExpiredToken(request.AccessToken);
 
@@ -223,6 +223,13 @@ namespace Eduva.Infrastructure.Identity
                 throw new UserAccountLockedException();
             }
 
+            var previousTokenExpiry = TokenHelper.GetTokenExpiry(request.AccessToken);
+            if (previousTokenExpiry > DateTimeOffset.UtcNow)
+            {
+                await _tokenBlackListService.BlacklistTokenAsync(request.AccessToken, previousTokenExpiry);
+                _logger.LogInformation("Previous access token invalidated for user: {username}", username);
+            }
+
             var userRoles = await _userManager.GetRolesAsync(user);
 
             var userClaims = await _userManager.GetClaimsAsync(user);
@@ -232,7 +239,7 @@ namespace Eduva.Infrastructure.Identity
             return (CustomCode.Success, authResponse);
         }
 
-        public async Task Logout(string userId, string accessToken)
+        public async Task LogoutAsync(string userId, string accessToken)
         {
             var user = await _userManager.FindByIdAsync(userId);
 
@@ -264,7 +271,27 @@ namespace Eduva.Infrastructure.Identity
                 throw new AppException(CustomCode.Unauthorized, errors);
             }
 
+            // Invalidate all existing tokens for this user after password change
+            await _tokenBlackListService.BlacklistAllUserTokensAsync(dto.UserId.ToString());
+            _logger.LogInformation("All tokens invalidated for user {UserId} after password change", dto.UserId);
+
             return CustomCode.Success;
+        }
+
+        public async Task InvalidateAllUserTokensAsync(string userId)
+        {
+            // Clear refresh token from database
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user != null)
+            {
+                user.RefreshToken = null!;
+                user.RefreshTokenExpiryTime = null;
+                await _userManager.UpdateAsync(user);
+            }
+
+            // Invalidate all tokens for this user
+            await _tokenBlackListService.BlacklistAllUserTokensAsync(userId);
+            _logger.LogInformation("All tokens invalidated for user {UserId}", userId);
         }
     }
 }

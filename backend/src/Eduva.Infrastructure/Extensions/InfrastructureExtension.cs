@@ -1,4 +1,7 @@
-﻿using Eduva.Infrastructure.Persistence.DbContext;
+﻿using Eduva.Application.Common.Interfaces;
+using Eduva.Infrastructure.Configurations;
+using Eduva.Infrastructure.Email;
+using Eduva.Infrastructure.Persistence.DbContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,6 +15,10 @@ namespace Eduva.Infrastructure.Extensions
             services.AddDbContext<AppDbContext>(options =>
                 options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"),
                     b => b.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName)));
+
+            var emailConfig = configuration.GetSection("EmailConfiguration").Get<EmailConfiguration>();
+            services.AddSingleton(emailConfig ?? throw new InvalidDataException("EmailConfiguration is missing in appsettings.json"));
+            services.AddScoped<IEmailSender, EmailSender>();
 
             services.AddHealthChecks().Services.AddDbContext<AppDbContext>();
 

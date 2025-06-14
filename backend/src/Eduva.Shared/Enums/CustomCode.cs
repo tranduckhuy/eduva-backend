@@ -13,8 +13,10 @@
         PasswordResetSuccessful = 2007,
 
         // Auth errors
+        ModelInvalid = 4000,
         Unauthorized = 4001,
         Forbidden = 4003,
+
 
         InvalidToken = 4004,
         EmailAlreadyExists = 4005,
@@ -25,9 +27,5 @@
         UserAccountLocked = 4010,
         ConfirmEmailTokenInvalidOrExpired = 4011,
         UserAlreadyConfirmed = 4012,
-
-        // User errors
-        EmailInvalid = 40001,
-        UserNotFound = 40002,
     }
 }

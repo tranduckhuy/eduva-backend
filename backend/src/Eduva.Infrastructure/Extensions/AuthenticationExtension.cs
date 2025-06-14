@@ -1,3 +1,4 @@
+using Eduva.Application.Common.Interfaces;
 using Eduva.Infrastructure.Identity;
 using Eduva.Infrastructure.Identity.Interfaces;
 using Eduva.Infrastructure.Persistence.DbContext;
@@ -7,6 +8,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace Eduva.Infrastructure.Extensions
 {
@@ -17,6 +20,7 @@ namespace Eduva.Infrastructure.Extensions
             // Register JWT services
             services.AddScoped<JwtHandler>();
             services.AddScoped<ITokenBlackListService, TokenBlackListService>();
+            services.AddScoped<IAuthService, AuthService>();
 
             // Configure JWT Authentication
             services.AddAuthentication(options =>
@@ -37,8 +41,8 @@ namespace Eduva.Infrastructure.Extensions
                     RequireExpirationTime = true,
                     ValidateIssuerSigningKey = true,
                     ClockSkew = TimeSpan.Zero,
-                    ValidIssuer = configuration["JwtSettings:Issuer"],
-                    ValidAudience = configuration["JwtSettings:Audience"],
+                    ValidIssuer = configuration["JWTSettings:ValidIssuer"],
+                    ValidAudience = configuration["JwtSettings:ValidAudience"],
                     IssuerSigningKey = new SymmetricSecurityKey(
                         Encoding.UTF8.GetBytes(configuration["JwtSettings:SecretKey"]!)
                     )
@@ -55,9 +59,25 @@ namespace Eduva.Infrastructure.Extensions
                         var token = context.Request.Headers["Authorization"]
                             .FirstOrDefault()?.Split(" ").Last();
                         
+                        // Check if individual token is blacklisted
                         if (!string.IsNullOrEmpty(token) && await tokenBlacklistService.IsTokenBlacklistedAsync(token))
                         {
                             context.Fail("Token has been revoked");
+                            return;
+                        }
+
+                        // Check if all user tokens have been invalidated
+                        var userIdClaim = context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                        if (!string.IsNullOrEmpty(userIdClaim))
+                        {
+                            var tokenHandler = new JwtSecurityTokenHandler();
+                            var jwtToken = tokenHandler.ReadJwtToken(token);
+                            var tokenIssuedAt = jwtToken.IssuedAt;
+
+                            if (await tokenBlacklistService.AreUserTokensInvalidatedAsync(userIdClaim, tokenIssuedAt))
+                            {
+                                context.Fail("All user tokens have been invalidated");
+                            }
                         }
                     }
                 };
