@@ -1,10 +1,11 @@
-﻿using Eduva.Domain.Constants;
+﻿using Eduva.Domain.Common;
+using Eduva.Domain.Constants;
 using Eduva.Domain.Enums;
 using Microsoft.AspNetCore.Identity;
 
 namespace Eduva.Domain.Entities
 {
-    public class ApplicationUser : IdentityUser<Guid>
+    public class ApplicationUser : IdentityUser<Guid>, IEntity<Guid>
     {
         public string? FullName { get; set; }
         public string AvatarUrl { get; set; } = AppConstants.DEFAULT_AVATAR;
