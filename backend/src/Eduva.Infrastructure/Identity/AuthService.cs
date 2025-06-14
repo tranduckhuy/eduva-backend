@@ -38,7 +38,7 @@ namespace Eduva.Infrastructure.Identity
             var existingUser = await _userManager.FindByEmailAsync(request.Email);
             if (existingUser != null)
             {
-                _logger.LogWarning("Attempt to register with existing email: {email}.", request.Email);
+                _logger.LogWarning("Attempt to register with existing email: {Email}.", request.Email);
                 throw new EmailAlreadyExistsException();
             }
 
@@ -58,7 +58,7 @@ namespace Eduva.Infrastructure.Identity
             if (!result.Succeeded)
             {
                 var errors = result.Errors.Select(e => e.Description).ToList();
-                _logger.LogError("Failed to create user. Errors: {errors}", string.Join(", ", errors));
+                _logger.LogError("Failed to create user. Errors: {Errors}", string.Join(", ", errors));
                 throw new AppException(CustomCode.ProvidedInformationIsInValid, errors);
             }
 
@@ -75,7 +75,7 @@ namespace Eduva.Infrastructure.Identity
 
             var message = MailMessageHelper.CreateMessage(newUser, token, clientUrl, "Confirm Email", "confirm your email");
 
-            _logger.LogInformation("Sending email to '{email}' to confirm email.", newUser.Email);
+            _logger.LogInformation("Sending email to '{Email}' to confirm email.", newUser.Email);
 
             //_ = _emailSender.SendEmailBrevoAsync(newUser.Email!, newUser.FirstName + " " + newUser.LastName, message.Subject, message.Content);
 
@@ -88,20 +88,20 @@ namespace Eduva.Infrastructure.Identity
 
             if (!user.EmailConfirmed)
             {
-                _logger.LogWarning("Attempt to login with unconfirmed email: {email}.", request.Email);
+                _logger.LogWarning("Attempt to login with unconfirmed email: {Email}.", request.Email);
                 throw new UserNotConfirmedException();
             }
 
             if (!await _userManager.CheckPasswordAsync(user, request.Password))
             {
-                _logger.LogWarning("Attempt to login with invalid password for email: {email}.", request.Email);
+                _logger.LogWarning("Attempt to login with invalid password for email: {Email}.", request.Email);
                 throw new InvalidCredentialsException();
             }
 
             // Check if user account is locked
             if (await _userManager.IsLockedOutAsync(user))
             {
-                _logger.LogWarning("Attempt to login with locked account for email: {email}.", request.Email);
+                _logger.LogWarning("Attempt to login with locked account for email: {Email}.", request.Email);
                 throw new UserAccountLockedException();
             }
 
@@ -166,7 +166,7 @@ namespace Eduva.Infrastructure.Identity
             if (!result.Succeeded)
             {
                 var errors = result.Errors.Select(e => e.Description).ToList();
-                _logger.LogError("Failed to reset password. Errors: {errors}", string.Join(", ", errors));
+                _logger.LogError("Failed to reset password. Errors: {Errors}", string.Join(", ", errors));
                 throw new AppException(CustomCode.Unauthorized, errors);
             }
 
@@ -181,7 +181,7 @@ namespace Eduva.Infrastructure.Identity
             if (!result.Succeeded)
             {
                 var errors = result.Errors.Select(e => e.Description).ToList();
-                _logger.LogError("Failed to confirm email. Errors: {errors}", string.Join(", ", errors));
+                _logger.LogError("Failed to confirm email. Errors: {Errors}", string.Join(", ", errors));
                 throw new AppException(CustomCode.ConfirmEmailTokenInvalidOrExpired, errors);
             }
 
@@ -194,7 +194,7 @@ namespace Eduva.Infrastructure.Identity
 
             if (user.EmailConfirmed)
             {
-                _logger.LogWarning("Attempt to resend confirmation email for already confirmed email: {email}.", request.Email);
+                _logger.LogWarning("Attempt to resend confirmation email for already confirmed email: {Email}.", request.Email);
                 throw new UserAlreadyConfirmedException();
             }
 
@@ -219,7 +219,7 @@ namespace Eduva.Infrastructure.Identity
             // Check if user account is locked
             if (await _userManager.IsLockedOutAsync(user))
             {
-                _logger.LogWarning("Attempt to login with locked account for email: {email}.", user.Email);
+                _logger.LogWarning("Attempt to login with locked account for email: {Email}.", user.Email);
                 throw new UserAccountLockedException();
             }
 
@@ -227,7 +227,7 @@ namespace Eduva.Infrastructure.Identity
             if (previousTokenExpiry > DateTimeOffset.UtcNow)
             {
                 await _tokenBlackListService.BlacklistTokenAsync(request.AccessToken, previousTokenExpiry);
-                _logger.LogInformation("Previous access token invalidated for user: {username}", username);
+                _logger.LogInformation("Previous access token invalidated for user: {Username}", username);
             }
 
             var userRoles = await _userManager.GetRolesAsync(user);
@@ -258,22 +258,22 @@ namespace Eduva.Infrastructure.Identity
             }
         }
 
-        public async Task<CustomCode> ChangePasswordAsync(ChangePasswordRequestDto dto)
+        public async Task<CustomCode> ChangePasswordAsync(ChangePasswordRequestDto request)
         {
-            var user = await _userManager.FindByIdAsync(dto.UserId.ToString()) ?? throw new UserNotExistsException();
+            var user = await _userManager.FindByIdAsync(request.UserId.ToString()) ?? throw new UserNotExistsException();
 
-            var result = await _userManager.ChangePasswordAsync(user, dto.CurrentPassword, dto.NewPassword);
+            var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
 
             if (!result.Succeeded)
             {
                 var errors = result.Errors.Select(e => e.Description).ToList();
-                _logger.LogError("Failed to change password. Errors: {errors}", string.Join(", ", errors));
+                _logger.LogError("Failed to change password. Errors: {Errors}", string.Join(", ", errors));
                 throw new AppException(CustomCode.Unauthorized, errors);
             }
 
             // Invalidate all existing tokens for this user after password change
-            await _tokenBlackListService.BlacklistAllUserTokensAsync(dto.UserId.ToString());
-            _logger.LogInformation("All tokens invalidated for user {UserId} after password change", dto.UserId);
+            await _tokenBlackListService.BlacklistAllUserTokensAsync(request.UserId.ToString());
+            _logger.LogInformation("All tokens invalidated for user {UserId} after password change", request.UserId);
 
             return CustomCode.Success;
         }

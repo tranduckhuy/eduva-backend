@@ -6,7 +6,7 @@ namespace Eduva.Shared.Constants
 {
     public static class ResponseMessages
     {
-        public static readonly Dictionary<CustomCode, MessageDetail> Messages = new Dictionary<CustomCode, MessageDetail>
+        internal static readonly Dictionary<CustomCode, MessageDetail> _messages = new Dictionary<CustomCode, MessageDetail>
         {
             #region Success Codes
             { CustomCode.Success, new MessageDetail {
@@ -57,5 +57,7 @@ namespace Eduva.Shared.Constants
 
             #endregion
         };
+
+        public static IReadOnlyDictionary<CustomCode, MessageDetail> Messages => _messages;
     }
 }

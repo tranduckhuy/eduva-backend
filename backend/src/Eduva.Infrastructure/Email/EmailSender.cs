@@ -60,7 +60,7 @@ namespace Eduva.Infrastructure.Email
 
             try
             {
-                _logger.LogInformation("Sending email to {email}", mailMessage.To);
+                _logger.LogInformation("Sending email to {Email}", mailMessage.To);
                 await client.ConnectAsync(_emailConfiguration.SmtpServer, _emailConfiguration.Port, true);
                 client.AuthenticationMechanisms.Remove("XOAUTH2");
                 await client.AuthenticateAsync(_emailConfiguration.From, _emailConfiguration.Password);
@@ -69,7 +69,7 @@ namespace Eduva.Infrastructure.Email
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while sending email to `{email}`", mailMessage.To);
+                _logger.LogError(ex, "An error occurred while sending email to `{Email}`", mailMessage.To);
             }
             finally
             {
@@ -97,11 +97,11 @@ namespace Eduva.Infrastructure.Email
 
                 await apiInstance.SendTransacEmailAsync(sendSmtpEmail);
 
-                _logger.LogInformation("Email sent successfully to {email}", receiverEmail);
+                _logger.LogInformation("Email sent successfully to {Email}", receiverEmail);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "An error occurred while sending email to `{email}`", receiverEmail);
+                _logger.LogError(e, "An error occurred while sending email to `{Email}`", receiverEmail);
             }
         }
     }
