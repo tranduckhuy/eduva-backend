@@ -3,6 +3,7 @@ using Eduva.Shared.Constants;
 using Eduva.Shared.Enums;
 using Eduva.Shared.Models;
 using Microsoft.AspNetCore.Mvc;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Eduva.API.Controllers.Base
 {
@@ -30,14 +31,14 @@ namespace Eduva.API.Controllers.Base
 
                 var statusCode = CustomCode.ModelInvalid;
 
-                return Respond(statusCode);
+                return Respond(statusCode, null, errors);
             }
 
             return null!;
         }
 
 
-        protected IActionResult Respond(CustomCode code, object data = null!)
+        protected IActionResult Respond(CustomCode code, object? data = null, IEnumerable<string>? errors = null)
         {
             if (!ResponseMessages.Messages.TryGetValue(code, out var msgDetail))
             {
@@ -52,7 +53,8 @@ namespace Eduva.API.Controllers.Base
             {
                 StatusCode = (int)code,
                 Message = msgDetail.Message,
-                Data = data
+                Data = data,
+                Errors = errors
             };
 
             return StatusCode(msgDetail.HttpCode, responseData);

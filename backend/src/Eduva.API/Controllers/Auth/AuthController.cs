@@ -38,7 +38,7 @@ namespace Eduva.API.Controllers.Auth
             {
                 if (ex is AppException appEx)
                 {
-                    return Respond(appEx.StatusCode, appEx.Message);
+                    return Respond(appEx.StatusCode, null, appEx.Errors);
                 }
 
                 return Respond((CustomCode)StatusCodes.Status500InternalServerError);
@@ -63,7 +63,7 @@ namespace Eduva.API.Controllers.Auth
             {
                 if (ex is AppException appEx)
                 {
-                    return Respond(appEx.StatusCode, appEx.Message);
+                    return Respond(appEx.StatusCode, null, appEx.Errors);
                 }
                 return Respond((CustomCode)StatusCodes.Status500InternalServerError);
             }
@@ -86,7 +86,7 @@ namespace Eduva.API.Controllers.Auth
             {
                 if (ex is AppException appEx)
                 {
-                    return Respond(appEx.StatusCode, appEx.Message);
+                    return Respond(appEx.StatusCode, null, appEx.Errors);
                 }
                 return Respond((CustomCode)StatusCodes.Status500InternalServerError);
             }
@@ -109,7 +109,7 @@ namespace Eduva.API.Controllers.Auth
             {
                 if (ex is AppException appEx)
                 {
-                    return Respond(appEx.StatusCode, appEx.Message);
+                    return Respond(appEx.StatusCode, null, appEx.Errors);
                 }
                 return Respond((CustomCode)StatusCodes.Status500InternalServerError);
             }
@@ -132,7 +132,7 @@ namespace Eduva.API.Controllers.Auth
             {
                 if (ex is AppException appEx)
                 {
-                    return Respond(appEx.StatusCode, appEx.Message);
+                    return Respond(appEx.StatusCode, null, appEx.Errors);
                 }
                 return Respond((CustomCode)StatusCodes.Status500InternalServerError);
             }
@@ -165,7 +165,7 @@ namespace Eduva.API.Controllers.Auth
             {
                 if (ex is AppException appEx)
                 {
-                    return Respond(appEx.StatusCode, appEx.Message);
+                    return Respond(appEx.StatusCode, null, appEx.Errors);
                 }
                 return Respond((CustomCode)StatusCodes.Status500InternalServerError);
             }
@@ -188,7 +188,7 @@ namespace Eduva.API.Controllers.Auth
             {
                 if (ex is AppException appEx)
                 {
-                    return Respond(appEx.StatusCode, appEx.Message);
+                    return Respond(appEx.StatusCode, null, appEx.Errors);
                 }
                 return Respond((CustomCode)StatusCodes.Status500InternalServerError);
             }
@@ -211,7 +211,7 @@ namespace Eduva.API.Controllers.Auth
             {
                 if (ex is AppException appEx)
                 {
-                    return Respond(appEx.StatusCode, appEx.Message);
+                    return Respond(appEx.StatusCode, null, appEx.Errors);
                 }
                 return Respond((CustomCode)StatusCodes.Status500InternalServerError);
             }
@@ -245,7 +245,7 @@ namespace Eduva.API.Controllers.Auth
             {
                 if (ex is AppException appEx)
                 {
-                    return Respond(appEx.StatusCode, appEx.Message);
+                    return Respond(appEx.StatusCode, null, appEx.Errors);
                 }
                 return Respond((CustomCode)StatusCodes.Status500InternalServerError);
             }
@@ -265,7 +265,7 @@ namespace Eduva.API.Controllers.Auth
             {
                 if (ex is AppException appEx)
                 {
-                    return Respond(appEx.StatusCode, appEx.Message);
+                    return Respond(appEx.StatusCode, null, appEx.Errors);
                 }
                 return Respond((CustomCode)StatusCodes.Status500InternalServerError);
             }
@@ -290,7 +290,7 @@ namespace Eduva.API.Controllers.Auth
             {
                 if (ex is AppException appEx)
                 {
-                    return Respond(appEx.StatusCode, appEx.Message);
+                    return Respond(appEx.StatusCode, null, appEx.Errors);
                 }
                 return Respond((CustomCode)StatusCodes.Status500InternalServerError);
             }

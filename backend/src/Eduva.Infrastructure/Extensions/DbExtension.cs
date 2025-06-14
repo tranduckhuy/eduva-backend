@@ -31,7 +31,7 @@ namespace Eduva.Infrastructure.Extensions
                 await roleManager.CreateAsync(new IdentityRole<Guid>(nameof(Role.SystemAdmin)));
                 await roleManager.CreateAsync(new IdentityRole<Guid>(nameof(Role.SchoolAdmin)));
                 await roleManager.CreateAsync(new IdentityRole<Guid>(nameof(Role.ContentModerator)));
-                await roleManager.CreateAsync(new IdentityRole<Guid>(nameof(Role.ContentModerator)));
+                await roleManager.CreateAsync(new IdentityRole<Guid>(nameof(Role.Teacher)));
                 await roleManager.CreateAsync(new IdentityRole<Guid>(nameof(Role.Student)));
             }
 
