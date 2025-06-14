@@ -1,5 +1,4 @@
 ﻿using Eduva.Domain.Common;
-using Eduva.Domain.Enums;
 
 namespace Eduva.Domain.Entities
 {
