@@ -16,10 +16,10 @@ namespace Eduva.Infrastructure.Identity
             _logger = logger;
         }
 
-        public async Task BlacklistTokenAsync(string token, DateTimeOffset expiry)
+        public async Task BlacklistTokenAsync(string token, DateTime expiry)
         {
             var key = $"blacklist:{token}";
-            var ttl = (expiry - DateTimeOffset.UtcNow).TotalSeconds;
+            var ttl = (expiry - DateTime.UtcNow).TotalSeconds;
 
             if (ttl > 0)
             {
@@ -52,7 +52,7 @@ namespace Eduva.Infrastructure.Identity
         public async Task BlacklistAllUserTokensAsync(string userId)
         {
             // Store a timestamp when all user tokens were invalidated
-            var invalidationTime = DateTime.UtcNow;
+            var invalidationTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             var userTokenKey = $"user_tokens_invalidated_{userId}";
             
             var cacheOptions = new DistributedCacheEntryOptions
@@ -60,13 +60,13 @@ namespace Eduva.Infrastructure.Identity
                 AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24)
             };
 
-            await _distributedCache.SetStringAsync(userTokenKey, 
-                JsonSerializer.Serialize(invalidationTime), cacheOptions);
+            // Store as Unix timestamp to avoid timezone issues
+            await _distributedCache.SetStringAsync(userTokenKey, invalidationTime.ToString(), cacheOptions);
             
-            _logger.LogInformation("All tokens for user {UserId} have been blacklisted", userId);
+            _logger.LogInformation("All tokens for user {UserId} have been blacklisted at {InvalidationTime}", userId, DateTimeOffset.FromUnixTimeSeconds(invalidationTime));
         }
 
-        public async Task<bool> AreUserTokensInvalidatedAsync(string userId, DateTimeOffset tokenIssuedAt)
+        public async Task<bool> AreUserTokensInvalidatedAsync(string userId, DateTime tokenIssuedAt)
         {
             try
             {
@@ -76,8 +76,34 @@ namespace Eduva.Infrastructure.Identity
                 if (string.IsNullOrEmpty(invalidationData))
                     return false;
 
-                var invalidationTime = JsonSerializer.Deserialize<DateTimeOffset>(invalidationData);
-                return tokenIssuedAt < invalidationTime;
+                long invalidationTimeUnix;
+                
+                // Handle backward compatibility - check if it's old DateTime format or new Unix timestamp
+                if (invalidationData.StartsWith("\"") && invalidationData.EndsWith("\""))
+                {
+                    var dateTimeString = invalidationData.Trim('"');
+                    if (DateTime.TryParse(dateTimeString, out var invalidationDateTime))
+                    {
+                        invalidationTimeUnix = new DateTimeOffset(invalidationDateTime.ToUniversalTime()).ToUnixTimeSeconds();
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Failed to parse old DateTime format for user {UserId}: {Data}", userId, invalidationData);
+                        return false;
+                    }
+                }
+                else
+                {
+                    if (!long.TryParse(invalidationData, out invalidationTimeUnix))
+                    {
+                        _logger.LogWarning("Failed to parse Unix timestamp for user {UserId}: {Data}", userId, invalidationData);
+                        return false;
+                    }
+                }
+
+                var tokenIssuedAtUnix = new DateTimeOffset(tokenIssuedAt.ToUniversalTime()).ToUnixTimeSeconds();
+                
+                return tokenIssuedAtUnix < invalidationTimeUnix;
             }
             catch (Exception ex)
             {

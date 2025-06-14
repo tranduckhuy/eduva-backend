@@ -30,11 +30,19 @@ namespace Eduva.Infrastructure.Identity
 
         public JwtSecurityToken GenerateTokenOptions(SigningCredentials signingCredentials, List<Claim> claims)
         {
+            var now = DateTime.UtcNow;
+            
+            // Add the 'iat' (issued at) claim
+            claims.Add(new Claim(JwtRegisteredClaimNames.Iat, 
+                new DateTimeOffset(now).ToUnixTimeSeconds().ToString(), 
+                ClaimValueTypes.Integer64));
+            
             var tokenOptions = new JwtSecurityToken(
                 issuer: _jwtSettings["ValidIssuer"],
                 audience: _jwtSettings["ValidAudience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddSeconds(GetExpiryInSecond()),
+                notBefore: now,
+                expires: now.AddSeconds(GetExpiryInSecond()),
                 signingCredentials: signingCredentials
             );
             return tokenOptions;

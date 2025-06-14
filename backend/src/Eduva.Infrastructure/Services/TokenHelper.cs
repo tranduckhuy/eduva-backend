@@ -38,7 +38,7 @@ namespace Eduva.Infrastructure.Services
         {
             var handler = new JwtSecurityTokenHandler();
             var jwtToken = handler.ReadJwtToken(token);
-            return jwtToken.ValidTo;
+            return jwtToken.ValidTo; // Return DateTime directly
         }
     }
 }

@@ -252,7 +252,7 @@ namespace Eduva.API.Controllers.Auth
         }
 
         // Admin endpoints for token management
-        [HttpPost("admin/invalidate-user-tokens/{userId}")]
+        [HttpPost("admin/invalidate-user-tokens/{userId}")]     
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
         public async Task<IActionResult> InvalidateUserTokens(string userId)
         {

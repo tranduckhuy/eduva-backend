@@ -72,7 +72,7 @@ namespace Eduva.Infrastructure.Extensions
                         {
                             var tokenHandler = new JwtSecurityTokenHandler();
                             var jwtToken = tokenHandler.ReadJwtToken(token);
-                            var tokenIssuedAt = jwtToken.IssuedAt;
+                            var tokenIssuedAt = jwtToken.IssuedAt; // Use DateTime directly
 
                             if (await tokenBlacklistService.AreUserTokensInvalidatedAsync(userIdClaim, tokenIssuedAt))
                             {

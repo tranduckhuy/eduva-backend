@@ -224,7 +224,7 @@ namespace Eduva.Infrastructure.Identity
             }
 
             var previousTokenExpiry = TokenHelper.GetTokenExpiry(request.AccessToken);
-            if (previousTokenExpiry > DateTimeOffset.UtcNow)
+            if (previousTokenExpiry > DateTime.UtcNow)
             {
                 await _tokenBlackListService.BlacklistTokenAsync(request.AccessToken, previousTokenExpiry);
                 _logger.LogInformation("Previous access token invalidated for user: {Username}", username);
