@@ -3,7 +3,6 @@ using Eduva.Shared.Constants;
 using Eduva.Shared.Enums;
 using Eduva.Shared.Models;
 using Microsoft.AspNetCore.Mvc;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Eduva.API.Controllers.Base
 {
