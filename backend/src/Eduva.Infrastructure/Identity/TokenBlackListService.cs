@@ -75,34 +75,15 @@ namespace Eduva.Infrastructure.Identity
                 if (string.IsNullOrEmpty(invalidationData))
                     return false;
 
-                long invalidationTimeUnix;
-                
-                // Handle backward compatibility - check if it's old DateTime format or new Unix timestamp
-                if (invalidationData.StartsWith("\"") && invalidationData.EndsWith("\""))
+                // Parse the invalidation time from cache
+                if (long.TryParse(invalidationData, out var invalidationTime))
                 {
-                    var dateTimeString = invalidationData.Trim('"');
-                    if (DateTime.TryParse(dateTimeString, out var invalidationDateTime))
-                    {
-                        invalidationTimeUnix = new DateTimeOffset(invalidationDateTime.ToUniversalTime()).ToUnixTimeSeconds();
-                    }
-                    else
-                    {
-                        _logger.LogWarning("Failed to parse old DateTime format for user {UserId}: {Data}", userId, invalidationData);
-                        return false;
-                    }
+                    var invalidationDateTime = DateTimeOffset.FromUnixTimeSeconds(invalidationTime).UtcDateTime;
+                    return tokenIssuedAt < invalidationDateTime;
                 }
-                else
-                {
-                    if (!long.TryParse(invalidationData, out invalidationTimeUnix))
-                    {
-                        _logger.LogWarning("Failed to parse Unix timestamp for user {UserId}: {Data}", userId, invalidationData);
-                        return false;
-                    }
-                }
+                _logger.LogWarning("Invalid data format for user {UserId} in cache: {InvalidationData}", userId, invalidationData);
+                return false;
 
-                var tokenIssuedAtUnix = new DateTimeOffset(tokenIssuedAt.ToUniversalTime()).ToUnixTimeSeconds();
-                
-                return tokenIssuedAtUnix < invalidationTimeUnix;
             }
             catch (Exception ex)
             {
