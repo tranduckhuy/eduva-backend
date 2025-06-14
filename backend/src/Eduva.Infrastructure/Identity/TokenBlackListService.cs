@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Eduva.Infrastructure.Identity.Interfaces;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;

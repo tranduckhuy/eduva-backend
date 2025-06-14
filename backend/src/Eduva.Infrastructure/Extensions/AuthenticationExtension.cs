@@ -41,7 +41,7 @@ namespace Eduva.Infrastructure.Extensions
                     RequireExpirationTime = true,
                     ValidateIssuerSigningKey = true,
                     ClockSkew = TimeSpan.Zero,
-                    ValidIssuer = configuration["JWTSettings:ValidIssuer"],
+                    ValidIssuer = configuration["JwtSettings:ValidIssuer"],
                     ValidAudience = configuration["JwtSettings:ValidAudience"],
                     IssuerSigningKey = new SymmetricSecurityKey(
                         Encoding.UTF8.GetBytes(configuration["JwtSettings:SecretKey"]!)
