@@ -161,6 +161,11 @@ namespace Eduva.Infrastructure.Identity
         {
             var user = await _userManager.FindByEmailAsync(request.Email) ?? throw new UserNotExistsException();
 
+            if (await _userManager.CheckPasswordAsync(user, request.Password))
+            {
+                throw new NewPasswordSameAsOldException();
+            }
+
             var result = await _userManager.ResetPasswordAsync(user, request.Token, request.Password);
 
             if (!result.Succeeded)
@@ -261,6 +266,11 @@ namespace Eduva.Infrastructure.Identity
         public async Task<CustomCode> ChangePasswordAsync(ChangePasswordRequestDto request)
         {
             var user = await _userManager.FindByIdAsync(request.UserId.ToString()) ?? throw new UserNotExistsException();
+
+            if (await _userManager.CheckPasswordAsync(user, request.NewPassword))
+            {
+                throw new NewPasswordSameAsOldException();
+            }
 
             var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
 

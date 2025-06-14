@@ -54,6 +54,8 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Confirm email token is invalid or expired" } },
             { CustomCode.UserAlreadyConfirmed, new MessageDetail {
                 HttpCode = StatusCodes.Status400BadRequest, Message = "User account already confirmed" } },
+            { CustomCode.NewPasswordSameAsOld, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "New password cannot be the same as the old password" } },
 
             #endregion
         };

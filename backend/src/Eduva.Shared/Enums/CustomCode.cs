@@ -27,5 +27,6 @@
         UserAccountLocked = 4010,
         ConfirmEmailTokenInvalidOrExpired = 4011,
         UserAlreadyConfirmed = 4012,
+        NewPasswordSameAsOld = 4013,
     }
 }
