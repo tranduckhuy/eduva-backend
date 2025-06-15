@@ -69,6 +69,140 @@ namespace Eduva.API.Controllers.Auth
             }
         }
 
+        [HttpPost("verify-otp-login")]
+        public async Task<IActionResult> VerifyOtpLogin([FromBody] VerifyOtpRequestDto request)
+        {
+            var modelStateCheck = CheckModelStateValidity();
+            if (modelStateCheck != null)
+                return modelStateCheck;
+
+            try
+            {
+                var (code, result) = await _authService.VerifyLoginOtpAsync(request);
+                return Respond(code, result);
+            }
+            catch (Exception ex)
+            {
+                if (ex is AppException appEx)
+                {
+                    return Respond(appEx.StatusCode, null, appEx.Errors);
+                }
+                return Respond((CustomCode)StatusCodes.Status500InternalServerError);
+            }
+        }
+
+        [HttpPost("security/request-enable-2fa")]
+        [Authorize]
+        public async Task<IActionResult> RequestEnable2Fa([FromBody] Request2FaDto request)
+        {
+            var modelStateCheck = CheckModelStateValidity();
+            if (modelStateCheck != null)
+                return modelStateCheck;
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+                return Respond(CustomCode.Unauthorized, "User ID not found in claims.");
+
+            request.UserId = Guid.Parse(userId);
+
+            try
+            {
+                var result = await _authService.RequestEnable2FaOtpAsync(request);
+                return Respond(result);
+            }
+            catch (Exception ex)
+            {
+                if (ex is AppException appEx)
+                    return Respond(appEx.StatusCode, null, appEx.Errors);
+
+                return Respond((CustomCode)StatusCodes.Status500InternalServerError);
+            }
+        }
+
+        [HttpPost("security/confirm-enable-2fa")]
+        [Authorize]
+        public async Task<IActionResult> ConfirmEnable2Fa([FromBody] Confirm2FaDto request)
+        {
+            var modelStateCheck = CheckModelStateValidity();
+            if (modelStateCheck != null)
+                return modelStateCheck;
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+                return Respond(CustomCode.Unauthorized, "User ID not found in claims.");
+
+            request.UserId = Guid.Parse(userId);
+
+            try
+            {
+                var result = await _authService.ConfirmEnable2FaOtpAsync(request);
+                return Respond(result);
+            }
+            catch (Exception ex)
+            {
+                if (ex is AppException appEx)
+                    return Respond(appEx.StatusCode, null, appEx.Errors);
+
+                return Respond((CustomCode)StatusCodes.Status500InternalServerError);
+            }
+        }
+
+        [HttpPost("security/request-disable-2fa")]
+        [Authorize]
+        public async Task<IActionResult> RequestDisable2Fa([FromBody] Request2FaDto request)
+        {
+            var modelStateCheck = CheckModelStateValidity();
+            if (modelStateCheck != null)
+                return modelStateCheck;
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+                return Respond(CustomCode.Unauthorized, "User ID not found in claims.");
+
+            request.UserId = Guid.Parse(userId);
+
+            try
+            {
+                var result = await _authService.RequestDisable2FaOtpAsync(request);
+                return Respond(result);
+            }
+            catch (Exception ex)
+            {
+                if (ex is AppException appEx)
+                    return Respond(appEx.StatusCode, null, appEx.Errors);
+
+                return Respond((CustomCode)StatusCodes.Status500InternalServerError);
+            }
+        }
+
+        [HttpPost("security/confirm-disable-2fa")]
+        [Authorize]
+        public async Task<IActionResult> ConfirmDisable2Fa([FromBody] Confirm2FaDto request)
+        {
+            var modelStateCheck = CheckModelStateValidity();
+            if (modelStateCheck != null)
+                return modelStateCheck;
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+                return Respond(CustomCode.Unauthorized, "User ID not found in claims.");
+
+            request.UserId = Guid.Parse(userId);
+
+            try
+            {
+                var result = await _authService.ConfirmDisable2FaOtpAsync(request);
+                return Respond(result);
+            }
+            catch (Exception ex)
+            {
+                if (ex is AppException appEx)
+                    return Respond(appEx.StatusCode, null, appEx.Errors);
+
+                return Respond((CustomCode)StatusCodes.Status500InternalServerError);
+            }
+        }
+
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto forgotPasswordRequestDto)
         {
@@ -155,6 +289,14 @@ namespace Eduva.API.Controllers.Auth
             }
 
             changePasswordRequestDto.UserId = Guid.Parse(userId);
+
+            var token = Request.Headers.Authorization.FirstOrDefault()?.Replace("Bearer ", "").Trim();
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                return Respond(CustomCode.Unauthorized, "Access token is missing or invalid.");
+            }
+
+            changePasswordRequestDto.CurrentAccessToken = token;
 
             try
             {
