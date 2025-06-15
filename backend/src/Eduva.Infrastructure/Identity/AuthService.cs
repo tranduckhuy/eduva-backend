@@ -1,5 +1,4 @@
 using Eduva.Application.Common.Exceptions;
-using Eduva.Application.Common.Interfaces;
 using Eduva.Application.Common.Models;
 using Eduva.Application.Exceptions.Auth;
 using Eduva.Application.Features.Auth.DTOs;
