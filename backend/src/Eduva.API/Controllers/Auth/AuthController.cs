@@ -156,6 +156,14 @@ namespace Eduva.API.Controllers.Auth
 
             changePasswordRequestDto.UserId = Guid.Parse(userId);
 
+            var token = Request.Headers.Authorization.FirstOrDefault()?.Replace("Bearer ", "").Trim();
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                return Respond(CustomCode.Unauthorized, "Access token is missing or invalid.");
+            }
+
+            changePasswordRequestDto.CurrentAccessToken = token;
+
             try
             {
                 var result = await _authService.ChangePasswordAsync(changePasswordRequestDto);

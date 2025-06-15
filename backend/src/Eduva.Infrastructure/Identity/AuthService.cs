@@ -281,9 +281,25 @@ namespace Eduva.Infrastructure.Identity
                 throw new AppException(CustomCode.Unauthorized, errors);
             }
 
-            // Invalidate all existing tokens for this user after password change
-            await _tokenBlackListService.BlacklistAllUserTokensAsync(request.UserId.ToString());
-            _logger.LogInformation("All tokens invalidated for user {UserId} after password change", request.UserId);
+            // Handle logout behavior
+            switch (request.LogoutBehavior)
+            {
+                case LogoutBehavior.LogoutAllIncludingCurrent:
+                    await _tokenBlackListService.BlacklistAllUserTokensAsync(request.UserId.ToString());
+                    _logger.LogInformation("All tokens invalidated for user {UserId} after password change", request.UserId);
+                    break;
+
+                case LogoutBehavior.LogoutOthersOnly:
+                    var accessToken = request.CurrentAccessToken;
+                    await _tokenBlackListService.BlacklistAllUserTokensExceptAsync(request.UserId.ToString(), accessToken);
+                    _logger.LogInformation("All tokens except current invalidated for user {UserId}", request.UserId);
+                    break;
+
+                case LogoutBehavior.KeepAllSessions:
+                default:
+                    _logger.LogInformation("No session invalidated for user {UserId}", request.UserId);
+                    break;
+            }
 
             return CustomCode.Success;
         }
