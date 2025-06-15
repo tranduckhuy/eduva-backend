@@ -1,4 +1,5 @@
-﻿using Eduva.Domain.Entities;
+﻿using Eduva.Domain.Common;
+using Eduva.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -38,6 +39,25 @@ namespace Eduva.Infrastructure.Persistence.DbContext
         public DbSet<QuestionComment> QuestionComments { get; set; } = default!;
         public DbSet<Notification> Notifications { get; set; } = default!;
         public DbSet<UserNotification> UserNotifications { get; set; } = default!;
+
+        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            var entries = ChangeTracker.Entries()
+            .Where(e => e.Entity is BaseTimestampedEntity<Guid> &&
+                        (e.State == EntityState.Added || e.State == EntityState.Modified));
+
+            foreach (var entry in entries)
+            {
+                var entity = (BaseTimestampedEntity<Guid>)entry.Entity;
+
+                if (entry.State == EntityState.Modified)
+                {
+                    entity.LastModifiedAt = DateTimeOffset.UtcNow;
+                }
+            }
+
+            return await base.SaveChangesAsync(cancellationToken);
+        }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

@@ -1,146 +1,71 @@
-using Eduva.Domain.Common;
-using Eduva.Domain.Interfaces;
-using Eduva.Domain.Interfaces.Repositories;
+using Eduva.Application.Interfaces;
+using Eduva.Application.Interfaces.Repositories;
 using Eduva.Infrastructure.Persistence.DbContext;
-using Eduva.Infrastructure.Persistence.Repositories;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
-using System.Data;
 
 namespace Eduva.Infrastructure.Persistence.UnitOfWork
 {
     public class UnitOfWork : IUnitOfWork
     {
         private readonly AppDbContext _context;
-        private IDbContextTransaction? _currentTransaction;
-        private bool _disposed = false;
+        private readonly IRepositoryFactory _repositoryFactory;
+        private IDbContextTransaction? _transaction;
+        private bool _disposed;
 
-        public ILessonMaterialRepository LessonMaterialRepository { get; private set; }
-        public UnitOfWork(AppDbContext context)
+        public UnitOfWork(AppDbContext context, IRepositoryFactory repositoryFactory)
         {
             _context = context;
-            LessonMaterialRepository = new LessonMaterialRepository(_context);
+            _repositoryFactory = repositoryFactory;
         }
 
-        #region Repository Properties
+        public IGenericRepository<TEntity, TKey> GetRepository<TEntity, TKey>()
+            where TEntity : class => _repositoryFactory.GetGenericRepository<TEntity, TKey>();
 
-        #endregion
+        public TRepository GetCustomRepository<TRepository>()
+            where TRepository : class => _repositoryFactory.GetCustomRepository<TRepository>();
 
-        #region Transaction Management
-
-        public async Task<IDbTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
+        public async Task<IDbContextTransaction> BeginTransactionAsync()
         {
-            if (_currentTransaction != null)
-                throw new InvalidOperationException("A transaction is already in progress.");
-
-            _currentTransaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-            return _currentTransaction.GetDbTransaction();
+            _transaction = await _context.Database.BeginTransactionAsync();
+            return _transaction;
         }
 
-        public async Task CommitTransactionAsync(CancellationToken cancellationToken = default)
+        public async Task RollbackAsync()
         {
-            if (_currentTransaction == null)
-                throw new InvalidOperationException("No transaction in progress.");
+            if (_transaction != null)
+            {
+                await _transaction.RollbackAsync();
+                await DisposeTransactionAsync();
+            }
+        }
 
+        public async Task<int> CommitAsync()
+        {
             try
             {
-                await _currentTransaction.CommitAsync(cancellationToken);
+                var result = await _context.SaveChangesAsync();
+                if (_transaction != null)
+                {
+                    await _transaction.CommitAsync();
+                    await DisposeTransactionAsync();
+                }
+                return result;
             }
             catch
             {
-                await RollbackTransactionAsync(cancellationToken);
+                await RollbackAsync();
                 throw;
             }
-            finally
-            {
-                await _currentTransaction.DisposeAsync();
-                _currentTransaction = null;
-            }
         }
 
-        public async Task RollbackTransactionAsync(CancellationToken cancellationToken = default)
+        private async Task DisposeTransactionAsync()
         {
-            if (_currentTransaction == null)
-                throw new InvalidOperationException("No transaction in progress.");
-
-            try
+            if (_transaction != null)
             {
-                await _currentTransaction.RollbackAsync(cancellationToken);
-            }
-            finally
-            {
-                await _currentTransaction.DisposeAsync();
-                _currentTransaction = null;
+                await _transaction.DisposeAsync();
+                _transaction = null;
             }
         }
-
-        #endregion
-
-        #region Save Operations
-
-        public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                // Apply audit fields for timestamped entities
-                ApplyAuditInformation();
-                
-                return await _context.SaveChangesAsync(cancellationToken);
-            }
-            catch (DbUpdateConcurrencyException ex)
-            {
-                // Handle concurrency conflicts
-                throw new InvalidOperationException("The entity was modified by another user. Please refresh and try again.", ex);
-            }
-            catch (DbUpdateException ex)
-            {
-                // Handle database update exceptions
-                throw new InvalidOperationException("An error occurred while saving changes to the database.", ex);
-            }
-        }
-
-        public async Task<bool> CompleteAsync(CancellationToken cancellationToken = default)
-        {
-            var result = await SaveChangesAsync(cancellationToken);
-            return result > 0;
-        }
-
-        private void ApplyAuditInformation()
-        {
-            var entries = _context.ChangeTracker.Entries()
-                .Where(e => e.Entity is BaseTimestampedEntity<int> || e.Entity is BaseTimestampedEntity<Guid>)
-                .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified);
-
-            foreach (var entry in entries)
-            {
-                if (entry.State == EntityState.Added)
-                {
-                    if (entry.Entity is BaseTimestampedEntity<int> intEntity)
-                    {
-                        intEntity.CreatedAt = DateTimeOffset.UtcNow;
-                    }
-                    else if (entry.Entity is BaseTimestampedEntity<Guid> guidEntity)
-                    {
-                        guidEntity.CreatedAt = DateTimeOffset.UtcNow;
-                    }
-                }
-                else if (entry.State == EntityState.Modified)
-                {
-                    if (entry.Entity is BaseTimestampedEntity<int> intEntity)
-                    {
-                        intEntity.LastModifiedAt = DateTimeOffset.UtcNow;
-                    }
-                    else if (entry.Entity is BaseTimestampedEntity<Guid> guidEntity)
-                    {
-                        guidEntity.LastModifiedAt = DateTimeOffset.UtcNow;
-                    }
-                }
-            }
-        }
-
-        #endregion
-
-        #region Dispose Pattern
 
         public void Dispose()
         {
@@ -148,21 +73,31 @@ namespace Eduva.Infrastructure.Persistence.UnitOfWork
             GC.SuppressFinalize(this);
         }
 
+        public async ValueTask DisposeAsync()
+        {
+            await DisposeAsyncCore();
+            Dispose(false);
+            GC.SuppressFinalize(this);
+        }
+
         protected virtual void Dispose(bool disposing)
         {
-            if (!_disposed && disposing)
+            if (!_disposed)
             {
-                _currentTransaction?.Dispose();
-                _context.Dispose();
+                if (disposing)
+                {
+                    _transaction?.Dispose();
+                    _context.Dispose();
+                }
                 _disposed = true;
             }
         }
 
-        ~UnitOfWork()
+        protected virtual async ValueTask DisposeAsyncCore()
         {
-            Dispose(false);
+            if (_transaction != null)
+                await _transaction.DisposeAsync();
+            await _context.DisposeAsync();
         }
-
-        #endregion
     }
 }

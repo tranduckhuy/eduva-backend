@@ -9,7 +9,7 @@ namespace Eduva.API.Controllers.Base
     [ApiController]
     public abstract class BaseController<TController> : ControllerBase
     {
-        private readonly ILogger<BaseController<TController>> _logger;
+        protected readonly ILogger<BaseController<TController>> _logger;
 
         protected BaseController(ILogger<BaseController<TController>> logger)
         {

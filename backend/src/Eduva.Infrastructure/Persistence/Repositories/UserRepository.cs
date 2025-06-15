@@ -4,9 +4,9 @@ using Eduva.Infrastructure.Persistence.DbContext;
 
 namespace Eduva.Infrastructure.Persistence.Repositories
 {
-    public class LessonMaterialRepository : GenericRepository<LessonMaterial, int>, ILessonMaterialRepository
+    public class UserRepository : GenericRepository<ApplicationUser, Guid>, IUserRepository
     {
-        public LessonMaterialRepository(AppDbContext context) : base(context)
+        public UserRepository(AppDbContext context) : base(context)
         {
         }
     }

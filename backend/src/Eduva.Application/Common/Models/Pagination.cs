@@ -1,4 +1,4 @@
-﻿namespace Eduva.Domain.Specs
+﻿namespace Eduva.Application.Common.Models
 {
     public class Pagination<T> where T : class
     {

@@ -53,7 +53,7 @@ namespace Eduva.Infrastructure.Identity
             // Store a timestamp when all user tokens were invalidated
             var invalidationTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             var userTokenKey = $"user_tokens_invalidated_{userId}";
-            
+
             var cacheOptions = new DistributedCacheEntryOptions
             {
                 AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24)
@@ -61,7 +61,7 @@ namespace Eduva.Infrastructure.Identity
 
             // Store as Unix timestamp to avoid timezone issues
             await _distributedCache.SetStringAsync(userTokenKey, invalidationTime.ToString(), cacheOptions);
-            
+
             _logger.LogInformation("All tokens for user {UserId} have been blacklisted at {InvalidationTime}", userId, DateTimeOffset.FromUnixTimeSeconds(invalidationTime));
         }
 
@@ -71,7 +71,7 @@ namespace Eduva.Infrastructure.Identity
             {
                 var userTokenKey = $"user_tokens_invalidated_{userId}";
                 var invalidationData = await _distributedCache.GetStringAsync(userTokenKey);
-                
+
                 if (string.IsNullOrEmpty(invalidationData))
                     return false;
 

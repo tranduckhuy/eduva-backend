@@ -1,7 +1,7 @@
 ﻿using Eduva.Application.Features.Auth.DTOs;
 using Eduva.Shared.Enums;
 
-namespace Eduva.Application.Common.Interfaces
+namespace Eduva.Application.Interfaces.Services
 {
     public interface IAuthService
     {

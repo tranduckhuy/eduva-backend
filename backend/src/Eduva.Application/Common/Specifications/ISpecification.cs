@@ -1,6 +1,6 @@
 ﻿using System.Linq.Expressions;
 
-namespace Eduva.Domain.Specs
+namespace Eduva.Application.Common.Specifications
 {
     public interface ISpecification<TEntity>
     {

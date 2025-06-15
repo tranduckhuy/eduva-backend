@@ -1,7 +1,7 @@
 ﻿using Eduva.Application.Common.Exceptions;
-using Eduva.Application.Common.Interfaces;
 using Eduva.Application.Exceptions.Auth;
 using Eduva.Application.Features.Auth.DTOs;
+using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using Eduva.Infrastructure.Email;

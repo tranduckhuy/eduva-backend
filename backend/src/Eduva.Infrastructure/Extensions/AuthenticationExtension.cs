@@ -1,4 +1,4 @@
-using Eduva.Application.Common.Interfaces;
+using Eduva.Application.Interfaces.Services;
 using Eduva.Infrastructure.Identity;
 using Eduva.Infrastructure.Identity.Interfaces;
 using Eduva.Infrastructure.Persistence.DbContext;
@@ -7,9 +7,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace Eduva.Infrastructure.Extensions
 {
@@ -55,10 +55,10 @@ namespace Eduva.Infrastructure.Extensions
                     {
                         var tokenBlacklistService = context.HttpContext.RequestServices
                             .GetRequiredService<ITokenBlackListService>();
-                        
+
                         var token = context.Request.Headers["Authorization"]
                             .FirstOrDefault()?.Split(" ").Last();
-                        
+
                         // Check if individual token is blacklisted
                         if (!string.IsNullOrEmpty(token) && await tokenBlacklistService.IsTokenBlacklistedAsync(token))
                         {

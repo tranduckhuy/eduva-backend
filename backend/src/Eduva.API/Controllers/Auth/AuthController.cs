@@ -1,7 +1,7 @@
 ﻿using Eduva.API.Controllers.Base;
 using Eduva.Application.Common.Exceptions;
-using Eduva.Application.Common.Interfaces;
 using Eduva.Application.Features.Auth.DTOs;
+using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using Microsoft.AspNetCore.Authorization;

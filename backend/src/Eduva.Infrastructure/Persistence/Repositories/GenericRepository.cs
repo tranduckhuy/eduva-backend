@@ -1,57 +1,101 @@
-﻿using Eduva.Domain.Common;
-using Eduva.Domain.Interfaces.Repositories;
-using Eduva.Domain.Specs;
+﻿using Eduva.Application.Common.Models;
+using Eduva.Application.Common.Specifications;
+using Eduva.Application.Interfaces.Repositories;
 using Eduva.Infrastructure.Persistence.DbContext;
+using Microsoft.EntityFrameworkCore;
 
 namespace Eduva.Infrastructure.Persistence.Repositories
 {
-    public class GenericRepository<TEntity, TKey> : IGenericRepository<TEntity, TKey> where TEntity : BaseEntity<TKey>
+    public class GenericRepository<TEntity, TKey> : IGenericRepository<TEntity, TKey> where TEntity : class
     {
         protected readonly AppDbContext _context;
+        protected readonly DbSet<TEntity> _dbSet;
 
         public GenericRepository(AppDbContext context)
         {
             _context = context;
+            _dbSet = context.Set<TEntity>();
         }
 
-        public Task<TEntity> AddAsync(TEntity entity)
+        public async Task AddAsync(TEntity entity)
         {
-            throw new NotImplementedException();
+            await _dbSet.AddAsync(entity);
         }
 
-        public Task<TEntity> AddRangeAsync(IEnumerable<TEntity> entities)
+        public async Task AddRangeAsync(IEnumerable<TEntity> entities)
         {
-            throw new NotImplementedException();
+            await _dbSet.AddRangeAsync(entities);
         }
 
-        public Task<IReadOnlyList<TEntity>> GetAllAsync()
+        public async Task<IReadOnlyList<TEntity>> GetAllAsync()
         {
-            throw new NotImplementedException();
+            return await _dbSet.ToListAsync();
         }
 
-        public Task<TEntity?> GetByIdAsync(TKey id)
+        public async Task<TEntity?> GetByIdAsync(TKey id)
         {
-            throw new NotImplementedException();
+            return await _dbSet.FindAsync(id);
         }
 
-        public Task<Pagination<TEntity>> GetWithSpecAsync<TSpec>(TSpec spec) where TSpec : ISpecification<TEntity>
+        public void Update(TEntity entity)
         {
-            throw new NotImplementedException();
+            _dbSet.Update(entity);
         }
 
-        public Task RemoveAsync(TEntity entity)
+        public void Remove(TEntity entity)
         {
-            throw new NotImplementedException();
+            _dbSet.Remove(entity);
         }
 
-        public Task<TEntity> RemoveRangeAsync(IEnumerable<TEntity> entities)
+        public void RemoveRange(IEnumerable<TEntity> entities)
         {
-            throw new NotImplementedException();
+            _dbSet.RemoveRange(entities);
         }
 
-        public Task UpdateAsync(TEntity entity)
+        public async Task<bool> ExistsAsync(TKey id)
         {
-            throw new NotImplementedException();
+            return await GetByIdAsync(id) != null;
+        }
+
+        public async Task<Pagination<TEntity>> GetWithSpecAsync<TSpec>(TSpec spec) where TSpec : ISpecification<TEntity>
+        {
+            var query = _context.Set<TEntity>().AsQueryable();
+
+            // Filter
+            if (spec.Criteria != null)
+            {
+                query = query.Where(spec.Criteria);
+            }
+
+            // Includes
+            foreach (var includeExpression in spec.Includes)
+            {
+                query = query.Include(includeExpression);
+            }
+
+            // Sorting
+            if (spec.OrderBy != null)
+            {
+                query = spec.OrderBy(query);
+            }
+            else if (spec.OrderByDescending != null)
+            {
+                query = spec.OrderByDescending(query);
+            }
+
+            // Projection
+            if (spec.Selector != null)
+            {
+                query = spec.Selector(query);
+            }
+
+            var count = await query.CountAsync();
+
+            var data = await query.Skip(spec.Skip).Take(spec.Take).AsNoTracking().ToListAsync();
+
+            var pageNumber = spec.Take > 0 ? (spec.Skip / spec.Take) + 1 : 1;
+
+            return new Pagination<TEntity>(pageNumber, spec.Take, count, data);
         }
     }
 }
