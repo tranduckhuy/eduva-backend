@@ -76,7 +76,21 @@ namespace Eduva.Infrastructure.Extensions
 
                             if (await tokenBlacklistService.AreUserTokensInvalidatedAsync(userIdClaim, tokenIssuedAt))
                             {
-                                context.Fail("All user tokens have been invalidated");
+                                var exceptionToken = await tokenBlacklistService.GetExceptionTokenAsync(userIdClaim);
+
+                                if (!string.IsNullOrEmpty(exceptionToken))
+                                {
+                                    if (token != exceptionToken)
+                                    {
+                                        context.Fail("This session was logged out by user.");
+                                        return;
+                                    }
+                                }
+                                else
+                                {
+                                    context.Fail("All user tokens have been invalidated");
+                                    return;
+                                }
                             }
                         }
                     }

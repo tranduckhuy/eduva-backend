@@ -2,14 +2,14 @@
 
 namespace Eduva.Application.Features.Auth.DTOs
 {
-    public class ForgotPasswordRequestDto
+    public class VerifyOtpRequestDto
     {
+        [Required(ErrorMessage = "OTP code is required.")]
+        [RegularExpression(@"^\d{6}$", ErrorMessage = "OTP must be exactly 6 digits.")]
+        public string OtpCode { get; set; } = string.Empty;
+
         [Required(ErrorMessage = "Email is required")]
         [EmailAddress(ErrorMessage = "Email is not valid")]
         public string Email { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Client URL is required")]
-        [MaxLength(255, ErrorMessage = "Client URL must be less than 255 characters")]
-        public string ClientUrl { get; set; } = string.Empty;
     }
 }

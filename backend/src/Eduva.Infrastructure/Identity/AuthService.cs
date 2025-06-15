@@ -1,4 +1,6 @@
-﻿using Eduva.Application.Common.Exceptions;
+using Eduva.Application.Common.Exceptions;
+using Eduva.Application.Common.Interfaces;
+using Eduva.Application.Common.Models;
 using Eduva.Application.Exceptions.Auth;
 using Eduva.Application.Features.Auth.DTOs;
 using Eduva.Application.Interfaces.Services;
@@ -105,6 +107,26 @@ namespace Eduva.Infrastructure.Identity
                 throw new UserAccountLockedException();
             }
 
+            if (await _userManager.GetTwoFactorEnabledAsync(user))
+            {
+                var token = await _userManager.GenerateTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider);
+
+                var message = new EmailMessage(
+                    [new EmailAddress(user.Email!, user.FullName ?? user.Email!)],
+                    "Two-Factor Authentication Code",
+                    $"<p>Your authentication code is: <strong>{token}</strong></p>",
+                    null
+                );
+
+                await _emailSender.SendEmailAsync(message);
+
+                return (CustomCode.RequiresOtpVerification, new AuthResultDto
+                {
+                    Requires2FA = true,
+                    Email = user.Email!
+                });
+            }
+
             var userRoles = await _userManager.GetRolesAsync(user);
 
             var userClaims = await _userManager.GetClaimsAsync(user);
@@ -112,6 +134,104 @@ namespace Eduva.Infrastructure.Identity
             var authResponse = await GenerateToken(user, userRoles, userClaims, true);
 
             return (CustomCode.Success, authResponse);
+        }
+
+        public async Task<(CustomCode, AuthResultDto)> VerifyLoginOtpAsync(VerifyOtpRequestDto request)
+        {
+            var user = await _userManager.FindByEmailAsync(request.Email);
+            if (user == null)
+                throw new UserNotExistsException();
+
+            if (!await _userManager.GetTwoFactorEnabledAsync(user))
+                throw new AppException(CustomCode.Forbidden);
+
+            var isValid = await _userManager.VerifyTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider, request.OtpCode);
+            if (!isValid)
+                throw new OtpInvalidOrExpireException();
+
+            var roles = await _userManager.GetRolesAsync(user);
+            var claims = await _userManager.GetClaimsAsync(user);
+            var authResponse = await GenerateToken(user, roles, claims, true);
+
+            return (CustomCode.Success, authResponse);
+        }
+
+        private async Task Send2FaOtpEmailAsync(ApplicationUser user, string subject, string instruction)
+        {
+            var token = await _userManager.GenerateTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider);
+
+            var message = new EmailMessage(
+                [new EmailAddress(user.Email!, user.FullName ?? user.Email!)],
+                subject,
+                $"<p>{instruction}: <strong>{token}</strong></p>",
+                null
+            );
+
+            await _emailSender.SendEmailAsync(message);
+        }
+
+        private async Task<CustomCode> Confirm2FaChangeAsync(ApplicationUser user, string otpCode, bool enable)
+        {
+            var isValidOtp = await _userManager.VerifyTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider, otpCode);
+            if (!isValidOtp)
+                throw new OtpInvalidOrExpireException();
+
+            user.TwoFactorEnabled = enable;
+            var result = await _userManager.UpdateAsync(user);
+
+            if (!result.Succeeded)
+            {
+                var errors = result.Errors.Select(e => e.Description).ToList();
+                throw new AppException(CustomCode.ProvidedInformationIsInValid, errors);
+            }
+
+            return CustomCode.Success;
+        }
+        public async Task<CustomCode> RequestEnable2FaOtpAsync(Request2FaDto request)
+        {
+            var user = await _userManager.FindByIdAsync(request.UserId.ToString()) ?? throw new UserNotExistsException();
+
+            if (user.TwoFactorEnabled)
+                throw new TwoFactorIsAlreadyEnabledException();
+
+            if (!await _userManager.CheckPasswordAsync(user, request.CurrentPassword))
+                throw new InvalidCredentialsException();
+
+            await Send2FaOtpEmailAsync(user, "Enable 2FA - Verification Code", "Use this code to enable Two-Factor Authentication");
+
+            return CustomCode.OtpSentSuccessfully;
+        }
+        public async Task<CustomCode> ConfirmEnable2FaOtpAsync(Confirm2FaDto request)
+        {
+            var user = await _userManager.FindByIdAsync(request.UserId.ToString()) ?? throw new UserNotExistsException();
+
+            if (user.TwoFactorEnabled)
+                throw new TwoFactorIsAlreadyEnabledException();
+
+            return await Confirm2FaChangeAsync(user, request.OtpCode, true);
+        }
+        public async Task<CustomCode> RequestDisable2FaOtpAsync(Request2FaDto request)
+        {
+            var user = await _userManager.FindByIdAsync(request.UserId.ToString()) ?? throw new UserNotExistsException();
+
+            if (!user.TwoFactorEnabled)
+                throw new TwoFactorIsAlreadyDisabledException();
+
+            if (!await _userManager.CheckPasswordAsync(user, request.CurrentPassword))
+                throw new InvalidCredentialsException();
+
+            await Send2FaOtpEmailAsync(user, "Disable 2FA - Verification Code", "Use this code to disable Two-Factor Authentication");
+
+            return CustomCode.OtpSentSuccessfully;
+        }
+        public async Task<CustomCode> ConfirmDisable2FaOtpAsync(Confirm2FaDto request)
+        {
+            var user = await _userManager.FindByIdAsync(request.UserId.ToString()) ?? throw new UserNotExistsException();
+
+            if (!user.TwoFactorEnabled)
+                throw new TwoFactorIsAlreadyDisabledException();
+
+            return await Confirm2FaChangeAsync(user, request.OtpCode, false);
         }
 
         private async Task<AuthResultDto> GenerateToken(ApplicationUser user, IList<string> roles, IList<Claim> userClaims, bool populateExp)
@@ -160,6 +280,11 @@ namespace Eduva.Infrastructure.Identity
         public async Task<CustomCode> ResetPasswordAsync(ResetPasswordRequestDto request)
         {
             var user = await _userManager.FindByEmailAsync(request.Email) ?? throw new UserNotExistsException();
+
+            if (await _userManager.CheckPasswordAsync(user, request.Password))
+            {
+                throw new NewPasswordSameAsOldException();
+            }
 
             var result = await _userManager.ResetPasswordAsync(user, request.Token, request.Password);
 
@@ -262,6 +387,11 @@ namespace Eduva.Infrastructure.Identity
         {
             var user = await _userManager.FindByIdAsync(request.UserId.ToString()) ?? throw new UserNotExistsException();
 
+            if (await _userManager.CheckPasswordAsync(user, request.NewPassword))
+            {
+                throw new NewPasswordSameAsOldException();
+            }
+
             var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
 
             if (!result.Succeeded)
@@ -271,9 +401,24 @@ namespace Eduva.Infrastructure.Identity
                 throw new AppException(CustomCode.Unauthorized, errors);
             }
 
-            // Invalidate all existing tokens for this user after password change
-            await _tokenBlackListService.BlacklistAllUserTokensAsync(request.UserId.ToString());
-            _logger.LogInformation("All tokens invalidated for user {UserId} after password change", request.UserId);
+            // Handle logout behavior
+            switch (request.LogoutBehavior)
+            {
+                case LogoutBehavior.LogoutAllIncludingCurrent:
+                    await _tokenBlackListService.BlacklistAllUserTokensAsync(request.UserId.ToString());
+                    _logger.LogInformation("All tokens invalidated for user {UserId} after password change", request.UserId);
+                    break;
+
+                case LogoutBehavior.LogoutOthersOnly:
+                    var accessToken = request.CurrentAccessToken;
+                    await _tokenBlackListService.BlacklistAllUserTokensExceptAsync(request.UserId.ToString(), accessToken);
+                    _logger.LogInformation("All tokens except current invalidated for user {UserId}", request.UserId);
+                    break;
+
+                default:
+                    _logger.LogInformation("No session invalidated for user {UserId}", request.UserId);
+                    break;
+            }
 
             return CustomCode.Success;
         }
