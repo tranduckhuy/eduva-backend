@@ -295,7 +295,6 @@ namespace Eduva.Infrastructure.Identity
                     _logger.LogInformation("All tokens except current invalidated for user {UserId}", request.UserId);
                     break;
 
-                case LogoutBehavior.KeepAllSessions:
                 default:
                     _logger.LogInformation("No session invalidated for user {UserId}", request.UserId);
                     break;
