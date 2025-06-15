@@ -5,5 +5,4 @@
         public int HttpCode { get; set; }
         public string Message { get; set; } = string.Empty;
     }
-
 }

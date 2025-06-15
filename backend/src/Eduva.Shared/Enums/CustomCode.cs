@@ -11,6 +11,8 @@
         ConfirmationEmailSent = 2005,
         ResetPasswordEmailSent = 2006,
         PasswordResetSuccessful = 2007,
+        RequiresOtpVerification = 2008,
+        OtpSentSuccessfully = 2009,
 
         // Auth errors
         ModelInvalid = 4000,
@@ -28,5 +30,8 @@
         ConfirmEmailTokenInvalidOrExpired = 4011,
         UserAlreadyConfirmed = 4012,
         NewPasswordSameAsOld = 4013,
+        OtpInvalidOrExpired = 4014,
+        TwoFactorIsAlreadyEnabled = 4015,
+        TwoFactorIsAlreadyDisabled = 4016,
     }
 }
