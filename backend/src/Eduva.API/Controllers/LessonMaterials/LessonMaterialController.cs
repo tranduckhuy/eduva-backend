@@ -31,10 +31,10 @@ namespace Eduva.API.Controllers.LessonMaterials
                 return validationResult;
             }
 
-            var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null)
             {
-                return Respond(CustomCode.Unauthorized, "User ID not found in claims.");
+                return Respond(CustomCode.UserIdNotFound);
             }
 
             try

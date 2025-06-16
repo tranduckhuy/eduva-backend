@@ -40,6 +40,8 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status401Unauthorized, Message = "Unauthorized" } },
             { CustomCode.Forbidden, new MessageDetail {
                 HttpCode = StatusCodes.Status403Forbidden, Message = "Access denied" } },
+            { CustomCode.SystemError, new MessageDetail {
+                HttpCode = StatusCodes.Status500InternalServerError, Message = "An unexpected error occurred in the system" } },
             { CustomCode.InvalidToken, new MessageDetail {
                 HttpCode = StatusCodes.Status401Unauthorized, Message = "Invalid token. Please log in again" } },
             { CustomCode.EmailAlreadyExists, new MessageDetail {
@@ -66,6 +68,10 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Two-factor authentication is already enabled." } },
             { CustomCode.TwoFactorIsAlreadyDisabled, new MessageDetail {
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Two-factor authentication is already disabled." } },
+            { CustomCode.UserIdNotFound, new MessageDetail {
+                HttpCode = StatusCodes.Status401Unauthorized, Message = "User ID not found in the request. Please ensure you are authenticated." } },
+            { CustomCode.AccessTokenInvalidOrExpired, new MessageDetail {
+                HttpCode = StatusCodes.Status401Unauthorized, Message = "Access token is invalid or has expired." } },
 
             #endregion
         };

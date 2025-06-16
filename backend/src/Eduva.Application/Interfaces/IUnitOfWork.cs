@@ -1,6 +1,5 @@
 ﻿using Eduva.Application.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore.Storage;
-using System.Data;
 
 namespace Eduva.Application.Interfaces
 {

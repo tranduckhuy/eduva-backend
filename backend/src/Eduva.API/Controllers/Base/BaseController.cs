@@ -44,7 +44,7 @@ namespace Eduva.API.Controllers.Base
                 msgDetail = new MessageDetail
                 {
                     HttpCode = StatusCodes.Status500InternalServerError,
-                    Message = "Unknown error"
+                    Message = "System encountered an unexpected error."
                 };
             }
 
