@@ -1,6 +1,8 @@
 ﻿using Eduva.API.Controllers.Base;
 using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Features.LessonMaterials.Commands;
+using Eduva.Application.Features.LessonMaterials.Queries;
+using Eduva.Application.Features.LessonMaterials.Specifications;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
@@ -51,7 +53,42 @@ namespace Eduva.API.Controllers.LessonMaterials
                 {
                     return Respond(appEx.StatusCode, null, appEx.Errors);
                 }
-                return Respond((CustomCode)StatusCodes.Status500InternalServerError, null,
+                return Respond(CustomCode.SystemError, null,
+                    [ex.InnerException?.Message ?? "The system encountered an unexpected error while processing the request"]);
+            }
+        }
+
+        [HttpGet]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)},{nameof(Role.Student)}")]
+        public async Task<IActionResult> GetLessonMaterials([FromQuery] LessonMaterialSpecParam lessonMaterialSpecParam)
+        {
+            var validationResult = CheckModelStateValidity();
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+            {
+                return Respond(CustomCode.UserIdNotFound);
+            }
+
+            try
+            {
+
+                var query = new GetLessonMaterialsQuery(lessonMaterialSpecParam, Guid.Parse(userId));
+                var response = await _mediator.Send(query);
+                return Respond(CustomCode.Success, response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while retrieving lesson materials");
+                if (ex is AppException appEx)
+                {
+                    return Respond(appEx.StatusCode, null, appEx.Errors);
+                }
+                return Respond(CustomCode.SystemError, null,
                     [ex.InnerException?.Message ?? "The system encountered an unexpected error while processing the request"]);
             }
         }
