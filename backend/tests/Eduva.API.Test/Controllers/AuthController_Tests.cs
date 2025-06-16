@@ -842,6 +842,18 @@ namespace Eduva.API.Test.Controllers
         {
             var request = new Request2FaDto();
 
+            // Setup fake user to avoid null principal
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = new ClaimsPrincipal(new ClaimsIdentity(new[]
+                    {
+                new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString())
+            }))
+                }
+            };
+
             _controller.ModelState.AddModelError("CurrentPassword", "CurrentPassword is required");
 
             var result = await _controller.RequestEnable2Fa(request);
@@ -925,7 +937,19 @@ namespace Eduva.API.Test.Controllers
         public async Task ConfirmEnable2Fa_ShouldReturn400_WhenModelStateInvalid()
         {
             var request = new Confirm2FaDto();
-            _controller.ModelState.AddModelError("OtpCode", "OTP is required");
+
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = new ClaimsPrincipal(new ClaimsIdentity(new[]
+                    {
+                new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString())
+            }))
+                }
+            };
+
+            _controller.ModelState.AddModelError("OtpCode", "OtpCode is required");
 
             var result = await _controller.ConfirmEnable2Fa(request);
             var objectResult = result as ObjectResult;
@@ -1004,9 +1028,20 @@ namespace Eduva.API.Test.Controllers
         [Test]
         public async Task ConfirmDisable2Fa_ShouldReturn400_WhenModelStateInvalid()
         {
-            var request = new Confirm2FaDto { OtpCode = string.Empty };
+            var request = new Confirm2FaDto();
 
-            _controller.ModelState.AddModelError("OtpCode", "OTP code is required");
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = new ClaimsPrincipal(new ClaimsIdentity(new[]
+                    {
+                new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString())
+            }))
+                }
+            };
+
+            _controller.ModelState.AddModelError("OtpCode", "OtpCode is required");
 
             var result = await _controller.ConfirmDisable2Fa(request);
             var objectResult = result as ObjectResult;
@@ -1086,6 +1121,18 @@ namespace Eduva.API.Test.Controllers
         public async Task RequestDisable2Fa_ShouldReturn400_WhenModelStateInvalid()
         {
             var request = new Request2FaDto();
+
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = new ClaimsPrincipal(new ClaimsIdentity(new[]
+                    {
+                new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString())
+            }))
+                }
+            };
+
             _controller.ModelState.AddModelError("CurrentPassword", "CurrentPassword is required");
 
             var result = await _controller.RequestDisable2Fa(request);

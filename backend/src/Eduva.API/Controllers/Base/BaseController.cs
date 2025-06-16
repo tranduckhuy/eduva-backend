@@ -9,9 +9,9 @@ namespace Eduva.API.Controllers.Base
     [ApiController]
     public abstract class BaseController<TController> : ControllerBase
     {
-        protected readonly ILogger<BaseController<TController>> _logger;
+        protected readonly ILogger<TController> _logger;
 
-        protected BaseController(ILogger<BaseController<TController>> logger)
+        protected BaseController(ILogger<TController> logger)
         {
             _logger = logger;
         }
@@ -25,17 +25,15 @@ namespace Eduva.API.Controllers.Base
                     .ToList();
 
                 _logger.LogWarning("Request validation failed for {ControllerName}: {ErrorMessages}",
-                        typeof(TController).Name,
-                        string.Join(", ", errors));
+                    typeof(TController).Name,
+                    string.Join(", ", errors));
 
                 var statusCode = CustomCode.ModelInvalid;
-
                 return Respond(statusCode, null, errors);
             }
 
             return null!;
         }
-
 
         protected IActionResult Respond(CustomCode code, object? data = null, IEnumerable<string>? errors = null)
         {

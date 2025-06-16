@@ -1,5 +1,4 @@
-﻿using Eduva.API.Controllers.Base;
-using Eduva.Application.Common.Exceptions;
+﻿using Eduva.API.Controllers.Base.Auth;
 using Eduva.Application.Features.Auth.DTOs;
 using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Enums;
@@ -11,7 +10,7 @@ using System.Security.Claims;
 namespace Eduva.API.Controllers.Auth
 {
     [Route("api/auth")]
-    public class AuthController : BaseController<AuthController>
+    public class AuthController : BaseAuthController<AuthController>
     {
         private readonly IAuthService _authService;
 
@@ -23,422 +22,168 @@ namespace Eduva.API.Controllers.Auth
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
         {
-            var modelStateCheck = CheckModelStateValidity();
-            if (modelStateCheck != null)
-            {
-                return modelStateCheck;
-            }
-
-            try
-            {
-                var result = await _authService.RegisterAsync(request);
-                return Respond(result);
-            }
-            catch (Exception ex)
-            {
-                if (ex is AppException appEx)
-                {
-                    return Respond(appEx.StatusCode, null, appEx.Errors);
-                }
-
-                return Respond(CustomCode.SystemError);
-            }
+            return await HandleRequestAsync(() => _authService.RegisterAsync(request));
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
         {
-            var modelStateCheck = CheckModelStateValidity();
-            if (modelStateCheck != null)
-            {
-                return modelStateCheck;
-            }
-
-            try
+            return await HandleRequestAsync(async () =>
             {
                 var (code, result) = await _authService.LoginAsync(request);
-                return Respond(code, result);
-            }
-            catch (Exception ex)
-            {
-                if (ex is AppException appEx)
-                {
-                    return Respond(appEx.StatusCode, null, appEx.Errors);
-                }
-                return Respond(CustomCode.SystemError);
-            }
+                return (code, result);
+            });
         }
 
         [HttpPost("verify-otp-login")]
         public async Task<IActionResult> VerifyOtpLogin([FromBody] VerifyOtpRequestDto request)
         {
-            var modelStateCheck = CheckModelStateValidity();
-            if (modelStateCheck != null)
-                return modelStateCheck;
-
-            try
+            return await HandleRequestAsync(async () =>
             {
                 var (code, result) = await _authService.VerifyLoginOtpAsync(request);
-                return Respond(code, result);
-            }
-            catch (Exception ex)
-            {
-                if (ex is AppException appEx)
-                {
-                    return Respond(appEx.StatusCode, null, appEx.Errors);
-                }
-                return Respond(CustomCode.SystemError);
-            }
+                return (code, result);
+            });
         }
 
         [HttpPost("security/request-enable-2fa")]
         [Authorize]
         public async Task<IActionResult> RequestEnable2Fa([FromBody] Request2FaDto request)
         {
-            var modelStateCheck = CheckModelStateValidity();
-            if (modelStateCheck != null)
-                return modelStateCheck;
-
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId == null)
+            if (!Guid.TryParse(userId, out var id))
+            {
                 return Respond(CustomCode.UserIdNotFound);
-
-            request.UserId = Guid.Parse(userId);
-
-            try
-            {
-                var result = await _authService.RequestEnable2FaOtpAsync(request);
-                return Respond(result);
             }
-            catch (Exception ex)
-            {
-                if (ex is AppException appEx)
-                    return Respond(appEx.StatusCode, null, appEx.Errors);
-
-                return Respond(CustomCode.SystemError);
-            }
+            request.UserId = id;
+            return await HandleRequestAsync(() => _authService.RequestEnable2FaOtpAsync(request));
         }
 
         [HttpPost("security/confirm-enable-2fa")]
         [Authorize]
         public async Task<IActionResult> ConfirmEnable2Fa([FromBody] Confirm2FaDto request)
         {
-            var modelStateCheck = CheckModelStateValidity();
-            if (modelStateCheck != null)
-                return modelStateCheck;
-
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId == null)
+            if (!Guid.TryParse(userId, out var id))
+            {
                 return Respond(CustomCode.UserIdNotFound);
-
-            request.UserId = Guid.Parse(userId);
-
-            try
-            {
-                var result = await _authService.ConfirmEnable2FaOtpAsync(request);
-                return Respond(result);
             }
-            catch (Exception ex)
-            {
-                if (ex is AppException appEx)
-                    return Respond(appEx.StatusCode, null, appEx.Errors);
-
-                return Respond(CustomCode.SystemError);
-            }
+            request.UserId = id;
+            return await HandleRequestAsync(() => _authService.ConfirmEnable2FaOtpAsync(request));
         }
 
         [HttpPost("security/request-disable-2fa")]
         [Authorize]
         public async Task<IActionResult> RequestDisable2Fa([FromBody] Request2FaDto request)
         {
-            var modelStateCheck = CheckModelStateValidity();
-            if (modelStateCheck != null)
-                return modelStateCheck;
-
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId == null)
+            if (!Guid.TryParse(userId, out var id))
+            {
                 return Respond(CustomCode.UserIdNotFound);
-
-            request.UserId = Guid.Parse(userId);
-
-            try
-            {
-                var result = await _authService.RequestDisable2FaOtpAsync(request);
-                return Respond(result);
             }
-            catch (Exception ex)
-            {
-                if (ex is AppException appEx)
-                    return Respond(appEx.StatusCode, null, appEx.Errors);
-
-                return Respond(CustomCode.SystemError);
-            }
+            request.UserId = id;
+            return await HandleRequestAsync(() => _authService.RequestDisable2FaOtpAsync(request));
         }
 
         [HttpPost("security/confirm-disable-2fa")]
         [Authorize]
         public async Task<IActionResult> ConfirmDisable2Fa([FromBody] Confirm2FaDto request)
         {
-            var modelStateCheck = CheckModelStateValidity();
-            if (modelStateCheck != null)
-                return modelStateCheck;
-
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId == null)
+            if (!Guid.TryParse(userId, out var id))
+            {
                 return Respond(CustomCode.UserIdNotFound);
-
-            request.UserId = Guid.Parse(userId);
-
-            try
-            {
-                var result = await _authService.ConfirmDisable2FaOtpAsync(request);
-                return Respond(result);
             }
-            catch (Exception ex)
-            {
-                if (ex is AppException appEx)
-                    return Respond(appEx.StatusCode, null, appEx.Errors);
-
-                return Respond(CustomCode.SystemError);
-            }
+            request.UserId = id;
+            return await HandleRequestAsync(() => _authService.ConfirmDisable2FaOtpAsync(request));
         }
 
         [HttpPost("forgot-password")]
-        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto forgotPasswordRequestDto)
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto dto)
         {
-            var modelStateCheck = CheckModelStateValidity();
-            if (modelStateCheck != null)
-            {
-                return modelStateCheck;
-            }
-            try
-            {
-                var result = await _authService.ForgotPasswordAsync(forgotPasswordRequestDto);
-                return Respond(result);
-            }
-            catch (Exception ex)
-            {
-                if (ex is AppException appEx)
-                {
-                    return Respond(appEx.StatusCode, null, appEx.Errors);
-                }
-                return Respond(CustomCode.SystemError);
-            }
+            return await HandleRequestAsync(() => _authService.ForgotPasswordAsync(dto));
         }
 
         [HttpPost("reset-password")]
-        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDto resetPasswordRequestDto)
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDto dto)
         {
-            var modelStateCheck = CheckModelStateValidity();
-            if (modelStateCheck != null)
-            {
-                return modelStateCheck;
-            }
-            try
-            {
-                var result = await _authService.ResetPasswordAsync(resetPasswordRequestDto);
-                return Respond(result);
-            }
-            catch (Exception ex)
-            {
-                if (ex is AppException appEx)
-                {
-                    return Respond(appEx.StatusCode, null, appEx.Errors);
-                }
-                return Respond(CustomCode.SystemError);
-            }
+            return await HandleRequestAsync(() => _authService.ResetPasswordAsync(dto));
         }
 
         [HttpGet("confirm-email")]
         public async Task<IActionResult> ConfirmEmail([FromQuery] ConfirmEmailRequestDto request)
         {
-            var modelStateCheck = CheckModelStateValidity();
-            if (modelStateCheck != null)
-            {
-                return modelStateCheck;
-            }
-            try
-            {
-                var result = await _authService.ConfirmEmailAsync(request);
-                return Respond(result);
-            }
-            catch (Exception ex)
-            {
-                if (ex is AppException appEx)
-                {
-                    return Respond(appEx.StatusCode, null, appEx.Errors);
-                }
-                return Respond(CustomCode.SystemError);
-            }
+            return await HandleRequestAsync(() => _authService.ConfirmEmailAsync(request));
         }
 
         [HttpPost("change-password")]
         [Authorize]
-        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto changePasswordRequestDto)
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto dto)
         {
-            var modelStateCheck = CheckModelStateValidity();
-            if (modelStateCheck != null)
-            {
-                return modelStateCheck;
-            }
-
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId == null)
+            if (!Guid.TryParse(userId, out var id))
             {
                 return Respond(CustomCode.UserIdNotFound);
             }
-
-            changePasswordRequestDto.UserId = Guid.Parse(userId);
-
+            dto.UserId = id;
             var token = Request.Headers.Authorization.FirstOrDefault()?.Replace("Bearer ", "").Trim();
             if (string.IsNullOrWhiteSpace(token))
             {
                 return Respond(CustomCode.AccessTokenInvalidOrExpired);
             }
-
-            changePasswordRequestDto.CurrentAccessToken = token;
-
-            try
-            {
-                var result = await _authService.ChangePasswordAsync(changePasswordRequestDto);
-                return Respond(result);
-            }
-            catch (Exception ex)
-            {
-                if (ex is AppException appEx)
-                {
-                    return Respond(appEx.StatusCode, null, appEx.Errors);
-                }
-                return Respond(CustomCode.SystemError);
-            }
+            dto.CurrentAccessToken = token;
+            return await HandleRequestAsync(() => _authService.ChangePasswordAsync(dto));
         }
 
         [HttpPost("resend-confirmation-email")]
-        public async Task<IActionResult> ResendConfirmationEmail([FromBody] ResendConfirmationEmailRequestDto resendConfirmationEmailRequestDto)
+        public async Task<IActionResult> ResendConfirmationEmail([FromBody] ResendConfirmationEmailRequestDto dto)
         {
-            var modelStateCheck = CheckModelStateValidity();
-            if (modelStateCheck != null)
-            {
-                return modelStateCheck;
-            }
-            try
-            {
-                var result = await _authService.ResendConfirmationEmailAsync(resendConfirmationEmailRequestDto);
-                return Respond(result);
-            }
-            catch (Exception ex)
-            {
-                if (ex is AppException appEx)
-                {
-                    return Respond(appEx.StatusCode, null, appEx.Errors);
-                }
-                return Respond(CustomCode.SystemError);
-            }
+            return await HandleRequestAsync(() => _authService.ResendConfirmationEmailAsync(dto));
         }
 
         [HttpPost("refresh-token")]
-        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto refreshTokenRequestDto)
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto dto)
         {
-            var modelStateCheck = CheckModelStateValidity();
-            if (modelStateCheck != null)
+            return await HandleRequestAsync(async () =>
             {
-                return modelStateCheck;
-            }
-            try
-            {
-                var (code, result) = await _authService.RefreshTokenAsync(refreshTokenRequestDto);
-                return Respond(code, result);
-            }
-            catch (Exception ex)
-            {
-                if (ex is AppException appEx)
-                {
-                    return Respond(appEx.StatusCode, null, appEx.Errors);
-                }
-                return Respond(CustomCode.SystemError);
-            }
+                var (code, result) = await _authService.RefreshTokenAsync(dto);
+                return (code, result);
+            });
         }
 
         [HttpPost("logout")]
         [Authorize]
         public async Task<IActionResult> Logout()
         {
-            var modelStateCheck = CheckModelStateValidity();
-            if (modelStateCheck != null)
-            {
-                return modelStateCheck;
-            }
-
-            var token = Request.Headers.Authorization.ToString().Replace("Bearer ", "");
-
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if (userId == null)
+            if (string.IsNullOrWhiteSpace(userId))
             {
                 return Respond(CustomCode.UserIdNotFound);
             }
-
-            try
-            {
-                await _authService.LogoutAsync(userId, token);
-                return Respond(CustomCode.Success);
-            }
-            catch (Exception ex)
-            {
-                if (ex is AppException appEx)
-                {
-                    return Respond(appEx.StatusCode, null, appEx.Errors);
-                }
-                return Respond(CustomCode.SystemError);
-            }
+            var token = Request.Headers.Authorization.ToString().Replace("Bearer ", "");
+            return await HandleRequestAsync(() => _authService.LogoutAsync(userId, token));
         }
 
-        // Admin endpoints for token management
         [HttpPost("admin/invalidate-user-tokens/{userId}")]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
         public async Task<IActionResult> InvalidateUserTokens(string userId)
         {
             if (string.IsNullOrWhiteSpace(userId))
+            {
                 return Respond(CustomCode.UserIdNotFound);
-
-            try
-            {
-                await _authService.InvalidateAllUserTokensAsync(userId);
-                return Respond(CustomCode.Success);
             }
-            catch (Exception ex)
-            {
-                if (ex is AppException appEx)
-                {
-                    return Respond(appEx.StatusCode, null, appEx.Errors);
-                }
-                return Respond(CustomCode.SystemError);
-            }
+            return await HandleRequestAsync(() => _authService.InvalidateAllUserTokensAsync(userId));
         }
 
         [HttpPost("security/invalidate-all-sessions")]
         [Authorize]
         public async Task<IActionResult> InvalidateAllSessions()
         {
-            var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-            if (userId == null)
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(userId))
             {
                 return Respond(CustomCode.UserIdNotFound);
             }
-
-            try
-            {
-                await _authService.InvalidateAllUserTokensAsync(userId);
-                return Respond(CustomCode.Success);
-            }
-            catch (Exception ex)
-            {
-                if (ex is AppException appEx)
-                {
-                    return Respond(appEx.StatusCode, null, appEx.Errors);
-                }
-                return Respond(CustomCode.SystemError);
-            }
+            return await HandleRequestAsync(() => _authService.InvalidateAllUserTokensAsync(userId));
         }
     }
 }

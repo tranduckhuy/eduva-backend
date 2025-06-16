@@ -398,7 +398,7 @@ namespace Eduva.Infrastructure.Identity
             {
                 var errors = result.Errors.Select(e => e.Description).ToList();
                 _logger.LogError("Failed to change password. Errors: {Errors}", string.Join(", ", errors));
-                throw new AppException(CustomCode.Unauthorized, errors);
+                throw new AppException(CustomCode.ProvidedInformationIsInValid, errors);
             }
 
             // Handle logout behavior
