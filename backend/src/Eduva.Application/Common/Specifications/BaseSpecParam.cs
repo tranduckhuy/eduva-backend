@@ -12,5 +12,9 @@ namespace Eduva.Application.Common.Specifications
             get => _pageSize;
             set => _pageSize = value > MaxPageSize ? MaxPageSize : value;
         }
+        public string? SortBy { get; set; }
+        public string SortDirection { get; set; } = "asc";
+        public string? SearchTerm { get; set; }
+
     }
 }

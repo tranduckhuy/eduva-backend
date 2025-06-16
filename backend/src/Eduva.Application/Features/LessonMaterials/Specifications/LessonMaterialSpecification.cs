@@ -10,8 +10,6 @@ namespace Eduva.Application.Features.LessonMaterials.Specifications
 
         public Func<IQueryable<LessonMaterial>, IOrderedQueryable<LessonMaterial>>? OrderBy { get; private set; }
 
-        public Func<IQueryable<LessonMaterial>, IOrderedQueryable<LessonMaterial>>? OrderByDescending { get; private set; }
-
         public List<Expression<Func<LessonMaterial, object>>> Includes { get; private set; } = [];
 
         public Func<IQueryable<LessonMaterial>, IQueryable<LessonMaterial>>? Selector { get; private set; }
@@ -35,10 +33,17 @@ namespace Eduva.Application.Features.LessonMaterials.Specifications
 
             if (!string.IsNullOrEmpty(param.SortBy))
             {
-                OrderBy = param.SortBy switch
+                bool isDescending = param.SortDirection.Equals("desc", StringComparison.OrdinalIgnoreCase);
+
+                OrderBy = param.SortBy.ToLower() switch
                 {
-                    "title" => q => q.OrderBy(lm => lm.Title),
-                    _ => q => q.OrderBy(lm => lm.CreatedAt)
+                    "title" => isDescending
+                        ? q => q.OrderByDescending(lm => lm.Title)
+                        : q => q.OrderBy(lm => lm.Title),
+
+                    _ => isDescending
+                        ? q => q.OrderByDescending(lm => lm.CreatedAt)
+                        : q => q.OrderBy(lm => lm.CreatedAt)
                 };
             }
 

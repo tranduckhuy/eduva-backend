@@ -13,7 +13,8 @@ namespace Eduva.Application.Common.Mappings
             CreateMap<CreateLessonMaterialCommand, LessonMaterial>();
             CreateMap<LessonMaterial, LessonMaterialResponse>()
                 .ForMember(dest => dest.CreatedById, opt => opt.MapFrom(src => src.CreatedBy))
-                .ForMember(dest => dest.CreatedByName, opt => opt.MapFrom(src => src.CreatedByUser.FullName))
+                .ForMember(dest => dest.CreatedByName,
+                        opt => opt.MapFrom(src => src.CreatedByUser != null ? src.CreatedByUser.FullName : string.Empty))
                 .ReverseMap();
             CreateMap<Pagination<LessonMaterial>, Pagination<LessonMaterialResponse>>();
         }
