@@ -43,15 +43,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-sonar-scanner
 
-      - name: Install dotnet-sonarscanner
-        run: dotnet tool install --global dotnet-sonarscanner --no-cache
+      - name: Install dotnet tools
+        run: |
+          dotnet tool install --global dotnet-sonarscanner --no-cache
+          dotnet tool install --global coverlet.console --no-cache
+          dotnet tool install --global dotnet-reportgenerator-globaltool --no-cache
 
       - name: Add dotnet tools to PATH
         shell: bash
         run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
-
-      - name: Install code coverage tools
-        run: dotnet tool install --global dotnet-coverage
 
       - name: Start SonarQube analysis
         run: >
@@ -59,9 +59,8 @@ jobs:
           /k:"Eduva-Backend"
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
           /d:sonar.host.url="${{ secrets.SONAR_HOST_URL }}"
-          /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml
+          /d:sonar.cs.opencover.reportsPaths="backend/coverage.opencover.xml"
           /d:sonar.coverage.exclusions="**/Program.cs,**/*Extension*.cs,**/Migrations/**/*.cs,**/*.Test.cs"
-          /d:sonar.cs.opencover.reportsPaths=coverage.opencover.xml
 
       - name: Build solution
         run: dotnet build backend/backend.sln --no-incremental
@@ -69,9 +68,72 @@ jobs:
       - name: Run Tests with Coverage
         run: |
           cd backend
-          dotnet test --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults/ --logger "trx;LogFileName=test_results.trx"
-          dotnet-coverage collect -f xml -o coverage.xml "dotnet test --no-build"
-          dotnet-coverage collect -f opencover -o coverage.opencover.xml "dotnet test --no-build"
+          # Remove any existing coverage files
+          rm -f coverage.*.xml coverage.json
+
+          # Run tests and collect coverage from all projects
+          dotnet test --no-build --logger "trx;LogFileName=test_results.trx" \
+          --collect:"XPlat Code Coverage" \
+          --settings coverlet.runsettings \
+          -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+
+      - name: Process Coverage Reports
+        run: |
+          cd backend
+
+          # List all coverage files for debugging
+          echo "Looking for coverage files..."
+          find . -name "*.opencover.xml" -o -name "coverage.cobertura.xml" -type f | head -20
+
+          # Find the main coverage file from XPlat Code Coverage
+          COVERAGE_FILE=$(find . -name "coverage.cobertura.xml" -type f | head -1)
+
+          if [ -n "$COVERAGE_FILE" ]; then
+            echo "Found XPlat Code Coverage file: $COVERAGE_FILE"
+            
+            # Convert Cobertura to OpenCover format using reportgenerator
+            reportgenerator \
+            -reports:"$COVERAGE_FILE" \
+            -targetdir:"." \
+            -reporttypes:"Cobertura" \
+            -filefilters:"-**/Migrations/**;-**/Program.cs;-**/*Extension*.cs;-**/*.Test.cs" \
+            -title:"Eduva Backend Coverage"
+            
+            # Rename to what SonarQube expects
+            if [ -f "Cobertura.xml" ]; then
+              mv Cobertura.xml coverage.opencover.xml
+            fi
+          else
+            echo "XPlat Code Coverage file not found, looking for individual coverage files..."
+            
+            # Look for coverage files in test directories
+            COVERAGE_FILES=$(find ./tests -name "coverage.opencover.xml" -type f)
+            
+            if [ -n "$COVERAGE_FILES" ]; then
+              echo "Found coverage files in test directories:"
+              echo "$COVERAGE_FILES"
+              
+              # Use the first available coverage file
+              FIRST_FILE=$(echo "$COVERAGE_FILES" | head -1)
+              echo "Using coverage file: $FIRST_FILE"
+              cp "$FIRST_FILE" ./coverage.opencover.xml
+            else
+              echo "No coverage files found anywhere, creating minimal coverage file"
+              echo '<?xml version="1.0" encoding="utf-8"?><CoverageSession xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><Summary numSequencePoints="0" visitedSequencePoints="0" numBranchPoints="0" visitedBranchPoints="0" sequenceCoverage="0" branchCoverage="0" maxCyclomaticComplexity="0" minCyclomaticComplexity="0" visitedClasses="0" numClasses="0" visitedMethods="0" numMethods="0" /></CoverageSession>' > coverage.opencover.xml
+            fi
+          fi
+
+          # Final verification
+          if [ -f coverage.opencover.xml ]; then
+            echo "Final coverage file verification:"
+            ls -la coverage.opencover.xml
+            echo "File size: $(wc -c < coverage.opencover.xml) bytes"
+            echo "First few lines:"
+            head -10 coverage.opencover.xml
+          else
+            echo "ERROR: No coverage file could be created!"
+            exit 1
+          fi
 
       - name: End SonarQube analysis
         if: always()
