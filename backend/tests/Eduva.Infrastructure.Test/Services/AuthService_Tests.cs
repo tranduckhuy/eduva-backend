@@ -303,8 +303,11 @@ public class AuthService_Tests
         var results = new List<ValidationResult>();
         var isValid = Validator.TryValidateObject(dto, context, results, true);
 
-        Assert.That(isValid, Is.True);
-        Assert.That(results, Is.Empty);
+        Assert.Multiple(() =>
+        {
+            Assert.That(isValid, Is.True);
+            Assert.That(results, Is.Empty);
+        });
     }
 
     [Test]
