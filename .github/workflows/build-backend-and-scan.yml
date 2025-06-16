@@ -43,15 +43,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-sonar-scanner
 
-      - name: Install dotnet-sonarscanner
-        run: dotnet tool install --global dotnet-sonarscanner --no-cache
+      - name: Install dotnet tools
+        run: |
+          dotnet tool install --global dotnet-sonarscanner --no-cache
+          dotnet tool install --global coverlet.console --no-cache
 
       - name: Add dotnet tools to PATH
         shell: bash
         run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
-
-      - name: Install code coverage tools
-        run: dotnet tool install --global dotnet-coverage
 
       - name: Start SonarQube analysis
         run: >
@@ -59,9 +58,8 @@ jobs:
           /k:"Eduva-Backend"
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
           /d:sonar.host.url="${{ secrets.SONAR_HOST_URL }}"
-          /d:sonar.cs.vscoveragexml.reportsPaths="backend/coverage.xml"
-          /d:sonar.coverage.exclusions="**/Program.cs,**/*Extension*.cs,**/Migrations/**/*.cs,**/*.Test.cs"
           /d:sonar.cs.opencover.reportsPaths="backend/coverage.opencover.xml"
+          /d:sonar.coverage.exclusions="**/Program.cs,**/*Extension*.cs,**/Migrations/**/*.cs,**/*.Test.cs"
 
       - name: Build solution
         run: dotnet build backend/backend.sln --no-incremental
@@ -69,25 +67,8 @@ jobs:
       - name: Run Tests with Coverage
         run: |
           cd backend
-          # Clean any existing coverage files
-          rm -f coverage.xml coverage.opencover.xml
-
-          # Run tests with coverlet coverage collection
-          dotnet test --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults/ --logger "trx;LogFileName=test_results.trx" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
-
-          # Collect coverage in XML format for SonarQube
-          find ./TestResults -name "coverage.cobertura.xml" -exec cp {} coverage.xml \;
-
-          # If no cobertura file found, try opencover format
-          if [ ! -f coverage.xml ]; then
-            find ./TestResults -name "coverage.opencover.xml" -exec cp {} coverage.opencover.xml \;
-          fi
-
-          # Alternative: Use dotnet-coverage if the above doesn't work
-          if [ ! -f coverage.xml ] && [ ! -f coverage.opencover.xml ]; then
-            echo "Generating coverage using dotnet-coverage..."
-            dotnet-coverage collect -f xml -o coverage.xml "dotnet test --no-build"
-          fi
+          # Run tests with coverlet to generate coverage report
+          dotnet test --no-build --logger "trx;LogFileName=test_results.trx" /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=coverage.opencover.xml
 
       - name: End SonarQube analysis
         if: always()
