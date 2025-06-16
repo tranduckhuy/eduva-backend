@@ -2,20 +2,23 @@
 
 namespace Eduva.Application.Features.LessonMaterials.Responses
 {
-    public record LessonMaterialResponse(
-        int Id,
-        int? SchoolId,
-        string Title,
-        string? Description,
-        ContentType ContentType,
-        string? Tag,
-        LessonMaterialStatus LessonStatus,
-        int Duration,
-        bool IsAIContent,
-        string SourceUrl,
-        LessonMaterialVisibility Visibility,
-        DateTimeOffset CreatedAt,
-        DateTimeOffset? LastModifiedAt,
-        EntityStatus Status
-    );
+    public class LessonMaterialResponse
+    {
+        public int Id { get; set; }
+        public int? SchoolId { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public ContentType ContentType { get; set; }
+        public string? Tag { get; set; }
+        public LessonMaterialStatus LessonStatus { get; set; }
+        public int Duration { get; set; }
+        public bool IsAIContent { get; set; }
+        public string SourceUrl { get; set; } = string.Empty;
+        public LessonMaterialVisibility Visibility { get; set; }
+        public DateTimeOffset CreatedAt { get; set; }
+        public DateTimeOffset? LastModifiedAt { get; set; }
+        public EntityStatus Status { get; set; }
+        public Guid CreatedById { get; set; }
+        public string? CreatedByName { get; set; }
+    }
 }

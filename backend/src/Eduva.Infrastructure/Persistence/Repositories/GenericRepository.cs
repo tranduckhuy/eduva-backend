@@ -78,10 +78,6 @@ namespace Eduva.Infrastructure.Persistence.Repositories
             {
                 query = spec.OrderBy(query);
             }
-            else if (spec.OrderByDescending != null)
-            {
-                query = spec.OrderByDescending(query);
-            }
 
             // Projection
             if (spec.Selector != null)
