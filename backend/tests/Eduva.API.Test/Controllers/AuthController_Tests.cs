@@ -143,19 +143,22 @@ namespace Eduva.API.Test.Controllers
             var result = await _controller.Login(request);
             var objectResult = result as ObjectResult;
 
-            Assert.That(objectResult, Is.Not.Null);
-            Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status200OK));
+            Assert.Multiple(() =>
+            {
+                Assert.That(objectResult, Is.Not.Null);
+                Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status200OK));
 
-            var apiResponse = objectResult.Value as ApiResponse<object>;
-            Assert.That(apiResponse, Is.Not.Null);
+                var apiResponse = objectResult.Value as ApiResponse<object>;
+                Assert.That(apiResponse, Is.Not.Null);
 
-            var authResult = apiResponse!.Data as AuthResultDto;
-            Assert.That(authResult, Is.Not.Null);
-            Assert.That(authResult!.AccessToken, Is.EqualTo("access-token-123"));
-            Assert.That(authResult.RefreshToken, Is.EqualTo("refresh-token-456"));
-            Assert.That(authResult.ExpiresIn, Is.EqualTo(3600));
-            Assert.That(authResult.Requires2FA, Is.False);
-            Assert.That(authResult.Email, Is.EqualTo("user@example.com"));
+                var authResult = apiResponse!.Data as AuthResultDto;
+                Assert.That(authResult, Is.Not.Null);
+                Assert.That(authResult!.AccessToken, Is.EqualTo("access-token-123"));
+                Assert.That(authResult.RefreshToken, Is.EqualTo("refresh-token-456"));
+                Assert.That(authResult.ExpiresIn, Is.EqualTo(3600));
+                Assert.That(authResult.Requires2FA, Is.False);
+                Assert.That(authResult.Email, Is.EqualTo("user@example.com"));
+            });
         }
 
         [Test]
@@ -521,7 +524,7 @@ namespace Eduva.API.Test.Controllers
             {
                 new Claim(ClaimTypes.NameIdentifier, userId)
             }));
-            _controller.ControllerContext.HttpContext.Request.Headers["Authorization"] = token;
+            _controller.ControllerContext.HttpContext.Request.Headers.TryAdd("Authorization", token);
 
             _authServiceMock.Setup(s => s.LogoutAsync(userId, It.IsAny<string>()))
                 .Returns(Task.CompletedTask);
@@ -714,7 +717,7 @@ namespace Eduva.API.Test.Controllers
             {
                 new Claim(ClaimTypes.NameIdentifier, userId.ToString())
             }));
-            _controller.ControllerContext.HttpContext.Request.Headers["Authorization"] = token;
+            _controller.ControllerContext.HttpContext.Request.Headers.TryAdd("Authorization", token);
 
             _authServiceMock.Setup(s => s.ChangePasswordAsync(It.Is<ChangePasswordRequestDto>(r => r.UserId == userId)))
                 .ReturnsAsync(CustomCode.Success);
@@ -796,7 +799,7 @@ namespace Eduva.API.Test.Controllers
             {
                 new Claim(ClaimTypes.NameIdentifier, userId.ToString())
             }));
-            _controller.ControllerContext.HttpContext.Request.Headers["Authorization"] = token;
+            _controller.ControllerContext.HttpContext.Request.Headers.TryAdd("Authorization", token);
 
             _authServiceMock.Setup(s => s.ChangePasswordAsync(It.Is<ChangePasswordRequestDto>(r =>
                 r.CurrentAccessToken == "myaccesstoken" && r.UserId == userId)))
