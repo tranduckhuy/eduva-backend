@@ -1,4 +1,4 @@
-﻿using Eduva.API.Controllers.Base.Api;
+﻿using Eduva.API.Controllers.Base;
 using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Features.LessonMaterials.Commands;
 using Eduva.Application.Features.LessonMaterials.Queries;
@@ -13,7 +13,7 @@ using System.Security.Claims;
 namespace Eduva.API.Controllers.LessonMaterials
 {
     [Route("api/lesson-materials")]
-    public class LessonMaterialController : BaseApiController<LessonMaterialController>
+    public class LessonMaterialController : BaseController<LessonMaterialController>
     {
         private readonly IMediator _mediator;
 

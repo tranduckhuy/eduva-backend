@@ -1,7 +1,7 @@
 ﻿using Eduva.API.Models;
+using Eduva.Application.Common.Exceptions;
 using Eduva.Shared.Constants;
 using Eduva.Shared.Enums;
-using Eduva.Shared.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Eduva.API.Controllers.Base
@@ -28,8 +28,7 @@ namespace Eduva.API.Controllers.Base
                     typeof(TController).Name,
                     string.Join(", ", errors));
 
-                var statusCode = CustomCode.ModelInvalid;
-                return Respond(statusCode, null, errors);
+                return Respond(CustomCode.ModelInvalid, null, errors);
             }
 
             return null!;
@@ -37,24 +36,65 @@ namespace Eduva.API.Controllers.Base
 
         protected IActionResult Respond(CustomCode code, object? data = null, IEnumerable<string>? errors = null)
         {
-            if (!ResponseMessages.Messages.TryGetValue(code, out var msgDetail))
-            {
-                msgDetail = new MessageDetail
-                {
-                    HttpCode = StatusCodes.Status500InternalServerError,
-                    Message = "System encountered an unexpected error."
-                };
-            }
+            ResponseMessages.Messages.TryGetValue(code, out var msgDetail);
 
             var responseData = new ApiResponse<object>
             {
                 StatusCode = (int)code,
-                Message = msgDetail.Message,
+                Message = msgDetail?.Message ?? "Unknown error",
                 Data = data,
                 Errors = errors
             };
 
-            return StatusCode(msgDetail.HttpCode, responseData);
+            return StatusCode(msgDetail?.HttpCode ?? StatusCodes.Status500InternalServerError, responseData);
+        }
+
+        protected async Task<IActionResult> HandleRequestAsync<TResponse>(
+            Func<Task<(CustomCode code, TResponse result)>> func)
+            where TResponse : class
+        {
+            var modelCheck = CheckModelStateValidity();
+            if (modelCheck != null)
+                return modelCheck;
+
+            try
+            {
+                var (code, result) = await func();
+                return Respond(code, result);
+            }
+            catch (AppException ex)
+            {
+                return Respond(ex.StatusCode, default(TResponse), ex.Errors);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in {ControllerName}", typeof(TController).Name);
+                return Respond(CustomCode.SystemError);
+            }
+        }
+
+        protected async Task<IActionResult> HandleRequestAsync(
+            Func<Task> func,
+            CustomCode successCode = CustomCode.Success)
+        {
+            var modelCheck = CheckModelStateValidity();
+            if (modelCheck != null)
+                return modelCheck;
+
+            try
+            {
+                await func();
+                return Respond(successCode);
+            }
+            catch (AppException ex)
+            {
+                return Respond(ex.StatusCode, null, ex.Errors);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in {ControllerName}", typeof(TController).Name);
+                return Respond(CustomCode.SystemError);
+            }
         }
     }
 }

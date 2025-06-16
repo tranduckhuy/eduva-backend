@@ -1,4 +1,4 @@
-﻿using Eduva.API.Controllers.Base.Auth;
+﻿using Eduva.API.Controllers.Base;
 using Eduva.Application.Features.Auth.DTOs;
 using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Enums;
@@ -10,7 +10,7 @@ using System.Security.Claims;
 namespace Eduva.API.Controllers.Auth
 {
     [Route("api/auth")]
-    public class AuthController : BaseAuthController<AuthController>
+    public class AuthController : BaseController<AuthController>
     {
         private readonly IAuthService _authService;
 

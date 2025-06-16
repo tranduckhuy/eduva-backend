@@ -152,9 +152,12 @@ public class AuthService_Tests
         var dto = new LoginRequestDto { Email = user.Email, Password = "password" };
         var result = await _authService.LoginAsync(dto);
 
-        Assert.That(result.Item1, Is.EqualTo(CustomCode.RequiresOtpVerification));
-        Assert.That(result.Item2.Requires2FA, Is.True);
-        Assert.That(result.Item2.Email, Is.EqualTo(user.Email));
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Item1, Is.EqualTo(CustomCode.RequiresOtpVerification));
+            Assert.That(result.Item2.Requires2FA, Is.True);
+            Assert.That(result.Item2.Email, Is.EqualTo(user.Email));
+        });
     }
 
     [Test]
@@ -275,13 +278,16 @@ public class AuthService_Tests
         var dto = new RefreshTokenRequestDto();
         var context = new ValidationContext(dto);
         var results = new List<ValidationResult>();
-
         var isValid = Validator.TryValidateObject(dto, context, results, true);
 
-        Assert.IsFalse(isValid);
-        Assert.That(results.Count, Is.EqualTo(2));
-        Assert.That(results.Any(r => r.ErrorMessage == "Access token is required."));
-        Assert.That(results.Any(r => r.ErrorMessage == "Refresh token is required."));
+        Assert.That(isValid, Is.False);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(results, Has.Count.EqualTo(2));
+            Assert.That(results.Any(r => r.ErrorMessage == "Access token is required."));
+            Assert.That(results.Any(r => r.ErrorMessage == "Refresh token is required."));
+        });
     }
 
     [Test]
@@ -295,10 +301,9 @@ public class AuthService_Tests
 
         var context = new ValidationContext(dto);
         var results = new List<ValidationResult>();
-
         var isValid = Validator.TryValidateObject(dto, context, results, true);
 
-        Assert.IsTrue(isValid);
+        Assert.That(isValid, Is.True);
         Assert.That(results, Is.Empty);
     }
 
