@@ -200,6 +200,7 @@ namespace Eduva.Infrastructure.Identity
 
             return CustomCode.OtpSentSuccessfully;
         }
+
         public async Task<CustomCode> ConfirmEnable2FaOtpAsync(Confirm2FaDto request)
         {
             var user = await _userManager.FindByIdAsync(request.UserId.ToString()) ?? throw new UserNotExistsException();

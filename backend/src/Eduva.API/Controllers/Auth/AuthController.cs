@@ -398,6 +398,9 @@ namespace Eduva.API.Controllers.Auth
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
         public async Task<IActionResult> InvalidateUserTokens(string userId)
         {
+            if (string.IsNullOrWhiteSpace(userId))
+                return Respond(CustomCode.UserIdNotFound);
+
             try
             {
                 await _authService.InvalidateAllUserTokensAsync(userId);
