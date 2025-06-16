@@ -43,15 +43,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-sonar-scanner
 
-      - name: Install dotnet-sonarscanner
-        run: dotnet tool install --global dotnet-sonarscanner --no-cache
+      - name: Install dotnet tools
+        run: |
+          dotnet tool install --global dotnet-sonarscanner --no-cache
+          dotnet tool install --global coverlet.console --no-cache
+          dotnet tool install --global dotnet-reportgenerator-globaltool --no-cache
 
       - name: Add dotnet tools to PATH
         shell: bash
         run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
-
-      - name: Install code coverage tools
-        run: dotnet tool install --global dotnet-coverage
 
       - name: Start SonarQube analysis
         run: >
@@ -59,9 +59,8 @@ jobs:
           /k:"Eduva-Backend"
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
           /d:sonar.host.url="${{ secrets.SONAR_HOST_URL }}"
-          /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml
+          /d:sonar.cs.opencover.reportsPaths="backend/**/coverage.opencover.xml"
           /d:sonar.coverage.exclusions="**/Program.cs,**/*Extension*.cs,**/Migrations/**/*.cs,**/*.Test.cs"
-          /d:sonar.cs.opencover.reportsPaths=coverage.opencover.xml
 
       - name: Build solution
         run: dotnet build backend/backend.sln --no-incremental
@@ -69,9 +68,47 @@ jobs:
       - name: Run Tests with Coverage
         run: |
           cd backend
-          dotnet test --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults/ --logger "trx;LogFileName=test_results.trx"
-          dotnet-coverage collect -f xml -o coverage.xml "dotnet test --no-build"
-          dotnet-coverage collect -f opencover -o coverage.opencover.xml "dotnet test --no-build"
+          # Run tests with coverlet to generate individual coverage reports
+          dotnet test --no-build --logger "trx;LogFileName=test_results.trx" \
+          /p:CollectCoverage=true \
+          /p:CoverletOutputFormat=opencover \
+          /p:MergeWith="../coverage.json" \
+          /p:CoverletOutput="../coverage.opencover.xml"
+
+      - name: Merge Coverage Reports
+        run: |
+          cd backend
+          # Find all individual coverage files and merge them
+          find . -name "*coverage.opencover.xml" -type f > coverage_files.txt
+
+          if [ -s coverage_files.txt ]; then
+            echo "Found coverage files:"
+            cat coverage_files.txt
+            
+            # Use reportgenerator to merge all coverage files
+            reportgenerator \
+            -reports:"$(cat coverage_files.txt | tr '\n' ';')" \
+            -targetdir:"." \
+            -reporttypes:"OpenCover" \
+            -filefilters:"-**/Migrations/**;-**/Program.cs;-**/*Extension*.cs;-**/*.Test.cs" \
+            -title:"Eduva Backend Coverage"
+            
+            # Ensure the final file is named correctly
+            if [ -f "OpenCover.xml" ]; then
+              mv OpenCover.xml coverage.opencover.xml
+            fi
+          else
+            echo "No coverage files found, creating empty coverage file"
+            echo '<?xml version="1.0" encoding="utf-8"?><CoverageSession></CoverageSession>' > coverage.opencover.xml
+          fi
+
+          # Verify the final coverage file exists
+          if [ -f coverage.opencover.xml ]; then
+            echo "Final coverage file created successfully"
+            ls -la coverage.opencover.xml
+          else
+            echo "Warning: No coverage file generated"
+          fi
 
       - name: End SonarQube analysis
         if: always()
