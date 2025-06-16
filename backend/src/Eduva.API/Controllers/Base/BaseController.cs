@@ -9,7 +9,7 @@ namespace Eduva.API.Controllers.Base
     [ApiController]
     public abstract class BaseController<TController> : ControllerBase
     {
-        private readonly ILogger<BaseController<TController>> _logger;
+        protected readonly ILogger<BaseController<TController>> _logger;
 
         protected BaseController(ILogger<BaseController<TController>> logger)
         {
@@ -44,7 +44,7 @@ namespace Eduva.API.Controllers.Base
                 msgDetail = new MessageDetail
                 {
                     HttpCode = StatusCodes.Status500InternalServerError,
-                    Message = "Unknown error"
+                    Message = "System encountered an unexpected error."
                 };
             }
 

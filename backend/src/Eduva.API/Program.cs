@@ -1,3 +1,4 @@
+using Eduva.Application.Extentions;
 using Eduva.Domain.Entities;
 using Eduva.Infrastructure.Extensions;
 using HealthChecks.UI.Client;
@@ -67,6 +68,7 @@ builder.Services.Configure<DataProtectionTokenProviderOptions>(opt =>
 });
 
 builder.Services.AddInfrastructureServices(builder.Configuration);
+builder.Services.AddApplicationServices();
 
 
 var app = builder.Build();

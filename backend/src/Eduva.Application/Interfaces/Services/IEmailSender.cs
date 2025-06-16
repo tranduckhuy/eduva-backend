@@ -1,6 +1,6 @@
 ﻿using Eduva.Application.Common.Models;
 
-namespace Eduva.Application.Common.Interfaces
+namespace Eduva.Application.Interfaces.Services
 {
     public interface IEmailSender
     {

@@ -14,11 +14,11 @@
         RequiresOtpVerification = 2008,
         OtpSentSuccessfully = 2009,
 
-        // Auth errors
+        // Error
         ModelInvalid = 4000,
         Unauthorized = 4001,
         Forbidden = 4003,
-
+        SystemError = 5000,
 
         InvalidToken = 4004,
         EmailAlreadyExists = 4005,
@@ -33,5 +33,7 @@
         OtpInvalidOrExpired = 4014,
         TwoFactorIsAlreadyEnabled = 4015,
         TwoFactorIsAlreadyDisabled = 4016,
+        UserIdNotFound = 4017,
+        AccessTokenInvalidOrExpired = 4018,
     }
 }

@@ -1,7 +1,7 @@
 ﻿using Eduva.API.Controllers.Base;
 using Eduva.Application.Common.Exceptions;
-using Eduva.Application.Common.Interfaces;
 using Eduva.Application.Features.Auth.DTOs;
+using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using Microsoft.AspNetCore.Authorization;
@@ -41,7 +41,7 @@ namespace Eduva.API.Controllers.Auth
                     return Respond(appEx.StatusCode, null, appEx.Errors);
                 }
 
-                return Respond((CustomCode)StatusCodes.Status500InternalServerError);
+                return Respond(CustomCode.SystemError);
             }
         }
 
@@ -65,7 +65,7 @@ namespace Eduva.API.Controllers.Auth
                 {
                     return Respond(appEx.StatusCode, null, appEx.Errors);
                 }
-                return Respond((CustomCode)StatusCodes.Status500InternalServerError);
+                return Respond(CustomCode.SystemError);
             }
         }
 
@@ -87,7 +87,7 @@ namespace Eduva.API.Controllers.Auth
                 {
                     return Respond(appEx.StatusCode, null, appEx.Errors);
                 }
-                return Respond((CustomCode)StatusCodes.Status500InternalServerError);
+                return Respond(CustomCode.SystemError);
             }
         }
 
@@ -101,7 +101,7 @@ namespace Eduva.API.Controllers.Auth
 
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null)
-                return Respond(CustomCode.Unauthorized, "User ID not found in claims.");
+                return Respond(CustomCode.UserIdNotFound);
 
             request.UserId = Guid.Parse(userId);
 
@@ -115,7 +115,7 @@ namespace Eduva.API.Controllers.Auth
                 if (ex is AppException appEx)
                     return Respond(appEx.StatusCode, null, appEx.Errors);
 
-                return Respond((CustomCode)StatusCodes.Status500InternalServerError);
+                return Respond(CustomCode.SystemError);
             }
         }
 
@@ -129,7 +129,7 @@ namespace Eduva.API.Controllers.Auth
 
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null)
-                return Respond(CustomCode.Unauthorized, "User ID not found in claims.");
+                return Respond(CustomCode.UserIdNotFound);
 
             request.UserId = Guid.Parse(userId);
 
@@ -143,7 +143,7 @@ namespace Eduva.API.Controllers.Auth
                 if (ex is AppException appEx)
                     return Respond(appEx.StatusCode, null, appEx.Errors);
 
-                return Respond((CustomCode)StatusCodes.Status500InternalServerError);
+                return Respond(CustomCode.SystemError);
             }
         }
 
@@ -157,7 +157,7 @@ namespace Eduva.API.Controllers.Auth
 
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null)
-                return Respond(CustomCode.Unauthorized, "User ID not found in claims.");
+                return Respond(CustomCode.UserIdNotFound);
 
             request.UserId = Guid.Parse(userId);
 
@@ -171,7 +171,7 @@ namespace Eduva.API.Controllers.Auth
                 if (ex is AppException appEx)
                     return Respond(appEx.StatusCode, null, appEx.Errors);
 
-                return Respond((CustomCode)StatusCodes.Status500InternalServerError);
+                return Respond(CustomCode.SystemError);
             }
         }
 
@@ -185,7 +185,7 @@ namespace Eduva.API.Controllers.Auth
 
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null)
-                return Respond(CustomCode.Unauthorized, "User ID not found in claims.");
+                return Respond(CustomCode.UserIdNotFound);
 
             request.UserId = Guid.Parse(userId);
 
@@ -199,7 +199,7 @@ namespace Eduva.API.Controllers.Auth
                 if (ex is AppException appEx)
                     return Respond(appEx.StatusCode, null, appEx.Errors);
 
-                return Respond((CustomCode)StatusCodes.Status500InternalServerError);
+                return Respond(CustomCode.SystemError);
             }
         }
 
@@ -222,7 +222,7 @@ namespace Eduva.API.Controllers.Auth
                 {
                     return Respond(appEx.StatusCode, null, appEx.Errors);
                 }
-                return Respond((CustomCode)StatusCodes.Status500InternalServerError);
+                return Respond(CustomCode.SystemError);
             }
         }
 
@@ -245,7 +245,7 @@ namespace Eduva.API.Controllers.Auth
                 {
                     return Respond(appEx.StatusCode, null, appEx.Errors);
                 }
-                return Respond((CustomCode)StatusCodes.Status500InternalServerError);
+                return Respond(CustomCode.SystemError);
             }
         }
 
@@ -268,7 +268,7 @@ namespace Eduva.API.Controllers.Auth
                 {
                     return Respond(appEx.StatusCode, null, appEx.Errors);
                 }
-                return Respond((CustomCode)StatusCodes.Status500InternalServerError);
+                return Respond(CustomCode.SystemError);
             }
         }
 
@@ -282,10 +282,10 @@ namespace Eduva.API.Controllers.Auth
                 return modelStateCheck;
             }
 
-            var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null)
             {
-                return Respond(CustomCode.Unauthorized, "User ID not found in claims.");
+                return Respond(CustomCode.UserIdNotFound);
             }
 
             changePasswordRequestDto.UserId = Guid.Parse(userId);
@@ -293,7 +293,7 @@ namespace Eduva.API.Controllers.Auth
             var token = Request.Headers.Authorization.FirstOrDefault()?.Replace("Bearer ", "").Trim();
             if (string.IsNullOrWhiteSpace(token))
             {
-                return Respond(CustomCode.Unauthorized, "Access token is missing or invalid.");
+                return Respond(CustomCode.AccessTokenInvalidOrExpired);
             }
 
             changePasswordRequestDto.CurrentAccessToken = token;
@@ -309,7 +309,7 @@ namespace Eduva.API.Controllers.Auth
                 {
                     return Respond(appEx.StatusCode, null, appEx.Errors);
                 }
-                return Respond((CustomCode)StatusCodes.Status500InternalServerError);
+                return Respond(CustomCode.SystemError);
             }
         }
 
@@ -332,7 +332,7 @@ namespace Eduva.API.Controllers.Auth
                 {
                     return Respond(appEx.StatusCode, null, appEx.Errors);
                 }
-                return Respond((CustomCode)StatusCodes.Status500InternalServerError);
+                return Respond(CustomCode.SystemError);
             }
         }
 
@@ -355,7 +355,7 @@ namespace Eduva.API.Controllers.Auth
                 {
                     return Respond(appEx.StatusCode, null, appEx.Errors);
                 }
-                return Respond((CustomCode)StatusCodes.Status500InternalServerError);
+                return Respond(CustomCode.SystemError);
             }
         }
 
@@ -371,11 +371,11 @@ namespace Eduva.API.Controllers.Auth
 
             var token = Request.Headers.Authorization.ToString().Replace("Bearer ", "");
 
-            var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (userId == null)
             {
-                return Respond(CustomCode.Unauthorized, "User ID not found in claims.");
+                return Respond(CustomCode.UserIdNotFound);
             }
 
             try
@@ -389,19 +389,19 @@ namespace Eduva.API.Controllers.Auth
                 {
                     return Respond(appEx.StatusCode, null, appEx.Errors);
                 }
-                return Respond((CustomCode)StatusCodes.Status500InternalServerError);
+                return Respond(CustomCode.SystemError);
             }
         }
 
         // Admin endpoints for token management
-        [HttpPost("admin/invalidate-user-tokens/{userId}")]     
+        [HttpPost("admin/invalidate-user-tokens/{userId}")]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
         public async Task<IActionResult> InvalidateUserTokens(string userId)
         {
             try
             {
                 await _authService.InvalidateAllUserTokensAsync(userId);
-                return Respond(CustomCode.Success, "All tokens for the user have been invalidated");
+                return Respond(CustomCode.Success);
             }
             catch (Exception ex)
             {
@@ -409,7 +409,7 @@ namespace Eduva.API.Controllers.Auth
                 {
                     return Respond(appEx.StatusCode, null, appEx.Errors);
                 }
-                return Respond((CustomCode)StatusCodes.Status500InternalServerError);
+                return Respond(CustomCode.SystemError);
             }
         }
 
@@ -420,13 +420,13 @@ namespace Eduva.API.Controllers.Auth
             var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
             if (userId == null)
             {
-                return Respond(CustomCode.Unauthorized, "User ID not found in claims.");
+                return Respond(CustomCode.UserIdNotFound);
             }
 
             try
             {
                 await _authService.InvalidateAllUserTokensAsync(userId);
-                return Respond(CustomCode.Success, "All your sessions have been invalidated. Please login again.");
+                return Respond(CustomCode.Success);
             }
             catch (Exception ex)
             {
@@ -434,7 +434,7 @@ namespace Eduva.API.Controllers.Auth
                 {
                     return Respond(appEx.StatusCode, null, appEx.Errors);
                 }
-                return Respond((CustomCode)StatusCodes.Status500InternalServerError);
+                return Respond(CustomCode.SystemError);
             }
         }
     }
