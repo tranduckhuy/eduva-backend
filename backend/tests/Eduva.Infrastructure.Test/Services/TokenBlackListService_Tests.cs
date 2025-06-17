@@ -59,6 +59,17 @@ public class TokenBlackListService_Tests
     }
 
     [Test]
+    public async Task IsTokenBlacklistedAsync_ShouldReturnFalse_IfExceptionThrown()
+    {
+        _cacheMock.Setup(c => c.GetAsync(It.IsAny<string>(), default))
+                  .ThrowsAsync(new Exception("Cache error"));
+
+        var result = await _service.IsTokenBlacklistedAsync("error-token");
+
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
     public async Task GetExceptionTokenAsync_ShouldReturnStoredToken()
     {
         _cacheMock.Setup(c => c.GetAsync("user_tokens_exception_user123", default))
@@ -99,6 +110,17 @@ public class TokenBlackListService_Tests
     }
 
     [Test]
+    public async Task BlacklistAllUserTokensExceptAsync_ShouldFallback_WhenTokenIsNullOrWhiteSpace()
+    {
+        await _service.BlacklistAllUserTokensExceptAsync("user123", "");
+
+        _cacheMock.Verify(c => c.SetAsync("user_tokens_invalidated_user123",
+            It.IsAny<byte[]>(),
+            It.IsAny<DistributedCacheEntryOptions>(),
+            default), Times.Once);
+    }
+
+    [Test]
     public async Task AreUserTokensInvalidatedAsync_ShouldReturnTrue_IfIssuedBeforeInvalidation()
     {
         var invalidationTime = DateTimeOffset.UtcNow.AddMinutes(-5).ToUnixTimeSeconds().ToString();
@@ -120,6 +142,29 @@ public class TokenBlackListService_Tests
 
         var tokenIssuedAt = DateTime.UtcNow.AddMinutes(-5);
         var result = await _service.AreUserTokensInvalidatedAsync("user123", tokenIssuedAt);
+
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public async Task AreUserTokensInvalidatedAsync_ShouldReturnFalse_IfInvalidFormat()
+    {
+        _cacheMock.Setup(c => c.GetAsync(It.IsAny<string>(), default))
+                  .ReturnsAsync(Encoding.UTF8.GetBytes("not-a-number"));
+
+        var tokenIssuedAt = DateTime.UtcNow;
+        var result = await _service.AreUserTokensInvalidatedAsync("user123", tokenIssuedAt);
+
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public async Task AreUserTokensInvalidatedAsync_ShouldReturnFalse_IfExceptionThrown()
+    {
+        _cacheMock.Setup(c => c.GetAsync(It.IsAny<string>(), default))
+                  .ThrowsAsync(new Exception("Redis error"));
+
+        var result = await _service.AreUserTokensInvalidatedAsync("user123", DateTime.UtcNow);
 
         Assert.That(result, Is.False);
     }

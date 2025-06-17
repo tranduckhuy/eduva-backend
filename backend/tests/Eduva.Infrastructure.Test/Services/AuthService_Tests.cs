@@ -1,4 +1,5 @@
 ﻿using Eduva.Application.Common.Exceptions;
+using Eduva.Application.Common.Models;
 using Eduva.Application.Exceptions.Auth;
 using Eduva.Application.Features.Auth.DTOs;
 using Eduva.Application.Interfaces.Services;
@@ -16,8 +17,9 @@ using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Reflection;
 using System.Security.Claims;
+using System.Text;
 
-namespace Eduva.Application.Test.Services;
+namespace Eduva.Infrastructure.Test.Services;
 
 [TestFixture]
 public class AuthService_Tests
@@ -94,6 +96,40 @@ public class AuthService_Tests
     }
 
     [Test]
+    public void RegisterAsync_CreateUserFailed_ThrowsAppException()
+    {
+        // Arrange
+        _userManager.Setup(m => m.FindByEmailAsync(It.IsAny<string>()))
+            .ReturnsAsync((ApplicationUser?)null);
+
+        var identityErrors = new List<IdentityError>
+    {
+        new IdentityError { Description = "Password too weak" },
+        new IdentityError { Description = "Email is invalid" }
+    };
+
+        var failedResult = IdentityResult.Failed(identityErrors.ToArray());
+
+        _userManager.Setup(m => m.CreateAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()))
+            .ReturnsAsync(failedResult);
+
+        var dto = new RegisterRequestDto
+        {
+            Email = "fail@example.com",
+            Password = "123",
+            ConfirmPassword = "123",
+            FullName = "Test",
+            PhoneNumber = "0123456789",
+            ClientUrl = "http://localhost"
+        };
+
+        // Act & Assert
+        var ex = Assert.ThrowsAsync<AppException>(() => _authService.RegisterAsync(dto));
+        Assert.That(ex!.Errors, Does.Contain("Password too weak"));
+        Assert.That(ex!.Errors, Does.Contain("Email is invalid"));
+    }
+
+    [Test]
     public void LoginAsync_UserNotExists_ThrowsException()
     {
         _userManager.Setup(m => m.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync((ApplicationUser?)null);
@@ -115,31 +151,6 @@ public class AuthService_Tests
     }
 
     [Test]
-    public void LoginAsync_InvalidPassword_ThrowsException()
-    {
-        var user = new ApplicationUser { Email = "user@example.com", EmailConfirmed = true };
-        _userManager.Setup(m => m.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync(user);
-        _userManager.Setup(m => m.CheckPasswordAsync(user, It.IsAny<string>())).ReturnsAsync(false);
-
-        var dto = new LoginRequestDto { Email = user.Email, Password = "wrong" };
-
-        Assert.ThrowsAsync<InvalidCredentialsException>(() => _authService.LoginAsync(dto));
-    }
-
-    [Test]
-    public void LoginAsync_UserLockedOut_ThrowsException()
-    {
-        var user = new ApplicationUser { Email = "user@example.com", EmailConfirmed = true };
-        _userManager.Setup(m => m.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync(user);
-        _userManager.Setup(m => m.CheckPasswordAsync(user, It.IsAny<string>())).ReturnsAsync(true);
-        _userManager.Setup(m => m.IsLockedOutAsync(user)).ReturnsAsync(true);
-
-        var dto = new LoginRequestDto { Email = user.Email, Password = "password" };
-
-        Assert.ThrowsAsync<UserAccountLockedException>(() => _authService.LoginAsync(dto));
-    }
-
-    [Test]
     public async Task LoginAsync_2FAEnabled_ReturnsOtpRequired()
     {
         var user = new ApplicationUser { Email = "user@example.com", EmailConfirmed = true, FullName = "User" };
@@ -158,6 +169,76 @@ public class AuthService_Tests
             Assert.That(result.Item2.Requires2FA, Is.True);
             Assert.That(result.Item2.Email, Is.EqualTo(user.Email));
         });
+    }
+
+    [Test]
+    public async Task LoginAsync_SuccessWithout2FA_ReturnsAuthResult()
+    {
+        var user = new ApplicationUser
+        {
+            Id = Guid.NewGuid(),
+            Email = "user@example.com",
+            UserName = "user@example.com",
+            FullName = "Test User",
+            EmailConfirmed = true,
+            RefreshToken = "refresh-token",
+            RefreshTokenExpiryTime = DateTimeOffset.UtcNow.AddDays(1)
+        };
+
+        _userManager.Setup(x => x.FindByEmailAsync(user.Email)).ReturnsAsync(user);
+        _userManager.Setup(x => x.CheckPasswordAsync(user, It.IsAny<string>())).ReturnsAsync(true);
+        _userManager.Setup(x => x.IsLockedOutAsync(user)).ReturnsAsync(false);
+        _userManager.Setup(x => x.GetTwoFactorEnabledAsync(user)).ReturnsAsync(false);
+        _userManager.Setup(x => x.GetRolesAsync(user)).ReturnsAsync(new List<string> { "User" });
+        _userManager.Setup(x => x.GetClaimsAsync(user)).ReturnsAsync(new List<Claim>
+    {
+        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+        new Claim(ClaimTypes.Email, user.Email),
+        new Claim("FullName", user.FullName!)
+    });
+
+        var dto = new LoginRequestDto
+        {
+            Email = user.Email,
+            Password = "password"
+        };
+
+        var (code, result) = await _authService.LoginAsync(dto);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(code, Is.EqualTo(CustomCode.Success));
+            Assert.That(result.AccessToken, Is.Not.Null.And.Not.Empty);
+            Assert.That(result.RefreshToken, Is.Not.Null.And.Not.Empty);
+            Assert.That(result.Requires2FA, Is.False);
+        });
+    }
+
+    [Test]
+    public void LoginAsync_InvalidPassword_ThrowsInvalidCredentialsException()
+    {
+        var user = new ApplicationUser { Email = "test@example.com", EmailConfirmed = true };
+
+        _userManager.Setup(m => m.FindByEmailAsync(user.Email)).ReturnsAsync(user);
+        _userManager.Setup(m => m.CheckPasswordAsync(user, It.IsAny<string>())).ReturnsAsync(false);
+
+        var dto = new LoginRequestDto { Email = user.Email, Password = "wrong-password" };
+
+        Assert.ThrowsAsync<InvalidCredentialsException>(() => _authService.LoginAsync(dto));
+    }
+
+    [Test]
+    public void LoginAsync_UserIsLockedOut_ThrowsUserAccountLockedException()
+    {
+        var user = new ApplicationUser { Email = "locked@example.com", EmailConfirmed = true };
+
+        _userManager.Setup(m => m.FindByEmailAsync(user.Email)).ReturnsAsync(user);
+        _userManager.Setup(m => m.CheckPasswordAsync(user, It.IsAny<string>())).ReturnsAsync(true);
+        _userManager.Setup(m => m.IsLockedOutAsync(user)).ReturnsAsync(true);
+
+        var dto = new LoginRequestDto { Email = user.Email, Password = "password" };
+
+        Assert.ThrowsAsync<UserAccountLockedException>(() => _authService.LoginAsync(dto));
     }
 
     [Test]
@@ -354,7 +435,7 @@ public class AuthService_Tests
 
         // Generate expired JWT token
         var tokenHandler = new JwtSecurityTokenHandler();
-        var key = System.Text.Encoding.UTF8.GetBytes("super_secret_key_1234567890123456");
+        var key = Encoding.UTF8.GetBytes("super_secret_key_1234567890123456");
 
         var now = DateTime.UtcNow;
 
@@ -432,6 +513,104 @@ public class AuthService_Tests
         var result = await _authService.ConfirmEnable2FaOtpAsync(dto);
 
         Assert.That(result, Is.EqualTo(CustomCode.Success));
+    }
+
+    [Test]
+    public void ConfirmEnable2FaOtpAsync_UpdateFails_ThrowsAppException()
+    {
+        var user = new ApplicationUser { TwoFactorEnabled = false };
+
+        _userManager.Setup(x => x.FindByIdAsync(It.IsAny<string>())).ReturnsAsync(user);
+        _userManager.Setup(x => x.VerifyTwoFactorTokenAsync(user, It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
+        _userManager.Setup(x => x.UpdateAsync(user)).ReturnsAsync(IdentityResult.Failed(new IdentityError
+        {
+            Description = "Failed to enable 2FA"
+        }));
+
+        var dto = new Confirm2FaDto { UserId = Guid.NewGuid(), OtpCode = "123456" };
+
+        var ex = Assert.ThrowsAsync<AppException>(() => _authService.ConfirmEnable2FaOtpAsync(dto));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.ProvidedInformationIsInValid));
+            Assert.That(ex.Errors, Has.One.EqualTo("Failed to enable 2FA"));
+        });
+    }
+
+    [Test]
+    public void ConfirmEnable2FaOtpAsync_UserNotFound_ThrowsException()
+    {
+        _userManager.Setup(x => x.FindByIdAsync(It.IsAny<string>())).ReturnsAsync((ApplicationUser?)null);
+
+        var dto = new Confirm2FaDto { UserId = Guid.NewGuid(), OtpCode = "code" };
+
+        Assert.ThrowsAsync<UserNotExistsException>(() => _authService.ConfirmEnable2FaOtpAsync(dto));
+    }
+
+    [Test]
+    public void RequestDisable2FaOtpAsync_UserNotFound_ThrowsException()
+    {
+        _userManager.Setup(x => x.FindByIdAsync(It.IsAny<string>()))
+                    .ReturnsAsync((ApplicationUser?)null);
+
+        var dto = new Request2FaDto { UserId = Guid.NewGuid(), CurrentPassword = "password" };
+
+        Assert.ThrowsAsync<UserNotExistsException>(() => _authService.RequestDisable2FaOtpAsync(dto));
+    }
+
+    [Test]
+    public void RequestDisable2FaOtpAsync_TwoFactorAlreadyDisabled_ThrowsException()
+    {
+        var user = new ApplicationUser { TwoFactorEnabled = false };
+
+        _userManager.Setup(x => x.FindByIdAsync(It.IsAny<string>())).ReturnsAsync(user);
+
+        var dto = new Request2FaDto { UserId = Guid.NewGuid(), CurrentPassword = "password" };
+
+        Assert.ThrowsAsync<TwoFactorIsAlreadyDisabledException>(() => _authService.RequestDisable2FaOtpAsync(dto));
+    }
+
+    [Test]
+    public void RequestDisable2FaOtpAsync_InvalidPassword_ThrowsException()
+    {
+        var user = new ApplicationUser { TwoFactorEnabled = true };
+
+        _userManager.Setup(x => x.FindByIdAsync(It.IsAny<string>())).ReturnsAsync(user);
+        _userManager.Setup(x => x.CheckPasswordAsync(user, It.IsAny<string>())).ReturnsAsync(false);
+
+        var dto = new Request2FaDto { UserId = Guid.NewGuid(), CurrentPassword = "wrong" };
+
+        Assert.ThrowsAsync<InvalidCredentialsException>(() => _authService.RequestDisable2FaOtpAsync(dto));
+    }
+
+    [Test]
+    public async Task RequestDisable2FaOtpAsync_ValidRequest_ReturnsSuccess()
+    {
+        var user = new ApplicationUser { TwoFactorEnabled = true };
+
+        _userManager.Setup(x => x.FindByIdAsync(It.IsAny<string>())).ReturnsAsync(user);
+        _userManager.Setup(x => x.CheckPasswordAsync(user, It.IsAny<string>())).ReturnsAsync(true);
+        _userManager.Setup(x => x.GenerateTwoFactorTokenAsync(user, It.IsAny<string>()))
+                    .ReturnsAsync("token");
+
+        _emailSender.Setup(x => x.SendEmailAsync(It.IsAny<EmailMessage>()))
+                    .Returns(Task.CompletedTask);
+
+        var dto = new Request2FaDto { UserId = Guid.NewGuid(), CurrentPassword = "correct" };
+
+        var result = await _authService.RequestDisable2FaOtpAsync(dto);
+
+        Assert.That(result, Is.EqualTo(CustomCode.OtpSentSuccessfully));
+    }
+
+    [Test]
+    public void ConfirmDisable2FaOtpAsync_UserNotFound_Throws()
+    {
+        _userManager.Setup(x => x.FindByIdAsync(It.IsAny<string>())).ReturnsAsync((ApplicationUser?)null);
+        var dto = new Confirm2FaDto { UserId = Guid.NewGuid(), OtpCode = "code" };
+
+        Assert.ThrowsAsync<UserNotExistsException>(() => _authService.ConfirmDisable2FaOtpAsync(dto));
     }
 
     [Test]
@@ -622,14 +801,252 @@ public class AuthService_Tests
     }
 
     [Test]
-    public void RefreshTokenAsync_InvalidAccessToken_ThrowsException()
+    public void ChangePasswordAsync_NewPasswordSameAsOld_ThrowsException()
+    {
+        var user = new ApplicationUser();
+        var userId = Guid.NewGuid();
+        _userManager.Setup(x => x.FindByIdAsync(userId.ToString())).ReturnsAsync(user);
+        _userManager.Setup(x => x.CheckPasswordAsync(user, "newpass")).ReturnsAsync(true);
+
+        var dto = new ChangePasswordRequestDto
+        {
+            UserId = userId,
+            NewPassword = "newpass"
+        };
+
+        Assert.ThrowsAsync<NewPasswordSameAsOldException>(() => _authService.ChangePasswordAsync(dto));
+    }
+
+    [Test]
+    public void ChangePasswordAsync_ChangeFails_ThrowsAppException()
+    {
+        var user = new ApplicationUser();
+        var userId = Guid.NewGuid();
+
+        _userManager.Setup(x => x.FindByIdAsync(userId.ToString())).ReturnsAsync(user);
+        _userManager.Setup(x => x.CheckPasswordAsync(user, It.IsAny<string>())).ReturnsAsync(false);
+        _userManager.Setup(x => x.ChangePasswordAsync(user, It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "Something went wrong" }));
+
+        var dto = new ChangePasswordRequestDto
+        {
+            UserId = userId,
+            CurrentPassword = "oldpass",
+            NewPassword = "newpass"
+        };
+
+        var ex = Assert.ThrowsAsync<AppException>(() => _authService.ChangePasswordAsync(dto));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ex, Is.Not.Null);
+            Assert.That(ex!.Errors, Is.Not.Null.And.Not.Empty);
+            Assert.That(ex.Errors!.FirstOrDefault(), Is.EqualTo("Something went wrong"));
+        });
+    }
+
+    [Test]
+    public void ChangePasswordAsync_UserNotFound_ThrowsException()
+    {
+        _userManager.Setup(x => x.FindByIdAsync(It.IsAny<string>())).ReturnsAsync((ApplicationUser?)null);
+
+        var dto = new ChangePasswordRequestDto
+        {
+            UserId = Guid.NewGuid(),
+            CurrentPassword = "oldpass",
+            NewPassword = "newpass"
+        };
+
+        Assert.ThrowsAsync<UserNotExistsException>(() => _authService.ChangePasswordAsync(dto));
+    }
+
+    [Test]
+    public void RefreshTokenAsync_InvalidAccessToken_Throws()
     {
         var dto = new RefreshTokenRequestDto
         {
             AccessToken = "invalid.token",
+            RefreshToken = "any"
+        };
+
+        Assert.ThrowsAsync<InvalidTokenException>(() => _authService.RefreshTokenAsync(dto));
+    }
+
+    [Test]
+    public void RefreshTokenAsync_UserNullOrTokenInvalid_Throws()
+    {
+        var token = GenerateValidExpiredAccessToken("user@email.com");
+
+        _userManager.Setup(m => m.FindByNameAsync("user@email.com"))
+            .ReturnsAsync((ApplicationUser?)null);
+
+        var dto = new RefreshTokenRequestDto
+        {
+            AccessToken = token,
+            RefreshToken = "wrong"
+        };
+
+        Assert.ThrowsAsync<InvalidTokenException>(() => _authService.RefreshTokenAsync(dto));
+    }
+
+    [Test]
+    public void RefreshTokenAsync_RefreshTokenMismatch_Throws()
+    {
+        var user = new ApplicationUser
+        {
+            Email = "user@email.com",
+            RefreshToken = "real-token",
+            RefreshTokenExpiryTime = DateTime.UtcNow.AddMinutes(5)
+        };
+
+        _userManager.Setup(m => m.FindByNameAsync(user.Email)).ReturnsAsync(user);
+
+        var dto = new RefreshTokenRequestDto
+        {
+            AccessToken = GenerateValidExpiredAccessToken(user.Email),
+            RefreshToken = "wrong"
+        };
+
+        Assert.ThrowsAsync<InvalidTokenException>(() => _authService.RefreshTokenAsync(dto));
+    }
+
+    [Test]
+    public void RefreshTokenAsync_RefreshTokenExpired_Throws()
+    {
+        var user = new ApplicationUser
+        {
+            Email = "user@email.com",
+            RefreshToken = "refresh",
+            RefreshTokenExpiryTime = DateTime.UtcNow.AddMinutes(-1)
+        };
+
+        _userManager.Setup(m => m.FindByNameAsync(user.Email)).ReturnsAsync(user);
+
+        var dto = new RefreshTokenRequestDto
+        {
+            AccessToken = GenerateValidExpiredAccessToken(user.Email),
             RefreshToken = "refresh"
         };
 
         Assert.ThrowsAsync<InvalidTokenException>(() => _authService.RefreshTokenAsync(dto));
+    }
+
+    [Test]
+    public void RefreshTokenAsync_UserLockedOut_Throws()
+    {
+        var user = new ApplicationUser
+        {
+            Email = "user@email.com",
+            RefreshToken = "refresh",
+            RefreshTokenExpiryTime = DateTime.UtcNow.AddMinutes(10)
+        };
+
+        _userManager.Setup(m => m.FindByNameAsync(user.Email)).ReturnsAsync(user);
+        _userManager.Setup(m => m.IsLockedOutAsync(user)).ReturnsAsync(true);
+
+        var dto = new RefreshTokenRequestDto
+        {
+            AccessToken = GenerateValidExpiredAccessToken(user.Email),
+            RefreshToken = "refresh"
+        };
+
+        Assert.ThrowsAsync<UserAccountLockedException>(() => _authService.RefreshTokenAsync(dto));
+    }
+
+    [Test]
+    public async Task RefreshTokenAsync_TokenNotExpired_BlacklistCalled()
+    {
+        var email = "user@email.com";
+        var userId = Guid.NewGuid();
+        var user = new ApplicationUser
+        {
+            Id = userId,
+            Email = email,
+            UserName = email,
+            FullName = "User Token",
+            RefreshToken = "refresh",
+            RefreshTokenExpiryTime = DateTimeOffset.UtcNow.AddMinutes(10)
+        };
+
+        var token = GenerateValidExpiredAccessToken(email);
+
+        _userManager.Setup(m => m.FindByNameAsync(email)).ReturnsAsync(user);
+        _userManager.Setup(m => m.IsLockedOutAsync(user)).ReturnsAsync(false);
+        _userManager.Setup(m => m.GetRolesAsync(user)).ReturnsAsync(new List<string>());
+        _userManager.Setup(m => m.GetClaimsAsync(user)).ReturnsAsync(new List<Claim>());
+        _userManager.Setup(m => m.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
+        _tokenService.Setup(t => t.BlacklistTokenAsync(token, It.IsAny<DateTime>())).Returns(Task.CompletedTask);
+
+        var dto = new RefreshTokenRequestDto
+        {
+            AccessToken = token,
+            RefreshToken = user.RefreshToken!
+        };
+
+        var result = await _authService.RefreshTokenAsync(dto);
+
+        Assert.That(result.Item1, Is.EqualTo(CustomCode.Success));
+        Assert.That(result.Item2.AccessToken, Is.Not.Null.And.Not.Empty);
+    }
+
+
+    [Test]
+    public async Task RefreshTokenAsync_ValidRequest_ReturnsNewTokens()
+    {
+        var userId = Guid.NewGuid();
+        var email = "refreshuser@example.com";
+        var user = new ApplicationUser
+        {
+            Id = userId,
+            Email = email,
+            UserName = email,
+            FullName = "Refresh User",
+            RefreshToken = "old-refresh-token",
+            RefreshTokenExpiryTime = DateTime.UtcNow.AddMinutes(5)
+        };
+
+        var accessToken = GenerateValidExpiredAccessToken(email);
+
+        _userManager.Setup(x => x.FindByNameAsync(email)).ReturnsAsync(user);
+        _userManager.Setup(x => x.IsLockedOutAsync(user)).ReturnsAsync(false);
+        _userManager.Setup(x => x.GetRolesAsync(user)).ReturnsAsync(new List<string> { "User" });
+        _userManager.Setup(x => x.GetClaimsAsync(user)).ReturnsAsync(new List<Claim>());
+        _userManager.Setup(x => x.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
+
+        var dto = new RefreshTokenRequestDto
+        {
+            AccessToken = accessToken,
+            RefreshToken = user.RefreshToken!
+        };
+
+        var result = await _authService.RefreshTokenAsync(dto);
+
+        Assert.That(result.Item1, Is.EqualTo(CustomCode.Success));
+        Assert.That(result.Item2.AccessToken, Is.Not.Null.And.Not.Empty);
+        Assert.That(result.Item2.RefreshToken, Is.Not.Null.And.Not.Empty);
+    }
+
+    private string GenerateValidExpiredAccessToken(string email)
+    {
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var key = Encoding.UTF8.GetBytes("super_secret_key_1234567890123456");
+
+        var now = DateTime.UtcNow;
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(new[]
+            {
+            new Claim(ClaimTypes.Name, email),
+            new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString())
+        }),
+            NotBefore = now.AddMinutes(-10),
+            Expires = now.AddMinutes(-5),
+            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
+            Issuer = "issuer",
+            Audience = "audience"
+        };
+
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        return tokenHandler.WriteToken(token);
     }
 }

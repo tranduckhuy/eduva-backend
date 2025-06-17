@@ -48,6 +48,21 @@ public class JwtHandler_Tests
     }
 
     [Test]
+    public void GetSigningCredentials_ShouldThrow_WhenSecretKeyMissing()
+    {
+        var mockSection = new Mock<IConfigurationSection>();
+        mockSection.Setup(s => s["SecretKey"]).Returns((string?)null);
+        mockSection.Setup(s => s["ValidIssuer"]).Returns("issuer");
+        mockSection.Setup(s => s["ValidAudience"]).Returns("audience");
+        mockSection.Setup(s => s["ExpiryInSecond"]).Returns("3600");
+
+        _configurationMock.Setup(c => c.GetSection("JwtSettings")).Returns(mockSection.Object);
+        var handler = new JwtHandler(_configurationMock.Object, _loggerMock.Object);
+
+        Assert.Throws<InvalidDataException>(() => handler.GetSigningCredentials());
+    }
+
+    [Test]
     public void GetExpiryInSecond_ShouldReturn3600()
     {
         var expiry = _jwtHandler.GetExpiryInSecond();
@@ -90,6 +105,32 @@ public class JwtHandler_Tests
         var jwt = tokenHandler.WriteToken(token);
 
         Assert.Throws<InvalidTokenException>(() => _jwtHandler.GetPrincipalFromExpiredToken(jwt));
+    }
+
+    [Test]
+    public void GetPrincipalFromExpiredToken_ShouldThrow_WhenTokenIsNotJwtSecurityToken()
+    {
+        var handler = new JwtSecurityTokenHandler();
+        var creds = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(ValidLongKey)), SecurityAlgorithms.HmacSha256);
+
+        // create token manually and tamper type
+        var token = new JwtSecurityToken(
+            issuer: "TestIssuer",
+            audience: "TestAudience",
+            claims: new[] { new Claim(ClaimTypes.NameIdentifier, "1") },
+            notBefore: DateTime.UtcNow.AddMinutes(-10),
+            expires: DateTime.UtcNow.AddMinutes(-5),
+            signingCredentials: creds
+        );
+
+        var tokenString = handler.WriteToken(token);
+
+        // simulate tamper by modifying payload so it becomes uncastable
+        var parts = tokenString.Split('.');
+        parts[1] = Convert.ToBase64String(Encoding.UTF8.GetBytes("{\"typ\":\"non-jwt\"}"));
+        var tampered = string.Join('.', parts);
+
+        Assert.Throws<InvalidTokenException>(() => _jwtHandler.GetPrincipalFromExpiredToken(tampered));
     }
 
     [Test]
