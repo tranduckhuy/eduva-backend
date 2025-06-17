@@ -44,7 +44,7 @@ public class TokenHelper_Tests
         Assert.Multiple(() =>
         {
             Assert.That(token, Is.Not.Null.And.Not.Empty);
-            Assert.That(tokenBytes.Length, Is.EqualTo(64));
+            Assert.That(tokenBytes, Has.Length.EqualTo(64));
         });
     }
 

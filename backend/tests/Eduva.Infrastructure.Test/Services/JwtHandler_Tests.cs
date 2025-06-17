@@ -62,9 +62,12 @@ public class JwtHandler_Tests
 
         var token = _jwtHandler.GenerateTokenOptions(creds, claims);
 
-        Assert.That(token, Is.Not.Null);
-        Assert.That(token.Claims.Any(c => c.Type == JwtRegisteredClaimNames.Iat), Is.True);
-        Assert.That(token.Claims.Any(c => c.Type == ClaimTypes.NameIdentifier && c.Value == "123"), Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(token, Is.Not.Null);
+            Assert.That(token.Claims.Any(c => c.Type == JwtRegisteredClaimNames.Iat), Is.True);
+            Assert.That(token.Claims.Any(c => c.Type == ClaimTypes.NameIdentifier && c.Value == "123"), Is.True);
+        });
     }
 
     [Test]
@@ -98,9 +101,12 @@ public class JwtHandler_Tests
 
         var principal = _jwtHandler.GetPrincipalFromExpiredToken(jwt);
 
-        Assert.That(principal, Is.Not.Null);
-        Assert.That(principal.Identity, Is.Not.Null);
-        Assert.That(principal.Identity!.IsAuthenticated, Is.True);
-        Assert.That(principal.Claims.Any(c => c.Type == ClaimTypes.NameIdentifier && c.Value == "1"), Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(principal, Is.Not.Null);
+            Assert.That(principal.Identity, Is.Not.Null);
+            Assert.That(principal.Identity!.IsAuthenticated, Is.True);
+            Assert.That(principal.Claims.Any(c => c.Type == ClaimTypes.NameIdentifier && c.Value == "1"), Is.True);
+        });
     }
 }

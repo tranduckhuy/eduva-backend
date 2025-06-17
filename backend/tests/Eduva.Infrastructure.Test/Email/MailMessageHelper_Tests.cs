@@ -27,7 +27,7 @@ public class MailMessageHelper_Tests
         Assert.Multiple(() =>
         {
             Assert.That(message, Is.Not.Null);
-            Assert.That(message.To.Count, Is.EqualTo(1));
+            Assert.That(message.To, Has.Count.EqualTo(1));
             Assert.That(message.To[0].Email, Is.EqualTo(user.Email));
             Assert.That(message.To[0].DisplayName, Is.EqualTo(user.FullName));
             Assert.That(message.Subject, Is.EqualTo(subject));
