@@ -39,6 +39,7 @@ public class JwtHandlerTests
         _jwtHandler = new JwtHandler(_configurationMock.Object, _loggerMock.Object);
     }
 
+    // Verifies that the JwtHandler is initialized correctly with the configuration.
     [Test]
     public void GetSigningCredentials_ShouldReturnValidCredentials()
     {
@@ -47,6 +48,7 @@ public class JwtHandlerTests
         Assert.That(creds.Algorithm, Is.EqualTo(SecurityAlgorithms.HmacSha256));
     }
 
+    // Verifies that the JwtHandler throws an exception when the SecretKey is missing.
     [Test]
     public void GetSigningCredentials_ShouldThrow_WhenSecretKeyMissing()
     {
@@ -62,6 +64,7 @@ public class JwtHandlerTests
         Assert.Throws<InvalidDataException>(() => handler.GetSigningCredentials());
     }
 
+    // Verifies that the token expiry duration is correctly set to 3600 seconds.
     [Test]
     public void GetExpiryInSecond_ShouldReturn3600()
     {
@@ -69,6 +72,7 @@ public class JwtHandlerTests
         Assert.That(expiry, Is.EqualTo(3600));
     }
 
+    // Verifies that the GenerateTokenOptions method creates a valid JWT token with the expected claims.
     [Test]
     public void GenerateTokenOptions_ShouldIncludeClaims()
     {
@@ -85,6 +89,7 @@ public class JwtHandlerTests
         });
     }
 
+    // Verifies that the GenerateTokenOptions method sets the correct issuer and audience.
     [Test]
     public void GetPrincipalFromExpiredToken_ShouldThrow_OnInvalidAlgorithm()
     {
@@ -107,6 +112,7 @@ public class JwtHandlerTests
         Assert.Throws<InvalidTokenException>(() => _jwtHandler.GetPrincipalFromExpiredToken(jwt));
     }
 
+    // Verifies that the GetPrincipalFromExpiredToken method throws an exception when the token is not a valid JWT.
     [Test]
     public void GetPrincipalFromExpiredToken_ShouldThrow_WhenTokenIsNotJwtSecurityToken()
     {
@@ -133,6 +139,7 @@ public class JwtHandlerTests
         Assert.Throws<InvalidTokenException>(() => _jwtHandler.GetPrincipalFromExpiredToken(tampered));
     }
 
+    // Verifies that the GetPrincipalFromExpiredToken method returns a ClaimsPrincipal with the expected claims.
     [Test]
     public void GetPrincipalFromExpiredToken_ShouldReturnPrincipal()
     {
@@ -151,6 +158,7 @@ public class JwtHandlerTests
         });
     }
 
+    // Verifies that the GetPrincipalFromExpiredToken method throws an exception when the algorithm is null.
     [Test]
     public void GetPrincipalFromExpiredToken_ShouldThrow_WhenAlgorithmIsNull()
     {

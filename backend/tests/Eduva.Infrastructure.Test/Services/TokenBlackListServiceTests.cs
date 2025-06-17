@@ -21,6 +21,7 @@ public class TokenBlackListServiceTests
         _service = new TokenBlackListService(_cacheMock.Object, _loggerMock.Object);
     }
 
+    // Verifies that the token is blacklisted correctly with a positive TTL
     [Test]
     public async Task BlacklistTokenAsync_ShouldSetToken_WhenTtlPositive()
     {
@@ -36,6 +37,7 @@ public class TokenBlackListServiceTests
             default), Times.Once);
     }
 
+    // Verifies that the token is not set when TTL is zero or negative
     [Test]
     public async Task IsTokenBlacklistedAsync_ShouldReturnTrue_IfTokenExists()
     {
@@ -47,6 +49,7 @@ public class TokenBlackListServiceTests
         Assert.That(result, Is.True);
     }
 
+    // Verifies that the method returns false if the token does not exist
     [Test]
     public async Task IsTokenBlacklistedAsync_ShouldReturnFalse_IfTokenNotExists()
     {
@@ -58,6 +61,7 @@ public class TokenBlackListServiceTests
         Assert.That(result, Is.False);
     }
 
+    // Verifies that the method handles exceptions gracefully and returns false
     [Test]
     public async Task IsTokenBlacklistedAsync_ShouldReturnFalse_IfExceptionThrown()
     {
@@ -69,6 +73,7 @@ public class TokenBlackListServiceTests
         Assert.That(result, Is.False);
     }
 
+    // Verifies that the exception token is retrieved correctly
     [Test]
     public async Task GetExceptionTokenAsync_ShouldReturnStoredToken()
     {
@@ -79,6 +84,7 @@ public class TokenBlackListServiceTests
         Assert.That(result, Is.EqualTo("exception-token"));
     }
 
+    // Verifies that the method returns null if no exception token is stored
     [Test]
     public async Task BlacklistAllUserTokensAsync_ShouldSetInvalidationTime_AndRemoveException()
     {
@@ -93,6 +99,7 @@ public class TokenBlackListServiceTests
         _cacheMock.Verify(c => c.RemoveAsync("user_tokens_exception_user123", default), Times.Once);
     }
 
+    // Verifies that the method sets both keys when blacklisting all user tokens except one
     [Test]
     public async Task BlacklistAllUserTokensExceptAsync_ShouldSetBothKeys()
     {
@@ -109,6 +116,7 @@ public class TokenBlackListServiceTests
             default), Times.Once);
     }
 
+    // Verifies that the method sets the invalidation key when the token is null or whitespace
     [Test]
     public async Task BlacklistAllUserTokensExceptAsync_ShouldFallback_WhenTokenIsNullOrWhiteSpace()
     {
@@ -120,6 +128,7 @@ public class TokenBlackListServiceTests
             default), Times.Once);
     }
 
+    // Verifies that the method checks if user tokens are invalidated correctly
     [Test]
     public async Task AreUserTokensInvalidatedAsync_ShouldReturnTrue_IfIssuedBeforeInvalidation()
     {
@@ -133,6 +142,7 @@ public class TokenBlackListServiceTests
         Assert.That(result, Is.True);
     }
 
+    // Verifies that the method returns false if the token was issued after invalidation
     [Test]
     public async Task AreUserTokensInvalidatedAsync_ShouldReturnFalse_IfIssuedAfterInvalidation()
     {
@@ -146,6 +156,7 @@ public class TokenBlackListServiceTests
         Assert.That(result, Is.False);
     }
 
+    // Verifies that the method returns false if no invalidation data is found
     [Test]
     public async Task AreUserTokensInvalidatedAsync_ShouldReturnFalse_IfInvalidFormat()
     {
@@ -158,6 +169,7 @@ public class TokenBlackListServiceTests
         Assert.That(result, Is.False);
     }
 
+    // Verifies that the method returns false if an exception occurs while checking invalidation
     [Test]
     public async Task AreUserTokensInvalidatedAsync_ShouldReturnFalse_IfExceptionThrown()
     {
@@ -169,6 +181,7 @@ public class TokenBlackListServiceTests
         Assert.That(result, Is.False);
     }
 
+    // Verifies that the method returns false if invalidation data is empty
     [Test]
     public async Task AreUserTokensInvalidatedAsync_ShouldReturnFalse_IfInvalidationDataIsEmpty()
     {

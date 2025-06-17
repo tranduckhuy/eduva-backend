@@ -10,6 +10,7 @@ namespace Eduva.Infrastructure.Test.Services;
 [TestFixture]
 public class TokenHelperTests
 {
+    // Verifies that the GetClaims method returns the correct claims for a user
     [Test]
     public void GetClaims_ShouldReturnStandardAndRoleClaims()
     {
@@ -35,6 +36,7 @@ public class TokenHelperTests
         });
     }
 
+    // Verifies that the GenerateRefreshToken method returns a valid Base64 string of expected length
     [Test]
     public void GenerateRefreshToken_ShouldReturnBase64StringOfExpectedLength()
     {
@@ -48,6 +50,7 @@ public class TokenHelperTests
         });
     }
 
+    // Verifies that the GenerateRefreshToken method returns a different token each time it is called
     [Test]
     public void GenerateRefreshToken_ShouldReturnDifferentValueEachTime()
     {
@@ -57,6 +60,7 @@ public class TokenHelperTests
         Assert.That(token1, Is.Not.EqualTo(token2));
     }
 
+    // Verifies that the GetTokenExpiry method returns the correct expiry time from a JWT token
     [Test]
     public void GetTokenExpiry_ShouldReturnValidExpiry()
     {

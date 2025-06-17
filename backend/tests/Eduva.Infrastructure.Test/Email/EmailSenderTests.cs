@@ -32,6 +32,7 @@ namespace Eduva.Infrastructure.Test.Email
             _emailSender = new EmailSender(_config, _loggerMock.Object);
         }
 
+        // Verifies that sending an email without attachments does not throw any exceptions.
         [Test]
         public async Task SendEmailAsync_NoAttachments_ShouldNotThrow()
         {
@@ -52,6 +53,7 @@ namespace Eduva.Infrastructure.Test.Email
             }
         }
 
+        // Verifies that sending an email with attachments does not throw any exceptions.
         [Test]
         public async Task SendEmailAsync_WithAttachments_ShouldNotThrow()
         {
@@ -86,6 +88,7 @@ namespace Eduva.Infrastructure.Test.Email
             }
         }
 
+        // Verifies that sending an email using the Brevo API does not throw any exceptions.
         [Test]
         public async Task SendEmailBrevoAsync_ShouldNotThrow()
         {
@@ -104,6 +107,7 @@ namespace Eduva.Infrastructure.Test.Email
             }
         }
 
+        // Verifies that when SMTP configuration is invalid, an error is logged during email sending.
         [Test]
         public async Task SendEmailAsync_ShouldLogError_OnInvalidSmtp()
         {

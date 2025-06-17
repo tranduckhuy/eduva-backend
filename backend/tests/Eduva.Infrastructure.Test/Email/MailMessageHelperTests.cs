@@ -6,6 +6,7 @@ namespace Eduva.Infrastructure.Test.Email;
 [TestFixture]
 public class MailMessageHelperTests
 {
+    // Verifies that the CreateMessage method builds an EmailMessage with the correct properties.
     [Test]
     public void CreateMessage_ShouldBuildCorrectEmailMessage()
     {
@@ -38,6 +39,7 @@ public class MailMessageHelperTests
         });
     }
 
+    // Verifies that the CreateMessage method falls back to email when FullName is null.
     [Test]
     public void CreateMessage_ShouldFallbackToEmail_WhenFullNameIsNull()
     {
@@ -66,6 +68,7 @@ public class MailMessageHelperTests
         });
     }
 
+    // Verifies that the CreateMessage method correctly appends query parameters to the client URL.
     [Test]
     public void CreateMessage_ShouldHandleUrlWithExistingQueryParameters()
     {
