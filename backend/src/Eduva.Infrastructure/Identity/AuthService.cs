@@ -200,6 +200,7 @@ namespace Eduva.Infrastructure.Identity
 
             return CustomCode.OtpSentSuccessfully;
         }
+
         public async Task<CustomCode> ConfirmEnable2FaOtpAsync(Confirm2FaDto request)
         {
             var user = await _userManager.FindByIdAsync(request.UserId.ToString()) ?? throw new UserNotExistsException();
@@ -257,7 +258,9 @@ namespace Eduva.Infrastructure.Identity
             {
                 AccessToken = accessToken,
                 RefreshToken = refreshToken,
-                ExpiresIn = _jwtHandler.GetExpiryInSecond()
+                ExpiresIn = _jwtHandler.GetExpiryInSecond(),
+                Requires2FA = false,
+                Email = claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value ?? user.Email
             };
         }
 
@@ -397,7 +400,7 @@ namespace Eduva.Infrastructure.Identity
             {
                 var errors = result.Errors.Select(e => e.Description).ToList();
                 _logger.LogError("Failed to change password. Errors: {Errors}", string.Join(", ", errors));
-                throw new AppException(CustomCode.Unauthorized, errors);
+                throw new AppException(CustomCode.ProvidedInformationIsInValid, errors);
             }
 
             // Handle logout behavior
