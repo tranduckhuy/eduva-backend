@@ -22,7 +22,7 @@ using System.Text;
 namespace Eduva.Infrastructure.Test.Services;
 
 [TestFixture]
-public class AuthService_Tests
+public class AuthServiceTests
 {
     private Mock<UserManager<ApplicationUser>> _userManager = default!;
     private Mock<IEmailSender> _emailSender = default!;

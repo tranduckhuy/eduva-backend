@@ -8,7 +8,7 @@ using System.Text;
 namespace Eduva.Infrastructure.Test.Services;
 
 [TestFixture]
-public class TokenHelper_Tests
+public class TokenHelperTests
 {
     [Test]
     public void GetClaims_ShouldReturnStandardAndRoleClaims()

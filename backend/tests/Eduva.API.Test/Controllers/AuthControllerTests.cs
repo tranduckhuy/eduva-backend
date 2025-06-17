@@ -14,7 +14,7 @@ using System.Security.Claims;
 namespace Eduva.API.Test.Controllers
 {
     [TestFixture]
-    public class AuthController_Tests
+    public class AuthControllerTests
     {
         private Mock<IAuthService> _authServiceMock;
         private Mock<ILogger<AuthController>> _loggerMock;

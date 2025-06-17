@@ -11,7 +11,7 @@ using System.Text;
 namespace Eduva.Infrastructure.Test.Services;
 
 [TestFixture]
-public class JwtHandler_Tests
+public class JwtHandlerTests
 {
     private JwtHandler _jwtHandler;
     private Mock<IConfiguration> _configurationMock;

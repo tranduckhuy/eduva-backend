@@ -9,7 +9,7 @@ using System.Text;
 namespace Eduva.Infrastructure.Test.Email
 {
     [TestFixture]
-    public class EmailSender_Tests
+    public class EmailSenderTests
     {
         private EmailSender _emailSender;
         private EmailConfiguration _config;

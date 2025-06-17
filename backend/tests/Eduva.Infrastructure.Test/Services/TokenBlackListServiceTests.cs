@@ -7,7 +7,7 @@ using System.Text;
 namespace Eduva.Infrastructure.Test.Services;
 
 [TestFixture]
-public class TokenBlackListService_Tests
+public class TokenBlackListServiceTests
 {
     private TokenBlackListService _service;
     private Mock<IDistributedCache> _cacheMock;

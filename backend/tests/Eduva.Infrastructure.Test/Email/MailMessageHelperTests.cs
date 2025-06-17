@@ -4,7 +4,7 @@ using Eduva.Infrastructure.Email;
 namespace Eduva.Infrastructure.Test.Email;
 
 [TestFixture]
-public class MailMessageHelper_Tests
+public class MailMessageHelperTests
 {
     [Test]
     public void CreateMessage_ShouldBuildCorrectEmailMessage()
