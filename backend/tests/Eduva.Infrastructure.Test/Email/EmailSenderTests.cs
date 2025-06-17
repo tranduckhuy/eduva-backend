@@ -33,7 +33,7 @@ namespace Eduva.Infrastructure.Test.Email
         }
 
         [Test]
-        public async Task SendEmailAsync_NoAttachments_ShouldSucceed()
+        public async Task SendEmailAsync_NoAttachments_ShouldNotThrow()
         {
             var message = new EmailMessage(
                 new List<EmailAddress> { new EmailAddress("to@example.com", "To User") },
@@ -42,11 +42,18 @@ namespace Eduva.Infrastructure.Test.Email
                 null
             );
 
-            await _emailSender.SendEmailAsync(message);
+            try
+            {
+                await _emailSender.SendEmailAsync(message);
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail($"Expected no exception, but got: {ex.GetType().Name} - {ex.Message}");
+            }
         }
 
         [Test]
-        public async Task SendEmailAsync_WithAttachments_ShouldSucceed()
+        public async Task SendEmailAsync_WithAttachments_ShouldNotThrow()
         {
             var content = "This is test file content";
             var stream = new MemoryStream(Encoding.UTF8.GetBytes(content));
@@ -66,21 +73,35 @@ namespace Eduva.Infrastructure.Test.Email
                 new List<EmailAddress> { new EmailAddress("to@example.com", "To User") },
                 "Test Subject With File",
                 "Test Content",
-                formFiles //
+                formFiles
             );
 
-            await _emailSender.SendEmailAsync(message);
+            try
+            {
+                await _emailSender.SendEmailAsync(message);
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail($"Expected no exception, but got: {ex.GetType().Name} - {ex.Message}");
+            }
         }
 
         [Test]
-        public async Task SendEmailBrevoAsync_ShouldSucceed()
+        public async Task SendEmailBrevoAsync_ShouldNotThrow()
         {
-            await _emailSender.SendEmailBrevoAsync(
-                "receiver@example.com",
-                "Receiver",
-                "Test Subject",
-                "Test Brevo Email Content"
-            );
+            try
+            {
+                await _emailSender.SendEmailBrevoAsync(
+                    "receiver@example.com",
+                    "Receiver",
+                    "Test Subject",
+                    "Test Brevo Email Content"
+                );
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail($"Expected no exception, but got: {ex.GetType().Name} - {ex.Message}");
+            }
         }
 
         [Test]
@@ -106,6 +127,17 @@ namespace Eduva.Infrastructure.Test.Email
             );
 
             await emailSender.SendEmailAsync(message);
+
+            _loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("An error occurred while sending email")),
+                    It.IsAny<Exception?>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
+                ),
+                Times.AtLeastOnce
+            );
         }
     }
 }

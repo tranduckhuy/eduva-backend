@@ -1066,8 +1066,11 @@ public class AuthServiceTests
 
         var result = await _authService.RefreshTokenAsync(dto);
 
-        Assert.That(result.Item1, Is.EqualTo(CustomCode.Success));
-        Assert.That(result.Item2.AccessToken, Is.Not.Null.And.Not.Empty);
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Item1, Is.EqualTo(CustomCode.Success));
+            Assert.That(result.Item2.AccessToken, Is.Not.Null.And.Not.Empty);
+        });
     }
 
 
@@ -1102,12 +1105,15 @@ public class AuthServiceTests
 
         var result = await _authService.RefreshTokenAsync(dto);
 
-        Assert.That(result.Item1, Is.EqualTo(CustomCode.Success));
-        Assert.That(result.Item2.AccessToken, Is.Not.Null.And.Not.Empty);
-        Assert.That(result.Item2.RefreshToken, Is.Not.Null.And.Not.Empty);
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Item1, Is.EqualTo(CustomCode.Success));
+            Assert.That(result.Item2.AccessToken, Is.Not.Null.And.Not.Empty);
+            Assert.That(result.Item2.RefreshToken, Is.Not.Null.And.Not.Empty);
+        });
     }
 
-    private string GenerateValidExpiredAccessToken(string email)
+    private static string GenerateValidExpiredAccessToken(string email)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.UTF8.GetBytes("super_secret_key_1234567890123456");
@@ -1154,7 +1160,7 @@ public class AuthServiceTests
     }
 
 
-    private string GenerateJwtAccessToken(string userId, DateTime expiry)
+    private static string GenerateJwtAccessToken(string userId, DateTime expiry)
     {
         var handler = new JwtSecurityTokenHandler();
         var key = Encoding.UTF8.GetBytes("super_secret_key_1234567890123456");
