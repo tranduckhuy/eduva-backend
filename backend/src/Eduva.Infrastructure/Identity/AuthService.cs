@@ -258,7 +258,9 @@ namespace Eduva.Infrastructure.Identity
             {
                 AccessToken = accessToken,
                 RefreshToken = refreshToken,
-                ExpiresIn = _jwtHandler.GetExpiryInSecond()
+                ExpiresIn = _jwtHandler.GetExpiryInSecond(),
+                Requires2FA = false,
+                Email = claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value ?? user.Email
             };
         }
 

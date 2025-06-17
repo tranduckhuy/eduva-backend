@@ -168,4 +168,15 @@ public class TokenBlackListService_Tests
 
         Assert.That(result, Is.False);
     }
+
+    [Test]
+    public async Task AreUserTokensInvalidatedAsync_ShouldReturnFalse_IfInvalidationDataIsEmpty()
+    {
+        _cacheMock.Setup(c => c.GetAsync(It.IsAny<string>(), default))
+                  .ReturnsAsync(Array.Empty<byte>());
+
+        var result = await _service.AreUserTokensInvalidatedAsync("user123", DateTime.UtcNow);
+
+        Assert.That(result, Is.False);
+    }
 }

@@ -150,4 +150,46 @@ public class JwtHandler_Tests
             Assert.That(principal.Claims.Any(c => c.Type == ClaimTypes.NameIdentifier && c.Value == "1"), Is.True);
         });
     }
+
+    [Test]
+    public void GetPrincipalFromExpiredToken_ShouldThrow_WhenAlgorithmIsNull()
+    {
+        var creds = _jwtHandler.GetSigningCredentials();
+        var token = new JwtSecurityToken(
+            issuer: "TestIssuer",
+            audience: "TestAudience",
+            claims: new[] { new Claim(ClaimTypes.NameIdentifier, "1") },
+            notBefore: DateTime.UtcNow.AddMinutes(-10),
+            expires: DateTime.UtcNow.AddMinutes(-5),
+            signingCredentials: creds
+        );
+
+        // generate token and decode to modify header manually
+        var handler = new JwtSecurityTokenHandler();
+        var tokenStr = handler.WriteToken(token);
+        var parts = tokenStr.Split('.');
+
+        // decode header, remove alg
+        var jsonHeader = Encoding.UTF8.GetString(Convert.FromBase64String(PadBase64(parts[0])));
+        var headerObj = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(jsonHeader)!;
+        headerObj.Remove("alg");
+
+        var newHeaderJson = System.Text.Json.JsonSerializer.Serialize(headerObj);
+        parts[0] = Convert.ToBase64String(Encoding.UTF8.GetBytes(newHeaderJson)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+
+        var tampered = string.Join('.', parts);
+
+        Assert.Throws<InvalidTokenException>(() => _jwtHandler.GetPrincipalFromExpiredToken(tampered));
+    }
+
+    // Helper to pad base64 for decoding
+    private static string PadBase64(string input)
+    {
+        switch (input.Length % 4)
+        {
+            case 2: return input + "==";
+            case 3: return input + "=";
+            default: return input;
+        }
+    }
 }
