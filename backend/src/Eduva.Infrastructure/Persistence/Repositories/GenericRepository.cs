@@ -57,15 +57,14 @@ namespace Eduva.Infrastructure.Persistence.Repositories
         {
             return await GetByIdAsync(id) != null;
         }
+        public async Task<bool> ExistsAsync(Expression<Func<TEntity, bool>> predicate)
+        {
+            return await _dbSet.AnyAsync(predicate);
+        }
 
         public Task<TEntity?> FindAsync(TKey id)
         {
             return GetByIdAsync(id);
-        }
-
-        public async Task<bool> ExistsAsync(Expression<Func<TEntity, bool>> predicate)
-        {
-            return await _dbSet.AnyAsync(predicate);
         }
 
         public async Task<Pagination<TEntity>> GetWithSpecAsync<TSpec>(TSpec spec) where TSpec : ISpecification<TEntity>

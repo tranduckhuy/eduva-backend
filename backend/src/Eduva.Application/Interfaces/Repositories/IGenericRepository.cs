@@ -15,7 +15,7 @@ namespace Eduva.Application.Interfaces.Repositories
         void Remove(TEntity entity);
         void RemoveRange(IEnumerable<TEntity> entities);
         Task<bool> ExistsAsync(TKey id);
-        Task<TEntity?> FindAsync(TKey id);
         Task<bool> ExistsAsync(Expression<Func<TEntity, bool>> predicate);
+        Task<TEntity?> FindAsync(TKey id);
     }
 }

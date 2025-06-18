@@ -1,5 +1,4 @@
 ﻿using Eduva.API.Controllers.Base;
-using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Common.Models;
 using Eduva.Application.Features.SubscriptionPlans.Queries;
 using Eduva.Application.Features.SubscriptionPlans.Responses;
@@ -9,7 +8,6 @@ using Eduva.Shared.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace Eduva.API.Controllers.SubscriptionPlans
 {
@@ -31,9 +29,6 @@ namespace Eduva.API.Controllers.SubscriptionPlans
         {
             return await HandleRequestAsync<Pagination<SubscriptionPlanResponse>>(async () =>
             {
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
-                              ?? throw new AppException(CustomCode.UserIdNotFound);
-
                 var result = await _mediator.Send(new GetSubscriptionPlansQuery(specParam));
                 return (CustomCode.Success, result);
             });
