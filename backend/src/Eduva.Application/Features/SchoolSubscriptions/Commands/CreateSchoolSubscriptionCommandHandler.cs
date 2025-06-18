@@ -1,4 +1,5 @@
 ﻿using Eduva.Application.Exceptions.School;
+using Eduva.Application.Exceptions.SchoolSubscription;
 using Eduva.Application.Exceptions.SubscriptionPlan;
 using Eduva.Application.Features.SchoolSubscriptions.Response;
 using Eduva.Application.Features.SubscriptionPlans.Configurations;
@@ -50,10 +51,46 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Commands
             var transactionId = orderCode;
             var now = DateTimeOffset.UtcNow;
 
+            decimal? deductedAmount = null;
+            double? deductedPercent = null;
+
+            var existingSub = await schoolSubRepo.GetActiveSubscriptionBySchoolIdAsync(school.Id);
+
+            if (existingSub != null)
+            {
+                if (existingSub.PlanId == request.PlanId && existingSub.BillingCycle == request.BillingCycle)
+                {
+                    throw new SchoolSubscriptionAlreadyExistsException();
+                }
+
+                var isDowngrade = (existingSub.BillingCycle == BillingCycle.Yearly && request.BillingCycle == BillingCycle.Monthly)
+                     || (request.BillingCycle == BillingCycle.Monthly && plan.PriceMonthly < existingSub.Plan.PriceMonthly)
+                     || (request.BillingCycle == BillingCycle.Yearly && plan.PricePerYear < existingSub.Plan.PricePerYear);
+
+                if (isDowngrade)
+                {
+                    throw new DowngradeNotAllowedException();
+                }
+
+                var totalDaysOld = existingSub.BillingCycle == BillingCycle.Monthly ? 30 : 365;
+                var daysUsed = (now - existingSub.StartDate).TotalDays;
+                var daysLeft = Math.Max(0, totalDaysOld - daysUsed);
+                var oldDailyRate = (double)existingSub.AmountPaid / totalDaysOld;
+                deductedAmount = (decimal)(daysLeft * oldDailyRate);
+                deductedPercent = (double)(deductedAmount ?? 0) / (double)(request.BillingCycle == BillingCycle.Monthly ? plan.PriceMonthly : plan.PricePerYear) * 100;
+                amount -= deductedAmount ?? 0;
+
+                if (amount <= 10000)
+                {
+                    amount = 10000;
+                }
+            }
+
             var subscription = new SchoolSubscription
             {
                 PlanId = plan.Id,
                 SchoolId = school.Id,
+                BillingCycle = request.BillingCycle,
                 SubscriptionStatus = SubscriptionStatus.Peding,
                 PaymentStatus = PaymentStatus.Pending,
                 PaymentMethod = PaymentMethod.PayOS,
@@ -69,10 +106,12 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Commands
             await schoolSubRepo.AddAsync(subscription);
             await _unitOfWork.CommitAsync();
 
+            var billingCode = request.BillingCycle == BillingCycle.Monthly ? "M" : "Y";
+
             var paymentRequest = new PaymentData(
                 orderCode: orderCode,
                 amount: (int)amount,
-               description: $"{plan.Name}{(request.BillingCycle == BillingCycle.Monthly ? "M" : "Y")}",
+               description: $"{plan.Name}{billingCode}",
                 items: new List<ItemData>
                 {
                     new ItemData(
@@ -94,7 +133,10 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Commands
             {
                 CheckoutUrl = result.checkoutUrl,
                 PaymentLinkId = result.paymentLinkId,
-                Amount = (long)amount
+                Amount = (long)amount,
+                DeductedAmount = deductedAmount.HasValue ? Math.Round(deductedAmount.Value, 2) : 0,
+                DeductedPercent = deductedPercent.HasValue ? Math.Round(deductedPercent.Value, 2) : 0,
+                TransactionId = transactionId.ToString(),
             };
 
             return (CustomCode.Success, response);

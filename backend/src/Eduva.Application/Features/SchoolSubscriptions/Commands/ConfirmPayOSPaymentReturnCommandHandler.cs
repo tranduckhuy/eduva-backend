@@ -35,6 +35,13 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Commands
                 throw new PaymentAlreadyConfirmedException();
             }
 
+            var oldActiveSub = await subRepo.GetActiveSubscriptionBySchoolIdAsync(subscription.SchoolId);
+            if (oldActiveSub != null && oldActiveSub.Id != subscription.Id)
+            {
+                oldActiveSub.SubscriptionStatus = SubscriptionStatus.Expired;
+                oldActiveSub.EndDate = DateTimeOffset.UtcNow;
+            }
+
             subscription.PaymentStatus = PaymentStatus.Paid;
             subscription.SubscriptionStatus = SubscriptionStatus.Active;
             subscription.LastUsageResetDate = DateTimeOffset.UtcNow;

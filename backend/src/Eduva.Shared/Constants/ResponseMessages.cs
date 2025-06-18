@@ -86,6 +86,10 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status402PaymentRequired, Message = "Payment failed. Please try again." } },
             { CustomCode.PaymentAlreadyConfirmed, new MessageDetail {
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Payment has already been confirmed." } },
+            { CustomCode.DowngradeNotAllowed, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "You cannot switch to a lower-tier plan or a shorter billing cycle." } },
+            { CustomCode.SchoolSubscriptionAlreadyExists, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "You are already subscribed to this plan and billing cycle." } },
 
             #endregion
         };

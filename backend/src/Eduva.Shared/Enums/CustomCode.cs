@@ -42,6 +42,7 @@
         SchoolSubscriptionNotFound = 4023,
         PaymentFailed = 4024,
         PaymentAlreadyConfirmed = 4025,
-
+        DowngradeNotAllowed = 4026,
+        SchoolSubscriptionAlreadyExists = 4027,
     }
 }
