@@ -35,5 +35,11 @@
         TwoFactorIsAlreadyDisabled = 4016,
         UserIdNotFound = 4017,
         AccessTokenInvalidOrExpired = 4018,
+
+
+        // File Storage Errors
+        InvalidBlobName = 4200,
+        InvalidBlobUrl = 4201,
+        BlobNotFound = 4202,
     }
 }

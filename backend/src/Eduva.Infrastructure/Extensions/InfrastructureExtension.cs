@@ -6,6 +6,7 @@ using Eduva.Infrastructure.Email;
 using Eduva.Infrastructure.Persistence.DbContext;
 using Eduva.Infrastructure.Persistence.Repositories;
 using Eduva.Infrastructure.Persistence.UnitOfWork;
+using Eduva.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,6 +33,11 @@ namespace Eduva.Infrastructure.Extensions
             var emailConfig = configuration.GetSection("EmailConfiguration").Get<EmailConfiguration>();
             services.AddSingleton(emailConfig ?? throw new InvalidDataException("EmailConfiguration is missing in appsettings.json"));
             services.AddScoped<IEmailSender, EmailSender>();
+
+            // Azure Blob Storage Options
+            var azureBlobStorageOptions = configuration.GetSection("AzureBlobStorage").Get<AzureBlobStorageOptions>();
+            services.AddSingleton(azureBlobStorageOptions ?? throw new InvalidDataException("AzureBlobStorageOptions is missing in appsettings.json"));
+            services.AddScoped<IStorageService, AzureBlobStorageService>();
 
             // Unit of Work 
             services.AddScoped<IUnitOfWork, UnitOfWork>();
