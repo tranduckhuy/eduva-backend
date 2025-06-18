@@ -35,5 +35,13 @@
         TwoFactorIsAlreadyDisabled = 4016,
         UserIdNotFound = 4017,
         AccessTokenInvalidOrExpired = 4018,
+        UserAlreadyHasSchool = 4019,
+        SchoolNotFound = 4020,
+        PlanNotFound = 4021,
+        PlanNotActive = 4022,
+        SchoolSubscriptionNotFound = 4023,
+        PaymentFailed = 4024,
+        PaymentAlreadyConfirmed = 4025,
+
     }
 }

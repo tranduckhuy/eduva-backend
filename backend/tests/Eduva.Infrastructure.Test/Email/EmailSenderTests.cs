@@ -1,5 +1,5 @@
 ﻿using Eduva.Application.Common.Models;
-using Eduva.Infrastructure.Configurations;
+using Eduva.Infrastructure.Configurations.Email;
 using Eduva.Infrastructure.Email;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;

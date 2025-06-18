@@ -72,6 +72,20 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status401Unauthorized, Message = "User ID not found in the request. Please ensure you are authenticated." } },
             { CustomCode.AccessTokenInvalidOrExpired, new MessageDetail {
                 HttpCode = StatusCodes.Status401Unauthorized, Message = "Access token is invalid or has expired." } },
+            { CustomCode.UserAlreadyHasSchool, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "User already has a school associated with their account." } },
+            { CustomCode.SchoolNotFound, new MessageDetail {
+                HttpCode = StatusCodes.Status404NotFound, Message = "School not found" } },
+            { CustomCode.PlanNotFound, new MessageDetail {
+                HttpCode = StatusCodes.Status404NotFound, Message = "Subscription plan not found" } },
+            { CustomCode.PlanNotActive, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Subscription plan is not active" } },
+            {CustomCode.SchoolSubscriptionNotFound, new MessageDetail {
+                HttpCode = StatusCodes.Status404NotFound, Message = "School subscription not found" } },
+            { CustomCode.PaymentFailed, new MessageDetail {
+                HttpCode = StatusCodes.Status402PaymentRequired, Message = "Payment failed. Please try again." } },
+            { CustomCode.PaymentAlreadyConfirmed, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Payment has already been confirmed." } },
 
             #endregion
         };

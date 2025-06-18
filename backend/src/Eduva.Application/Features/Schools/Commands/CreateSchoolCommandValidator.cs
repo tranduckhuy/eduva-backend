@@ -1,0 +1,54 @@
+﻿using Eduva.Application.Interfaces;
+using Eduva.Domain.Entities;
+using FluentValidation;
+
+namespace Eduva.Application.Features.Schools.Commands
+{
+    public class CreateSchoolCommandValidator : AbstractValidator<CreateSchoolCommand>
+    {
+        private readonly IUnitOfWork _unitOfWork;
+
+        public CreateSchoolCommandValidator(IUnitOfWork unitOfWork)
+        {
+            _unitOfWork = unitOfWork;
+
+            RuleFor(x => x.Name)
+                .NotEmpty().WithMessage("School name is required.")
+                .MaximumLength(255);
+
+            RuleFor(x => x.Code)
+                .NotEmpty().WithMessage("School code is required.")
+                .MaximumLength(50)
+                .MustAsync(CodeIsUnique).WithMessage("School code already exists.");
+
+            RuleFor(x => x.ContactEmail)
+                .NotEmpty().WithMessage("Contact email is required.")
+                .EmailAddress().WithMessage("Invalid email format.")
+                .MustAsync(EmailIsUnique).WithMessage("Email already exists.");
+
+            RuleFor(x => x.ContactPhone)
+                .NotEmpty().WithMessage("Phone number is required")
+                .Matches(@"^((03|05|07|08|09)\d{8}|02\d{9})$").WithMessage("Invalid phone number format");
+
+            RuleFor(x => x.Address)
+                .MaximumLength(255);
+
+            RuleFor(x => x.WebsiteUrl)
+                .MaximumLength(255)
+                .Must(url => string.IsNullOrWhiteSpace(url) || Uri.IsWellFormedUriString(url, UriKind.Absolute))
+                .WithMessage("Website URL must be a valid absolute URL.");
+        }
+
+        private async Task<bool> CodeIsUnique(string code, CancellationToken token)
+        {
+            var repo = _unitOfWork.GetRepository<School, int>();
+            return !await repo.ExistsAsync(s => s.Code == code);
+        }
+
+        private async Task<bool> EmailIsUnique(string email, CancellationToken token)
+        {
+            var repo = _unitOfWork.GetRepository<School, int>();
+            return !await repo.ExistsAsync(s => s.ContactEmail == email);
+        }
+    }
+}

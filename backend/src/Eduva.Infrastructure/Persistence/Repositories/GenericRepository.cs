@@ -3,6 +3,7 @@ using Eduva.Application.Common.Specifications;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Infrastructure.Persistence.DbContext;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace Eduva.Infrastructure.Persistence.Repositories
 {
@@ -55,6 +56,16 @@ namespace Eduva.Infrastructure.Persistence.Repositories
         public async Task<bool> ExistsAsync(TKey id)
         {
             return await GetByIdAsync(id) != null;
+        }
+
+        public Task<TEntity?> FindAsync(TKey id)
+        {
+            return GetByIdAsync(id);
+        }
+
+        public async Task<bool> ExistsAsync(Expression<Func<TEntity, bool>> predicate)
+        {
+            return await _dbSet.AnyAsync(predicate);
         }
 
         public async Task<Pagination<TEntity>> GetWithSpecAsync<TSpec>(TSpec spec) where TSpec : ISpecification<TEntity>

@@ -63,7 +63,7 @@ namespace Eduva.Infrastructure.Identity
                 throw new AppException(CustomCode.ProvidedInformationIsInValid, errors);
             }
 
-            await _userManager.AddToRoleAsync(newUser, nameof(Role.Student));
+            await _userManager.AddToRoleAsync(newUser, nameof(Role.SchoolAdmin));
 
             _ = SendConfirmEmailMessage(request.ClientUrl, newUser);
 

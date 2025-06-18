@@ -15,7 +15,7 @@ namespace Eduva.Domain.Entities
         public decimal CurrentPeriodAIUsageMinutes { get; set; }
         public DateTimeOffset LastUsageResetDate { get; set; }
         public DateTimeOffset PurchasedAt { get; set; }
-        
+
         public int SchoolId { get; set; }
         public virtual School School { get; set; } = null!;
 
