@@ -1,6 +1,6 @@
 ﻿using Eduva.Domain.Entities;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Eduva.Infrastructure.Persistence.Configurations
 {
@@ -48,6 +48,10 @@ namespace Eduva.Infrastructure.Persistence.Configurations
                 .IsRequired();
 
             builder.Property(ss => ss.PurchasedAt)
+                .IsRequired();
+
+            builder.Property(ss => ss.BillingCycle)
+                .HasConversion<string>()
                 .IsRequired();
 
             // Relationships (Foreign Keys)

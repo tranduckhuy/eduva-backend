@@ -32,6 +32,9 @@ namespace Eduva.Infrastructure.Persistence.Configurations
             builder.Property(lm => lm.Duration)
                 .IsRequired();
 
+            builder.Property(lm => lm.FileSize)
+                .IsRequired();
+
             builder.Property(lm => lm.IsAIContent)
                 .IsRequired();
 
@@ -47,7 +50,7 @@ namespace Eduva.Infrastructure.Persistence.Configurations
 
             // Relationships
             builder.HasOne(lm => lm.CreatedByUser)
-                .WithMany(u => u.CreatedLessonMaterials) 
+                .WithMany(u => u.CreatedLessonMaterials)
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(lm => lm.School)

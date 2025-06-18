@@ -1,7 +1,8 @@
+using Eduva.Application.Features.SubscriptionPlans.Configurations;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Application.Interfaces.Services;
-using Eduva.Infrastructure.Configurations;
+using Eduva.Infrastructure.Configurations.Email;
 using Eduva.Infrastructure.Email;
 using Eduva.Infrastructure.Persistence.DbContext;
 using Eduva.Infrastructure.Persistence.Repositories;
@@ -9,6 +10,8 @@ using Eduva.Infrastructure.Persistence.UnitOfWork;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Net.payOS;
 
 namespace Eduva.Infrastructure.Extensions
 {
@@ -41,7 +44,18 @@ namespace Eduva.Infrastructure.Extensions
             services.AddScoped<IRepositoryFactory, RepositoryFactory>();
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<ILessonMaterialRepository, LessonMaterialRepository>();
+            services.AddScoped<ISchoolSubscriptionRepository, SchoolSubscriptionRepository>();
+            services.AddScoped<ISubscriptionPlanRepository, SubscriptionPlanRepository>();
             services.AddScoped<IClassroomRepository, ClassroomRepository>();
+            services.AddScoped<ISchoolRepository, SchoolRepository>();
+            services.AddScoped<PayOS>(provider =>
+            {
+                var config = provider.GetRequiredService<IOptions<PayOSConfig>>().Value;
+                return new PayOS(config.PAYOS_CLIENT_ID, config.PAYOS_API_KEY, config.PAYOS_CHECKSUM_KEY);
+            });
+
+            // Payment Configuration
+            services.Configure<PayOSConfig>(configuration.GetSection(PayOSConfig.ConfigName));
 
             return services;
         }

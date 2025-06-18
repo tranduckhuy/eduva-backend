@@ -1,5 +1,6 @@
 ﻿using Eduva.API.Models;
 using Eduva.Application.Common.Exceptions;
+using Eduva.Application.Common.Models;
 using Eduva.Shared.Constants;
 using Eduva.Shared.Enums;
 using Microsoft.AspNetCore.Mvc;
@@ -49,9 +50,12 @@ namespace Eduva.API.Controllers.Base
             return StatusCode(msgDetail?.HttpCode ?? StatusCodes.Status500InternalServerError, responseData);
         }
 
-        protected async Task<IActionResult> HandleRequestAsync<TResponse>(
-            Func<Task<(CustomCode code, TResponse result)>> func)
-            where TResponse : class
+        // Unified internal handler to avoid repetition
+        private async Task<IActionResult> ExecuteAsync<T>(
+            Func<Task<(CustomCode code, T result)>> func,
+            Func<T, object?> resultSelector,
+            T defaultResult,
+            CustomCode? overrideSuccessCode = null)
         {
             var modelCheck = CheckModelStateValidity();
             if (modelCheck != null)
@@ -60,11 +64,11 @@ namespace Eduva.API.Controllers.Base
             try
             {
                 var (code, result) = await func();
-                return Respond(code, result);
+                return Respond(overrideSuccessCode ?? code, resultSelector(result));
             }
             catch (AppException ex)
             {
-                return Respond(ex.StatusCode, default(TResponse), ex.Errors);
+                return Respond(ex.StatusCode, resultSelector(defaultResult), ex.Errors);
             }
             catch (Exception ex)
             {
@@ -73,28 +77,29 @@ namespace Eduva.API.Controllers.Base
             }
         }
 
-        protected async Task<IActionResult> HandleRequestAsync(
+        // Generic result
+        protected Task<IActionResult> HandleRequestAsync<TResponse>(
+            Func<Task<(CustomCode code, TResponse result)>> func)
+            where TResponse : class
+            => ExecuteAsync(func, result => result, default(TResponse)!);
+
+        // No result (void flow)
+        protected Task<IActionResult> HandleRequestAsync(
             Func<Task> func,
             CustomCode successCode = CustomCode.Success)
-        {
-            var modelCheck = CheckModelStateValidity();
-            if (modelCheck != null)
-                return modelCheck;
+            => ExecuteAsync<object?>(
+                async () =>
+                {
+                    await func();
+                    return (successCode, (object?)null);
+                },
+                _ => null,
+                null);
 
-            try
-            {
-                await func();
-                return Respond(successCode);
-            }
-            catch (AppException ex)
-            {
-                return Respond(ex.StatusCode, null, ex.Errors);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error in {ControllerName}", typeof(TController).Name);
-                return Respond(CustomCode.SystemError);
-            }
-        }
+        // Pagination result
+        protected Task<IActionResult> HandlePaginatedRequestAsync<T>(
+            Func<Task<(CustomCode code, Pagination<T> result)>> func)
+            where T : class
+            => ExecuteAsync(func, result => result, default(Pagination<T>)!);
     }
 }

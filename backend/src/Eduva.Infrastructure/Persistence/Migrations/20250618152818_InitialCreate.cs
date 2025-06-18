@@ -11,8 +11,6 @@ namespace Eduva.Infrastructure.Persistence.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql("CREATE EXTENSION IF NOT EXISTS unaccent;");
-
             migrationBuilder.CreateTable(
                 name: "AspNetRoles",
                 columns: table => new
@@ -49,7 +47,6 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    Code = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     Address = table.Column<string>(type: "text", nullable: true),
                     ContactEmail = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     ContactPhone = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
@@ -160,6 +157,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     CurrentPeriodAIUsageMinutes = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
                     LastUsageResetDate = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     PurchasedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    BillingCycle = table.Column<string>(type: "text", nullable: false),
                     SchoolId = table.Column<int>(type: "integer", nullable: false),
                     PlanId = table.Column<int>(type: "integer", nullable: false)
                 },
@@ -331,6 +329,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     Tag = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     LessonStatus = table.Column<string>(type: "text", nullable: false),
                     Duration = table.Column<int>(type: "integer", nullable: false),
+                    FileSize = table.Column<int>(type: "integer", nullable: false),
                     IsAIContent = table.Column<bool>(type: "boolean", nullable: false),
                     SourceUrl = table.Column<string>(type: "character varying(2048)", maxLength: 2048, nullable: false),
                     Visibility = table.Column<string>(type: "text", nullable: false),
@@ -693,12 +692,6 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 name: "IX_QuestionComments_QuestionID",
                 table: "QuestionComments",
                 column: "QuestionID");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Schools_Code",
-                table: "Schools",
-                column: "Code",
-                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Schools_ContactEmail",

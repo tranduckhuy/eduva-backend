@@ -4,6 +4,9 @@ using Eduva.Application.Features.Classes.Commands;
 using Eduva.Application.Features.Classes.Responses;
 using Eduva.Application.Features.LessonMaterials.Commands;
 using Eduva.Application.Features.LessonMaterials.Responses;
+using Eduva.Application.Features.Schools.Commands;
+using Eduva.Application.Features.Schools.Reponses;
+using Eduva.Application.Features.SubscriptionPlans.Responses;
 using Eduva.Domain.Entities;
 
 namespace Eduva.Application.Common.Mappings
@@ -19,7 +22,18 @@ namespace Eduva.Application.Common.Mappings
                 .ForMember(dest => dest.CreatedByName,
                         opt => opt.MapFrom(src => src.CreatedByUser != null ? src.CreatedByUser.FullName : string.Empty))
                 .ReverseMap();
-            CreateMap<Pagination<LessonMaterial>, Pagination<LessonMaterialResponse>>();            // Classes mappings
+            CreateMap<Pagination<LessonMaterial>, Pagination<LessonMaterialResponse>>();
+
+
+            // School mappings
+            CreateMap<CreateSchoolCommand, School>();
+            CreateMap<School, SchoolResponse>();
+
+            // Subscription Plan mappings
+            CreateMap<Pagination<SubscriptionPlan>, Pagination<SubscriptionPlanResponse>>();
+            CreateMap<SubscriptionPlan, SubscriptionPlanResponse>();
+
+            // Class mappings
             CreateMap<CreateClassCommand, Classroom>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.ClassCode, opt => opt.Ignore());
