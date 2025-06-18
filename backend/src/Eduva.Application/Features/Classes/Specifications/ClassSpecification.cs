@@ -23,9 +23,8 @@ namespace Eduva.Application.Features.Classes.Specifications
             Criteria = c =>
                 (!param.SchoolId.HasValue || c.SchoolId == param.SchoolId) &&
                 (!param.TeacherId.HasValue || c.TeacherId == param.TeacherId) &&
-                (string.IsNullOrEmpty(param.SearchTerm) ||
-                 c.Name.Contains(param.SearchTerm, StringComparison.OrdinalIgnoreCase) ||
-                 (c.ClassCode != null && c.ClassCode.Contains(param.SearchTerm, StringComparison.OrdinalIgnoreCase)));
+                (string.IsNullOrEmpty(param.SearchTerm) || c.Name.ToLower().Contains(param.SearchTerm.ToLower()) ||
+                                                           (c.ClassCode != null && c.ClassCode.ToLower().Contains(param.SearchTerm.ToLower())));
 
             Includes.Add(c => c.Teacher);
             Includes.Add(c => c.School);
