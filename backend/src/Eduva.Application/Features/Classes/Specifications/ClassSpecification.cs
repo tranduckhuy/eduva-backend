@@ -12,7 +12,7 @@ namespace Eduva.Application.Features.Classes.Specifications
 
         public List<Expression<Func<Classroom, object>>> Includes { get; private set; } = [];
 
-        public Func<IQueryable<Classroom>, IQueryable<Classroom>>? Selector { get; private set; }
+        public Func<IQueryable<Classroom>, IQueryable<Classroom>>? Selector { get; }
 
         public int Skip { get; private set; }
 
@@ -20,11 +20,12 @@ namespace Eduva.Application.Features.Classes.Specifications
 
         public ClassSpecification(ClassSpecParam param)
         {
-            Criteria = c => 
+            Criteria = c =>
                 (!param.SchoolId.HasValue || c.SchoolId == param.SchoolId) &&
                 (!param.TeacherId.HasValue || c.TeacherId == param.TeacherId) &&
-                (string.IsNullOrEmpty(param.SearchTerm) || c.Name.ToLower().Contains(param.SearchTerm.ToLower()) || 
-                                                           (c.ClassCode != null && c.ClassCode.ToLower().Contains(param.SearchTerm.ToLower())));
+                (string.IsNullOrEmpty(param.SearchTerm) ||
+                 c.Name.Contains(param.SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                 (c.ClassCode != null && c.ClassCode.Contains(param.SearchTerm, StringComparison.OrdinalIgnoreCase)));
 
             Includes.Add(c => c.Teacher);
             Includes.Add(c => c.School);
