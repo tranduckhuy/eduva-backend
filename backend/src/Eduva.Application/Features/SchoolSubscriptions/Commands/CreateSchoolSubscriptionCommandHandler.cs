@@ -73,7 +73,7 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Commands
             return plan;
         }
 
-        private decimal GetBaseAmount(SubscriptionPlan plan, BillingCycle cycle)
+        private static decimal GetBaseAmount(SubscriptionPlan plan, BillingCycle cycle)
         {
             return cycle == BillingCycle.Monthly ? plan.PriceMonthly : plan.PricePerYear;
         }
@@ -105,14 +105,14 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Commands
             return (final, Math.Round(deducted, 2), Math.Round(percent, 2));
         }
 
-        private bool IsDowngrade(CreateSchoolSubscriptionCommand request, SubscriptionPlan newPlan, SchoolSubscription current)
+        private static bool IsDowngrade(CreateSchoolSubscriptionCommand request, SubscriptionPlan newPlan, SchoolSubscription current)
         {
             return (current.BillingCycle == BillingCycle.Yearly && request.BillingCycle == BillingCycle.Monthly)
                 || (request.BillingCycle == BillingCycle.Monthly && newPlan.PriceMonthly < current.Plan.PriceMonthly)
                 || (request.BillingCycle == BillingCycle.Yearly && newPlan.PricePerYear < current.Plan.PricePerYear);
         }
 
-        private SchoolSubscription CreateNewSubscription(CreateSchoolSubscriptionCommand request, SubscriptionPlan plan, int schoolId, decimal amount, DateTimeOffset now, string transactionId)
+        private static SchoolSubscription CreateNewSubscription(CreateSchoolSubscriptionCommand request, SubscriptionPlan plan, int schoolId, decimal amount, DateTimeOffset now, string transactionId)
         {
             return new SchoolSubscription
             {
