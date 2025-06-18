@@ -49,7 +49,7 @@ namespace Eduva.Application.Features.Classes.Commands
             }
         }
 
-        private string GenerateUniqueClassCode()
+        private static string GenerateUniqueClassCode()
         {
             // Create random codes 8 characters including capital letters and numbers
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
