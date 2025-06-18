@@ -19,4 +19,8 @@
     <ProjectReference Include="..\Eduva.Shared\Eduva.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Features\Classes\" />
+  </ItemGroup>
+
 </Project>

@@ -1,4 +1,4 @@
-﻿using Eduva.Application.Features.SubscriptionPlans.Configurations;
+using Eduva.Application.Features.SubscriptionPlans.Configurations;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Application.Interfaces.Services;
@@ -46,6 +46,7 @@ namespace Eduva.Infrastructure.Extensions
             services.AddScoped<ILessonMaterialRepository, LessonMaterialRepository>();
             services.AddScoped<ISchoolSubscriptionRepository, SchoolSubscriptionRepository>();
             services.AddScoped<ISubscriptionPlanRepository, SubscriptionPlanRepository>();
+            services.AddScoped<IClassroomRepository, ClassroomRepository>();
             services.AddScoped<ISchoolRepository, SchoolRepository>();
             services.AddScoped<PayOS>(provider =>
             {
