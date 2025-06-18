@@ -22,7 +22,7 @@ namespace Eduva.Application.Features.Classes.Commands
         public async Task<ClassResponse> Handle(CreateClassCommand request, CancellationToken cancellationToken)
         {
             var classroomRepository = _unitOfWork.GetCustomRepository<IClassroomRepository>();
-              // Kiểm tra sự tồn tại của SchoolId
+            // Check the existence of SchoolId
             var schoolRepository = _unitOfWork.GetRepository<School, int>();
             var school = await schoolRepository.GetByIdAsync(request.SchoolId);
             if (school == null)
@@ -31,6 +31,9 @@ namespace Eduva.Application.Features.Classes.Commands
             }
 
             var classroom = AppMapper.Mapper.Map<Classroom>(request);
+            
+            // Automatically create classcode 8 characters
+            classroom.ClassCode = GenerateUniqueClassCode();
 
             await classroomRepository.AddAsync(classroom);
 
@@ -44,6 +47,17 @@ namespace Eduva.Application.Features.Classes.Commands
                 await _unitOfWork.RollbackAsync();
                 throw;
             }
+        }
+
+        private string GenerateUniqueClassCode()
+        {
+            // Create random codes 8 characters including capital letters and numbers
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            var random = new Random();
+            var code = new string(Enumerable.Repeat(chars, 8)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
+            
+            return code;
         }
     }
 }

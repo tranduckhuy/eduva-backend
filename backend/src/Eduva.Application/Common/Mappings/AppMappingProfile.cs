@@ -19,11 +19,10 @@ namespace Eduva.Application.Common.Mappings
                 .ForMember(dest => dest.CreatedByName,
                         opt => opt.MapFrom(src => src.CreatedByUser != null ? src.CreatedByUser.FullName : string.Empty))
                 .ReverseMap();
-            CreateMap<Pagination<LessonMaterial>, Pagination<LessonMaterialResponse>>();
-
-            // Classes mappings
+            CreateMap<Pagination<LessonMaterial>, Pagination<LessonMaterialResponse>>();            // Classes mappings
             CreateMap<CreateClassCommand, Classroom>()
-                .ForMember(dest => dest.Id, opt => opt.Ignore());
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.ClassCode, opt => opt.Ignore());
             CreateMap<Classroom, ClassResponse>()
                 .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher != null ? src.Teacher.FullName : string.Empty))
                 .ForMember(dest => dest.SchoolName, opt => opt.MapFrom(src => src.School != null ? src.School.Name : string.Empty))

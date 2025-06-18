@@ -11,6 +11,5 @@ namespace Eduva.Application.Features.Classes.Commands
 
         public int SchoolId { get; set; }
         public string Name { get; set; } = string.Empty;
-        public string? ClassCode { get; set; }
     }
 }
