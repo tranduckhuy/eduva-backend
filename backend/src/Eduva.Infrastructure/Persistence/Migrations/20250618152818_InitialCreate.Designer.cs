@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Eduva.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250613042439_InitialCreate")]
+    [Migration("20250618152818_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -285,6 +285,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.Property<int>("Duration")
                         .HasColumnType("integer");
 
+                    b.Property<int>("FileSize")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("IsAIContent")
                         .HasColumnType("boolean");
 
@@ -478,11 +481,6 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.Property<string>("Address")
                         .HasColumnType("text");
 
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
                     b.Property<string>("ContactEmail")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -514,9 +512,6 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Code")
-                        .IsUnique();
-
                     b.HasIndex("ContactEmail")
                         .IsUnique();
 
@@ -533,6 +528,10 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
                     b.Property<decimal>("AmountPaid")
                         .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("BillingCycle")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<decimal>("CurrentPeriodAIUsageMinutes")
                         .HasColumnType("numeric(18,2)");

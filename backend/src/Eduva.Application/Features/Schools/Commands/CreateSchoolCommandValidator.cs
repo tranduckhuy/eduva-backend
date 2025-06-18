@@ -16,11 +16,6 @@ namespace Eduva.Application.Features.Schools.Commands
                 .NotEmpty().WithMessage("School name is required.")
                 .MaximumLength(255);
 
-            RuleFor(x => x.Code)
-                .NotEmpty().WithMessage("School code is required.")
-                .MaximumLength(50)
-                .MustAsync(CodeIsUnique).WithMessage("School code already exists.");
-
             RuleFor(x => x.ContactEmail)
                 .NotEmpty().WithMessage("Contact email is required.")
                 .EmailAddress().WithMessage("Invalid email format.")
@@ -37,12 +32,6 @@ namespace Eduva.Application.Features.Schools.Commands
                 .MaximumLength(255)
                 .Must(url => string.IsNullOrWhiteSpace(url) || Uri.IsWellFormedUriString(url, UriKind.Absolute))
                 .WithMessage("Website URL must be a valid absolute URL.");
-        }
-
-        private async Task<bool> CodeIsUnique(string code, CancellationToken token)
-        {
-            var repo = _unitOfWork.GetRepository<School, int>();
-            return !await repo.ExistsAsync(s => s.Code == code);
         }
 
         private async Task<bool> EmailIsUnique(string email, CancellationToken token)
