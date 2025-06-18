@@ -1,4 +1,4 @@
-﻿using Eduva.Application.Interfaces;
+using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Application.Interfaces.Services;
 using Eduva.Infrastructure.Configurations;
@@ -41,6 +41,7 @@ namespace Eduva.Infrastructure.Extensions
             services.AddScoped<IRepositoryFactory, RepositoryFactory>();
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<ILessonMaterialRepository, LessonMaterialRepository>();
+            services.AddScoped<IClassroomRepository, ClassroomRepository>();
 
             return services;
         }

@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
 using Eduva.Application.Common.Models;
+using Eduva.Application.Features.Classes.Commands;
+using Eduva.Application.Features.Classes.Responses;
 using Eduva.Application.Features.LessonMaterials.Commands;
 using Eduva.Application.Features.LessonMaterials.Responses;
 using Eduva.Domain.Entities;
@@ -10,6 +12,7 @@ namespace Eduva.Application.Common.Mappings
     {
         public AppMappingProfile()
         {
+            // Lesson Materials mappings
             CreateMap<CreateLessonMaterialCommand, LessonMaterial>();
             CreateMap<LessonMaterial, LessonMaterialResponse>()
                 .ForMember(dest => dest.CreatedById, opt => opt.MapFrom(src => src.CreatedBy))
@@ -17,6 +20,15 @@ namespace Eduva.Application.Common.Mappings
                         opt => opt.MapFrom(src => src.CreatedByUser != null ? src.CreatedByUser.FullName : string.Empty))
                 .ReverseMap();
             CreateMap<Pagination<LessonMaterial>, Pagination<LessonMaterialResponse>>();
+
+            // Classes mappings
+            CreateMap<CreateClassCommand, Classroom>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore());
+            CreateMap<Classroom, ClassResponse>()
+                .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher != null ? src.Teacher.FullName : string.Empty))
+                .ForMember(dest => dest.SchoolName, opt => opt.MapFrom(src => src.School != null ? src.School.Name : string.Empty))
+                .ReverseMap();
+            CreateMap<Pagination<Classroom>, Pagination<ClassResponse>>();
         }
     }
 }
