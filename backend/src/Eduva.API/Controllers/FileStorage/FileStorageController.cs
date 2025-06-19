@@ -44,7 +44,7 @@ namespace Eduva.API.Controllers.FileStorage
         }
 
         [HttpDelete("{blobName}")]
-        [Authorize]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
         public async Task<IActionResult> DeleteFileAsync(string blobName)
         {
             return await HandleRequestAsync(async () => await _storageService.DeleteFileAsync(blobName));
