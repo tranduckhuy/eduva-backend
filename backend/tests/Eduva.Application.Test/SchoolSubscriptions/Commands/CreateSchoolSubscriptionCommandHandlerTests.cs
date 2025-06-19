@@ -3,7 +3,7 @@ using Eduva.Application.Exceptions.SchoolSubscription;
 using Eduva.Application.Exceptions.SubscriptionPlan;
 using Eduva.Application.Features.SchoolSubscriptions.Commands;
 using Eduva.Application.Features.SchoolSubscriptions.Configurations;
-using Eduva.Application.Features.SchoolSubscriptions.Configurations.PayOS;
+using Eduva.Application.Features.SchoolSubscriptions.Configurations.PayOSService;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Domain.Entities;
