@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace Eduva.API.Test.Controllers
+namespace Eduva.API.Test.Controllers.FireStorage
 {
     [TestFixture]
     public class FileStorageControllerTests
