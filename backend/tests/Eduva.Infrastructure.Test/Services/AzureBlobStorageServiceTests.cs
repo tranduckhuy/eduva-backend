@@ -126,8 +126,11 @@ namespace Eduva.Infrastructure.Test.Services
 
             // Assert
             Assert.That(token1, Is.Not.EqualTo(token2));
-            Assert.That(token1, Is.EqualTo(expectedSasUri1.ToString()));
-            Assert.That(token2, Is.EqualTo(expectedSasUri2.ToString()));
+            Assert.Multiple(() =>
+            {
+                Assert.That(token1, Is.EqualTo(expectedSasUri1.ToString()));
+                Assert.That(token2, Is.EqualTo(expectedSasUri2.ToString()));
+            });
         }
 
         [Test]
@@ -384,7 +387,7 @@ namespace Eduva.Infrastructure.Test.Services
             var results = await Task.WhenAll(tasks);
 
             // Assert
-            Assert.That(results.Length, Is.EqualTo(3));
+            Assert.That(results, Has.Length.EqualTo(3));
             Assert.That(results.All(r => !string.IsNullOrEmpty(r)), Is.True);
             _blobClientMock.Verify(b => b.GenerateSasUri(It.IsAny<BlobSasBuilder>()), Times.Exactly(3));
         }
@@ -403,9 +406,12 @@ namespace Eduva.Infrastructure.Test.Services
             var result1 = _service.GetReadableUrl(blobUrl);
             var result2 = _service.GetReadableUrl(blobUrl);
 
-            // Assert
-            Assert.That(result1, Is.Not.Null);
-            Assert.That(result2, Is.Not.Null);
+            Assert.Multiple(() =>
+            {
+                // Assert
+                Assert.That(result1, Is.Not.Null);
+                Assert.That(result2, Is.Not.Null);
+            });
             Assert.That(result1, Is.EqualTo(result2));
         }
 
