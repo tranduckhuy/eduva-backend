@@ -42,15 +42,54 @@ namespace Eduva.API.Controllers.Classes
         [HttpGet]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}, {nameof(Role.Student)}")]
         public async Task<IActionResult> GetClasses([FromQuery] ClassSpecParam classSpecParam)
-        {
+        {            
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(userId, out var userGuid))
                 return Respond(CustomCode.UserIdNotFound);
-
+                
             return await HandleRequestAsync(async () =>
             {
                 var query = new GetClassesQuery(classSpecParam, userGuid);
                 var result = await _mediator.Send(query);
+                return (CustomCode.Success, result);
+            });
+        }
+
+        [HttpPut("{id}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
+        public async Task<IActionResult> UpdateClass(Guid id, [FromBody] UpdateClassCommand command)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userId, out var currentUserId))
+                return Respond(CustomCode.UserIdNotFound);
+
+            command.Id = id;
+            command.TeacherId = currentUserId;
+
+            return await HandleRequestAsync(async () =>
+            {
+                var result = await _mediator.Send(command);
+                return (CustomCode.Success, result);
+            });
+        }
+
+        [HttpDelete("{id}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
+        public async Task<IActionResult> DeleteClass(Guid id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userId, out var currentUserId))
+                return Respond(CustomCode.UserIdNotFound);
+
+            var command = new DeleteClassCommand
+            {
+                Id = id,
+                TeacherId = currentUserId
+            };
+
+            return await HandleRequestAsync(async () =>
+            {
+                var result = await _mediator.Send(command);
                 return (CustomCode.Success, result);
             });
         }

@@ -37,6 +37,11 @@ namespace Eduva.Application.Common.Mappings
             CreateMap<CreateClassCommand, Classroom>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.ClassCode, opt => opt.Ignore());
+            CreateMap<UpdateClassCommand, Classroom>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.SchoolId, opt => opt.Ignore())
+                .ForMember(dest => dest.ClassCode, opt => opt.Ignore())
+                .ForMember(dest => dest.TeacherId, opt => opt.Ignore());
             CreateMap<Classroom, ClassResponse>()
                 .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher != null ? src.Teacher.FullName : string.Empty))
                 .ForMember(dest => dest.SchoolName, opt => opt.MapFrom(src => src.School != null ? src.School.Name : string.Empty))
