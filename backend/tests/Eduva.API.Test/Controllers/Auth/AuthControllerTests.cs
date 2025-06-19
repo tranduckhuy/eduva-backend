@@ -21,6 +21,8 @@ namespace Eduva.API.Test.Controllers.Auth
         private AuthController _controller;
         private const string ValidClientUrl = "https://localhost:9001/api/auth/confirm-email";
 
+        #region AuthController Setup
+
         [SetUp]
         public void Setup()
         {
@@ -29,7 +31,12 @@ namespace Eduva.API.Test.Controllers.Auth
             _controller = new AuthController(_authServiceMock.Object, _loggerMock.Object);
         }
 
+        #endregion
+
         // Tests for Register method - 200, 400, 500 responses
+
+        #region Register Tests
+
         [Test]
         public async Task Register_ShouldReturn200_WhenSuccessful()
         {
@@ -118,7 +125,12 @@ namespace Eduva.API.Test.Controllers.Auth
             Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status400BadRequest));
         }
 
+        #endregion
+
         // Tests for Login method - 200, 403, 400, 401 responses
+
+        #region Login Tests
+
         [Test]
         public async Task Login_ShouldReturn200_WithCorrectAuthResult()
         {
@@ -213,7 +225,12 @@ namespace Eduva.API.Test.Controllers.Auth
             Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status401Unauthorized));
         }
 
+        #endregion
+
         // Tests for VerifyOtpLogin method - 200, 401 responses
+
+        #region VerifyOtpLogin Tests
+
         [Test]
         public async Task VerifyOtp_ShouldReturn200_WhenCorrectCode()
         {
@@ -252,7 +269,12 @@ namespace Eduva.API.Test.Controllers.Auth
             Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status401Unauthorized));
         }
 
+        #endregion
+
         // Tests for ForgotPassword method - 200, 404 responses
+
+        #region ForgotPassword Tests
+
         [Test]
         public async Task ForgotPassword_ShouldReturn200_WhenSuccessful()
         {
@@ -291,7 +313,12 @@ namespace Eduva.API.Test.Controllers.Auth
             Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status404NotFound));
         }
 
+        #endregion
+
         // Tests for ResetPassword method - 200, 400, 500 responses
+
+        #region ResetPassword Tests
+
         [Test]
         public async Task ResetPassword_ShouldReturn200_WhenSuccessful()
         {
@@ -355,7 +382,12 @@ namespace Eduva.API.Test.Controllers.Auth
             Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status500InternalServerError));
         }
 
+        #endregion
+
         // Tests for ConfirmEmail method - 200, 400 responses
+
+        #region ConfirmEmail Tests
+
         [Test]
         public async Task ConfirmEmail_ShouldReturn200_WhenSuccessful()
         {
@@ -390,7 +422,12 @@ namespace Eduva.API.Test.Controllers.Auth
             Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status400BadRequest));
         }
 
+        #endregion
+
         // Tests for ResendConfirmationEmail method - 200, 400 responses
+
+        #region ResendConfirmationEmail Tests
+
         [Test]
         public async Task ResendConfirmationEmail_ShouldReturn200_WhenSuccessful()
         {
@@ -439,7 +476,12 @@ namespace Eduva.API.Test.Controllers.Auth
             Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status400BadRequest));
         }
 
+        #endregion
+
         // Tests for RefreshToken method - 200, 400, 401, 500 responses
+
+        #region RefreshToken Tests
+
         [Test]
         public async Task RefreshToken_ShouldReturn200_WhenSuccessful()
         {
@@ -510,7 +552,12 @@ namespace Eduva.API.Test.Controllers.Auth
             Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status401Unauthorized));
         }
 
+        #endregion
+
         // Tests for Logout method - 200, 401 responses
+
+        #region Logout Tests
+
         [Test]
         public async Task Logout_ShouldReturn200_WhenSuccessful()
         {
@@ -551,7 +598,12 @@ namespace Eduva.API.Test.Controllers.Auth
             Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status401Unauthorized));
         }
 
+        #endregion
+
         // Tests for InvalidateAllSessions method - 200, 401 responses
+
+        #region InvalidateAllSessions Tests
+
         [Test]
         public async Task InvalidateAllSessions_ShouldReturn200_WhenSuccessful()
         {
@@ -638,7 +690,12 @@ namespace Eduva.API.Test.Controllers.Auth
             Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status500InternalServerError));
         }
 
+        #endregion
+
         // Tests for InvalidateUserTokens method - 200, 500, 401, 403 responses
+
+        #region InvalidateUserTokens Tests
+
         [Test]
         public async Task InvalidateUserTokens_ShouldReturn200_WhenCalledByAdmin()
         {
@@ -695,7 +752,12 @@ namespace Eduva.API.Test.Controllers.Auth
             Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
         }
 
+        #endregion
+
         // Tests for ChangePassword method - 200, 401 responses
+
+        #region ChangePassword Tests
+
         [Test]
         public async Task ChangePassword_ShouldReturn200_WhenSuccessful()
         {
@@ -812,7 +874,12 @@ namespace Eduva.API.Test.Controllers.Auth
             Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status200OK));
         }
 
+        #endregion
+
         // Tests for RequestEnable2Fa method - 200, 400, 401, 500 responses
+
+        #region RequestEnable2Fa Tests
+
         [Test]
         public async Task RequestEnable2Fa_ShouldReturn200_WhenSuccessful()
         {
@@ -908,7 +975,12 @@ namespace Eduva.API.Test.Controllers.Auth
             Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status500InternalServerError));
         }
 
+        #endregion
+
         // Tests for ConfirmEnable2Fa method - 200, 400, 401, 500 responses
+
+        #region ConfirmEnable2Fa Tests
+
         [Test]
         public async Task ConfirmEnable2Fa_ShouldReturn200_WhenSuccessful()
         {
@@ -1000,7 +1072,12 @@ namespace Eduva.API.Test.Controllers.Auth
             Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status500InternalServerError));
         }
 
+        #endregion
+
         // Tests for ConfirmDisable2Fa method - 200, 400, 401, 500 responses
+
+        #region ConfirmDisable2Fa Tests
+
         [Test]
         public async Task ConfirmDisable2Fa_ShouldReturn200_WhenSuccessful()
         {
@@ -1092,7 +1169,12 @@ namespace Eduva.API.Test.Controllers.Auth
             Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status500InternalServerError));
         }
 
+        #endregion
+
         // Tests for RequestDisable2Fa method - 200, 400, 401, 500 responses
+
+        #region RequestDisable2Fa Tests
+
         [Test]
         public async Task RequestDisable2Fa_ShouldReturn200_WhenSuccessful()
         {
@@ -1183,5 +1265,8 @@ namespace Eduva.API.Test.Controllers.Auth
             Assert.That(objectResult, Is.Not.Null);
             Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status500InternalServerError));
         }
+
+        #endregion
+
     }
 }

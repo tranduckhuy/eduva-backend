@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using System.Security.Claims;
 
-namespace Eduva.API.Test.Controllers.Schools
+namespace Eduva.API.Test.Controllers.School
 {
     [TestFixture]
     public class SchoolControllerTests
@@ -19,6 +19,8 @@ namespace Eduva.API.Test.Controllers.Schools
         private Mock<ILogger<SchoolController>> _loggerMock = default!;
         private SchoolController _controller = default!;
 
+        #region SchoolController Setup
+
         [SetUp]
         public void Setup()
         {
@@ -26,6 +28,10 @@ namespace Eduva.API.Test.Controllers.Schools
             _loggerMock = new Mock<ILogger<SchoolController>>();
             _controller = new SchoolController(_mediatorMock.Object, _loggerMock.Object);
         }
+
+        #endregion
+
+        #region CreateSchool Tests
 
         [Test]
         public async Task CreateSchool_ShouldReturnUserIdNotFound_WhenUserIdIsNull()
@@ -114,6 +120,10 @@ namespace Eduva.API.Test.Controllers.Schools
             Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
         }
 
+        #endregion
+
+        #region Helper Methods
+
         private void SetupUser(string? userId)
         {
             var claims = new List<Claim>();
@@ -128,5 +138,7 @@ namespace Eduva.API.Test.Controllers.Schools
                 HttpContext = new DefaultHttpContext { User = user }
             };
         }
+
+        #endregion
     }
 }

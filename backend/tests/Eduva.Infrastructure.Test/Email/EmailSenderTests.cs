@@ -15,6 +15,8 @@ namespace Eduva.Infrastructure.Test.Email
         private EmailConfiguration _config;
         private Mock<ILogger<EmailSender>> _loggerMock;
 
+        #region EmailSender Setup
+
         [SetUp]
         public void Setup()
         {
@@ -31,6 +33,10 @@ namespace Eduva.Infrastructure.Test.Email
             _loggerMock = new Mock<ILogger<EmailSender>>();
             _emailSender = new EmailSender(_config, _loggerMock.Object);
         }
+
+        #endregion
+
+        #region EmailSender Tests
 
         // Verifies that sending an email without attachments does not throw any exceptions.
         [Test]
@@ -143,5 +149,8 @@ namespace Eduva.Infrastructure.Test.Email
                 Times.AtLeastOnce
             );
         }
+
+        #endregion
+
     }
 }

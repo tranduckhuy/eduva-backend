@@ -8,7 +8,7 @@ using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using Moq;
 
-namespace Eduva.Application.Test.Schools
+namespace Eduva.Application.Test.Schools.Commands
 {
     [TestFixture]
     public class CreateSchoolCommandHandlerTests
@@ -17,6 +17,8 @@ namespace Eduva.Application.Test.Schools
         private Mock<IGenericRepository<ApplicationUser, Guid>> _userRepoMock = default!;
         private Mock<ISchoolRepository> _schoolRepoMock = default!;
         private CreateSchoolCommandHandler _handler = default!;
+
+        #region CreateSchoolCommandHandler Setup
 
         [SetUp]
         public void Setup()
@@ -33,6 +35,10 @@ namespace Eduva.Application.Test.Schools
 
             _handler = new CreateSchoolCommandHandler(_unitOfWorkMock.Object);
         }
+
+        #endregion
+
+        #region CreateSchoolCommandHandler Tests
 
         [Test]
         public void Constructor_ShouldInitialize()
@@ -109,6 +115,10 @@ namespace Eduva.Application.Test.Schools
             _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Exactly(2));
         }
 
+        #endregion
+
+        #region Helper Methods
+
         private static async Task<TException?> TestDelegateWithException<TException>(Func<Task> testDelegate)
             where TException : Exception
         {
@@ -123,5 +133,7 @@ namespace Eduva.Application.Test.Schools
             }
             return null;
         }
+
+        #endregion
     }
 }

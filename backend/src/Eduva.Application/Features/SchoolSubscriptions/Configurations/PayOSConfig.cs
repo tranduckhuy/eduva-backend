@@ -1,4 +1,4 @@
-﻿namespace Eduva.Application.Features.SubscriptionPlans.Configurations
+﻿namespace Eduva.Application.Features.SchoolSubscriptions.Configurations
 {
     public class PayOSConfig
     {

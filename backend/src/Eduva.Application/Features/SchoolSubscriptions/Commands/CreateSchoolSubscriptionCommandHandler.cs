@@ -1,8 +1,9 @@
 ﻿using Eduva.Application.Exceptions.School;
 using Eduva.Application.Exceptions.SchoolSubscription;
 using Eduva.Application.Exceptions.SubscriptionPlan;
+using Eduva.Application.Features.SchoolSubscriptions.Configurations;
+using Eduva.Application.Features.SchoolSubscriptions.Configurations.PayOS;
 using Eduva.Application.Features.SchoolSubscriptions.Response;
-using Eduva.Application.Features.SubscriptionPlans.Configurations;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Domain.Entities;
@@ -10,7 +11,6 @@ using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
 using Microsoft.Extensions.Options;
-using Net.payOS;
 using Net.payOS.Types;
 
 namespace Eduva.Application.Features.SchoolSubscriptions.Commands
@@ -18,13 +18,13 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Commands
     public class CreateSchoolSubscriptionCommandHandler : IRequestHandler<CreateSchoolSubscriptionCommand, (CustomCode, CreatePaymentLinkResponse)>
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly PayOS _payOS;
+        private readonly IPayOSService _payOSService;
         private readonly PayOSConfig _payOSConfig;
 
-        public CreateSchoolSubscriptionCommandHandler(IUnitOfWork unitOfWork, PayOS payOS, IOptions<PayOSConfig> payOSOptions)
+        public CreateSchoolSubscriptionCommandHandler(IUnitOfWork unitOfWork, IPayOSService payOSService, IOptions<PayOSConfig> payOSOptions)
         {
             _unitOfWork = unitOfWork;
-            _payOS = payOS;
+            _payOSService = payOSService;
             _payOSConfig = payOSOptions.Value;
         }
 
@@ -43,7 +43,7 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Commands
             await SaveSubscriptionAsync(subscription);
 
             var paymentRequest = BuildPaymentRequest(plan, request.BillingCycle, (int)finalAmount, school, orderCode);
-            var result = await _payOS.createPaymentLink(paymentRequest);
+            var result = await _payOSService.CreatePaymentLinkAsync(paymentRequest);
 
             var response = new CreatePaymentLinkResponse
             {
