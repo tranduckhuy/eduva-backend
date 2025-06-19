@@ -41,7 +41,9 @@ public class CreateSchoolCommandValidatorTests
         {
             Name = "",
             ContactEmail = "valid@email.com",
-            ContactPhone = "0909123456"
+            ContactPhone = "0909123456",
+            Address = "HCM",
+            WebsiteUrl = "https://eduva.vn"
         };
 
         var result = await _validator.TestValidateAsync(command);
@@ -55,7 +57,9 @@ public class CreateSchoolCommandValidatorTests
         {
             Name = "School A",
             ContactEmail = "invalid-email",
-            ContactPhone = "0909123456"
+            ContactPhone = "0909123456",
+            Address = "HCM",
+            WebsiteUrl = "https://eduva.vn"
         };
 
         var result = await _validator.TestValidateAsync(command);
@@ -72,7 +76,9 @@ public class CreateSchoolCommandValidatorTests
         {
             Name = "School A",
             ContactEmail = "duplicate@email.com",
-            ContactPhone = "0909123456"
+            ContactPhone = "0909123456",
+            Address = "HCM",
+            WebsiteUrl = "https://eduva.vn"
         };
 
         var result = await _validator.TestValidateAsync(command);
@@ -87,7 +93,9 @@ public class CreateSchoolCommandValidatorTests
         {
             Name = "School A",
             ContactEmail = "valid@email.com",
-            ContactPhone = "123456"
+            ContactPhone = "123456",
+            Address = "HCM",
+            WebsiteUrl = "https://eduva.vn"
         };
 
         var result = await _validator.TestValidateAsync(command);
@@ -102,6 +110,7 @@ public class CreateSchoolCommandValidatorTests
             Name = "School A",
             ContactEmail = "valid@email.com",
             ContactPhone = "0909123456",
+            Address = "HCM",
             WebsiteUrl = "not-a-url"
         };
 
