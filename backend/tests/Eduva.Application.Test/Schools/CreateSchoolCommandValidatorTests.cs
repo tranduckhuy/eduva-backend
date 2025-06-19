@@ -28,6 +28,13 @@ public class CreateSchoolCommandValidatorTests
     }
 
     [Test]
+    public void Constructor_ShouldInitialize()
+    {
+        var validator = new CreateSchoolCommandValidator(_unitOfWorkMock.Object);
+        Assert.That(validator, Is.Not.Null);
+    }
+
+    [Test]
     public async Task Should_HaveError_When_NameIsEmpty()
     {
         var command = new CreateSchoolCommand
@@ -113,6 +120,7 @@ public class CreateSchoolCommandValidatorTests
             Name = "School A",
             ContactEmail = "school@email.com",
             ContactPhone = "0909123456",
+            Address = "123 EDU Street",
             WebsiteUrl = "https://eduva.vn"
         };
 

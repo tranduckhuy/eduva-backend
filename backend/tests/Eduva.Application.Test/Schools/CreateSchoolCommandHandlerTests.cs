@@ -35,15 +35,20 @@ namespace Eduva.Application.Test.Schools
         }
 
         [Test]
+        public void Constructor_ShouldInitialize()
+        {
+            var handler = new CreateSchoolCommandHandler(_unitOfWorkMock.Object);
+            Assert.That(handler, Is.Not.Null);
+        }
+
+        [Test]
         public async Task Handle_ShouldThrowUserIdNotFound_WhenUserNotExist()
         {
-            // Arrange
             var command = new CreateSchoolCommand { SchoolAdminId = Guid.NewGuid() };
 
             _userRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
                 .ReturnsAsync((ApplicationUser?)null);
 
-            // Act & Assert
             var ex = await TestDelegateWithException<AppException>(() => _handler.Handle(command, default));
             Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.UserIdNotFound));
         }
@@ -51,7 +56,6 @@ namespace Eduva.Application.Test.Schools
         [Test]
         public async Task Handle_ShouldThrowUserAlreadyHasSchool_WhenSchoolIdExists()
         {
-            // Arrange
             var command = new CreateSchoolCommand { SchoolAdminId = Guid.NewGuid() };
 
             var user = new ApplicationUser { Id = command.SchoolAdminId, SchoolId = 1 };
@@ -59,14 +63,12 @@ namespace Eduva.Application.Test.Schools
             _userRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
                 .ReturnsAsync(user);
 
-            // Act & Assert
             await TestDelegateWithException<UserAlreadyHasSchoolException>(() => _handler.Handle(command, default));
         }
 
         [Test]
         public async Task Handle_ShouldCreateSchoolAndReturnResponse_WhenValid()
         {
-            // Arrange
             var command = new CreateSchoolCommand
             {
                 SchoolAdminId = Guid.NewGuid(),
@@ -85,17 +87,20 @@ namespace Eduva.Application.Test.Schools
             _schoolRepoMock.Setup(r => r.AddAsync(It.IsAny<School>()))
                 .Returns(Task.CompletedTask);
 
-            _unitOfWorkMock.Setup(u => u.CommitAsync())
-                .Returns(Task.FromResult(1));
+            _unitOfWorkMock.SetupSequence(u => u.CommitAsync())
+                .ReturnsAsync(1)
+                .ReturnsAsync(1);
 
-            // Act
             var result = await _handler.Handle(command, CancellationToken.None);
 
-            // Assert
             Assert.That(result, Is.Not.Null);
             Assert.Multiple(() =>
             {
                 Assert.That(result.Name, Is.EqualTo(command.Name));
+                Assert.That(result.ContactEmail, Is.EqualTo(command.ContactEmail));
+                Assert.That(result.ContactPhone, Is.EqualTo(command.ContactPhone));
+                Assert.That(result.Address, Is.EqualTo(command.Address));
+                Assert.That(result.WebsiteUrl, Is.EqualTo(command.WebsiteUrl));
                 Assert.That(result.Status, Is.EqualTo(EntityStatus.Inactive));
             });
 
