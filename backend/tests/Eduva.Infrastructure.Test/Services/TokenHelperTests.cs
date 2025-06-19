@@ -10,6 +10,9 @@ namespace Eduva.Infrastructure.Test.Services;
 [TestFixture]
 public class TokenHelperTests
 {
+
+    #region TokenHelper Tests
+
     // Verifies that the GetClaims method returns the correct claims for a user
     [Test]
     public void GetClaims_ShouldReturnStandardAndRoleClaims()
@@ -81,4 +84,7 @@ public class TokenHelperTests
 
         Assert.That(expiry, Is.EqualTo(token.ValidTo).Within(TimeSpan.FromSeconds(1)));
     }
+
+    #endregion
+
 }

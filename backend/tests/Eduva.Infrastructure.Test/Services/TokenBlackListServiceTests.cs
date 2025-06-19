@@ -13,6 +13,8 @@ public class TokenBlackListServiceTests
     private Mock<IDistributedCache> _cacheMock;
     private Mock<ILogger<TokenBlackListService>> _loggerMock;
 
+    #region TokenBlackListService Setup
+
     [SetUp]
     public void SetUp()
     {
@@ -20,6 +22,10 @@ public class TokenBlackListServiceTests
         _loggerMock = new Mock<ILogger<TokenBlackListService>>();
         _service = new TokenBlackListService(_cacheMock.Object, _loggerMock.Object);
     }
+
+    #endregion
+
+    #region TokenBlackListService Tests
 
     // Verifies that the token is blacklisted correctly with a positive TTL
     [Test]
@@ -192,4 +198,7 @@ public class TokenBlackListServiceTests
 
         Assert.That(result, Is.False);
     }
+
+    #endregion
+
 }

@@ -1,4 +1,5 @@
-using Eduva.Application.Features.SubscriptionPlans.Configurations;
+using Eduva.Application.Features.SchoolSubscriptions.Configurations;
+using Eduva.Application.Features.SchoolSubscriptions.Configurations.PayOSService;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Application.Interfaces.Services;
@@ -63,6 +64,7 @@ namespace Eduva.Infrastructure.Extensions
 
             // Payment Configuration
             services.Configure<PayOSConfig>(configuration.GetSection(PayOSConfig.ConfigName));
+            services.AddScoped<IPayOSService, PayOSService>();
 
             return services;
         }

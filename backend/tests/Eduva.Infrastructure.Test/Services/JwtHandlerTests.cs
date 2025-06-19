@@ -19,6 +19,8 @@ public class JwtHandlerTests
     private IConfigurationSection _jwtSection;
     private const string ValidLongKey = "supersecretkey1234567890supersecretkey1234567890supersecretkey123456";
 
+    #region JwtHandler Setup
+
     [SetUp]
     public void SetUp()
     {
@@ -38,6 +40,10 @@ public class JwtHandlerTests
 
         _jwtHandler = new JwtHandler(_configurationMock.Object, _loggerMock.Object);
     }
+
+    #endregion
+
+    #region JwtHandler Tests
 
     // Verifies that the JwtHandler is initialized correctly with the configuration.
     [Test]
@@ -190,6 +196,10 @@ public class JwtHandlerTests
         Assert.Throws<InvalidTokenException>(() => _jwtHandler.GetPrincipalFromExpiredToken(tampered));
     }
 
+    #endregion
+
+    #region Helper Methods
+
     // Helper to pad base64 for decoding
     private static string PadBase64(string input)
     {
@@ -200,4 +210,7 @@ public class JwtHandlerTests
             default: return input;
         }
     }
+
+    #endregion
+
 }
