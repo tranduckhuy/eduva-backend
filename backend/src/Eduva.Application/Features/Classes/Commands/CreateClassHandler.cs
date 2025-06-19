@@ -24,8 +24,6 @@ namespace Eduva.Application.Features.Classes.Commands
             var classroomRepository = _unitOfWork.GetCustomRepository<IClassroomRepository>();
             // Check the existence of SchoolId
             var schoolRepository = _unitOfWork.GetRepository<School, int>();
-            var school = await schoolRepository.GetByIdAsync(request.SchoolId)
-                ?? throw new AppException(CustomCode.SchoolNotFound);
             // Check if class name already exists in the school
             bool classExists = await classroomRepository.ExistsAsync(c =>
                 c.SchoolId == request.SchoolId &&
