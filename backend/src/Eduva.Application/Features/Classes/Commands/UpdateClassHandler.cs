@@ -23,38 +23,30 @@ namespace Eduva.Application.Features.Classes.Commands
             var classroomRepository = _unitOfWork.GetCustomRepository<IClassroomRepository>();
 
             // Get the classroom by ID
-            var classroom = await classroomRepository.GetByIdAsync(request.Id);
-            if (classroom == null)
-            {
-                throw new AppException(CustomCode.ClassNotFound, new[] { $"Class with ID {request.Id} not found" });
-            }
+            var classroom = await classroomRepository.GetByIdAsync(request.Id)
+                ?? throw new AppException(CustomCode.ClassNotFound);
 
             // Check if the teacher is authorized to update this class
             if (classroom.TeacherId != request.TeacherId)
             {
-                throw new AppException(CustomCode.Unauthorized, new[] { "You are not authorized to update this class" });
+                throw new AppException(CustomCode.Unauthorized);
             }
 
             // Check if the school exists
             var schoolRepository = _unitOfWork.GetRepository<School, int>();
-            var school = await schoolRepository.GetByIdAsync(classroom.SchoolId);
-            if (school == null)
-            {
-                throw new AppException(CustomCode.SchoolNotFound, new[] { $"School with ID {classroom.SchoolId} not found" });
-            }
-            
+            var school = await schoolRepository.GetByIdAsync(classroom.SchoolId)
+                ?? throw new AppException(CustomCode.SchoolNotFound);
+
             // Check if the new class name already exists in the school (excluding current class)
             if (classroom.Name.ToLower() != request.Name.ToLower())
             {
-                bool classExists = await classroomRepository.ExistsAsync(c => 
-                    c.Id != request.Id && 
-                    c.SchoolId == classroom.SchoolId && 
+                bool classExists = await classroomRepository.ExistsAsync(c =>
+                    c.Id != request.Id &&
+                    c.SchoolId == classroom.SchoolId &&
                     c.Name.ToLower() == request.Name.ToLower());
-                    
                 if (classExists)
                 {
-                    throw new AppException(CustomCode.ClassNameAlreadyExists, 
-                        new[] { $"Class with name '{request.Name}' already exists in this school" });
+                    throw new AppException(CustomCode.ClassNameAlreadyExists);
                 }
             }
 
@@ -75,10 +67,11 @@ namespace Eduva.Application.Features.Classes.Commands
                 response.SchoolName = school.Name;
 
                 return response;
-            }            catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 await _unitOfWork.RollbackAsync();
-                throw new AppException(CustomCode.ClassUpdateFailed, new[] { $"Failed to update class: {ex.Message}" });
+                throw new AppException(CustomCode.ClassUpdateFailed);
             }
         }
     }

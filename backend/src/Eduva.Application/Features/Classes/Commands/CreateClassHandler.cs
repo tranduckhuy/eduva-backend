@@ -24,20 +24,16 @@ namespace Eduva.Application.Features.Classes.Commands
             var classroomRepository = _unitOfWork.GetCustomRepository<IClassroomRepository>();
             // Check the existence of SchoolId
             var schoolRepository = _unitOfWork.GetRepository<School, int>();
-            var school = await schoolRepository.GetByIdAsync(request.SchoolId);
-            if (school == null)
-            {
-                throw new AppException(CustomCode.SchoolNotFound, new[] { $"School with ID {request.SchoolId} not found" });
-            }
-
+            var school = await schoolRepository.GetByIdAsync(request.SchoolId)
+                ?? throw new AppException(CustomCode.SchoolNotFound);
             // Check if class name already exists in the school
             bool classExists = await classroomRepository.ExistsAsync(c =>
                 c.SchoolId == request.SchoolId &&
                 c.Name.ToLower() == request.Name.ToLower());
+
             if (classExists)
             {
-                throw new AppException(CustomCode.ClassNameAlreadyExists,
-                    new[] { $"Class with name '{request.Name}' already exists in this school" });
+                throw new AppException(CustomCode.ClassNameAlreadyExists);
             }
 
             var classroom = AppMapper.Mapper.Map<Classroom>(request);
@@ -56,8 +52,7 @@ namespace Eduva.Application.Features.Classes.Commands
 
             if (codeExists)
             {
-                throw new AppException(CustomCode.ClassCodeDuplicate,
-                    new[] { "Failed to generate unique class code after multiple attempts. Please try again." });
+                throw new AppException(CustomCode.ClassCodeDuplicate);
             }
 
             classroom.ClassCode = classCode;
@@ -72,7 +67,7 @@ namespace Eduva.Application.Features.Classes.Commands
             catch (Exception ex)
             {
                 await _unitOfWork.RollbackAsync();
-                throw new AppException(CustomCode.ClassCreateFailed, new[] { $"Failed to create class: {ex.Message}" });
+                throw new AppException(CustomCode.ClassCreateFailed);
             }
         }
     }
