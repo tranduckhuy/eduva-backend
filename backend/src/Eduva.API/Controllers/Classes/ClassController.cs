@@ -1,5 +1,4 @@
 using Eduva.API.Controllers.Base;
-using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Features.Classes.Commands;
 using Eduva.Application.Features.Classes.Queries;
 using Eduva.Application.Features.Classes.Specifications;
@@ -42,11 +41,11 @@ namespace Eduva.API.Controllers.Classes
         [HttpGet]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}, {nameof(Role.Student)}")]
         public async Task<IActionResult> GetClasses([FromQuery] ClassSpecParam classSpecParam)
-        {            
+        {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(userId, out var userGuid))
                 return Respond(CustomCode.UserIdNotFound);
-                
+
             return await HandleRequestAsync(async () =>
             {
                 var query = new GetClassesQuery(classSpecParam, userGuid);
@@ -82,6 +81,27 @@ namespace Eduva.API.Controllers.Classes
                 return Respond(CustomCode.UserIdNotFound);
 
             var command = new DeleteClassCommand
+            {
+                Id = id,
+                TeacherId = currentUserId
+            };
+
+            return await HandleRequestAsync(async () =>
+            {
+                var result = await _mediator.Send(command);
+                return (CustomCode.Success, result);
+            });
+        }
+
+        [HttpPost("{id}/reset-code")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
+        public async Task<IActionResult> ResetClassCode(Guid id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userId, out var currentUserId))
+                return Respond(CustomCode.UserIdNotFound);
+
+            var command = new ResetClassCodeCommand
             {
                 Id = id,
                 TeacherId = currentUserId

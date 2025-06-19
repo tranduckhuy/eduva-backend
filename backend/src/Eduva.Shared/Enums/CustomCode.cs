@@ -50,6 +50,7 @@ namespace Eduva.Shared.Enums
         ClassCreateFailed = 4031,
         ClassUpdateFailed = 4032,
         ClassArchiveFailed = 4033,
+        ClassCodeResetFailed = 4034,
 
         // File Storage Errors
         InvalidBlobName = 4200,
