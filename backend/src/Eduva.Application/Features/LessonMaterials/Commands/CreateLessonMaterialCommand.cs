@@ -16,6 +16,7 @@ namespace Eduva.Application.Features.LessonMaterials.Commands
         public ContentType ContentType { get; set; }
         public string? Tag { get; set; }
         public int Duration { get; set; }
+        public int FileSize { get; set; } // Size in bytes
         public bool IsAIContent { get; set; }
         public string SourceUrl { get; set; } = string.Empty;
     }

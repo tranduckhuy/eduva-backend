@@ -22,8 +22,9 @@ namespace Eduva.Application.Features.LessonMaterials.Commands
 
             RuleFor(x => x.ContentType)
                 .IsInEnum().WithMessage("Invalid content type specified.");
-            RuleFor(x => x.Duration)
-                .GreaterThan(0).WithMessage("Duration must be greater than zero.");
+
+            RuleFor(x => x.FileSize)
+                .GreaterThan(0).WithMessage("File size must be greater than zero.");
             RuleFor(x => x.SourceUrl)
                 .NotEmpty().WithMessage("Source URL is required.")
                 .Must(url => Uri.IsWellFormedUriString(url, UriKind.Absolute))

@@ -1,4 +1,4 @@
-﻿namespace Eduva.Infrastructure.Configurations
+﻿namespace Eduva.Infrastructure.Configurations.Email
 {
     public class EmailConfiguration
     {

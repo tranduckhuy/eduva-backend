@@ -1,6 +1,8 @@
 ﻿using Eduva.API.Controllers.Base;
 using Eduva.Application.Interfaces.Services;
+using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Eduva.API.Controllers.FileStorage
@@ -16,6 +18,7 @@ namespace Eduva.API.Controllers.FileStorage
         }
 
         [HttpGet("sas-token/upload/{blobName}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
         public async Task<IActionResult> GenerateUploadSasToken(string blobName)
         {
             return await HandleRequestAsync(async () =>
@@ -28,6 +31,7 @@ namespace Eduva.API.Controllers.FileStorage
         }
 
         [HttpGet("readable-url")]
+        [Authorize]
         public IActionResult GetReadableUrl([FromQuery] string blobName)
         {
             if (string.IsNullOrWhiteSpace(blobName))
@@ -40,6 +44,7 @@ namespace Eduva.API.Controllers.FileStorage
         }
 
         [HttpDelete("{blobName}")]
+        [Authorize]
         public async Task<IActionResult> DeleteFileAsync(string blobName)
         {
             return await HandleRequestAsync(async () => await _storageService.DeleteFileAsync(blobName));

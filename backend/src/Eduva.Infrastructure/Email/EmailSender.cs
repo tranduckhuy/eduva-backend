@@ -1,6 +1,6 @@
 ﻿using Eduva.Application.Common.Models;
 using Eduva.Application.Interfaces.Services;
-using Eduva.Infrastructure.Configurations;
+using Eduva.Infrastructure.Configurations.Email;
 using MailKit.Net.Smtp;
 using Microsoft.Extensions.Logging;
 using MimeKit;

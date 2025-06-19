@@ -11,11 +11,16 @@
     <PackageReference Include="FluentValidation" Version="12.0.0" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.0.0" />
     <PackageReference Include="MediatR" Version="12.5.0" />
+    <PackageReference Include="payOS" Version="1.0.9" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Eduva.Domain\Eduva.Domain.csproj" />
     <ProjectReference Include="..\Eduva.Shared\Eduva.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Features\Classes\" />
   </ItemGroup>
 
 </Project>
