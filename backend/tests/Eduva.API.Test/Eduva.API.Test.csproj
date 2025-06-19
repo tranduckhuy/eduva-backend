@@ -27,7 +27,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Eduva.API\Eduva.API.csproj" />
-    <ProjectReference Include="..\..\src\Eduva.Application\Eduva.Application.csproj" />
   </ItemGroup>
 
   <ItemGroup>

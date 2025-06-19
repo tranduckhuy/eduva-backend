@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using System.Security.Claims;
 
-namespace Eduva.API.Test.Controllers
+namespace Eduva.API.Test.Controllers.Auth
 {
     [TestFixture]
     public class AuthControllerTests
@@ -90,7 +90,7 @@ namespace Eduva.API.Test.Controllers
             };
 
             _authServiceMock.Setup(s => s.RegisterAsync(request))
-                .ThrowsAsync(new System.Exception("Unexpected error"));
+                .ThrowsAsync(new Exception("Unexpected error"));
 
             var result = await _controller.Register(request);
             var objectResult = result as ObjectResult;

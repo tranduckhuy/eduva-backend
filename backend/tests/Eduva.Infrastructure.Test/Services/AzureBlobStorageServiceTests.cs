@@ -1,4 +1,3 @@
-using Eduva.Application.Exceptions.FileStorage;
 using Eduva.Infrastructure.Configurations;
 using Eduva.Infrastructure.Services;
 
@@ -91,8 +90,11 @@ namespace Eduva.Infrastructure.Test.Services
 
             // Assert
             Assert.That(token1, Is.Not.EqualTo(token2));
-            Assert.That(token1, Does.Contain(blobName1));
-            Assert.That(token2, Does.Contain(blobName2));
+            Assert.Multiple(() =>
+            {
+                Assert.That(token1, Does.Contain(blobName1));
+                Assert.That(token2, Does.Contain(blobName2));
+            });
         }
 
         [Test]
@@ -343,9 +345,12 @@ namespace Eduva.Infrastructure.Test.Services
             stopwatch.Stop();
 
             // Assert
-            Assert.That(results.Length, Is.EqualTo(3));
-            Assert.That(results.All(r => !string.IsNullOrEmpty(r)), Is.True);
-            Assert.That(stopwatch.ElapsedMilliseconds, Is.LessThan(5000)); // Should complete within 5 seconds
+            Assert.That(results, Has.Length.EqualTo(3));
+            Assert.Multiple(() =>
+            {
+                Assert.That(results.All(r => !string.IsNullOrEmpty(r)), Is.True);
+                Assert.That(stopwatch.ElapsedMilliseconds, Is.LessThan(5000)); // Should complete within 5 seconds
+            });
         }
 
         [Test]
@@ -359,9 +364,12 @@ namespace Eduva.Infrastructure.Test.Services
             var result1 = _service.GetReadableUrl(blobUrl);
             var result2 = _service.GetReadableUrl(blobUrl);
 
-            // Assert
-            Assert.That(result1, Is.Not.Null);
-            Assert.That(result2, Is.Not.Null);
+            Assert.Multiple(() =>
+            {
+                // Assert
+                Assert.That(result1, Is.Not.Null);
+                Assert.That(result2, Is.Not.Null);
+            });
             // SAS tokens generated within the same second should be identical due to timestamp precision
             Assert.That(result1, Is.EqualTo(result2));
         }
