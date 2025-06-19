@@ -179,3 +179,5 @@ testem.log
 .DS_Store
 Thumbs.db
 *coverage.opencover.xml
+
+*coverage.json
