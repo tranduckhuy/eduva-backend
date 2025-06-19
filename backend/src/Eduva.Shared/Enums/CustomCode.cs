@@ -1,4 +1,4 @@
-﻿namespace Eduva.Shared.Enums
+namespace Eduva.Shared.Enums
 {
     public enum CustomCode
     {
@@ -44,5 +44,11 @@
         PaymentAlreadyConfirmed = 4025,
         DowngradeNotAllowed = 4026,
         SchoolSubscriptionAlreadyExists = 4027,
+
+
+        // File Storage Errors
+        InvalidBlobName = 4200,
+        InvalidBlobUrl = 4201,
+        BlobNotFound = 4202,
     }
 }

@@ -91,6 +91,15 @@ namespace Eduva.Shared.Constants
             { CustomCode.SchoolSubscriptionAlreadyExists, new MessageDetail {
                 HttpCode = StatusCodes.Status400BadRequest, Message = "You are already subscribed to this plan and billing cycle." } },
 
+
+
+            // File Storage Errors
+            { CustomCode.InvalidBlobName, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Invalid blob name provided." } },
+            { CustomCode.InvalidBlobUrl, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Invalid blob URL provided." } },
+            { CustomCode.BlobNotFound, new MessageDetail {
+                HttpCode = StatusCodes.Status404NotFound, Message = "The specified blob was not found. Ensure the blob name is correct and try again." } },
             #endregion
         };
 
