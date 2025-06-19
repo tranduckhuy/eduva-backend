@@ -64,7 +64,7 @@ namespace Eduva.Application.Features.Classes.Commands
                 await _unitOfWork.CommitAsync();
                 return AppMapper.Mapper.Map<ClassResponse>(classroom);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 await _unitOfWork.RollbackAsync();
                 throw new AppException(CustomCode.ClassCreateFailed);

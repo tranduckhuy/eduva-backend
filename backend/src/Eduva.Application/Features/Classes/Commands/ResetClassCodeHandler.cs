@@ -64,8 +64,9 @@ namespace Eduva.Application.Features.Classes.Commands
 
                 return response;
             }
-            catch (Exception ex)
-            {                await _unitOfWork.RollbackAsync();
+            catch (Exception)
+            {
+                await _unitOfWork.RollbackAsync();
                 throw new AppException(CustomCode.ClassUpdateFailed);
             }
         }

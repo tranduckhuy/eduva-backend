@@ -40,7 +40,7 @@ namespace Eduva.Application.Features.Classes.Commands
                 response.SchoolName = classroom.School?.Name ?? string.Empty;
                 return response;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 await _unitOfWork.RollbackAsync();
                 throw new AppException(CustomCode.ClassArchiveFailed);
