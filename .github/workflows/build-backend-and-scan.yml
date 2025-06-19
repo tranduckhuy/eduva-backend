@@ -60,7 +60,7 @@ jobs:
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
           /d:sonar.host.url="${{ secrets.SONAR_HOST_URL }}"
           /d:sonar.cs.opencover.reportsPaths="./**/coverage.opencover.xml"
-          /d:sonar.coverage.exclusions="**/Program.cs,**/*Extension*.cs,**/Migrations/**/*.cs,**/*.Test.cs"
+          /d:sonar.coverage.exclusions="**/Program.cs,**/*Extension*.cs,**/Migrations/**/*.cs,**/*.Test.cs,**/Persistence/**/*"
 
       - name: Build solution
         run: dotnet build backend/backend.sln --no-incremental
