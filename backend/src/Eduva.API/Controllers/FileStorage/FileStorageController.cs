@@ -12,7 +12,7 @@ namespace Eduva.API.Controllers.FileStorage
     {
         private readonly IStorageService _storageService;
 
-        public FileStorageController(ILogger<BaseController<FileStorageController>> logger, IStorageService storageService) : base(logger)
+        public FileStorageController(ILogger<FileStorageController> logger, IStorageService storageService) : base(logger)
         {
             _storageService = storageService;
         }

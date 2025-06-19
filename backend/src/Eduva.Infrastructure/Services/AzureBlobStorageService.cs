@@ -9,14 +9,13 @@ namespace Eduva.Infrastructure.Services
     public class AzureBlobStorageService : IStorageService
     {
         private readonly AzureBlobStorageOptions _options;
-        private readonly BlobServiceClient _blobServiceClient;
         private readonly BlobContainerClient _containerClient;
 
         public AzureBlobStorageService(AzureBlobStorageOptions options)
         {
             _options = options;
-            _blobServiceClient = new BlobServiceClient(_options.ConnectionString);
-            _containerClient = _blobServiceClient.GetBlobContainerClient(_options.ContainerName);
+            var blobServiceClient = new BlobServiceClient(_options.ConnectionString);
+            _containerClient = blobServiceClient.GetBlobContainerClient(_options.ContainerName);
         }
 
         public Task<string> GenerateUploadSasToken(string blobName, DateTimeOffset expiresOn)
@@ -69,7 +68,7 @@ namespace Eduva.Infrastructure.Services
             }
         }
 
-        private string GetBlobNameFromUrl(string blobUrl)
+        private static string GetBlobNameFromUrl(string blobUrl)
         {
             var uri = new Uri(blobUrl);
             return uri.Segments[^1];
