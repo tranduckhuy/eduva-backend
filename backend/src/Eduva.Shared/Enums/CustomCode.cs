@@ -44,11 +44,16 @@ namespace Eduva.Shared.Enums
         PaymentAlreadyConfirmed = 4025,
         DowngradeNotAllowed = 4026,
         SchoolSubscriptionAlreadyExists = 4027,
-
+        ClassNotFound = 4028,
+        ClassNameAlreadyExists = 4029,
+        ClassCodeDuplicate = 4030,
+        ClassCreateFailed = 4031,
+        ClassUpdateFailed = 4032,
+        ClassArchiveFailed = 4033,
 
         // File Storage Errors
         InvalidBlobName = 4200,
         InvalidBlobUrl = 4201,
-        BlobNotFound = 4202,
+        BlobNotFound = 4202,        
     }
 }

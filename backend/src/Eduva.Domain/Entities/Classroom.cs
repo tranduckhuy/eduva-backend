@@ -6,7 +6,7 @@ namespace Eduva.Domain.Entities
     {
         public int SchoolId { get; set; }
         public string Name { get; set; } = default!;
-        public string? ClassCode { get; set; } 
+        public string? ClassCode { get; set; }
         public Guid TeacherId { get; set; }
 
         // Navigation properties

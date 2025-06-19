@@ -90,8 +90,18 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status400BadRequest, Message = "You cannot switch to a lower-tier plan or a shorter billing cycle." } },
             { CustomCode.SchoolSubscriptionAlreadyExists, new MessageDetail {
                 HttpCode = StatusCodes.Status400BadRequest, Message = "You are already subscribed to this plan and billing cycle." } },
-
-
+            { CustomCode.ClassNotFound, new MessageDetail {
+                HttpCode = StatusCodes.Status404NotFound, Message = "Class not found" } },
+            { CustomCode.ClassNameAlreadyExists, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Class name already exists in this school" } },
+            { CustomCode.ClassCodeDuplicate, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Class code is duplicated, please try again" } },
+            { CustomCode.ClassCreateFailed, new MessageDetail {
+                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to create class" } },
+            { CustomCode.ClassUpdateFailed, new MessageDetail {
+                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to update class" } },
+            { CustomCode.ClassArchiveFailed, new MessageDetail {
+                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to archive class" } },
 
             // File Storage Errors
             { CustomCode.InvalidBlobName, new MessageDetail {
