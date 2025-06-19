@@ -102,6 +102,8 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to update class" } },
             { CustomCode.ClassArchiveFailed, new MessageDetail {
                 HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to archive class" } },
+            { CustomCode.ClassCodeResetFailed, new MessageDetail {
+                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to reset class code" } },
 
             // File Storage Errors
             { CustomCode.InvalidBlobName, new MessageDetail {
