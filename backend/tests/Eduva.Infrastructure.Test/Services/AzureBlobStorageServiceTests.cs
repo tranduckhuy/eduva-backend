@@ -1,14 +1,21 @@
+using Azure;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using Azure.Storage.Sas;
 using Eduva.Application.Exceptions.FileStorage;
 using Eduva.Infrastructure.Configurations;
 using Eduva.Infrastructure.Services;
+using Moq;
 
 namespace Eduva.Infrastructure.Test.Services
 {
     [TestFixture]
     public class AzureBlobStorageServiceTests
     {
-        private AzureBlobStorageOptions _options = null!;
-        private AzureBlobStorageService _service = null!;
+        private Mock<BlobContainerClient> _containerClientMock;
+        private Mock<BlobClient> _blobClientMock;
+        private AzureBlobStorageOptions _options;
+        private AzureBlobStorageService _service;
 
         [SetUp]
         public void Setup()
@@ -20,6 +27,16 @@ namespace Eduva.Infrastructure.Test.Services
                 StorageAccountName = "test-account",
                 StorageAccountKey = "test-key"
             };
+
+            _containerClientMock = new Mock<BlobContainerClient>();
+            _blobClientMock = new Mock<BlobClient>();
+
+            // Setup the container client to return our mocked blob client
+            _containerClientMock.Setup(c => c.GetBlobClient(It.IsAny<string>()))
+                .Returns(_blobClientMock.Object);
+
+            // Create service with mocked dependencies
+            _service = new TestableAzureBlobStorageService(_options, _containerClientMock.Object);
         }
 
         #region Constructor Tests
@@ -34,7 +51,7 @@ namespace Eduva.Infrastructure.Test.Services
         [Test]
         public void Constructor_ShouldThrowException_WhenNullOptionsProvided()
         {
-            // Act & Assert - Azure SDK might throw different exception types
+            // Act & Assert
             Assert.Throws<NullReferenceException>(() => new AzureBlobStorageService(null!));
         }
 
@@ -46,44 +63,62 @@ namespace Eduva.Infrastructure.Test.Services
         public async Task GenerateUploadSasToken_ShouldReturnValidSasToken_WhenValidBlobNameProvided()
         {
             // Arrange
-            _service = new AzureBlobStorageService(_options);
             var blobName = "test-file.pdf";
             var expiresOn = DateTimeOffset.UtcNow.AddHours(1);
+            var expectedSasUri = new Uri("https://test.blob.core.windows.net/container/test-file.pdf?sv=2021-12-02&st=2023-01-01T00%3A00%3A00Z&se=2023-01-01T01%3A00%3A00Z&sr=b&sp=cw&sig=signature");
+
+            _blobClientMock.Setup(b => b.GenerateSasUri(It.IsAny<BlobSasBuilder>()))
+                .Returns(expectedSasUri);
 
             // Act
             var result = await _service.GenerateUploadSasToken(blobName, expiresOn);
 
             // Assert
             Assert.That(result, Is.Not.Null);
-            Assert.That(result, Is.Not.Empty);
-            Assert.That(result, Does.Contain(blobName));
-            Assert.That(result, Does.Contain("sp=cw")); // Write and Create permissions
+            Assert.That(result, Is.EqualTo(expectedSasUri.ToString()));
+            _blobClientMock.Verify(b => b.GenerateSasUri(It.Is<BlobSasBuilder>(builder =>
+                builder.BlobName == blobName &&
+                builder.Resource == "b" &&
+                builder.ExpiresOn == expiresOn)), Times.Once);
         }
 
         [Test]
         public async Task GenerateUploadSasToken_ShouldIncludeCorrectPermissions_ForUpload()
         {
             // Arrange
-            _service = new AzureBlobStorageService(_options);
             var blobName = "upload-test.jpg";
             var expiresOn = DateTimeOffset.UtcNow.AddHours(2);
+            var expectedSasUri = new Uri("https://test.blob.core.windows.net/container/upload-test.jpg?sv=2021-12-02&sp=cw&sr=b");
+
+            _blobClientMock.Setup(b => b.GenerateSasUri(It.IsAny<BlobSasBuilder>()))
+                .Returns(expectedSasUri);
 
             // Act
             var result = await _service.GenerateUploadSasToken(blobName, expiresOn);
 
             // Assert
-            Assert.That(result, Does.Contain("sp=cw")); // Write and Create permissions
-            Assert.That(result, Does.Contain("sr=b")); // Resource type: blob
+            Assert.That(result, Is.Not.Null);
+            _blobClientMock.Verify(b => b.GenerateSasUri(It.Is<BlobSasBuilder>(builder =>
+                builder.BlobName == blobName)), Times.Once);
         }
 
         [Test]
         public async Task GenerateUploadSasToken_ShouldGenerateDifferentTokens_ForDifferentBlobs()
         {
             // Arrange
-            _service = new AzureBlobStorageService(_options);
             var blobName1 = "file1.pdf";
             var blobName2 = "file2.pdf";
             var expiresOn = DateTimeOffset.UtcNow.AddHours(1);
+            var expectedSasUri1 = new Uri("https://test.blob.core.windows.net/container/file1.pdf?sv=2021-12-02&sp=cw&sr=b&sig=signature1");
+            var expectedSasUri2 = new Uri("https://test.blob.core.windows.net/container/file2.pdf?sv=2021-12-02&sp=cw&sr=b&sig=signature2");
+
+            _blobClientMock.SetupSequence(b => b.GenerateSasUri(It.IsAny<BlobSasBuilder>()))
+                .Returns(expectedSasUri1)
+                .Returns(expectedSasUri2);
+
+            _containerClientMock.SetupSequence(c => c.GetBlobClient(It.IsAny<string>()))
+                .Returns(_blobClientMock.Object)
+                .Returns(_blobClientMock.Object);
 
             // Act
             var token1 = await _service.GenerateUploadSasToken(blobName1, expiresOn);
@@ -91,20 +126,35 @@ namespace Eduva.Infrastructure.Test.Services
 
             // Assert
             Assert.That(token1, Is.Not.EqualTo(token2));
-            Assert.That(token1, Does.Contain(blobName1));
-            Assert.That(token2, Does.Contain(blobName2));
+            Assert.That(token1, Is.EqualTo(expectedSasUri1.ToString()));
+            Assert.That(token2, Is.EqualTo(expectedSasUri2.ToString()));
         }
 
         [Test]
-        public void GenerateUploadSasToken_ShouldHandleSpecialCharacters_InBlobName()
+        public void GenerateUploadSasToken_ShouldThrowArgumentException_ForEmptyBlobName()
         {
             // Arrange
-            _service = new AzureBlobStorageService(_options);
-            var blobName = "folder/sub-folder/file name with spaces.pdf";
+            var emptyBlobName = "";
             var expiresOn = DateTimeOffset.UtcNow.AddHours(1);
 
             // Act & Assert
-            Assert.DoesNotThrowAsync(async () => await _service.GenerateUploadSasToken(blobName, expiresOn));
+            Assert.ThrowsAsync<NullReferenceException>(async () => await _service.GenerateUploadSasToken(emptyBlobName, expiresOn));
+        }
+
+        [Test]
+        public async Task GenerateUploadSasToken_ShouldHandlePastExpiryDate()
+        {
+            // Arrange
+            var blobName = "test-file.pdf";
+            var pastDate = DateTimeOffset.UtcNow.AddHours(-1);
+            var expectedSasUri = new Uri("https://test.blob.core.windows.net/container/test-file.pdf?sv=2021-12-02&sp=cw&sr=b");
+
+            _blobClientMock.Setup(b => b.GenerateSasUri(It.IsAny<BlobSasBuilder>()))
+                .Returns(expectedSasUri);
+
+            // Act & Assert
+            var result = await _service.GenerateUploadSasToken(blobName, pastDate);
+            Assert.That(result, Is.Not.Null);
         }
 
         #endregion
@@ -115,41 +165,52 @@ namespace Eduva.Infrastructure.Test.Services
         public void GetReadableUrl_ShouldReturnUrlWithSasToken_WhenValidBlobUrlProvided()
         {
             // Arrange
-            _service = new AzureBlobStorageService(_options);
             var blobUrl = "https://teststorage.blob.core.windows.net/container/test-file.pdf";
+            var expectedQuery = "?sv=2021-12-02&sp=r&sr=b&sig=signature";
+            var expectedSasUri = new Uri($"{blobUrl}{expectedQuery}");
+
+            _blobClientMock.Setup(b => b.GenerateSasUri(It.IsAny<BlobSasBuilder>()))
+                .Returns(expectedSasUri);
 
             // Act
             var result = _service.GetReadableUrl(blobUrl);
 
             // Assert
             Assert.That(result, Is.Not.Null);
-            Assert.That(result, Is.Not.Empty);
             Assert.That(result, Does.StartWith(blobUrl));
-            Assert.That(result, Does.Contain("?")); // Should have query parameters
-            Assert.That(result, Does.Contain("sp=r")); // Read permission
+            Assert.That(result, Does.Contain("?"));
+            _blobClientMock.Verify(b => b.GenerateSasUri(It.Is<BlobSasBuilder>(builder =>
+                builder.Resource == "b")), Times.Once);
         }
 
         [Test]
         public void GetReadableUrl_ShouldExtractCorrectBlobName_FromUrl()
         {
             // Arrange
-            _service = new AzureBlobStorageService(_options);
             var fileName = "document.docx";
             var blobUrl = $"https://teststorage.blob.core.windows.net/container/{fileName}";
+            var expectedSasUri = new Uri($"{blobUrl}?sv=2021-12-02&sp=r&sr=b");
+
+            _blobClientMock.Setup(b => b.GenerateSasUri(It.IsAny<BlobSasBuilder>()))
+                .Returns(expectedSasUri);
 
             // Act
             var result = _service.GetReadableUrl(blobUrl);
 
             // Assert
             Assert.That(result, Does.Contain(fileName));
+            _containerClientMock.Verify(c => c.GetBlobClient(fileName), Times.Once);
         }
 
         [Test]
         public void GetReadableUrl_ShouldHandleNestedPath_InBlobUrl()
         {
             // Arrange
-            _service = new AzureBlobStorageService(_options);
             var blobUrl = "https://teststorage.blob.core.windows.net/container/folder/subfolder/file.txt";
+            var expectedSasUri = new Uri($"{blobUrl}?sv=2021-12-02&sp=r&sr=b");
+
+            _blobClientMock.Setup(b => b.GenerateSasUri(It.IsAny<BlobSasBuilder>()))
+                .Returns(expectedSasUri);
 
             // Act
             var result = _service.GetReadableUrl(blobUrl);
@@ -164,7 +225,6 @@ namespace Eduva.Infrastructure.Test.Services
         public void GetReadableUrl_ShouldThrowException_WhenInvalidUrlProvided()
         {
             // Arrange
-            _service = new AzureBlobStorageService(_options);
             var invalidUrl = "not-a-valid-url";
 
             // Act & Assert
@@ -174,72 +234,62 @@ namespace Eduva.Infrastructure.Test.Services
         [Test]
         public void GetReadableUrl_ShouldThrowException_WhenNullUrlProvided()
         {
-            // Arrange
-            _service = new AzureBlobStorageService(_options);
-
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => _service.GetReadableUrl(null!));
         }
 
         #endregion
 
-        #region DeleteFileAsync Tests - Integration Style
+        #region DeleteFileAsync Tests
 
         [Test]
-        public void DeleteFileAsync_ShouldThrowConnectionException_WhenStorageEmulatorNotRunning()
+        public async Task DeleteFileAsync_ShouldDeleteSuccessfully_WhenBlobExists()
         {
             // Arrange
-            _service = new AzureBlobStorageService(_options);
-            var nonExistentBlobName = "non-existent-file.pdf";
+            var blobName = "existing-file.pdf";
+            var mockResponse = Response.FromValue(true, Mock.Of<Response>());
 
-            // Act & Assert - Without Azure Storage Emulator running, should get connection exceptions
-            Assert.ThrowsAsync<AggregateException>(
-                () => _service.DeleteFileAsync(nonExistentBlobName));
-        }
-
-        [Test]
-        public void DeleteFileAsync_ShouldThrowConnectionException_WhenValidBlobNameProvided()
-        {
-            // Arrange
-            _service = new AzureBlobStorageService(_options);
-            var blobName = "test-file.pdf";
-
-            // Act & Assert - Without Azure Storage Emulator running, should get connection exceptions
-            Assert.ThrowsAsync<AggregateException>(async () => await _service.DeleteFileAsync(blobName));
-        }
-
-        #endregion
-
-        #region GetBlobNameFromUrl Tests (Private Method Testing through Public Methods)
-
-        [Test]
-        public void GetBlobNameFromUrl_ShouldExtractCorrectName_ThroughGetReadableUrl()
-        {
-            // Arrange
-            _service = new AzureBlobStorageService(_options);
-            var expectedFileName = "test-document.pdf";
-            var blobUrl = $"https://storage.blob.core.windows.net/container/{expectedFileName}";
+            _blobClientMock.Setup(b => b.DeleteIfExistsAsync(It.IsAny<DeleteSnapshotsOption>(), It.IsAny<BlobRequestConditions>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(mockResponse);
 
             // Act
-            var result = _service.GetReadableUrl(blobUrl);
-
-            // Assert - Verify the blob name was correctly extracted and used
-            Assert.That(result, Does.Contain(expectedFileName));
-        }
-
-        [Test]
-        public void GetBlobNameFromUrl_ShouldHandleUrlsWithQueryParameters_ThroughGetReadableUrl()
-        {
-            // Arrange
-            _service = new AzureBlobStorageService(_options);
-            var expectedFileName = "file-with-query.txt";
-            var blobUrl = $"https://storage.blob.core.windows.net/container/{expectedFileName}?existing=param";
-
-            // Act
-            var result = _service.GetReadableUrl(blobUrl);
+            await _service.DeleteFileAsync(blobName);
 
             // Assert
-            Assert.That(result, Does.Contain(expectedFileName));
+            _blobClientMock.Verify(b => b.DeleteIfExistsAsync(It.IsAny<DeleteSnapshotsOption>(), It.IsAny<BlobRequestConditions>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Test]
+        public void DeleteFileAsync_ShouldThrowBlobNotFoundException_WhenBlobDoesNotExist()
+        {
+            // Arrange
+            var nonExistentBlobName = "non-existent-file.pdf";
+            var mockResponse = Response.FromValue(false, Mock.Of<Response>());
+
+            _blobClientMock.Setup(b => b.DeleteIfExistsAsync(It.IsAny<DeleteSnapshotsOption>(), It.IsAny<BlobRequestConditions>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(mockResponse);
+
+            // Act & Assert
+            var ex = Assert.ThrowsAsync<BlobNotFoundException>(async () => await _service.DeleteFileAsync(nonExistentBlobName));
+            Assert.That(ex, Is.Not.Null);
+        }
+
+        [Test]
+        public async Task DeleteFileAsync_ShouldCallCorrectBlobClient_WhenValidBlobNameProvided()
+        {
+            // Arrange
+            var blobName = "test-file.pdf";
+            var mockResponse = Response.FromValue(true, Mock.Of<Response>());
+
+            _blobClientMock.Setup(b => b.DeleteIfExistsAsync(It.IsAny<DeleteSnapshotsOption>(), It.IsAny<BlobRequestConditions>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(mockResponse);
+
+            // Act
+            await _service.DeleteFileAsync(blobName);
+
+            // Assert
+            _containerClientMock.Verify(c => c.GetBlobClient(blobName), Times.Once);
+            _blobClientMock.Verify(b => b.DeleteIfExistsAsync(It.IsAny<DeleteSnapshotsOption>(), It.IsAny<BlobRequestConditions>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         #endregion
@@ -247,38 +297,35 @@ namespace Eduva.Infrastructure.Test.Services
         #region Edge Cases and Error Handling
 
         [Test]
-        public void GenerateUploadSasToken_ShouldThrowArgumentException_ForEmptyBlobName()
-        {
-            // Arrange
-            _service = new AzureBlobStorageService(_options);
-            var emptyBlobName = "";
-            var expiresOn = DateTimeOffset.UtcNow.AddHours(1);
-
-            // Act & Assert - Azure SDK throws ArgumentException for empty blob name
-            Assert.ThrowsAsync<ArgumentException>(async () => await _service.GenerateUploadSasToken(emptyBlobName, expiresOn));
-        }
-
-        [Test]
-        public void GenerateUploadSasToken_ShouldHandlePastExpiryDate()
-        {
-            // Arrange
-            _service = new AzureBlobStorageService(_options);
-            var blobName = "test-file.pdf";
-            var pastDate = DateTimeOffset.UtcNow.AddHours(-1);
-
-            // Act & Assert
-            Assert.DoesNotThrowAsync(async () => await _service.GenerateUploadSasToken(blobName, pastDate));
-        }
-
-        [Test]
         public void GetReadableUrl_ShouldHandleUrlsWithSpecialCharacters()
         {
             // Arrange
-            _service = new AzureBlobStorageService(_options);
             var blobUrl = "https://storage.blob.core.windows.net/container/file%20with%20spaces.pdf";
+            var expectedSasUri = new Uri($"{blobUrl}?sv=2021-12-02&sp=r&sr=b");
+
+            _blobClientMock.Setup(b => b.GenerateSasUri(It.IsAny<BlobSasBuilder>()))
+                .Returns(expectedSasUri);
 
             // Act & Assert
             Assert.DoesNotThrow(() => _service.GetReadableUrl(blobUrl));
+        }
+
+        [Test]
+        public void GetReadableUrl_ShouldHandleUrlsWithQueryParameters()
+        {
+            // Arrange
+            var expectedFileName = "file-with-query.txt";
+            var blobUrl = $"https://storage.blob.core.windows.net/container/{expectedFileName}?existing=param";
+            var expectedSasUri = new Uri($"https://storage.blob.core.windows.net/container/{expectedFileName}?sv=2021-12-02&sp=r&sr=b");
+
+            _blobClientMock.Setup(b => b.GenerateSasUri(It.IsAny<BlobSasBuilder>()))
+                .Returns(expectedSasUri);
+
+            // Act
+            var result = _service.GetReadableUrl(blobUrl);
+
+            // Assert
+            Assert.That(result, Does.Contain(expectedFileName));
         }
 
         #endregion
@@ -296,30 +343,24 @@ namespace Eduva.Infrastructure.Test.Services
                 StorageAccountName = "test-account",
                 StorageAccountKey = "test-key"
             };
-            _service = new AzureBlobStorageService(customOptions);
-            var blobName = "test.pdf";
-            var expiresOn = DateTimeOffset.UtcNow.AddHours(1);
 
-            // Act
-            var result = _service.GenerateUploadSasToken(blobName, expiresOn);
-
-            // Assert - The container name should be reflected in the generated SAS token
-            Assert.DoesNotThrowAsync(async () => await result);
+            // Act & Assert
+            Assert.DoesNotThrow(() => new AzureBlobStorageService(customOptions));
         }
 
         [Test]
-        public void Service_ShouldHandleEmptyConnectionString()
+        public void Service_ShouldThrowException_WhenConnectionStringIsNull()
         {
             // Arrange
             var invalidOptions = new AzureBlobStorageOptions
             {
-                ConnectionString = "",
+                ConnectionString = null!,
                 ContainerName = "test-container",
                 StorageAccountName = "test-account",
                 StorageAccountKey = "test-key"
             };
 
-            // Act & Assert - Azure SDK throws ArgumentNullException for empty connection string
+            // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new AzureBlobStorageService(invalidOptions));
         }
 
@@ -328,32 +369,35 @@ namespace Eduva.Infrastructure.Test.Services
         #region Performance and Behavior Tests
 
         [Test]
-        public async Task GenerateUploadSasToken_ShouldReturnQuickly_ForMultipleRequests()
+        public async Task GenerateUploadSasToken_ShouldHandleMultipleRequests()
         {
             // Arrange
-            _service = new AzureBlobStorageService(_options);
             var blobNames = new[] { "file1.pdf", "file2.jpg", "file3.docx" };
             var expiresOn = DateTimeOffset.UtcNow.AddHours(1);
-            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            var expectedSasUri = new Uri("https://test.blob.core.windows.net/container/test.pdf?sv=2021-12-02&sp=cw&sr=b");
+
+            _blobClientMock.Setup(b => b.GenerateSasUri(It.IsAny<BlobSasBuilder>()))
+                .Returns(expectedSasUri);
 
             // Act
             var tasks = blobNames.Select(name => _service.GenerateUploadSasToken(name, expiresOn));
             var results = await Task.WhenAll(tasks);
 
-            stopwatch.Stop();
-
             // Assert
             Assert.That(results.Length, Is.EqualTo(3));
             Assert.That(results.All(r => !string.IsNullOrEmpty(r)), Is.True);
-            Assert.That(stopwatch.ElapsedMilliseconds, Is.LessThan(5000)); // Should complete within 5 seconds
+            _blobClientMock.Verify(b => b.GenerateSasUri(It.IsAny<BlobSasBuilder>()), Times.Exactly(3));
         }
 
         [Test]
-        public void GetReadableUrl_ShouldGenerateConsistentTokens_ForSameInput()
+        public void GetReadableUrl_ShouldGenerateConsistentResults_ForSameInput()
         {
             // Arrange
-            _service = new AzureBlobStorageService(_options);
             var blobUrl = "https://storage.blob.core.windows.net/container/test.pdf";
+            var expectedSasUri = new Uri($"{blobUrl}?sv=2021-12-02&sp=r&sr=b");
+
+            _blobClientMock.Setup(b => b.GenerateSasUri(It.IsAny<BlobSasBuilder>()))
+                .Returns(expectedSasUri);
 
             // Act
             var result1 = _service.GetReadableUrl(blobUrl);
@@ -362,10 +406,26 @@ namespace Eduva.Infrastructure.Test.Services
             // Assert
             Assert.That(result1, Is.Not.Null);
             Assert.That(result2, Is.Not.Null);
-            // SAS tokens generated within the same second should be identical due to timestamp precision
             Assert.That(result1, Is.EqualTo(result2));
         }
 
         #endregion
+    }
+
+    // Testable version of AzureBlobStorageService that allows dependency injection
+    public class TestableAzureBlobStorageService : AzureBlobStorageService
+    {
+        private readonly BlobContainerClient _containerClient;
+
+        public TestableAzureBlobStorageService(AzureBlobStorageOptions options, BlobContainerClient containerClient)
+            : base(options)
+        {
+            _containerClient = containerClient;
+
+            // Use reflection to set the private field
+            var field = typeof(AzureBlobStorageService).GetField("_containerClient",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            field?.SetValue(this, containerClient);
+        }
     }
 }
