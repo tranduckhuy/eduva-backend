@@ -1,14 +1,15 @@
 ﻿using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Exceptions.School;
-using Eduva.Application.Features.Schools.Commands;
+using Eduva.Application.Features.Schools.Commands.CreateSchool;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
+using MediatR;
 using Moq;
 
-namespace Eduva.Application.Test.Schools.Commands
+namespace Eduva.Application.Test.Schools.Commands.CreateSchool
 {
     [TestFixture]
     public class CreateSchoolCommandHandlerTests
@@ -73,8 +74,9 @@ namespace Eduva.Application.Test.Schools.Commands
         }
 
         [Test]
-        public async Task Handle_ShouldCreateSchoolAndReturnResponse_WhenValid()
+        public async Task Handle_ShouldCreateSchoolAndUpdateUser_WhenValid()
         {
+            // Arrange
             var command = new CreateSchoolCommand
             {
                 SchoolAdminId = Guid.NewGuid(),
@@ -97,20 +99,21 @@ namespace Eduva.Application.Test.Schools.Commands
                 .ReturnsAsync(1)
                 .ReturnsAsync(1);
 
+            // Act
             var result = await _handler.Handle(command, CancellationToken.None);
 
-            Assert.That(result, Is.Not.Null);
-            Assert.Multiple(() =>
-            {
-                Assert.That(result.Name, Is.EqualTo(command.Name));
-                Assert.That(result.ContactEmail, Is.EqualTo(command.ContactEmail));
-                Assert.That(result.ContactPhone, Is.EqualTo(command.ContactPhone));
-                Assert.That(result.Address, Is.EqualTo(command.Address));
-                Assert.That(result.WebsiteUrl, Is.EqualTo(command.WebsiteUrl));
-                Assert.That(result.Status, Is.EqualTo(EntityStatus.Inactive));
-            });
+            // Assert
+            Assert.That(result, Is.EqualTo(Unit.Value));
 
-            _schoolRepoMock.Verify(r => r.AddAsync(It.IsAny<School>()), Times.Once);
+            _schoolRepoMock.Verify(r => r.AddAsync(It.Is<School>(s =>
+                s.Name == command.Name &&
+                s.ContactEmail == command.ContactEmail &&
+                s.ContactPhone == command.ContactPhone &&
+                s.Address == command.Address &&
+                s.WebsiteUrl == command.WebsiteUrl &&
+                s.Status == EntityStatus.Inactive
+            )), Times.Once);
+
             _userRepoMock.Verify(r => r.Update(It.Is<ApplicationUser>(u => u.SchoolId != null)), Times.Once);
             _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Exactly(2));
         }

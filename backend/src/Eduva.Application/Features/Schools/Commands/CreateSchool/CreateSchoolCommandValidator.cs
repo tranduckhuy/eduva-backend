@@ -2,7 +2,7 @@
 using Eduva.Domain.Entities;
 using FluentValidation;
 
-namespace Eduva.Application.Features.Schools.Commands
+namespace Eduva.Application.Features.Schools.Commands.CreateSchool
 {
     public class CreateSchoolCommandValidator : AbstractValidator<CreateSchoolCommand>
     {

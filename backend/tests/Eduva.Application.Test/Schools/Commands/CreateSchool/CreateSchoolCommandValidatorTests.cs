@@ -1,4 +1,4 @@
-﻿using Eduva.Application.Features.Schools.Commands;
+﻿using Eduva.Application.Features.Schools.Commands.CreateSchool;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Domain.Entities;
@@ -6,7 +6,7 @@ using FluentValidation.TestHelper;
 using Moq;
 using System.Linq.Expressions;
 
-namespace Eduva.Application.Test.Schools.Commands
+namespace Eduva.Application.Test.Schools.Commands.CreateSchool
 {
     [TestFixture]
     public class CreateSchoolCommandValidatorTests

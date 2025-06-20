@@ -1,4 +1,4 @@
-﻿using Eduva.Application.Features.SchoolSubscriptions.Response;
+﻿using Eduva.Application.Features.SchoolSubscriptions.Responses;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;

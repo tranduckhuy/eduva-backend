@@ -1,10 +1,9 @@
-﻿using Eduva.Application.Features.Schools.Reponses;
-using MediatR;
+﻿using MediatR;
 using System.Text.Json.Serialization;
 
-namespace Eduva.Application.Features.Schools.Commands
+namespace Eduva.Application.Features.Schools.Commands.CreateSchool
 {
-    public class CreateSchoolCommand : IRequest<SchoolResponse>
+    public class CreateSchoolCommand : IRequest<Unit>
     {
         [JsonIgnore]
         public Guid SchoolAdminId { get; set; }

@@ -104,6 +104,19 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to archive class" } },
             { CustomCode.ClassCodeResetFailed, new MessageDetail {
                 HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to reset class code" } },
+            { CustomCode.SchoolAlreadyArchived, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "School is already archived" } },
+            { CustomCode.SubscriptionPlanMustBeArchived, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Subscription plan must be archived to perform this action" } },
+            { CustomCode.PlanInUse, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "This plan is currently in use and cannot be modified or deleted." } },
+            { CustomCode.SchoolAlreadyActive, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "School is already active" } },
+            { CustomCode.PlanAlreadyActive, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Plan is already active" } },
+            { CustomCode.PlanAlreadyArchived, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Plan is already archived" } },
+
 
             // File Storage Errors
             { CustomCode.InvalidBlobName, new MessageDetail {

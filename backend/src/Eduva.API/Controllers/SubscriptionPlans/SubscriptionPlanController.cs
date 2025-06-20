@@ -1,5 +1,10 @@
 ﻿using Eduva.API.Controllers.Base;
 using Eduva.Application.Common.Models;
+using Eduva.Application.Features.SubscriptionPlans.Commands.ActivatePlan;
+using Eduva.Application.Features.SubscriptionPlans.Commands.ArchivePlan;
+using Eduva.Application.Features.SubscriptionPlans.Commands.CreatePlan;
+using Eduva.Application.Features.SubscriptionPlans.Commands.DeletePlan;
+using Eduva.Application.Features.SubscriptionPlans.Commands.UpdatePlan;
 using Eduva.Application.Features.SubscriptionPlans.Queries;
 using Eduva.Application.Features.SubscriptionPlans.Responses;
 using Eduva.Application.Features.SubscriptionPlans.Specifications;
@@ -33,5 +38,79 @@ namespace Eduva.API.Controllers.SubscriptionPlans
                 return (CustomCode.Success, result);
             });
         }
+
+        [HttpGet("{id}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
+        public async Task<IActionResult> GetSubscriptionPlanById(int id)
+        {
+            var query = new GetSubscriptionPlanByIdQuery(id);
+
+            return await HandleRequestAsync(async () =>
+            {
+                var result = await _mediator.Send(query);
+                return (CustomCode.Success, result);
+            });
+        }
+
+        [HttpGet("{id}/details")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
+        public async Task<IActionResult> GetSubscriptionPlanDetail(int id)
+        {
+            var query = new GetSubscriptionPlanDetailQuery(id);
+
+            return await HandleRequestAsync(async () =>
+            {
+                var result = await _mediator.Send(query);
+                return (CustomCode.Success, result);
+            });
+        }
+
+        [HttpPost]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)}")]
+        public async Task<IActionResult> CreateSubscriptionPlan([FromBody] CreateSubscriptionPlanCommand command)
+        {
+            return await HandleRequestAsync(async () =>
+            {
+                var result = await _mediator.Send(command);
+                return (CustomCode.Success, result);
+            });
+        }
+
+        [HttpPut("{id}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)}")]
+        public async Task<IActionResult> UpdateSubscriptionPlan(int id, [FromBody] UpdateSubscriptionPlanCommand command)
+        {
+            command.Id = id;
+            return await HandleRequestAsync(async () =>
+            {
+                var result = await _mediator.Send(command);
+                return (CustomCode.Success, result);
+            });
+        }
+
+        [HttpPut("{id}/archive")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)}")]
+        public async Task<IActionResult> ArchiveSubscriptionPlan(int id)
+        {
+            var command = new ArchiveSubscriptionPlanCommand(id);
+            return await HandleRequestAsync(() => _mediator.Send(command));
+        }
+
+        [HttpPut("{id}/activate")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)}")]
+        public async Task<IActionResult> ActivateSubscriptionPlan(int id)
+        {
+            var command = new ActivateSubscriptionPlanCommand(id);
+            return await HandleRequestAsync(() => _mediator.Send(command));
+        }
+
+        [HttpDelete("{id}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)}")]
+        public async Task<IActionResult> DeleteSubscriptionPlan(int id)
+        {
+            var command = new DeleteSubscriptionPlanCommand(id);
+            return await HandleRequestAsync(() => _mediator.Send(command));
+        }
+
     }
 }

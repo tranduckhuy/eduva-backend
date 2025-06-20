@@ -4,5 +4,6 @@ namespace Eduva.Application.Interfaces.Repositories
 {
     public interface IUserRepository : IGenericRepository<ApplicationUser, Guid>
     {
+        Task<List<ApplicationUser>> GetUsersBySchoolIdAsync(int schoolId, CancellationToken cancellationToken = default);
     }
 }

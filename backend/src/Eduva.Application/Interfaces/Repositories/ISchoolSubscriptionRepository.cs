@@ -6,5 +6,7 @@ namespace Eduva.Application.Interfaces.Repositories
     {
         Task<SchoolSubscription?> FindByTransactionIdAsync(string transactionId);
         Task<SchoolSubscription?> GetActiveSubscriptionBySchoolIdAsync(int schoolId);
+        Task<int> CountSchoolsUsingPlanAsync(int planId, CancellationToken cancellationToken = default);
+        Task<SchoolSubscription?> GetLatestPaidBySchoolIdAsync(int schoolId, CancellationToken cancellationToken = default);
     }
 }
