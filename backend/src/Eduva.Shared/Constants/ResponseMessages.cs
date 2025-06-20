@@ -114,6 +114,8 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Plan is already active" } },
             { CustomCode.PlanAlreadyArchived, new MessageDetail {
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Plan is already archived" } },
+            { CustomCode.ClassCodeResetFailed, new MessageDetail {
+                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to reset class code" } },
 
             // File Storage Errors
             { CustomCode.InvalidBlobName, new MessageDetail {
