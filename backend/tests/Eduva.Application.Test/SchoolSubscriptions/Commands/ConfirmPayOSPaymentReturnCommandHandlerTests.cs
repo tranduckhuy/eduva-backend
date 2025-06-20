@@ -41,6 +41,42 @@ namespace Eduva.Application.Test.SchoolSubscriptions.Commands
         #region ConfirmPayOSPaymentReturnCommandHandler Tests
 
         [Test]
+        public async Task Should_Activate_Subscription_Without_Changing_School_Status_When_Already_Active()
+        {
+            var cmd = new ConfirmPayOSPaymentReturnCommand { Code = "00", Status = "PAID", OrderCode = 456 };
+
+            var newSub = new SchoolSubscription
+            {
+                Id = 3,
+                SchoolId = 20,
+                PaymentStatus = PaymentStatus.Pending,
+                SubscriptionStatus = SubscriptionStatus.Peding
+            };
+
+            var school = new School
+            {
+                Id = 20,
+                Status = EntityStatus.Active
+            };
+
+            _subRepoMock.Setup(x => x.FindByTransactionIdAsync("456")).ReturnsAsync(newSub);
+            _subRepoMock.Setup(x => x.GetActiveSubscriptionBySchoolIdAsync(20)).ReturnsAsync((SchoolSubscription?)null);
+            _schoolRepoMock.Setup(x => x.GetByIdAsync(20)).ReturnsAsync(school);
+
+            var result = await _handler.Handle(cmd, CancellationToken.None);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result, Is.EqualTo(Unit.Value));
+                Assert.That(newSub.SubscriptionStatus, Is.EqualTo(SubscriptionStatus.Active));
+                Assert.That(newSub.PaymentStatus, Is.EqualTo(PaymentStatus.Paid));
+                Assert.That(school.Status, Is.EqualTo(EntityStatus.Active));
+            });
+
+            _unitOfWorkMock.Verify(x => x.CommitAsync(), Times.Once);
+        }
+
+        [Test]
         public void Should_Throw_PaymentFailed_When_CodeNot00_Or_StatusNotPaid()
         {
             var cmd = new ConfirmPayOSPaymentReturnCommand { Code = "01", Status = "FAILED", OrderCode = 123 };

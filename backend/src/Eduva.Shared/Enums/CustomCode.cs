@@ -50,10 +50,16 @@ namespace Eduva.Shared.Enums
         ClassCreateFailed = 4031,
         ClassUpdateFailed = 4032,
         ClassArchiveFailed = 4033,
+        SchoolAlreadyArchived = 4034,
+        SubscriptionPlanMustBeArchived = 4035,
+        PlanInUse = 4036,
+        SchoolAlreadyActive = 4037,
+        PlanAlreadyActive = 4038,
+        PlanAlreadyArchived = 4039,
 
         // File Storage Errors
         InvalidBlobName = 4200,
         InvalidBlobUrl = 4201,
-        BlobNotFound = 4202,        
+        BlobNotFound = 4202,
     }
 }

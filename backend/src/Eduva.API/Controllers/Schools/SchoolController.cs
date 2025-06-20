@@ -1,5 +1,8 @@
 ﻿using Eduva.API.Controllers.Base;
-using Eduva.Application.Features.Schools.Commands;
+using Eduva.Application.Features.Schools.Commands.ActivateSchool;
+using Eduva.Application.Features.Schools.Commands.ArchiveSchool;
+using Eduva.Application.Features.Schools.Commands.CreateSchool;
+using Eduva.Application.Features.Schools.Commands.UpdateSchool;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
@@ -32,5 +35,30 @@ namespace Eduva.API.Controllers.Schools
 
             return await HandleRequestAsync(() => _mediator.Send(command));
         }
+
+        [HttpPut("{id}")]
+        [Authorize(Roles = $"{nameof(Role.SchoolAdmin)}")]
+        public async Task<IActionResult> UpdateSchool(int id, [FromBody] UpdateSchoolCommand command)
+        {
+            command.Id = id;
+            return await HandleRequestAsync(() => _mediator.Send(command));
+        }
+
+        [HttpPut("{id}/archive")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)}")]
+        public async Task<IActionResult> ArchiveSchool(int id)
+        {
+            var command = new ArchiveSchoolCommand(id);
+            return await HandleRequestAsync(() => _mediator.Send(command));
+        }
+
+        [HttpPut("{id}/activate")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)}")]
+        public async Task<IActionResult> ActivateSchool(int id)
+        {
+            var command = new ActivateSchoolCommand(id);
+            return await HandleRequestAsync(() => _mediator.Send(command));
+        }
+
     }
 }

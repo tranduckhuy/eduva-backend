@@ -56,6 +56,93 @@ namespace Eduva.Application.Test.SchoolSubscriptions.Commands
 
         #region CreateSchoolSubscriptionCommandHandler Tests
 
+        [TestCase(BillingCycle.Yearly, BillingCycle.Monthly)]
+        [TestCase(BillingCycle.Monthly, BillingCycle.Monthly)]
+        [TestCase(BillingCycle.Yearly, BillingCycle.Yearly)]
+        public void Should_Throw_DowngradeNotAllowed_For_All_DowngradeCases(BillingCycle currentCycle, BillingCycle requestCycle)
+        {
+            var plan = new SubscriptionPlan
+            {
+                Id = 2,
+                PriceMonthly = 50000,
+                PricePerYear = 600000,
+                Status = EntityStatus.Active
+            };
+
+            var currentPlan = new SubscriptionPlan
+            {
+                PriceMonthly = 99999,
+                PricePerYear = 999999
+            };
+
+            var existing = new SchoolSubscription
+            {
+                BillingCycle = currentCycle,
+                Plan = currentPlan,
+                PlanId = 1,
+                StartDate = DateTimeOffset.UtcNow.AddDays(-5),
+                AmountPaid = 990000
+            };
+
+            var school = new School { Id = 1, Name = "ABC", ContactEmail = "a", ContactPhone = "b" };
+            var command = new CreateSchoolSubscriptionCommand
+            {
+                SchoolId = 1,
+                PlanId = 2,
+                BillingCycle = requestCycle
+            };
+
+            _schoolRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(school);
+            _planRepoMock.Setup(r => r.GetByIdAsync(2)).ReturnsAsync(plan);
+            _subRepoMock.Setup(r => r.GetActiveSubscriptionBySchoolIdAsync(1)).ReturnsAsync(existing);
+
+            Assert.ThrowsAsync<DowngradeNotAllowedException>(() => _handler.Handle(command, CancellationToken.None));
+        }
+
+        [Test]
+        public async Task Should_Use_Yearly_Price_When_Cycle_Is_Yearly()
+        {
+            var school = new School { Id = 1, Name = "School", ContactEmail = "mail@edu.vn", ContactPhone = "0987654321" };
+            var plan = new SubscriptionPlan
+            {
+                Id = 2,
+                Name = "Pro",
+                Status = EntityStatus.Active,
+                PricePerYear = 990000
+            };
+
+            var command = new CreateSchoolSubscriptionCommand
+            {
+                SchoolId = 1,
+                PlanId = 2,
+                BillingCycle = BillingCycle.Yearly
+            };
+
+            var paymentResult = new CreatePaymentResult(
+                bin: "970436",
+                accountNumber: "987654321",
+                amount: 990000,
+                description: "ProY",
+                orderCode: 87654321,
+                currency: "VND",
+                paymentLinkId: "link-id-2",
+                status: "PENDING",
+                expiredAt: DateTimeOffset.UtcNow.AddMinutes(10).ToUnixTimeMilliseconds(),
+                checkoutUrl: "https://checkout.vn",
+                qrCode: "qr-code-2"
+            );
+
+            _schoolRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(school);
+            _planRepoMock.Setup(r => r.GetByIdAsync(2)).ReturnsAsync(plan);
+            _subRepoMock.Setup(r => r.GetActiveSubscriptionBySchoolIdAsync(1)).ReturnsAsync((SchoolSubscription?)null);
+            _payOSServiceMock.Setup(p => p.CreatePaymentLinkAsync(It.IsAny<PaymentData>()))
+                .ReturnsAsync(paymentResult);
+
+            var (code, response) = await _handler.Handle(command, CancellationToken.None);
+
+            Assert.That(response.Amount, Is.EqualTo(990000));
+        }
+
         [Test]
         public void Should_Throw_SchoolNotFound_When_SchoolMissing()
         {

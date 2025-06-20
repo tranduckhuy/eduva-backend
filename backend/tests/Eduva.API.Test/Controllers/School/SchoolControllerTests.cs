@@ -1,7 +1,9 @@
 ﻿using Eduva.API.Controllers.Schools;
 using Eduva.API.Models;
-using Eduva.Application.Features.Schools.Commands;
-using Eduva.Application.Features.Schools.Reponses;
+using Eduva.Application.Features.Schools.Commands.ActivateSchool;
+using Eduva.Application.Features.Schools.Commands.ArchiveSchool;
+using Eduva.Application.Features.Schools.Commands.CreateSchool;
+using Eduva.Application.Features.Schools.Commands.UpdateSchool;
 using Eduva.Shared.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -73,17 +75,10 @@ namespace Eduva.API.Test.Controllers.School
             SetupUser(validUserId.ToString());
 
             var command = new CreateSchoolCommand { Name = "Test School" };
-            var expectedResponse = new SchoolResponse
-            {
-                Id = 1,
-                Name = "Test School",
-                ContactEmail = "school@eduva.vn",
-                ContactPhone = "0909123456"
-            };
 
             _mediatorMock
                 .Setup(m => m.Send(It.IsAny<CreateSchoolCommand>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(expectedResponse);
+                .ReturnsAsync(Unit.Value);
 
             // Act
             var result = await _controller.CreateSchool(command);
@@ -93,12 +88,10 @@ namespace Eduva.API.Test.Controllers.School
 
             var objectResult = result as ObjectResult;
             Assert.That(objectResult, Is.Not.Null, "Result is not an ObjectResult");
-            Assert.That(objectResult!.Value, Is.Not.Null, "Returned Value is null");
 
-            var apiResponseJson = Newtonsoft.Json.JsonConvert.SerializeObject(objectResult.Value);
-            var apiResponse = Newtonsoft.Json.JsonConvert.DeserializeObject<ApiResponse<SchoolResponse>>(apiResponseJson);
-
-            Assert.That(apiResponse!.StatusCode, Is.EqualTo((int)CustomCode.Success), "StatusCode is not Success");
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null, "Response is null");
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success), "StatusCode is not Success");
         }
 
         [Test]
@@ -114,6 +107,135 @@ namespace Eduva.API.Test.Controllers.School
                 .ThrowsAsync(new Exception("Unhandled exception"));
 
             var result = await _controller.CreateSchool(command);
+
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
+        }
+
+        #endregion
+
+        #region UpdateSchool Tests
+
+        [Test]
+        public async Task UpdateSchool_ShouldReturnOk_WhenCommandIsValid()
+        {
+            // Arrange
+            var id = 1;
+            var command = new UpdateSchoolCommand
+            {
+                Name = "Updated School",
+                ContactEmail = "updated@eduva.vn",
+                ContactPhone = "0123456789",
+                Address = "New Address",
+                WebsiteUrl = "https://eduva.vn"
+            };
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<UpdateSchoolCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(Unit.Value);
+
+            // Act
+            var result = await _controller.UpdateSchool(id, command);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+        }
+
+        [Test]
+        public async Task UpdateSchool_ShouldReturnInternalServerError_WhenExceptionThrown()
+        {
+            var id = 1;
+            var command = new UpdateSchoolCommand { Name = "Fail School" };
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<UpdateSchoolCommand>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new Exception("Unexpected error"));
+
+            var result = await _controller.UpdateSchool(id, command);
+
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
+        }
+
+        #endregion
+
+        #region ArchiveSchool Tests
+
+        [Test]
+        public async Task ArchiveSchool_ShouldReturnOk_WhenCommandIsHandled()
+        {
+            var id = 1;
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<ArchiveSchoolCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(Unit.Value);
+
+            var result = await _controller.ArchiveSchool(id);
+
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+        }
+
+        [Test]
+        public async Task ArchiveSchool_ShouldReturnInternalServerError_WhenExceptionThrown()
+        {
+            var id = 1;
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<ArchiveSchoolCommand>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new Exception("Fail"));
+
+            var result = await _controller.ArchiveSchool(id);
+
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
+        }
+
+        #endregion
+
+        #region ActivateSchool Tests
+
+        [Test]
+        public async Task ActivateSchool_ShouldReturnOk_WhenCommandIsHandled()
+        {
+            var id = 2;
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<ActivateSchoolCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(Unit.Value);
+
+            var result = await _controller.ActivateSchool(id);
+
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+        }
+
+        [Test]
+        public async Task ActivateSchool_ShouldReturnInternalServerError_WhenExceptionThrown()
+        {
+            var id = 2;
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<ActivateSchoolCommand>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new Exception("Boom"));
+
+            var result = await _controller.ActivateSchool(id);
 
             var objectResult = result as ObjectResult;
             Assert.That(objectResult, Is.Not.Null);

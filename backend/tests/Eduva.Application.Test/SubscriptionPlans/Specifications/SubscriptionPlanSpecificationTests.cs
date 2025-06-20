@@ -139,6 +139,34 @@ namespace Eduva.Application.Test.SubscriptionPlans.Specifications
             Assert.That(spec.OrderBy, Is.Null);
         }
 
+        [Test]
+        public void Should_Project_Using_Selector()
+        {
+            // Arrange
+            var param = new SubscriptionPlanSpecParam();
+            var selectorFunc = new Func<IQueryable<SubscriptionPlan>, IQueryable<SubscriptionPlan>>(q =>
+                q.Select(x => new SubscriptionPlan
+                {
+                    Name = x.Name.ToUpper(),
+                    PriceMonthly = x.PriceMonthly
+                }));
+
+            var spec = new SubscriptionPlanSpecification(param)
+            {
+                Selector = selectorFunc
+            };
+
+            // Act
+            var projected = spec.Selector!(_mockData.AsQueryable()).ToList();
+
+            // Assert
+            Assert.Multiple(() =>
+            {
+                Assert.That(projected, Has.Count.EqualTo(3));
+                Assert.That(projected[0].Name, Is.EqualTo(_mockData[0].Name.ToUpper()));
+            });
+        }
+
         #endregion
 
     }

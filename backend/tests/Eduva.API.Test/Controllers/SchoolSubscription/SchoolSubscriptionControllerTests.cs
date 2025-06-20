@@ -1,12 +1,16 @@
 ﻿using Eduva.API.Controllers.SchoolSubscriptions;
+using Eduva.API.Models;
 using Eduva.Application.Features.SchoolSubscriptions.Commands;
-using Eduva.Application.Features.SchoolSubscriptions.Response;
+using Eduva.Application.Features.SchoolSubscriptions.Queries;
+using Eduva.Application.Features.SchoolSubscriptions.Responses;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Security.Claims;
 
 namespace Eduva.API.Test.Controllers.SchoolSubscription
 {
@@ -137,6 +141,110 @@ namespace Eduva.API.Test.Controllers.SchoolSubscription
 
             // Act
             var result = await _controller.PayOSReturn(query);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
+        }
+
+        #endregion
+
+        #region GetCurrentSubscription Tests
+
+        [Test]
+        public async Task GetCurrentSubscription_ShouldReturn200_WhenValidUser()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new[]
+            {
+            new Claim(ClaimTypes.NameIdentifier, userId.ToString())
+            }, "mock"));
+
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = claimsPrincipal
+                }
+            };
+
+            var expectedResponse = new MySchoolSubscriptionResponse
+            {
+                PlanName = "Plus",
+                Description = "Advanced plan",
+                StartDate = DateTimeOffset.UtcNow.AddDays(-5),
+                EndDate = DateTimeOffset.UtcNow.AddDays(25),
+                SubscriptionStatus = SubscriptionStatus.Active,
+                BillingCycle = BillingCycle.Monthly,
+                MaxUsers = 100,
+                StorageLimitGB = 50,
+                MaxMinutesPerMonth = 1000,
+                AmountPaid = 990000
+            };
+
+            _mediatorMock
+                .Setup(m => m.Send(It.Is<GetMySchoolSubscriptionQuery>(q => q.UserId == userId), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(expectedResponse);
+
+            // Act
+            var result = await _controller.GetCurrentSubscription();
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(200));
+
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(objectResult.Value);
+            var deserialized = Newtonsoft.Json.JsonConvert.DeserializeObject<ApiResponse<MySchoolSubscriptionResponse>>(json);
+
+            Assert.That(deserialized, Is.Not.Null);
+            Assert.That(deserialized!.Data!.PlanName, Is.EqualTo("Plus"));
+        }
+
+        [Test]
+        public async Task GetCurrentSubscription_ShouldReturn401_WhenUnauthenticated()
+        {
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = new ClaimsPrincipal(new ClaimsIdentity())
+                }
+            };
+
+            var result = await _controller.GetCurrentSubscription();
+
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(401));
+        }
+
+        [Test]
+        public async Task GetCurrentSubscription_ShouldReturn500_WhenExceptionThrown()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new[]
+            {
+            new Claim(ClaimTypes.NameIdentifier, userId.ToString())
+            }, "mock"));
+
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = claimsPrincipal
+                }
+            };
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<GetMySchoolSubscriptionQuery>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new Exception("Something failed"));
+
+            // Act
+            var result = await _controller.GetCurrentSubscription();
 
             // Assert
             var objectResult = result as ObjectResult;
