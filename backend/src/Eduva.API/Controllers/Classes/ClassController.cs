@@ -1,6 +1,9 @@
 using Eduva.API.Controllers.Base;
+using Eduva.API.Models;
+using Eduva.Application.Common.Models;
 using Eduva.Application.Features.Classes.Commands;
 using Eduva.Application.Features.Classes.Queries;
+using Eduva.Application.Features.Classes.Responses;
 using Eduva.Application.Features.Classes.Specifications;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
@@ -22,6 +25,7 @@ namespace Eduva.API.Controllers.Classes
         }
 
         [HttpPost]
+        [ProducesResponseType(typeof(ApiResponse<ClassResponse>), StatusCodes.Status201Created)]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
         public async Task<IActionResult> CreateClass([FromBody] CreateClassCommand command)
         {
@@ -34,11 +38,12 @@ namespace Eduva.API.Controllers.Classes
             return await HandleRequestAsync(async () =>
             {
                 var result = await _mediator.Send(command);
-                return (CustomCode.Success, result);
+                return (CustomCode.Created, result);
             });
         }
 
         [HttpGet]
+        [ProducesResponseType(typeof(ApiResponse<Pagination<ClassResponse>>), StatusCodes.Status200OK)]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}, {nameof(Role.Student)}")]
         public async Task<IActionResult> GetClasses([FromQuery] ClassSpecParam classSpecParam)
         {
@@ -55,6 +60,7 @@ namespace Eduva.API.Controllers.Classes
         }
 
         [HttpPut("{id}")]
+        [ProducesResponseType(typeof(ApiResponse<ClassResponse>), StatusCodes.Status200OK)]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
         public async Task<IActionResult> UpdateClass(Guid id, [FromBody] UpdateClassCommand command)
         {
@@ -73,13 +79,13 @@ namespace Eduva.API.Controllers.Classes
         }
 
         [HttpDelete("{id}")]
+        [ProducesResponseType(typeof(ApiResponse<ClassResponse>), StatusCodes.Status200OK)]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
         public async Task<IActionResult> DeleteClass(Guid id)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(userId, out var currentUserId))
                 return Respond(CustomCode.UserIdNotFound);
-
             var command = new DeleteClassCommand
             {
                 Id = id,
@@ -94,6 +100,7 @@ namespace Eduva.API.Controllers.Classes
         }
 
         [HttpPost("{id}/reset-code")]
+        [ProducesResponseType(typeof(ApiResponse<ClassResponse>), StatusCodes.Status200OK)]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
         public async Task<IActionResult> ResetClassCode(Guid id)
         {
