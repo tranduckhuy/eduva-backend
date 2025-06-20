@@ -102,6 +102,8 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to update class" } },
             { CustomCode.ClassArchiveFailed, new MessageDetail {
                 HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to archive class" } },
+            { CustomCode.ClassCodeResetFailed, new MessageDetail {
+                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to reset class code" } },
             { CustomCode.SchoolAlreadyArchived, new MessageDetail {
                 HttpCode = StatusCodes.Status400BadRequest, Message = "School is already archived" } },
             { CustomCode.SubscriptionPlanMustBeArchived, new MessageDetail {
@@ -114,8 +116,7 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Plan is already active" } },
             { CustomCode.PlanAlreadyArchived, new MessageDetail {
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Plan is already archived" } },
-            { CustomCode.ClassCodeResetFailed, new MessageDetail {
-                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to reset class code" } },
+
 
             // File Storage Errors
             { CustomCode.InvalidBlobName, new MessageDetail {

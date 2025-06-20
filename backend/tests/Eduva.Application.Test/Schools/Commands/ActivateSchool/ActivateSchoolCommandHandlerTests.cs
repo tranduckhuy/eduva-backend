@@ -68,16 +68,22 @@ namespace Eduva.Application.Test.Schools.Commands.ActivateSchool
             // Act
             var result = await _handler.Handle(command, CancellationToken.None);
 
-            // Assert
-            Assert.That(result, Is.EqualTo(Unit.Value));
-            Assert.That(school.Status, Is.EqualTo(EntityStatus.Active));
-            Assert.That(school.LastModifiedAt, Is.Not.EqualTo(default));
+            Assert.Multiple(() =>
+            {
+                // Assert
+                Assert.That(result, Is.EqualTo(Unit.Value));
+                Assert.That(school.Status, Is.EqualTo(EntityStatus.Active));
+                Assert.That(school.LastModifiedAt, Is.Not.EqualTo(default));
+            });
 
             foreach (var user in users)
             {
-                Assert.That(user.Status, Is.EqualTo(EntityStatus.Active));
-                Assert.That(user.LockoutEnabled, Is.False);
-                Assert.That(user.LockoutEnd, Is.Null);
+                Assert.Multiple(() =>
+                {
+                    Assert.That(user.Status, Is.EqualTo(EntityStatus.Active));
+                    Assert.That(user.LockoutEnabled, Is.False);
+                    Assert.That(user.LockoutEnd, Is.Null);
+                });
             }
 
             _schoolRepoMock.Verify(r => r.Update(It.IsAny<School>()), Times.Once);

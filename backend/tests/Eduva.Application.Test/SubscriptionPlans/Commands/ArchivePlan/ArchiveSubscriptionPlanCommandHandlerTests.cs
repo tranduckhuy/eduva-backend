@@ -59,9 +59,12 @@ namespace Eduva.Application.Test.SubscriptionPlans.Commands.ArchivePlan
             // Act
             var result = await _handler.Handle(command, CancellationToken.None);
 
-            // Assert
-            Assert.That(result, Is.EqualTo(Unit.Value));
-            Assert.That(plan.Status, Is.EqualTo(EntityStatus.Archived));
+            Assert.Multiple(() =>
+            {
+                // Assert
+                Assert.That(result, Is.EqualTo(Unit.Value));
+                Assert.That(plan.Status, Is.EqualTo(EntityStatus.Archived));
+            });
         }
 
         [Test]
