@@ -5,7 +5,6 @@ using Eduva.Application.Features.Classes.Commands;
 using Eduva.Application.Features.Classes.Queries;
 using Eduva.Application.Features.Classes.Responses;
 using Eduva.Application.Features.Classes.Specifications;
-using Eduva.Application.Features.Folders.Commands;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
