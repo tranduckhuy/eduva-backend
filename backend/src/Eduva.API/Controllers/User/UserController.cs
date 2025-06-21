@@ -68,7 +68,12 @@ namespace Eduva.API.Controllers.User
                 return Respond(CustomCode.UserIdNotFound);
 
             command.UserId = id;
-            return await HandleRequestAsync(() => _mediator.Send(command));
+            return await HandleRequestAsync(async () =>
+            {
+                var result = await _mediator.Send(command);
+                return (CustomCode.Success, result);
+            }
+            );
         }
     }
 }
