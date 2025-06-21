@@ -45,7 +45,7 @@ namespace Eduva.Infrastructure.Test.Services
             var resultBytes = await _service.ExportImportErrorsAsync(originalFile, rowErrors);
 
             Assert.That(resultBytes, Is.Not.Null);
-            Assert.That(resultBytes.Length, Is.GreaterThan(0));
+            Assert.That(resultBytes, Is.Not.Empty);
 
             using var resultPackage = new ExcelPackage(new MemoryStream(resultBytes));
             var worksheet = resultPackage.Workbook.Worksheets[0];
@@ -58,7 +58,7 @@ namespace Eduva.Infrastructure.Test.Services
 
         #region Helper Methods
 
-        private IFormFile CreateTestExcelFile()
+        private FormFile CreateTestExcelFile()
         {
             ExcelPackage.License.SetNonCommercialPersonal("EDUVA");
             var package = new ExcelPackage();

@@ -27,8 +27,8 @@ namespace Eduva.Application.Test.Features.Users.Commands
             store.Object,
             Mock.Of<IOptions<IdentityOptions>>(),
             Mock.Of<IPasswordHasher<ApplicationUser>>(),
-            new IUserValidator<ApplicationUser>[0],
-            new IPasswordValidator<ApplicationUser>[0],
+            Array.Empty<IUserValidator<ApplicationUser>>(),
+            Array.Empty<IPasswordValidator<ApplicationUser>>(),
             Mock.Of<ILookupNormalizer>(),
             Mock.Of<IdentityErrorDescriber>(),
             Mock.Of<IServiceProvider>(),
@@ -136,8 +136,11 @@ namespace Eduva.Application.Test.Features.Users.Commands
             };
 
             var ex = Assert.ThrowsAsync<AppException>(() => handler.Handle(command, default));
-            Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.ProvidedInformationIsInValid));
-            Assert.That(ex.Errors, Contains.Item("Password too weak"));
+            Assert.Multiple(() =>
+            {
+                Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.ProvidedInformationIsInValid));
+                Assert.That(ex.Errors, Contains.Item("Password too weak"));
+            });
         }
 
         [Test]

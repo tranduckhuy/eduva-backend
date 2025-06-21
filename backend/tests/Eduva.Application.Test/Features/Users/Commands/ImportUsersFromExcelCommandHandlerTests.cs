@@ -5,7 +5,6 @@ using Eduva.Domain.Entities;
 using Eduva.Shared.Enums;
 using FluentValidation;
 using MediatR;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Internal;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -35,8 +34,8 @@ namespace Eduva.Application.Test.Features.Users.Commands
                 store.Object,
                 Mock.Of<IOptions<IdentityOptions>>(),
                 Mock.Of<IPasswordHasher<ApplicationUser>>(),
-                new IUserValidator<ApplicationUser>[0],
-                new IPasswordValidator<ApplicationUser>[0],
+                Array.Empty<IUserValidator<ApplicationUser>>(),
+                Array.Empty<IPasswordValidator<ApplicationUser>>(),
                 Mock.Of<ILookupNormalizer>(),
                 Mock.Of<IdentityErrorDescriber>(),
                 Mock.Of<IServiceProvider>(),
@@ -82,7 +81,7 @@ namespace Eduva.Application.Test.Features.Users.Commands
                 Assert.That(code, Is.EqualTo(CustomCode.ProvidedInformationIsInValid));
                 Assert.That(fileResponse, Is.Not.Null);
             });
-            Assert.That(fileResponse!.Content.Length, Is.GreaterThan(0));
+            Assert.That(fileResponse!.Content, Is.Not.Empty);
         }
 
         [Test]
@@ -154,7 +153,7 @@ namespace Eduva.Application.Test.Features.Users.Commands
 
         #region Helper Methods
 
-        private IFormFile CreateTestExcelFile(IEnumerable<(string Email, string Name, string Role, string Password)> rows)
+        private static FormFile CreateTestExcelFile(IEnumerable<(string Email, string Name, string Role, string Password)> rows)
         {
             ExcelPackage.License.SetNonCommercialPersonal("EDUVA");
 
