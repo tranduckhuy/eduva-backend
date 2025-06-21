@@ -98,7 +98,7 @@ namespace Eduva.Infrastructure.Services
             for (int row = 2; row <= rowCount; row++)
             {
                 var dto = ExtractDtoFromWorksheet(worksheet, row);
-                var columnErrors = await ValidateDtoAsync(dto, row, fileEmailSet);
+                var columnErrors = await ValidateDtoAsync(dto, fileEmailSet);
 
                 if (columnErrors.Count > 0)
                 {
@@ -169,7 +169,7 @@ namespace Eduva.Infrastructure.Services
             }
         }
 
-        private void ClearWorksheetErrors(ExcelWorksheet worksheet, int rowCount)
+        private static void ClearWorksheetErrors(ExcelWorksheet worksheet, int rowCount)
         {
             for (int row = 2; row <= rowCount; row++)
             {
@@ -194,7 +194,7 @@ namespace Eduva.Infrastructure.Services
             };
         }
 
-        private async Task<Dictionary<int, string>> ValidateDtoAsync(CreateUserByAdminRequestDto dto, int row, HashSet<string> fileEmailSet)
+        private async Task<Dictionary<int, string>> ValidateDtoAsync(CreateUserByAdminRequestDto dto, HashSet<string> fileEmailSet)
         {
             var columnErrors = new Dictionary<int, string>();
 
