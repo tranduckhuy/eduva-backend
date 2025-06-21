@@ -1,10 +1,14 @@
 ﻿using Eduva.API.Controllers.Base;
 using Eduva.API.Models;
+using Eduva.Application.Features.Users.Commands;
 using Eduva.Application.Features.Users.DTOs;
-using Eduva.Application.Interfaces.Services;
+using Eduva.Application.Features.Users.Queries;
+using Eduva.Application.Features.Users.Requests;
+using Eduva.Application.Features.Users.Responses;
 using Eduva.Domain.Enums;
 using Eduva.Infrastructure.Configurations.ExcelTemplate;
 using Eduva.Shared.Enums;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -15,51 +19,107 @@ namespace Eduva.API.Controllers.Users
     [Route("api/users")]
     public class UserController : BaseController<UserController>
     {
-        private readonly IUserService _userService;
+        private readonly IMediator _mediator;
         private readonly ImportTemplateConfig _importTemplateConfig;
         private readonly IHttpClientFactory _httpClientFactory;
 
-        public UserController(IUserService userService, IOptions<ImportTemplateConfig> importTemplateOptions, IHttpClientFactory httpClientFactory, ILogger<UserController> logger) : base(logger)
+        public UserController(ILogger<UserController> logger, IOptions<ImportTemplateConfig> importTemplateOptions, IHttpClientFactory httpClientFactory, IMediator mediator) : base(logger)
         {
-            _userService = userService;
+            _mediator = mediator;
             _importTemplateConfig = importTemplateOptions.Value;
             _httpClientFactory = httpClientFactory;
         }
 
-        [HttpPost]
-        [Authorize(Roles = nameof(Role.SchoolAdmin))]
-        public async Task<IActionResult> CreateUserByAdmin([FromBody] CreateUserByAdminRequestDto request)
+        // Get the current user information
+        [HttpGet("profile")]
+        [ProducesResponseType(typeof(ApiResponse<UserResponse>), StatusCodes.Status200OK)]
+        [Authorize]
+        public async Task<IActionResult> GetUserProfileAsync()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!Guid.TryParse(userId, out var creatorId))
-            {
+            if (!Guid.TryParse(userId, out var id))
                 return Respond(CustomCode.UserIdNotFound);
-            }
 
-            return await HandleRequestAsync(() => _userService.CreateUserByAdminAsync(request, creatorId));
+            var query = new GetUserProfileQuery(UserId: id);
+
+            return await HandleRequestAsync(async () =>
+                {
+                    var result = await _mediator.Send(query);
+                    return (CustomCode.Success, result);
+                }
+            );
+        }
+
+        // Get user information by ID
+        [HttpGet("{userId:guid}")]
+        [ProducesResponseType(typeof(ApiResponse<UserResponse>), StatusCodes.Status200OK)]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)}")]
+        public async Task<IActionResult> GetUserByIdAsync(Guid userId)
+        {
+            var query = new GetUserProfileQuery(UserId: userId);
+            return await HandleRequestAsync(async () =>
+                {
+                    var result = await _mediator.Send(query);
+                    return (CustomCode.Success, result);
+                }
+            );
+        }
+
+        // Update user profile
+        [HttpPut("profile")]
+        [ProducesResponseType(typeof(ApiResponse<UserResponse>), StatusCodes.Status200OK)]
+        [Authorize]
+        public async Task<IActionResult> UpdateUserProfileAsync([FromBody] UpdateUserProfileCommand command)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userId, out var id))
+                return Respond(CustomCode.UserIdNotFound);
+
+            command.UserId = id;
+            return await HandleRequestAsync(async () =>
+            {
+                var result = await _mediator.Send(command);
+                return (CustomCode.Success, result);
+            }
+            );
+        }
+
+        [HttpPost]
+        [Authorize(Roles = nameof(Role.SchoolAdmin))]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> CreateUserAsync([FromBody] CreateUserByAdminCommand command)
+        {
+            var creatorIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(creatorIdString, out var creatorId))
+                return Respond(CustomCode.UserIdNotFound);
+
+            command.CreatorId = creatorId;
+            return await HandleRequestAsync(() => _mediator.Send(command));
         }
 
         [HttpPost("import")]
         [Authorize(Roles = nameof(Role.SchoolAdmin))]
-        public async Task<IActionResult> ImportUsersFromExcel([FromForm] ImportUsersFromExcelRequestDto request)
+        [ProducesResponseType(typeof(ApiResponse<FileResponseDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> ImportUsersFromExcel([FromForm] ImportUsersFromExcelRequest request)
         {
-            if (request.File == null || request.File.Length == 0)
-            {
-                return Respond(CustomCode.FileIsRequired);
-            }
+            var file = request.File;
 
-            if (!request.File.FileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
-            {
+            if (file is null || file.Length == 0)
+                return Respond(CustomCode.FileIsRequired);
+
+            if (!Path.GetExtension(file.FileName).Equals(".xlsx", StringComparison.OrdinalIgnoreCase))
                 return Respond(CustomCode.InvalidFileType);
-            }
 
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(userId, out var creatorId))
-            {
                 return Respond(CustomCode.UserIdNotFound);
-            }
 
-            var (code, fileResponse) = await _userService.ImportUsersFromExcelAsync(request.File, creatorId);
+            var (code, fileResponse) = await _mediator.Send(new ImportUsersFromExcelCommand
+            {
+                File = file,
+                CreatorId = creatorId
+            });
 
             if (fileResponse != null)
             {

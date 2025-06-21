@@ -1,14 +1,19 @@
-﻿using Eduva.API.Controllers.User;
+﻿using Eduva.API.Controllers.Users;
 using Eduva.API.Models;
 using Eduva.Application.Features.Users.Commands;
+using Eduva.Application.Features.Users.DTOs;
 using Eduva.Application.Features.Users.Queries;
+using Eduva.Application.Features.Users.Requests;
 using Eduva.Application.Features.Users.Responses;
+using Eduva.Infrastructure.Configurations.ExcelTemplate;
 using Eduva.Shared.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
+using System.Net;
 using System.Security.Claims;
 
 namespace Eduva.API.Test.Controllers.Users
@@ -19,6 +24,9 @@ namespace Eduva.API.Test.Controllers.Users
         private Mock<IMediator> _mediatorMock = default!;
         private Mock<ILogger<UserController>> _loggerMock = default!;
         private UserController _controller = default!;
+        private Mock<IOptions<ImportTemplateConfig>> _importTemplateOptionsMock = default!;
+        private Mock<IHttpClientFactory> _httpClientFactoryMock = default!;
+
 
         #region UserController Setup
 
@@ -27,7 +35,19 @@ namespace Eduva.API.Test.Controllers.Users
         {
             _mediatorMock = new Mock<IMediator>();
             _loggerMock = new Mock<ILogger<UserController>>();
-            _controller = new UserController(_loggerMock.Object, _mediatorMock.Object);
+            _importTemplateOptionsMock = new Mock<IOptions<ImportTemplateConfig>>();
+            _httpClientFactoryMock = new Mock<IHttpClientFactory>();
+
+            _importTemplateOptionsMock
+                .Setup(o => o.Value)
+                .Returns(new ImportTemplateConfig { Url = "https://mock-url.com/template.xlsx" });
+
+            _controller = new UserController(
+                _loggerMock.Object,
+                _importTemplateOptionsMock.Object,
+                _httpClientFactoryMock.Object,
+                _mediatorMock.Object
+            );
         }
 
         #endregion
@@ -317,6 +337,185 @@ namespace Eduva.API.Test.Controllers.Users
             var objectResult = result as ObjectResult;
             Assert.That(objectResult, Is.Not.Null);
             Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
+        }
+
+        #endregion
+
+        #region CreateUserAsync Tests
+
+        [Test]
+        public async Task CreateUserAsync_ShouldReturnUserIdNotFound_WhenUserIdIsInvalid()
+        {
+            SetupUser("invalid-guid");
+            var command = new CreateUserByAdminCommand { Email = "test@example.com" };
+
+            var result = await _controller.CreateUserAsync(command);
+
+            var objectResult = result as ObjectResult;
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task CreateUserAsync_ShouldCallMediator_WhenRequestIsValid()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            var command = new CreateUserByAdminCommand { Email = "test@example.com" };
+
+            _mediatorMock.Setup(m => m.Send(It.IsAny<CreateUserByAdminCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(Unit.Value);
+
+            var result = await _controller.CreateUserAsync(command);
+
+            var objectResult = result as ObjectResult;
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+        }
+
+        #endregion
+
+        #region ImportUsersFromExcel Tests
+
+        [Test]
+        public async Task ImportUsersFromExcel_ShouldReturnFileIsRequired_WhenFileIsEmpty()
+        {
+            SetupUser(Guid.NewGuid().ToString());
+
+            var mockFile = new Mock<IFormFile>();
+            mockFile.Setup(f => f.Length).Returns(0);
+            mockFile.Setup(f => f.FileName).Returns("users.xlsx");
+
+            var request = new ImportUsersFromExcelRequest { File = mockFile.Object };
+
+            var result = await _controller.ImportUsersFromExcel(request);
+
+            var objectResult = result as ObjectResult;
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.FileIsRequired));
+        }
+
+        [Test]
+        public async Task ImportUsersFromExcel_ShouldReturnInvalidFileType_WhenFileIsNotXlsx()
+        {
+            SetupUser(Guid.NewGuid().ToString());
+            var mockFile = new Mock<IFormFile>();
+            mockFile.Setup(f => f.Length).Returns(1024);
+            mockFile.Setup(f => f.FileName).Returns("invalid.csv");
+
+            var request = new ImportUsersFromExcelRequest { File = mockFile.Object };
+            var result = await _controller.ImportUsersFromExcel(request);
+            var objectResult = result as ObjectResult;
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.InvalidFileType));
+        }
+
+        [Test]
+        public async Task ImportUsersFromExcel_ShouldReturnFile_WhenImportFails()
+        {
+            SetupUser(Guid.NewGuid().ToString());
+            var mockFile = new Mock<IFormFile>();
+            mockFile.Setup(f => f.Length).Returns(1024);
+            mockFile.Setup(f => f.FileName).Returns("users.xlsx");
+            var fileResponse = new FileResponseDto { FileName = "error.xlsx", Content = new byte[] { 1, 2, 3 } };
+
+            _mediatorMock.Setup(m => m.Send(It.IsAny<ImportUsersFromExcelCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((CustomCode.ProvidedInformationIsInValid, fileResponse));
+
+            var request = new ImportUsersFromExcelRequest { File = mockFile.Object };
+            var result = await _controller.ImportUsersFromExcel(request);
+            var objectResult = result as ObjectResult;
+            var response = objectResult!.Value as ApiResponse<FileResponseDto>;
+            Assert.Multiple(() =>
+            {
+                Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.ProvidedInformationIsInValid));
+                Assert.That(response.Data, Is.Not.Null);
+            });
+        }
+
+        [Test]
+        public async Task ImportUsersFromExcel_ShouldReturnSuccess_WhenImportSucceeds()
+        {
+            SetupUser(Guid.NewGuid().ToString());
+            var mockFile = new Mock<IFormFile>();
+            mockFile.Setup(f => f.Length).Returns(1024);
+            mockFile.Setup(f => f.FileName).Returns("users.xlsx");
+
+            _mediatorMock.Setup(m => m.Send(It.IsAny<ImportUsersFromExcelCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((CustomCode.Success, null));
+
+            var request = new ImportUsersFromExcelRequest { File = mockFile.Object };
+            var result = await _controller.ImportUsersFromExcel(request);
+            var objectResult = result as ObjectResult;
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+        }
+
+        #endregion
+
+        #region DownloadUserImportTemplate Tests
+
+        [Test]
+        public async Task DownloadUserImportTemplate_ShouldReturnSuccess_WhenDownloadSucceeds()
+        {
+            var handler = new MockHttpMessageHandler(new byte[] { 1, 2, 3 });
+            var client = new HttpClient(handler);
+            _httpClientFactoryMock.Setup(f => f.CreateClient("EduvaHttpClient")).Returns(client);
+
+            var result = await _controller.DownloadUserImportTemplate();
+            var objectResult = result as ObjectResult;
+            var response = objectResult!.Value as ApiResponse<FileResponseDto>;
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+                Assert.That(response.Data, Is.Not.Null);
+            });
+        }
+
+        [Test]
+        public async Task DownloadUserImportTemplate_ShouldReturnSystemError_WhenExceptionThrown()
+        {
+            var handler = new MockHttpMessageHandler(throwException: true);
+            var client = new HttpClient(handler);
+            _httpClientFactoryMock.Setup(f => f.CreateClient("EduvaHttpClient")).Returns(client);
+
+            var result = await _controller.DownloadUserImportTemplate();
+            var objectResult = result as ObjectResult;
+            var response = objectResult!.Value as ApiResponse<FileResponseDto>;
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.SystemError));
+                Assert.That(response.Data, Is.Null);
+            });
+        }
+
+        #endregion
+
+        #region Helpers Classes
+
+        public class MockHttpMessageHandler : HttpMessageHandler
+        {
+            private readonly byte[] _content;
+            private readonly bool _throwException;
+
+            public MockHttpMessageHandler(byte[]? content = null, bool throwException = false)
+            {
+                _content = content ?? [];
+                _throwException = throwException;
+            }
+
+            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                if (_throwException)
+                    throw new Exception("Simulated download error");
+
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new ByteArrayContent(_content)
+                });
+            }
         }
 
         #endregion
