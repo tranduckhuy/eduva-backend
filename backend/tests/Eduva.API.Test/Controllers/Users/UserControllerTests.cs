@@ -451,6 +451,26 @@ namespace Eduva.API.Test.Controllers.Users
             Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
         }
 
+        [Test]
+        public async Task ImportUsersFromExcel_ShouldReturnUserIdNotFound_WhenUserIdIsInvalid()
+        {
+            SetupUser("invalid-guid");
+
+            var mockFile = new Mock<IFormFile>();
+            mockFile.Setup(f => f.Length).Returns(1024);
+            mockFile.Setup(f => f.FileName).Returns("users.xlsx");
+
+            var request = new ImportUsersFromExcelRequest { File = mockFile.Object };
+
+            // Act
+            var result = await _controller.ImportUsersFromExcel(request);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
         #endregion
 
         #region DownloadUserImportTemplate Tests
