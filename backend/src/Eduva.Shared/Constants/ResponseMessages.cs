@@ -122,6 +122,14 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Plan is already active" } },
             { CustomCode.PlanAlreadyArchived, new MessageDetail {
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Plan is already archived" } },
+            { CustomCode.InvalidRestrictedRole, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Invalid restricted role provided. Please use a valid role." } },
+            { CustomCode.UserNotPartOfSchool, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "User is not part of the school. Please ensure the user is registered in the school." } },
+            { CustomCode.FileIsRequired, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "File is required for this operation." } },
+            { CustomCode.InvalidFileType, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Invalid file type. Please upload a valid file." } },
 
 
             // File Storage Errors

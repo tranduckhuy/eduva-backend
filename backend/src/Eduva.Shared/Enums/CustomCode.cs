@@ -61,6 +61,14 @@ namespace Eduva.Shared.Enums
         NotTeacherOfClass = 4042,
         NotAdminForClassList = 4043,
 
+
+        InvalidRestrictedRole = 4044,
+        UserNotPartOfSchool = 4045,
+        FileIsRequired = 4046,
+        InvalidFileType = 4047,
+
+
+
         // File Storage Errors
         InvalidBlobName = 4200,
         InvalidBlobUrl = 4201,
