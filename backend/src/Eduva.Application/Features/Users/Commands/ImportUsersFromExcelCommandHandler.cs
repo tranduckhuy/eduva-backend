@@ -101,7 +101,7 @@ namespace Eduva.Application.Features.Users.Commands
 
                 ValidateRole(cmd.Role, columnErrors);
                 await ValidateDuplicateAndExistingEmail(cmd.Email, row, emailRowMap, errors, columnErrors);
-                await ValidateFluent(cmd, cancellationToken, columnErrors);
+                await ValidateFluent(cmd, columnErrors, cancellationToken);
                 await ValidatePasswordPolicy(cmd, columnErrors);
 
                 foreach (var (col, msg) in columnErrors)
@@ -155,8 +155,7 @@ namespace Eduva.Application.Features.Users.Commands
                 columnErrors[1] = "Email already exists";
         }
 
-        private async Task ValidateFluent(CreateUserByAdminCommand cmd, CancellationToken cancellationToken,
-            Dictionary<int, string> columnErrors)
+        private async Task ValidateFluent(CreateUserByAdminCommand cmd, Dictionary<int, string> columnErrors, CancellationToken cancellationToken)
         {
             var result = await _validator.ValidateAsync(cmd, cancellationToken);
             if (!result.IsValid)
