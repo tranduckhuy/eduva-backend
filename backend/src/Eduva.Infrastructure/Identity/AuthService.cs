@@ -74,7 +74,30 @@ namespace Eduva.Infrastructure.Identity
         {
             var token = await _userManager.GenerateEmailConfirmationTokenAsync(newUser);
 
-            var message = MailMessageHelper.CreateMessage(newUser, token, clientUrl, "Confirm Email", "confirm your email");
+            var verifyLink = $"{clientUrl}?email={Uri.EscapeDataString(newUser.Email!)}&token={Uri.EscapeDataString(token)}";
+
+            var basePath = AppContext.BaseDirectory;
+            var templatePath = Path.Combine(basePath, "email-templates", "verify-email.html");
+
+            if (!File.Exists(templatePath))
+            {
+                _logger.LogError("Email template file not found at path: {Path}", templatePath);
+                throw new FileNotFoundException("Template file not found", templatePath);
+            }
+
+            var template = await File.ReadAllTextAsync(templatePath);
+
+            var htmlBody = template
+                 .Replace("{{verify_link}}", verifyLink)
+                 .Replace("{{current_year}}", DateTime.UtcNow.Year.ToString());
+
+
+            var message = new EmailMessage(
+                    [new(newUser.Email!, newUser.FullName ?? newUser.Email!)],
+                    "Xác Minh Địa Chỉ Email",
+                    htmlBody,
+                    null
+                );
 
             _logger.LogInformation("Sending email to '{Email}' to confirm email.", newUser.Email);
 
@@ -110,14 +133,7 @@ namespace Eduva.Infrastructure.Identity
             {
                 var token = await _userManager.GenerateTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider);
 
-                var message = new EmailMessage(
-                    [new EmailAddress(user.Email!, user.FullName ?? user.Email!)],
-                    "Two-Factor Authentication Code",
-                    $"<p>Your authentication code is: <strong>{token}</strong></p>",
-                    null
-                );
-
-                await _emailSender.SendEmailAsync(message);
+                await SendOtpEmailMessage(user, token);
 
                 return (CustomCode.RequiresOtpVerification, new AuthResultDto
                 {
@@ -135,18 +151,46 @@ namespace Eduva.Infrastructure.Identity
             return (CustomCode.Success, authResponse);
         }
 
+        private async Task SendOtpEmailMessage(ApplicationUser user, string otp)
+        {
+            var basePath = AppContext.BaseDirectory;
+            var templatePath = Path.Combine(basePath, "email-templates", "otp-verification.html");
+
+            if (!File.Exists(templatePath))
+            {
+                _logger.LogError("OTP email template not found at path: {Path}", templatePath);
+                throw new FileNotFoundException("Template file not found", templatePath);
+            }
+
+            var template = await File.ReadAllTextAsync(templatePath);
+
+            var htmlBody = template
+                .Replace("{{otp_code}}", otp)
+                .Replace("{{current_year}}", DateTime.UtcNow.Year.ToString());
+
+            var message = new EmailMessage(
+                [new EmailAddress(user.Email!, user.FullName ?? user.Email!)],
+                "Xác thực OTP đăng nhập",
+                htmlBody,
+                null
+            );
+
+            await _emailSender.SendEmailAsync(message);
+        }
+
         public async Task<(CustomCode, AuthResultDto)> VerifyLoginOtpAsync(VerifyOtpRequestDto request)
         {
-            var user = await _userManager.FindByEmailAsync(request.Email);
-            if (user == null)
-                throw new UserNotExistsException();
-
+            var user = await _userManager.FindByEmailAsync(request.Email) ?? throw new UserNotExistsException();
             if (!await _userManager.GetTwoFactorEnabledAsync(user))
+            {
                 throw new AppException(CustomCode.Forbidden);
+            }
 
             var isValid = await _userManager.VerifyTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider, request.OtpCode);
             if (!isValid)
+            {
                 throw new OtpInvalidOrExpireException();
+            }
 
             var roles = await _userManager.GetRolesAsync(user);
             var claims = await _userManager.GetClaimsAsync(user);
@@ -155,16 +199,11 @@ namespace Eduva.Infrastructure.Identity
             return (CustomCode.Success, authResponse);
         }
 
-        private async Task Send2FaOtpEmailAsync(ApplicationUser user, string subject, string instruction)
+        private async Task Send2FaOtpEmailAsync(ApplicationUser user, string subject)
         {
-            var token = await _userManager.GenerateTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider);
+            var otpCode = await _userManager.GenerateTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider);
 
-            var message = new EmailMessage(
-                [new EmailAddress(user.Email!, user.FullName ?? user.Email!)],
-                subject,
-                $"<p>{instruction}: <strong>{token}</strong></p>",
-                null
-            );
+            var message = await MailMessageHelper.CreateMessageAsync(user, otpCode, subject);
 
             await _emailSender.SendEmailAsync(message);
         }
@@ -173,7 +212,9 @@ namespace Eduva.Infrastructure.Identity
         {
             var isValidOtp = await _userManager.VerifyTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider, otpCode);
             if (!isValidOtp)
+            {
                 throw new OtpInvalidOrExpireException();
+            }
 
             user.TwoFactorEnabled = enable;
             var result = await _userManager.UpdateAsync(user);
@@ -191,12 +232,16 @@ namespace Eduva.Infrastructure.Identity
             var user = await _userManager.FindByIdAsync(request.UserId.ToString()) ?? throw new UserNotExistsException();
 
             if (user.TwoFactorEnabled)
+            {
                 throw new TwoFactorIsAlreadyEnabledException();
+            }
 
             if (!await _userManager.CheckPasswordAsync(user, request.CurrentPassword))
+            {
                 throw new InvalidCredentialsException();
+            }
 
-            await Send2FaOtpEmailAsync(user, "Enable 2FA - Verification Code", "Use this code to enable Two-Factor Authentication");
+            await Send2FaOtpEmailAsync(user, "Bật xác thực 2 yếu tố - EDUVA");
 
             return CustomCode.OtpSentSuccessfully;
         }
@@ -206,7 +251,9 @@ namespace Eduva.Infrastructure.Identity
             var user = await _userManager.FindByIdAsync(request.UserId.ToString()) ?? throw new UserNotExistsException();
 
             if (user.TwoFactorEnabled)
+            {
                 throw new TwoFactorIsAlreadyEnabledException();
+            }
 
             return await Confirm2FaChangeAsync(user, request.OtpCode, true);
         }
@@ -215,12 +262,16 @@ namespace Eduva.Infrastructure.Identity
             var user = await _userManager.FindByIdAsync(request.UserId.ToString()) ?? throw new UserNotExistsException();
 
             if (!user.TwoFactorEnabled)
+            {
                 throw new TwoFactorIsAlreadyDisabledException();
+            }
 
             if (!await _userManager.CheckPasswordAsync(user, request.CurrentPassword))
+            {
                 throw new InvalidCredentialsException();
+            }
 
-            await Send2FaOtpEmailAsync(user, "Disable 2FA - Verification Code", "Use this code to disable Two-Factor Authentication");
+            await Send2FaOtpEmailAsync(user, "Tắt xác thực 2 yếu tố - EDUVA");
 
             return CustomCode.OtpSentSuccessfully;
         }
@@ -229,7 +280,9 @@ namespace Eduva.Infrastructure.Identity
             var user = await _userManager.FindByIdAsync(request.UserId.ToString()) ?? throw new UserNotExistsException();
 
             if (!user.TwoFactorEnabled)
+            {
                 throw new TwoFactorIsAlreadyDisabledException();
+            }
 
             return await Confirm2FaChangeAsync(user, request.OtpCode, false);
         }
@@ -270,7 +323,7 @@ namespace Eduva.Infrastructure.Identity
 
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
 
-            var message = MailMessageHelper.CreateMessage(user, token, request.ClientUrl, "Reset Password", "reset your password");
+            var message = MailMessageHelper.CreateMessage(user, token, request.ClientUrl, "reset-password.html", "Đặt Lại Mật Khẩu");
 
             //_ = _emailSender.SendEmailBrevoAsync(user.Email!, user.FirstName + " " + user.LastName, message.Subject, message.Content);
 
