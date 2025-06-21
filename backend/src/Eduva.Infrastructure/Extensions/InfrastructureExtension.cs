@@ -5,6 +5,7 @@ using Eduva.Application.Interfaces.Repositories;
 using Eduva.Application.Interfaces.Services;
 using Eduva.Infrastructure.Configurations;
 using Eduva.Infrastructure.Configurations.Email;
+using Eduva.Infrastructure.Configurations.ExcelTemplate;
 using Eduva.Infrastructure.Email;
 using Eduva.Infrastructure.Persistence.DbContext;
 using Eduva.Infrastructure.Persistence.Repositories;
@@ -50,6 +51,8 @@ namespace Eduva.Infrastructure.Extensions
 
             // Excel Service
             services.AddScoped<IExcelService, ExcelService>();
+            services.Configure<ImportTemplateConfig>(configuration.GetSection("ImportTemplate"));
+
 
             // User Service
             services.AddScoped<IUserService, UserService>();
@@ -72,6 +75,12 @@ namespace Eduva.Infrastructure.Extensions
             // Payment Configuration
             services.Configure<PayOSConfig>(configuration.GetSection(PayOSConfig.ConfigName));
             services.AddScoped<IPayOSService, PayOSService>();
+
+            services.AddHttpClient();
+            services.AddHttpClient("EduvaHttpClient", client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(10);
+            });
 
             return services;
         }

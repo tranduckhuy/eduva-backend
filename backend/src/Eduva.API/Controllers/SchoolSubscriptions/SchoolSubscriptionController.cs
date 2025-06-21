@@ -21,7 +21,7 @@ namespace Eduva.API.Controllers.SchoolSubscriptions
             _mediator = mediator;
         }
 
-        [HttpPost("create-payment-link")]
+        [HttpPost("payment-link")]
         [Authorize(Roles = $"{nameof(Role.SchoolAdmin)}")]
         public async Task<IActionResult> CreatePaymentLink([FromBody] CreateSchoolSubscriptionCommand command)
         {

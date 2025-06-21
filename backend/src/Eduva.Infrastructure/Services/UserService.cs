@@ -87,94 +87,33 @@ namespace Eduva.Infrastructure.Services
             var worksheet = package.Workbook.Worksheets[0];
             var rowCount = worksheet.Dimension.Rows;
 
-            for (int row = 2; row <= rowCount; row++)
-            {
-                for (int col = 1; col <= 4; col++)
-                {
-                    var cell = worksheet.Cells[row, col];
-                    if (cell.Comment != null)
-                        worksheet.Comments.Remove(cell.Comment);
-                    cell.Style.Fill.PatternType = ExcelFillStyle.None;
-                }
-            }
+            ClearWorksheetErrors(worksheet, rowCount);
 
             var fileEmailSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            var hasErrors = false;
             var validDtos = new List<(int Row, CreateUserByAdminRequestDto Dto)>();
+            var creationErrors = new Dictionary<(int Row, int Col), string>();
+            var hasErrors = false;
 
+            // Step 1: Validate content row-by-row
             for (int row = 2; row <= rowCount; row++)
             {
-                var email = worksheet.Cells[row, 1].Text.Trim();
-                var fullName = worksheet.Cells[row, 2].Text.Trim();
-                var roleStr = worksheet.Cells[row, 3].Text.Trim();
-                var password = worksheet.Cells[row, 4].Text.Trim();
-
-                var columnErrors = new Dictionary<int, string>();
-
-                if (!Enum.TryParse(roleStr, ignoreCase: true, out Role parsedRole))
-                    columnErrors[3] = "Invalid role";
-
-                if (!fileEmailSet.Add(email))
-                    columnErrors[1] = "Duplicate email in file";
-
-                var existing = await _userManager.FindByEmailAsync(email);
-                if (existing != null)
-                    columnErrors[1] = "Email already exists";
-
-                var dto = new CreateUserByAdminRequestDto
-                {
-                    Email = email,
-                    FullName = fullName,
-                    Role = parsedRole,
-                    InitialPassword = password
-                };
-
-                var validationResults = new List<ValidationResult>();
-                var validationContext = new ValidationContext(dto);
-                if (!Validator.TryValidateObject(dto, validationContext, validationResults, true))
-                {
-                    foreach (var result in validationResults)
-                    {
-                        var member = result.MemberNames.FirstOrDefault()?.ToLower() ?? "";
-                        var col = member switch
-                        {
-                            var n when n.Contains("email") => 1,
-                            var n when n.Contains("fullname") => 2,
-                            var n when n.Contains("role") => 3,
-                            var n when n.Contains("password") => 4,
-                            _ => 1
-                        };
-                        columnErrors[col] = result.ErrorMessage ?? "Invalid value";
-                    }
-                }
+                var dto = ExtractDtoFromWorksheet(worksheet, row);
+                var columnErrors = await ValidateDtoAsync(dto, row, fileEmailSet);
 
                 if (columnErrors.Count > 0)
                 {
                     hasErrors = true;
-                    foreach (var (col, msg) in columnErrors)
-                    {
-                        var cell = worksheet.Cells[row, col];
-                        cell.Style.Fill.PatternType = ExcelFillStyle.Solid;
-                        cell.Style.Fill.BackgroundColor.SetColor(Color.MistyRose);
-                        if (cell.Comment == null)
-                            cell.AddComment(msg, "System").AutoFit = true;
-                    }
+                    MarkErrorsInWorksheet(worksheet, row, columnErrors);
                     continue;
                 }
 
                 validDtos.Add((row, dto));
             }
 
-            var creationErrors = new Dictionary<(int Row, int Col), string>();
-
+            // Step 2: Validate password policy
             foreach (var (row, dto) in validDtos)
             {
-                var user = new ApplicationUser
-                {
-                    UserName = dto.Email,
-                    Email = dto.Email
-                };
-
+                var user = new ApplicationUser { Email = dto.Email, UserName = dto.Email };
                 foreach (var validator in _userManager.PasswordValidators)
                 {
                     var result = await validator.ValidateAsync(_userManager, user, dto.InitialPassword);
@@ -211,12 +150,96 @@ namespace Eduva.Infrastructure.Services
                 });
             }
 
-            foreach (var (_, dto) in validDtos)
+            // Step 3: Commit user creation in transaction
+            await _unitOfWork.BeginTransactionAsync();
+            try
             {
-                await CreateUserByAdminAsync(dto, creatorId);
+                foreach (var (_, dto) in validDtos)
+                {
+                    await CreateUserByAdminAsync(dto, creatorId);
+                }
+
+                await _unitOfWork.CommitAsync();
+                return (CustomCode.Success, null);
+            }
+            catch
+            {
+                await _unitOfWork.RollbackAsync();
+                throw new AppException(CustomCode.SystemError);
+            }
+        }
+
+        private void ClearWorksheetErrors(ExcelWorksheet worksheet, int rowCount)
+        {
+            for (int row = 2; row <= rowCount; row++)
+            {
+                for (int col = 1; col <= 4; col++)
+                {
+                    var cell = worksheet.Cells[row, col];
+                    if (cell.Comment != null)
+                        worksheet.Comments.Remove(cell.Comment);
+                    cell.Style.Fill.PatternType = ExcelFillStyle.None;
+                }
+            }
+        }
+
+        private static CreateUserByAdminRequestDto ExtractDtoFromWorksheet(ExcelWorksheet worksheet, int row)
+        {
+            return new CreateUserByAdminRequestDto
+            {
+                Email = worksheet.Cells[row, 1].Text.Trim(),
+                FullName = worksheet.Cells[row, 2].Text.Trim(),
+                Role = Enum.TryParse(worksheet.Cells[row, 3].Text.Trim(), true, out Role parsed) ? parsed : Role.Student,
+                InitialPassword = worksheet.Cells[row, 4].Text.Trim()
+            };
+        }
+
+        private async Task<Dictionary<int, string>> ValidateDtoAsync(CreateUserByAdminRequestDto dto, int row, HashSet<string> fileEmailSet)
+        {
+            var columnErrors = new Dictionary<int, string>();
+
+            if (!Enum.IsDefined(typeof(Role), dto.Role) || dto.Role == Role.SystemAdmin || dto.Role == Role.SchoolAdmin)
+                columnErrors[3] = "Invalid role";
+
+            if (!fileEmailSet.Add(dto.Email))
+                columnErrors[1] = "Duplicate email in file";
+
+            var existing = await _userManager.FindByEmailAsync(dto.Email);
+            if (existing != null)
+                columnErrors[1] = "Email already exists";
+
+            var validationResults = new List<ValidationResult>();
+            var context = new ValidationContext(dto);
+            if (!Validator.TryValidateObject(dto, context, validationResults, true))
+            {
+                foreach (var result in validationResults)
+                {
+                    var member = result.MemberNames.FirstOrDefault()?.ToLower() ?? "";
+                    var col = member switch
+                    {
+                        var n when n.Contains("email") => 1,
+                        var n when n.Contains("fullname") => 2,
+                        var n when n.Contains("role") => 3,
+                        var n when n.Contains("password") => 4,
+                        _ => 1
+                    };
+                    columnErrors[col] = result.ErrorMessage ?? "Invalid value";
+                }
             }
 
-            return (CustomCode.Success, null);
+            return columnErrors;
+        }
+
+        private static void MarkErrorsInWorksheet(ExcelWorksheet worksheet, int row, Dictionary<int, string> columnErrors)
+        {
+            foreach (var (col, msg) in columnErrors)
+            {
+                var cell = worksheet.Cells[row, col];
+                cell.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                cell.Style.Fill.BackgroundColor.SetColor(Color.MistyRose);
+                if (cell.Comment == null)
+                    cell.AddComment(msg, "System").AutoFit = true;
+            }
         }
     }
 }

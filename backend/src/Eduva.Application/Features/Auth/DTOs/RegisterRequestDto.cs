@@ -4,7 +4,7 @@ namespace Eduva.Application.Features.Auth.DTOs
 {
     public class RegisterRequestDto
     {
-        [Required(ErrorMessage = "First name is required")]
+        [Required(ErrorMessage = "Full name is required")]
         [MaxLength(50, ErrorMessage = "Full name must be less than 100 characters")]
         public string FullName { get; set; } = string.Empty;
 

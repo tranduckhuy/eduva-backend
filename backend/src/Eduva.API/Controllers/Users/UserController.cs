@@ -3,10 +3,11 @@ using Eduva.API.Models;
 using Eduva.Application.Features.Users.DTOs;
 using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Enums;
-using Eduva.Infrastructure.Services.Interface;
+using Eduva.Infrastructure.Configurations.ExcelTemplate;
 using Eduva.Shared.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using System.Security.Claims;
 
 namespace Eduva.API.Controllers.Users
@@ -15,12 +16,14 @@ namespace Eduva.API.Controllers.Users
     public class UserController : BaseController<UserController>
     {
         private readonly IUserService _userService;
-        private readonly IExcelService _excelService;
+        private readonly ImportTemplateConfig _importTemplateConfig;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        public UserController(IUserService userService, IExcelService excelService, ILogger<UserController> logger) : base(logger)
+        public UserController(IUserService userService, IOptions<ImportTemplateConfig> importTemplateOptions, IHttpClientFactory httpClientFactory, ILogger<UserController> logger) : base(logger)
         {
             _userService = userService;
-            _excelService = excelService;
+            _importTemplateConfig = importTemplateOptions.Value;
+            _httpClientFactory = httpClientFactory;
         }
 
         [HttpPost]
@@ -80,13 +83,10 @@ namespace Eduva.API.Controllers.Users
         [Authorize(Roles = nameof(Role.SchoolAdmin))]
         public async Task<IActionResult> DownloadUserImportTemplate()
         {
-            const string templateUrl =
-                "https://firebasestorage.googleapis.com/v0/b/gdupa-2fa82.appspot.com/o/excel-template%2Fuser-import-template.xlsx?alt=media&token=a1863610-2ab1-4d81-893b-bef6f3f6f4e0";
-
             try
             {
-                using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
-                var fileBytes = await httpClient.GetByteArrayAsync(templateUrl);
+                var httpClient = _httpClientFactory.CreateClient("EduvaHttpClient");
+                var fileBytes = await httpClient.GetByteArrayAsync(_importTemplateConfig.Url);
 
                 return Ok(new ApiResponse<FileResponseDto>
                 {
