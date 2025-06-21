@@ -1,4 +1,4 @@
-﻿using Eduva.API.Controllers.User;
+﻿using Eduva.API.Controllers.Users;
 using Eduva.API.Models;
 using Eduva.Application.Features.Users.Commands;
 using Eduva.Application.Features.Users.Queries;

@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 
-namespace Eduva.Infrastructure.Services.Interface
+namespace Eduva.Application.Interfaces.Services
 {
     public interface IExcelService
     {

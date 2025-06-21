@@ -11,7 +11,6 @@ using Eduva.Infrastructure.Persistence.DbContext;
 using Eduva.Infrastructure.Persistence.Repositories;
 using Eduva.Infrastructure.Persistence.UnitOfWork;
 using Eduva.Infrastructure.Services;
-using Eduva.Infrastructure.Services.Interface;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -52,10 +51,6 @@ namespace Eduva.Infrastructure.Extensions
             // Excel Service
             services.AddScoped<IExcelService, ExcelService>();
             services.Configure<ImportTemplateConfig>(configuration.GetSection("ImportTemplate"));
-
-
-            // User Service
-            services.AddScoped<IUserService, UserService>();
 
             // Register repositories
             services.AddScoped(typeof(IGenericRepository<,>), typeof(GenericRepository<,>));
