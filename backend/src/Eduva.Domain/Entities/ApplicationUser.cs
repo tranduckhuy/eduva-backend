@@ -9,7 +9,6 @@ namespace Eduva.Domain.Entities
         public string? FullName { get; set; }
         public string AvatarUrl { get; set; } = AppConstants.DEFAULT_AVATAR;
         public int? SchoolId { get; set; }
-        public DateTimeOffset? DOB { get; set; }
         public EntityStatus Status { get; set; } = EntityStatus.Active;
 
         public string? RefreshToken { get; set; }
@@ -26,5 +25,7 @@ namespace Eduva.Domain.Entities
         public virtual ICollection<LessonMaterialQuestion> CreatedLessonMaterialQuestions { get; set; } = [];
         public virtual ICollection<QuestionComment> CreatedQuestionComments { get; set; } = [];
         public virtual ICollection<UserNotification> ReceivedNotifications { get; set; } = [];
+        public virtual ICollection<UserCreditTransaction> CreditTransactions { get; set; } = [];
+        public virtual ICollection<PaymentTransaction> PaymentTransactions { get; set; } = [];
     }
 }

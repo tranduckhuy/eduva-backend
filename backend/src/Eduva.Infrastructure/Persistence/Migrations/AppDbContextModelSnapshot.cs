@@ -22,6 +22,75 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Eduva.Domain.Entities.AICreditPack", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BonusCredits")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Credits")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTimeOffset?>("LastModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AICreditPacks");
+                });
+
+            modelBuilder.Entity("Eduva.Domain.Entities.AIServicePricing", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("LastModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("PricePerMinuteCredits")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("ServiceType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AIServicePricings");
+                });
+
             modelBuilder.Entity("Eduva.Domain.Entities.AIUsageLog", b =>
                 {
                     b.Property<int>("Id")
@@ -30,19 +99,22 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("ContentType")
+                    b.Property<string>("AIServiceType")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<decimal>("CostMinutes")
-                        .HasColumnType("numeric");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("LessonTitleAtCreation")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                    b.Property<int>("CreditsCharged")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<int>("DurationSeconds")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
@@ -71,9 +143,6 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("text");
-
-                    b.Property<DateTimeOffset?>("DOB")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
@@ -426,6 +495,49 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.ToTable("Notifications");
                 });
 
+            modelBuilder.Entity("Eduva.Domain.Entities.PaymentTransaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PaymentPurpose")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PaymentStatus")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RelatedId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("TransactionCode")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PaymentTransactions");
+                });
+
             modelBuilder.Entity("Eduva.Domain.Entities.QuestionComment", b =>
                 {
                     b.Property<int>("Id")
@@ -523,35 +635,21 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<decimal>("AmountPaid")
-                        .HasColumnType("numeric(18,2)");
-
                     b.Property<string>("BillingCycle")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<decimal>("CurrentPeriodAIUsageMinutes")
-                        .HasColumnType("numeric(18,2)");
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTimeOffset>("EndDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTimeOffset>("LastUsageResetDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("PaymentMethod")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("PaymentStatus")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<Guid>("PaymentTransactionId")
+                        .HasColumnType("uuid");
 
                     b.Property<int>("PlanId")
                         .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset>("PurchasedAt")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("SchoolId")
                         .HasColumnType("integer");
@@ -563,11 +661,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("TransactionId")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
                     b.HasKey("Id");
+
+                    b.HasIndex("PaymentTransactionId");
 
                     b.HasIndex("PlanId");
 
@@ -619,9 +715,6 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset?>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<decimal>("MaxMinutesPerMonth")
-                        .HasColumnType("numeric(18,2)");
-
                     b.Property<int>("MaxUsers")
                         .HasColumnType("integer");
 
@@ -645,6 +738,40 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("SubscriptionPlans");
+                });
+
+            modelBuilder.Entity("Eduva.Domain.Entities.UserCreditTransaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AICreditPackId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Credits")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("PaymentTransactionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AICreditPackId");
+
+                    b.HasIndex("PaymentTransactionId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserCreditTransactions");
                 });
 
             modelBuilder.Entity("Eduva.Domain.Entities.UserNotification", b =>
@@ -935,6 +1062,17 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.Navigation("LessonMaterial");
                 });
 
+            modelBuilder.Entity("Eduva.Domain.Entities.PaymentTransaction", b =>
+                {
+                    b.HasOne("Eduva.Domain.Entities.ApplicationUser", "User")
+                        .WithMany("PaymentTransactions")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Eduva.Domain.Entities.QuestionComment", b =>
                 {
                     b.HasOne("Eduva.Domain.Entities.ApplicationUser", "CreatedByUser")
@@ -963,6 +1101,12 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Eduva.Domain.Entities.SchoolSubscription", b =>
                 {
+                    b.HasOne("Eduva.Domain.Entities.PaymentTransaction", "PaymentTransaction")
+                        .WithMany()
+                        .HasForeignKey("PaymentTransactionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Eduva.Domain.Entities.SubscriptionPlan", "Plan")
                         .WithMany("SchoolSubscriptions")
                         .HasForeignKey("PlanId")
@@ -974,6 +1118,8 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                         .HasForeignKey("SchoolId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("PaymentTransaction");
 
                     b.Navigation("Plan");
 
@@ -997,6 +1143,33 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.Navigation("Class");
 
                     b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("Eduva.Domain.Entities.UserCreditTransaction", b =>
+                {
+                    b.HasOne("Eduva.Domain.Entities.AICreditPack", "AICreditPack")
+                        .WithMany("UserCreditTransactions")
+                        .HasForeignKey("AICreditPackId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Eduva.Domain.Entities.PaymentTransaction", "PaymentTransaction")
+                        .WithMany()
+                        .HasForeignKey("PaymentTransactionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Eduva.Domain.Entities.ApplicationUser", "User")
+                        .WithMany("CreditTransactions")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AICreditPack");
+
+                    b.Navigation("PaymentTransaction");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Eduva.Domain.Entities.UserNotification", b =>
@@ -1069,6 +1242,11 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Eduva.Domain.Entities.AICreditPack", b =>
+                {
+                    b.Navigation("UserCreditTransactions");
+                });
+
             modelBuilder.Entity("Eduva.Domain.Entities.ApplicationUser", b =>
                 {
                     b.Navigation("AIUsageLogs");
@@ -1082,6 +1260,10 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.Navigation("CreatedLessonMaterials");
 
                     b.Navigation("CreatedQuestionComments");
+
+                    b.Navigation("CreditTransactions");
+
+                    b.Navigation("PaymentTransactions");
 
                     b.Navigation("PersonalFolders");
 

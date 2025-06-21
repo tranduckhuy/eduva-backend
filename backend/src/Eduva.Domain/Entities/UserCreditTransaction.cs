@@ -1,5 +1,4 @@
 ﻿using Eduva.Domain.Common;
-using Eduva.Domain.Enums;
 
 namespace Eduva.Domain.Entities
 {
@@ -7,15 +6,15 @@ namespace Eduva.Domain.Entities
     {
         public Guid UserId { get; set; }
 
-        public int AICreditPackID { get; set; }
+        public int AICreditPackId { get; set; }
+        public Guid PaymentTransactionId { get; set; } // Reference to the payment transaction
         public int Credits { get; set; }
-        public decimal MoneyAmount { get; set; }
-        public PaymentMethod PaymentMethod { get; set; }
-        public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.Pending;
-        public string TransactionId { get; set; } = string.Empty;
+        public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
         // Navigation properties
         public virtual ApplicationUser User { get; set; } = null!;
         public virtual AICreditPack AICreditPack { get; set; } = null!;
+        public virtual PaymentTransaction PaymentTransaction { get; set; } = null!;
+
     }
 }
