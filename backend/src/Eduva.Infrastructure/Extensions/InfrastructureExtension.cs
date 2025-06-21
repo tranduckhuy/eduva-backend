@@ -5,11 +5,13 @@ using Eduva.Application.Interfaces.Repositories;
 using Eduva.Application.Interfaces.Services;
 using Eduva.Infrastructure.Configurations;
 using Eduva.Infrastructure.Configurations.Email;
+using Eduva.Infrastructure.Configurations.ExcelTemplate;
 using Eduva.Infrastructure.Email;
 using Eduva.Infrastructure.Persistence.DbContext;
 using Eduva.Infrastructure.Persistence.Repositories;
 using Eduva.Infrastructure.Persistence.UnitOfWork;
 using Eduva.Infrastructure.Services;
+using Eduva.Infrastructure.Services.Interface;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -47,6 +49,14 @@ namespace Eduva.Infrastructure.Extensions
             // Unit of Work 
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+            // Excel Service
+            services.AddScoped<IExcelService, ExcelService>();
+            services.Configure<ImportTemplateConfig>(configuration.GetSection("ImportTemplate"));
+
+
+            // User Service
+            services.AddScoped<IUserService, UserService>();
+
             // Register repositories
             services.AddScoped(typeof(IGenericRepository<,>), typeof(GenericRepository<,>));
             services.AddScoped<IRepositoryFactory, RepositoryFactory>();
@@ -65,6 +75,12 @@ namespace Eduva.Infrastructure.Extensions
             // Payment Configuration
             services.Configure<PayOSConfig>(configuration.GetSection(PayOSConfig.ConfigName));
             services.AddScoped<IPayOSService, PayOSService>();
+
+            services.AddHttpClient();
+            services.AddHttpClient("EduvaHttpClient", client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(10);
+            });
 
             return services;
         }
