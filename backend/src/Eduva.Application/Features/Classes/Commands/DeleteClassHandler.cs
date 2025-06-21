@@ -1,6 +1,4 @@
 using Eduva.Application.Common.Exceptions;
-using Eduva.Application.Common.Mappings;
-using Eduva.Application.Features.Classes.Responses;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Domain.Entities;
@@ -11,7 +9,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Eduva.Application.Features.Classes.Commands
 {
-    public class DeleteClassHandler : IRequestHandler<DeleteClassCommand, ClassResponse>
+    public class DeleteClassHandler : IRequestHandler<DeleteClassCommand, bool>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<ApplicationUser> _userManager;
@@ -22,13 +20,13 @@ namespace Eduva.Application.Features.Classes.Commands
             _userManager = userManager;
         }
 
-        public async Task<ClassResponse> Handle(DeleteClassCommand request, CancellationToken cancellationToken)
+        public async Task<bool> Handle(DeleteClassCommand request, CancellationToken cancellationToken)
         {
             var classroomRepository = _unitOfWork.GetCustomRepository<IClassroomRepository>();
-            
+
             var classroom = await classroomRepository.GetByIdAsync(request.Id)
                 ?? throw new AppException(CustomCode.ClassNotFound);
-            
+
             // Get the current user
             var userRepository = _unitOfWork.GetRepository<ApplicationUser, Guid>();
             var currentUser = await userRepository.GetByIdAsync(request.TeacherId)
@@ -52,10 +50,7 @@ namespace Eduva.Application.Features.Classes.Commands
             try
             {
                 await _unitOfWork.CommitAsync();
-                var response = AppMapper.Mapper.Map<ClassResponse>(classroom);
-                response.TeacherName = classroom.Teacher?.FullName ?? string.Empty;
-                response.SchoolName = classroom.School?.Name ?? string.Empty;
-                return response;
+                return true;
             }
             catch (Exception)
             {
