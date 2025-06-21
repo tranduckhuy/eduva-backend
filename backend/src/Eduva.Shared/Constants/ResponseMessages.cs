@@ -94,6 +94,8 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status404NotFound, Message = "Class not found" } },
             { CustomCode.ClassNameAlreadyExists, new MessageDetail {
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Class name already exists in this school" } },
+            { CustomCode.ClassNameAlreadyExistsForTeacher, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "You already have a class with this name" } },
             { CustomCode.ClassCodeDuplicate, new MessageDetail {
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Class code is duplicated, please try again" } },
             { CustomCode.ClassCreateFailed, new MessageDetail {
@@ -104,6 +106,10 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to archive class" } },
             { CustomCode.ClassCodeResetFailed, new MessageDetail {
                 HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to reset class code" } },
+            { CustomCode.NotTeacherOfClass, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You do not have permission to modify this class as you are not the teacher of this class" } },
+            { CustomCode.NotAdminForClassList, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "Only system administrators and school administrators can view all classes" } },
             { CustomCode.SchoolAlreadyArchived, new MessageDetail {
                 HttpCode = StatusCodes.Status400BadRequest, Message = "School is already archived" } },
             { CustomCode.SubscriptionPlanMustBeArchived, new MessageDetail {

@@ -9,6 +9,9 @@ namespace Eduva.Application.Features.Classes.Queries
         {
             RuleFor(x => x.ClassSpecParam)
                 .NotNull().WithMessage("Class specification parameters are required");
+                
+            RuleFor(x => x.UserId)
+                .NotEmpty().WithMessage("User ID is required");
         }
     }
 }

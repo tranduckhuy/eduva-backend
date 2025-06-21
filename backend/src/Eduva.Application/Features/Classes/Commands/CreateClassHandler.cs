@@ -18,18 +18,16 @@ namespace Eduva.Application.Features.Classes.Commands
         {
             _unitOfWork = unitOfWork;
         }
-
         public async Task<ClassResponse> Handle(CreateClassCommand request, CancellationToken cancellationToken)
         {
             var classroomRepository = _unitOfWork.GetCustomRepository<IClassroomRepository>();
-            // Check if class name already exists in the school
-            bool classExists = await classroomRepository.ExistsAsync(c =>
-                c.SchoolId == request.SchoolId &&
+            // Check if the class name already exists for this teacher
+            bool classExistsForTeacher = await classroomRepository.ExistsAsync(c =>
+                c.TeacherId == request.TeacherId &&
                 c.Name.ToLower() == request.Name.ToLower());
-
-            if (classExists)
+            if (classExistsForTeacher)
             {
-                throw new AppException(CustomCode.ClassNameAlreadyExists);
+                throw new AppException(CustomCode.ClassNameAlreadyExistsForTeacher);
             }
 
             var classroom = AppMapper.Mapper.Map<Classroom>(request);
