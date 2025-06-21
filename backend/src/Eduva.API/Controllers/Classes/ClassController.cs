@@ -26,12 +26,20 @@ namespace Eduva.API.Controllers.Classes
 
         [HttpPost]
         [ProducesResponseType(typeof(ApiResponse<ClassResponse>), StatusCodes.Status201Created)]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
+        [Authorize]
         public async Task<IActionResult> CreateClass([FromBody] CreateClassCommand command)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(userId, out var currentUserId))
                 return Respond(CustomCode.UserIdNotFound);
+
+            // Check role from claim
+            var userRoleClaim = User.FindFirstValue(ClaimTypes.Role);
+            if (!Enum.TryParse<Role>(userRoleClaim, out var userRole) ||
+                (userRole != Role.SystemAdmin && userRole != Role.SchoolAdmin && userRole != Role.Teacher))
+            {
+                return Respond(CustomCode.Forbidden);
+            }
 
             command.TeacherId = currentUserId;
 
@@ -44,12 +52,20 @@ namespace Eduva.API.Controllers.Classes
 
         [HttpGet]
         [ProducesResponseType(typeof(ApiResponse<Pagination<ClassResponse>>), StatusCodes.Status200OK)]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}, {nameof(Role.Student)}")]
+        [Authorize]
         public async Task<IActionResult> GetClasses([FromQuery] ClassSpecParam classSpecParam)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(userId, out var userGuid))
                 return Respond(CustomCode.UserIdNotFound);
+
+            // Check role from claim
+            var userRoleClaim = User.FindFirstValue(ClaimTypes.Role);
+            if (!Enum.TryParse<Role>(userRoleClaim, out var userRole) ||
+                (userRole != Role.SystemAdmin && userRole != Role.SchoolAdmin))
+            {
+                return Respond(CustomCode.NotAdminForClassList);
+            }
 
             return await HandleRequestAsync(async () =>
             {
@@ -59,14 +75,47 @@ namespace Eduva.API.Controllers.Classes
             });
         }
 
+        [HttpGet("my-classes")]
+        [ProducesResponseType(typeof(ApiResponse<Pagination<ClassResponse>>), StatusCodes.Status200OK)]
+        [Authorize]
+        public async Task<IActionResult> GetTeacherClasses([FromQuery] ClassSpecParam classSpecParam)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userId, out var teacherId))
+                return Respond(CustomCode.UserIdNotFound);
+
+            // Check role from claim
+            var userRoleClaim = User.FindFirstValue(ClaimTypes.Role);
+            if (!Enum.TryParse<Role>(userRoleClaim, out var userRole) ||
+                userRole != Role.Teacher)
+            {
+                return Respond(CustomCode.Forbidden);
+            }
+
+            return await HandleRequestAsync(async () =>
+            {
+                var query = new GetTeacherClassesQuery(classSpecParam, teacherId);
+                var result = await _mediator.Send(query);
+                return (CustomCode.Success, result);
+            });
+        }
+
         [HttpPut("{id}")]
         [ProducesResponseType(typeof(ApiResponse<ClassResponse>), StatusCodes.Status200OK)]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
+        [Authorize]
         public async Task<IActionResult> UpdateClass(Guid id, [FromBody] UpdateClassCommand command)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(userId, out var currentUserId))
                 return Respond(CustomCode.UserIdNotFound);
+
+            // Check role from claim
+            var userRoleClaim = User.FindFirstValue(ClaimTypes.Role);
+            if (!Enum.TryParse<Role>(userRoleClaim, out var userRole) ||
+                (userRole != Role.SystemAdmin && userRole != Role.SchoolAdmin && userRole != Role.Teacher))
+            {
+                return Respond(CustomCode.Forbidden);
+            }
 
             command.Id = id;
             command.TeacherId = currentUserId;
@@ -80,12 +129,21 @@ namespace Eduva.API.Controllers.Classes
 
         [HttpDelete("{id}")]
         [ProducesResponseType(typeof(ApiResponse<ClassResponse>), StatusCodes.Status200OK)]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
+        [Authorize]
         public async Task<IActionResult> DeleteClass(Guid id)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(userId, out var currentUserId))
                 return Respond(CustomCode.UserIdNotFound);
+
+            // Check role from claim
+            var userRoleClaim = User.FindFirstValue(ClaimTypes.Role);
+            if (!Enum.TryParse<Role>(userRoleClaim, out var userRole) ||
+                (userRole != Role.SystemAdmin && userRole != Role.SchoolAdmin && userRole != Role.Teacher))
+            {
+                return Respond(CustomCode.Forbidden);
+            }
+
             var command = new DeleteClassCommand
             {
                 Id = id,
@@ -101,12 +159,20 @@ namespace Eduva.API.Controllers.Classes
 
         [HttpPost("{id}/reset-code")]
         [ProducesResponseType(typeof(ApiResponse<ClassResponse>), StatusCodes.Status200OK)]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
+        [Authorize]
         public async Task<IActionResult> ResetClassCode(Guid id)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(userId, out var currentUserId))
                 return Respond(CustomCode.UserIdNotFound);
+
+            // Check role from claim
+            var userRoleClaim = User.FindFirstValue(ClaimTypes.Role);
+            if (!Enum.TryParse<Role>(userRoleClaim, out var userRole) ||
+                (userRole != Role.SystemAdmin && userRole != Role.SchoolAdmin && userRole != Role.Teacher))
+            {
+                return Respond(CustomCode.Forbidden);
+            }
 
             var command = new ResetClassCodeCommand
             {
