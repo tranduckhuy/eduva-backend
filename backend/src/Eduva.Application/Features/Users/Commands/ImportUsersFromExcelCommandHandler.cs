@@ -96,67 +96,13 @@ namespace Eduva.Application.Features.Users.Commands
 
             for (int row = 2; row <= rowCount; row++)
             {
-                var email = worksheet.Cells[row, 1].Text.Trim();
-                var fullName = worksheet.Cells[row, 2].Text.Trim();
-                var roleStr = worksheet.Cells[row, 3].Text.Trim();
-                var password = worksheet.Cells[row, 4].Text.Trim();
-
+                var cmd = ParseCommandFromRow(worksheet, row);
                 var columnErrors = new Dictionary<int, string>();
 
-                if (!Enum.TryParse(roleStr, true, out Role parsedRole) || parsedRole is Role.SystemAdmin or Role.SchoolAdmin)
-                    columnErrors[3] = "Invalid role";
-
-                if (emailRowMap.TryGetValue(email, out var originalRow))
-                {
-                    columnErrors[1] = $"Duplicate email with row {originalRow}";
-                    errors[(originalRow, 1)] = $"Duplicate email with row {row}";
-                }
-                else
-                {
-                    emailRowMap[email] = row;
-                }
-
-                var existing = await _userManager.FindByEmailAsync(email);
-                if (existing != null)
-                    columnErrors[1] = "Email already exists";
-
-                var cmd = new CreateUserByAdminCommand
-                {
-                    Email = email,
-                    FullName = fullName,
-                    Role = parsedRole,
-                    InitialPassword = password
-                };
-
-                var validationResult = await _validator.ValidateAsync(cmd, cancellationToken);
-                if (!validationResult.IsValid)
-                {
-                    foreach (var error in validationResult.Errors)
-                    {
-                        var col = error.PropertyName.ToLower() switch
-                        {
-                            var n when n.Contains("email") => 1,
-                            var n when n.Contains("fullname") => 2,
-                            var n when n.Contains("role") => 3,
-                            var n when n.Contains("password") => 4,
-                            _ => 1
-                        };
-                        columnErrors[col] = error.ErrorMessage;
-                    }
-                }
-
-                var user = new ApplicationUser { Email = cmd.Email, UserName = cmd.Email };
-                foreach (var validator in _userManager.PasswordValidators)
-                {
-                    var result = await validator.ValidateAsync(_userManager, user, cmd.InitialPassword);
-                    if (!result.Succeeded)
-                    {
-                        foreach (var error in result.Errors)
-                        {
-                            columnErrors[4] = error.Description;
-                        }
-                    }
-                }
+                ValidateRole(cmd.Role, columnErrors);
+                await ValidateDuplicateAndExistingEmail(cmd.Email, row, emailRowMap, errors, columnErrors);
+                await ValidateFluent(cmd, cancellationToken, columnErrors);
+                await ValidatePasswordPolicy(cmd, columnErrors);
 
                 foreach (var (col, msg) in columnErrors)
                     errors[(row, col)] = msg;
@@ -166,6 +112,84 @@ namespace Eduva.Application.Features.Users.Commands
             }
 
             return (validCommands, errors);
+        }
+
+        private static CreateUserByAdminCommand ParseCommandFromRow(ExcelWorksheet worksheet, int row)
+        {
+            var email = worksheet.Cells[row, 1].Text.Trim();
+            var fullName = worksheet.Cells[row, 2].Text.Trim();
+            var roleStr = worksheet.Cells[row, 3].Text.Trim();
+            var password = worksheet.Cells[row, 4].Text.Trim();
+            Enum.TryParse(roleStr, true, out Role parsedRole);
+
+            return new CreateUserByAdminCommand
+            {
+                Email = email,
+                FullName = fullName,
+                Role = parsedRole,
+                InitialPassword = password
+            };
+        }
+
+        private static void ValidateRole(Role role, Dictionary<int, string> columnErrors)
+        {
+            if (role is Role.SystemAdmin or Role.SchoolAdmin || !Enum.IsDefined(typeof(Role), role))
+                columnErrors[3] = "Invalid role";
+        }
+
+        private async Task ValidateDuplicateAndExistingEmail(string email, int row, Dictionary<string, int> emailRowMap,
+            Dictionary<(int, int), string> errors, Dictionary<int, string> columnErrors)
+        {
+            if (emailRowMap.TryGetValue(email, out var originalRow))
+            {
+                columnErrors[1] = $"Duplicate email with row {originalRow}";
+                errors[(originalRow, 1)] = $"Duplicate email with row {row}";
+            }
+            else
+            {
+                emailRowMap[email] = row;
+            }
+
+            var existing = await _userManager.FindByEmailAsync(email);
+            if (existing != null)
+                columnErrors[1] = "Email already exists";
+        }
+
+        private async Task ValidateFluent(CreateUserByAdminCommand cmd, CancellationToken cancellationToken,
+            Dictionary<int, string> columnErrors)
+        {
+            var result = await _validator.ValidateAsync(cmd, cancellationToken);
+            if (!result.IsValid)
+            {
+                foreach (var error in result.Errors)
+                {
+                    var col = error.PropertyName.ToLower() switch
+                    {
+                        var n when n.Contains("email") => 1,
+                        var n when n.Contains("fullname") => 2,
+                        var n when n.Contains("role") => 3,
+                        var n when n.Contains("password") => 4,
+                        _ => 1
+                    };
+                    columnErrors[col] = error.ErrorMessage;
+                }
+            }
+        }
+
+        private async Task ValidatePasswordPolicy(CreateUserByAdminCommand cmd, Dictionary<int, string> columnErrors)
+        {
+            var user = new ApplicationUser { Email = cmd.Email, UserName = cmd.Email };
+            foreach (var validator in _userManager.PasswordValidators)
+            {
+                var result = await validator.ValidateAsync(_userManager, user, cmd.InitialPassword);
+                if (!result.Succeeded)
+                {
+                    foreach (var error in result.Errors)
+                    {
+                        columnErrors[4] = error.Description;
+                    }
+                }
+            }
         }
 
         private static void AddErrorCommentsToWorksheet(ExcelWorksheet worksheet, Dictionary<(int Row, int Col), string> errors)

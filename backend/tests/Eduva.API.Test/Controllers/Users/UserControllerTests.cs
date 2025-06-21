@@ -341,25 +341,6 @@ namespace Eduva.API.Test.Controllers.Users
 
         #endregion
 
-        #region Helper Methods
-
-        private void SetupUser(string? userId)
-        {
-            var claims = new List<Claim>();
-            if (userId != null)
-                claims.Add(new Claim(ClaimTypes.NameIdentifier, userId));
-
-            var identity = new ClaimsIdentity(claims);
-            var user = new ClaimsPrincipal(identity);
-
-            _controller.ControllerContext = new ControllerContext
-            {
-                HttpContext = new DefaultHttpContext { User = user }
-            };
-        }
-
-        #endregion
-
         #region CreateUserAsync Tests
 
         [Test]
@@ -445,8 +426,11 @@ namespace Eduva.API.Test.Controllers.Users
             var result = await _controller.ImportUsersFromExcel(request);
             var objectResult = result as ObjectResult;
             var response = objectResult!.Value as ApiResponse<FileResponseDto>;
-            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.ProvidedInformationIsInValid));
-            Assert.That(response.Data, Is.Not.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.ProvidedInformationIsInValid));
+                Assert.That(response.Data, Is.Not.Null);
+            });
         }
 
         [Test]
@@ -482,8 +466,11 @@ namespace Eduva.API.Test.Controllers.Users
             var objectResult = result as ObjectResult;
             var response = objectResult!.Value as ApiResponse<FileResponseDto>;
 
-            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
-            Assert.That(response.Data, Is.Not.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+                Assert.That(response.Data, Is.Not.Null);
+            });
         }
 
         [Test]
@@ -497,13 +484,16 @@ namespace Eduva.API.Test.Controllers.Users
             var objectResult = result as ObjectResult;
             var response = objectResult!.Value as ApiResponse<FileResponseDto>;
 
-            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.SystemError));
-            Assert.That(response.Data, Is.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.SystemError));
+                Assert.That(response.Data, Is.Null);
+            });
         }
 
         #endregion
 
-        #region Helpers
+        #region Helpers Classes
 
         public class MockHttpMessageHandler : HttpMessageHandler
         {
@@ -512,7 +502,7 @@ namespace Eduva.API.Test.Controllers.Users
 
             public MockHttpMessageHandler(byte[]? content = null, bool throwException = false)
             {
-                _content = content ?? new byte[0];
+                _content = content ?? [];
                 _throwException = throwException;
             }
 
@@ -530,5 +520,23 @@ namespace Eduva.API.Test.Controllers.Users
 
         #endregion
 
+        #region Helper Methods
+
+        private void SetupUser(string? userId)
+        {
+            var claims = new List<Claim>();
+            if (userId != null)
+                claims.Add(new Claim(ClaimTypes.NameIdentifier, userId));
+
+            var identity = new ClaimsIdentity(claims);
+            var user = new ClaimsPrincipal(identity);
+
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = user }
+            };
+        }
+
+        #endregion
     }
 }
