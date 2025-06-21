@@ -1,5 +1,4 @@
 ﻿using Eduva.API.Controllers.Base;
-using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Features.LessonMaterials.Commands;
 using Eduva.Application.Features.LessonMaterials.Queries;
 using Eduva.Application.Features.LessonMaterials.Specifications;
@@ -26,71 +25,40 @@ namespace Eduva.API.Controllers.LessonMaterials
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
         public async Task<IActionResult> CreateLessonMaterial([FromBody] CreateLessonMaterialCommand command)
         {
-            var validationResult = CheckModelStateValidity();
-
-            if (validationResult != null)
-            {
-                return validationResult;
-            }
-
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null)
             {
                 return Respond(CustomCode.UserIdNotFound);
             }
 
-            try
-            {
-                command.CreatedBy = Guid.Parse(userId);
-                var response = await _mediator.Send(command);
-                return Respond(CustomCode.Success, response);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "An error occurred while creating lesson material");
+            command.CreatedBy = Guid.Parse(userId);
 
-                if (ex is AppException appEx)
-                {
-                    return Respond(appEx.StatusCode, null, appEx.Errors);
-                }
-                return Respond(CustomCode.SystemError, null,
-                    [ex.InnerException?.Message ?? "The system encountered an unexpected error while processing the request"]);
-            }
+            return await HandleRequestAsync(async () =>
+            {
+                var response = await _mediator.Send(command);
+                return (CustomCode.Success, response);
+            });
+
         }
 
         [HttpGet]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)},{nameof(Role.Student)}")]
+        [Authorize]
         public async Task<IActionResult> GetLessonMaterials([FromQuery] LessonMaterialSpecParam lessonMaterialSpecParam)
         {
-            var validationResult = CheckModelStateValidity();
-            if (validationResult != null)
-            {
-                return validationResult;
-            }
-
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null)
             {
                 return Respond(CustomCode.UserIdNotFound);
             }
 
-            try
-            {
+            var query = new GetLessonMaterialsQuery(lessonMaterialSpecParam, Guid.Parse(userId));
 
-                var query = new GetLessonMaterialsQuery(lessonMaterialSpecParam, Guid.Parse(userId));
-                var response = await _mediator.Send(query);
-                return Respond(CustomCode.Success, response);
-            }
-            catch (Exception ex)
+            return await HandleRequestAsync(async () =>
             {
-                _logger.LogError(ex, "An error occurred while retrieving lesson materials");
-                if (ex is AppException appEx)
-                {
-                    return Respond(appEx.StatusCode, null, appEx.Errors);
-                }
-                return Respond(CustomCode.SystemError, null,
-                    [ex.InnerException?.Message ?? "The system encountered an unexpected error while processing the request"]);
-            }
+                var response = await _mediator.Send(query);
+                return (CustomCode.Success, response);
+            });
+
         }
     }
 }
