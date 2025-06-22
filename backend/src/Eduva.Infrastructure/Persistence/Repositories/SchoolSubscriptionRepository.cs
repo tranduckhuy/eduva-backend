@@ -51,11 +51,19 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                 .Where(s => s.SubscriptionStatus == SubscriptionStatus.Active && s.EndDate <= currentTime)
                 .ToListAsync();
         }
-
         public async Task<bool> HasAnyActiveSubscriptionAsync(int schoolId)
         {
             return await _context.SchoolSubscriptions
                 .AnyAsync(s => s.SchoolId == schoolId && s.SubscriptionStatus == SubscriptionStatus.Active);
+        }
+
+        public async Task<SchoolSubscription?> GetLatestSubscriptionBySchoolIdAsync(int schoolId, CancellationToken cancellationToken = default)
+        {
+            return await _context.SchoolSubscriptions
+                .Include(s => s.Plan)
+                .Where(s => s.SchoolId == schoolId)
+                .OrderByDescending(s => s.EndDate)
+                .FirstOrDefaultAsync(cancellationToken);
         }
 
     }

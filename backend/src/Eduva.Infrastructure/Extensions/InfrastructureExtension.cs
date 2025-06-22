@@ -70,6 +70,8 @@ namespace Eduva.Infrastructure.Extensions
 
             services.AddHostedService<SubscriptionExpiryJob>();
 
+            services.AddScoped<ISchoolSubscriptionService, SchoolSubscriptionService>();
+
             return services;
         }
     }

@@ -1,7 +1,10 @@
-﻿using Eduva.API.Controllers.Base;
+﻿using Eduva.API.Attributes;
+using Eduva.API.Controllers.Base;
+using Eduva.API.Models;
 using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Features.LessonMaterials.Commands;
 using Eduva.Application.Features.LessonMaterials.Queries;
+using Eduva.Application.Features.LessonMaterials.Responses;
 using Eduva.Application.Features.LessonMaterials.Specifications;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
@@ -23,6 +26,8 @@ namespace Eduva.API.Controllers.LessonMaterials
         }
 
         [HttpPost]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
+        [ProducesResponseType(typeof(ApiResponse<LessonMaterialResponse>), StatusCodes.Status200OK)]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
         public async Task<IActionResult> CreateLessonMaterial([FromBody] CreateLessonMaterialCommand command)
         {
@@ -59,6 +64,7 @@ namespace Eduva.API.Controllers.LessonMaterials
         }
 
         [HttpGet]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)},{nameof(Role.Student)}")]
         public async Task<IActionResult> GetLessonMaterials([FromQuery] LessonMaterialSpecParam lessonMaterialSpecParam)
         {

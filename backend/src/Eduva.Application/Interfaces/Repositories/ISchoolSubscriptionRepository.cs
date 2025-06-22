@@ -10,5 +10,6 @@ namespace Eduva.Application.Interfaces.Repositories
         Task<SchoolSubscription?> GetLatestPaidBySchoolIdAsync(int schoolId, CancellationToken cancellationToken = default);
         Task<List<SchoolSubscription>> GetExpiringSubscriptionsAsync(DateTimeOffset currentTime);
         Task<bool> HasAnyActiveSubscriptionAsync(int schoolId);
+        Task<SchoolSubscription?> GetLatestSubscriptionBySchoolIdAsync(int schoolId, CancellationToken cancellationToken = default);
     }
 }

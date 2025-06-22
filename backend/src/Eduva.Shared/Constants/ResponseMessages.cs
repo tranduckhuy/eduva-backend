@@ -133,6 +133,12 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status404NotFound, Message = "Payment transaction not found" } },
             { CustomCode.InvalidRelatedIdFormat, new MessageDetail {
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Invalid format for RelatedId. It should be a valid GUID." } },
+
+            // Subscription Errors
+            { CustomCode.SchoolAndSubscriptionRequired, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "Forbidden. You must complete school and subscription information to access this resource." } },
+            { CustomCode.SubscriptionExpiredWithDataLossRisk, new MessageDetail {
+                HttpCode = StatusCodes.Status402PaymentRequired, Message = "Your subscription has expired and you are at risk of data loss. Please renew your subscription to continue using the service." } },
             #endregion
         };
 

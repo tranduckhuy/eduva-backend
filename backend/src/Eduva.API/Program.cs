@@ -1,3 +1,4 @@
+using Eduva.API.Middlewares;
 using Eduva.Application.Extentions;
 using Eduva.Domain.Entities;
 using Eduva.Infrastructure.Extensions;
@@ -88,6 +89,9 @@ app.UseCors("AllowAll");
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Custom middleware to validate subscription access
+app.UseMiddleware<SubscriptionValidationMiddleware>();
 
 app.MapControllers();
 

@@ -67,5 +67,9 @@ namespace Eduva.Shared.Enums
         // Payment Transaction Errors
         PaymentTransactionNotFound = 4300,
         InvalidRelatedIdFormat = 4301,
+
+        // Subscription Errors
+        SchoolAndSubscriptionRequired = 4400,
+        SubscriptionExpiredWithDataLossRisk = 4401,
     }
 }
