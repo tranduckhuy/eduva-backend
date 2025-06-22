@@ -2,6 +2,7 @@
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
+using System.Text.Json.Serialization;
 
 namespace Eduva.Application.Features.SchoolSubscriptions.Commands
 {
@@ -10,5 +11,8 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Commands
         public int PlanId { get; set; }
         public int SchoolId { get; set; }
         public BillingCycle BillingCycle { get; set; }
+
+        [JsonIgnore]
+        public Guid UserId { get; set; }
     }
 }

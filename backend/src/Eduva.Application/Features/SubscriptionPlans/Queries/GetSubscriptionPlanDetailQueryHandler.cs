@@ -33,7 +33,6 @@ namespace Eduva.Application.Features.SubscriptionPlans.Queries
                 Description = plan.Description,
                 MaxUsers = plan.MaxUsers,
                 StorageLimitGB = plan.StorageLimitGB,
-                MaxMinutesPerMonth = plan.MaxMinutesPerMonth,
                 PriceMonthly = plan.PriceMonthly,
                 PricePerYear = plan.PricePerYear,
                 Status = plan.Status,

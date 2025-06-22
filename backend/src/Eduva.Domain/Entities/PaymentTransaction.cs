@@ -7,6 +7,7 @@ namespace Eduva.Domain.Entities
     {
         public Guid UserId { get; set; }
         public PaymentPurpose PaymentPurpose { get; set; }
+        public int PaymentItemId { get; set; }
         public string? RelatedId { get; set; } // Optional: could be used for linking to an order or subscription
         public PaymentMethod PaymentMethod { get; set; }
         public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.Pending;

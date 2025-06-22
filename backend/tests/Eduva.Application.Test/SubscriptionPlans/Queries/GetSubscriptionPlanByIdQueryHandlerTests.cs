@@ -45,7 +45,6 @@ namespace Eduva.Application.Test.SubscriptionPlans.Queries
                 Name = "Basic",
                 MaxUsers = 10,
                 StorageLimitGB = 5,
-                MaxMinutesPerMonth = 100,
                 PriceMonthly = 100000,
                 PricePerYear = 990000,
                 Status = EntityStatus.Active

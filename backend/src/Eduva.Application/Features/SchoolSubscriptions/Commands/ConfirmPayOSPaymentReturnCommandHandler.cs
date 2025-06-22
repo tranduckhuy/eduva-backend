@@ -1,5 +1,7 @@
-﻿using Eduva.Application.Exceptions.School;
+﻿using Eduva.Application.Exceptions.PaymentTransaction;
+using Eduva.Application.Exceptions.School;
 using Eduva.Application.Exceptions.SchoolSubscription;
+using Eduva.Application.Exceptions.SubscriptionPlan;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Domain.Entities;
@@ -19,38 +21,56 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Commands
 
         public async Task<Unit> Handle(ConfirmPayOSPaymentReturnCommand request, CancellationToken cancellationToken)
         {
-            var subRepo = _unitOfWork.GetCustomRepository<ISchoolSubscriptionRepository>();
-            var schoolRepo = _unitOfWork.GetRepository<School, int>();
-
             if (request.Code != "00" || request.Status != "PAID")
-            {
                 throw new PaymentFailedException();
-            }
 
-            var subscription = await subRepo.FindByTransactionIdAsync(request.OrderCode.ToString())
-                ?? throw new SchoolSubscriptionNotFoundException();
+            var transactionRepo = _unitOfWork.GetCustomRepository<IPaymentTransactionRepository>();
+            var transaction = await transactionRepo.GetByTransactionCodeAsync(request.OrderCode.ToString(), cancellationToken)
+                ?? throw new PaymentTransactionNotFoundException();
 
-            if (subscription.PaymentStatus == PaymentStatus.Paid)
-            {
+            if (transaction.PaymentStatus == PaymentStatus.Paid)
                 throw new PaymentAlreadyConfirmedException();
+
+            var schoolRepo = _unitOfWork.GetCustomRepository<ISchoolRepository>();
+            var school = await schoolRepo.GetByUserIdAsync(transaction.UserId)
+                ?? throw new SchoolNotFoundException();
+
+            var planRepo = _unitOfWork.GetCustomRepository<ISubscriptionPlanRepository>();
+            var plan = await planRepo.GetPlanByTransactionIdAsync(transaction.Id)
+                ?? throw new PlanNotFoundException();
+
+            var amount = transaction.Amount;
+            var cycle = (amount == plan.PriceMonthly) ? BillingCycle.Monthly : BillingCycle.Yearly;
+            var duration = cycle == BillingCycle.Monthly ? 30 : 365;
+
+            var subRepo = _unitOfWork.GetCustomRepository<ISchoolSubscriptionRepository>();
+            var oldSub = await subRepo.GetLatestPaidBySchoolIdAsync(school.Id, cancellationToken);
+            if (oldSub is not null && oldSub.SubscriptionStatus == SubscriptionStatus.Active)
+            {
+                oldSub.SubscriptionStatus = SubscriptionStatus.Expired;
+                oldSub.EndDate = DateTimeOffset.UtcNow;
             }
 
-            var oldActiveSub = await subRepo.GetActiveSubscriptionBySchoolIdAsync(subscription.SchoolId);
-            if (oldActiveSub != null && oldActiveSub.Id != subscription.Id)
+            var now = DateTimeOffset.UtcNow;
+            var newSub = new SchoolSubscription
             {
-                oldActiveSub.SubscriptionStatus = SubscriptionStatus.Expired;
-                oldActiveSub.EndDate = DateTimeOffset.UtcNow;
-            }
+                StartDate = now,
+                EndDate = now.AddDays(duration),
+                SubscriptionStatus = SubscriptionStatus.Active,
+                BillingCycle = cycle,
+                SchoolId = school.Id,
+                PlanId = plan.Id,
+                PaymentTransactionId = transaction.Id,
+                CreatedAt = now
+            };
 
-            subscription.PaymentStatus = PaymentStatus.Paid;
-            subscription.SubscriptionStatus = SubscriptionStatus.Active;
-            subscription.LastUsageResetDate = DateTimeOffset.UtcNow;
+            await subRepo.AddAsync(newSub);
 
-            var school = await schoolRepo.GetByIdAsync(subscription.SchoolId) ?? throw new SchoolNotFoundException();
-            if (school != null && school.Status == EntityStatus.Inactive)
-            {
+            transaction.PaymentStatus = PaymentStatus.Paid;
+            transaction.RelatedId = newSub.Id.ToString();
+
+            if (school.Status == EntityStatus.Inactive)
                 school.Status = EntityStatus.Active;
-            }
 
             await _unitOfWork.CommitAsync();
             return Unit.Value;

@@ -26,7 +26,6 @@ namespace Eduva.Application.Features.SubscriptionPlans.Commands.UpdatePlan
             plan.Description = request.Description;
             plan.MaxUsers = request.MaxUsers;
             plan.StorageLimitGB = request.StorageLimitGB;
-            plan.MaxMinutesPerMonth = request.MaxMinutesPerMonth;
             plan.PriceMonthly = request.PriceMonthly;
             plan.PricePerYear = request.PricePerYear;
             plan.LastModifiedAt = DateTimeOffset.UtcNow;

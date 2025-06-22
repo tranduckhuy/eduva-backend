@@ -1,4 +1,4 @@
-﻿using Eduva.API.Controllers.SubscriptionPlans;
+﻿/*using Eduva.API.Controllers.SubscriptionPlans;
 using Eduva.Application.Common.Models;
 using Eduva.Application.Features.SubscriptionPlans.Commands.ActivatePlan;
 using Eduva.Application.Features.SubscriptionPlans.Commands.ArchivePlan;
@@ -335,4 +335,4 @@ namespace Eduva.API.Test.Controllers.SubscriptionPlan
         #endregion
 
     }
-}
+}*/

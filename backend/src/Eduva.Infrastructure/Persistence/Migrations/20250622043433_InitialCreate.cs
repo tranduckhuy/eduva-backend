@@ -360,6 +360,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     PaymentPurpose = table.Column<string>(type: "text", nullable: false),
+                    PaymentItemId = table.Column<int>(type: "integer", nullable: false),
                     RelatedId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     PaymentMethod = table.Column<string>(type: "text", nullable: false),
                     PaymentStatus = table.Column<string>(type: "text", nullable: false),

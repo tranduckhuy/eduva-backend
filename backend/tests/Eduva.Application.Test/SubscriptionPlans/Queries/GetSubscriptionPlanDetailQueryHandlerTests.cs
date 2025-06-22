@@ -50,7 +50,6 @@ namespace Eduva.Application.Test.SubscriptionPlans.Queries
                 Description = "Advanced features",
                 MaxUsers = 100,
                 StorageLimitGB = 50,
-                MaxMinutesPerMonth = 1000,
                 PriceMonthly = 149000,
                 PricePerYear = 990000,
                 Status = EntityStatus.Active
@@ -74,7 +73,6 @@ namespace Eduva.Application.Test.SubscriptionPlans.Queries
                 Assert.That(result.Description, Is.EqualTo("Advanced features"));
                 Assert.That(result.MaxUsers, Is.EqualTo(100));
                 Assert.That(result.StorageLimitGB, Is.EqualTo(50));
-                Assert.That(result.MaxMinutesPerMonth, Is.EqualTo(1000));
                 Assert.That(result.PriceMonthly, Is.EqualTo(149000));
                 Assert.That(result.PricePerYear, Is.EqualTo(990000));
                 Assert.That(result.Status, Is.EqualTo(EntityStatus.Active));

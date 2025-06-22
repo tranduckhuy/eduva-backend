@@ -62,5 +62,10 @@ namespace Eduva.Shared.Enums
         InvalidBlobName = 4200,
         InvalidBlobUrl = 4201,
         BlobNotFound = 4202,
+
+
+        // Payment Transaction Errors
+        PaymentTransactionNotFound = 4300,
+        InvalidRelatedIdFormat = 4301,
     }
 }

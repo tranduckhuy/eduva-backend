@@ -125,6 +125,14 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Invalid blob URL provided." } },
             { CustomCode.BlobNotFound, new MessageDetail {
                 HttpCode = StatusCodes.Status404NotFound, Message = "The specified blob was not found. Ensure the blob name is correct and try again." } },
+
+
+
+            // Payment Transaction Errors
+            { CustomCode.PaymentTransactionNotFound, new MessageDetail {
+                HttpCode = StatusCodes.Status404NotFound, Message = "Payment transaction not found" } },
+            { CustomCode.InvalidRelatedIdFormat, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Invalid format for RelatedId. It should be a valid GUID." } },
             #endregion
         };
 

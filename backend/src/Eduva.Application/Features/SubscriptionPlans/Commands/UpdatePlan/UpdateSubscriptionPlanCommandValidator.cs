@@ -23,9 +23,6 @@ namespace Eduva.Application.Features.SubscriptionPlans.Commands.UpdatePlan
             RuleFor(x => x.StorageLimitGB)
                 .GreaterThanOrEqualTo(0).WithMessage("Storage limit must be >= 0.");
 
-            RuleFor(x => x.MaxMinutesPerMonth)
-                .GreaterThanOrEqualTo(0).WithMessage("Max AI minutes must be >= 0.");
-
             RuleFor(x => x.PriceMonthly)
                 .GreaterThanOrEqualTo(0).WithMessage("Monthly price must be >= 0.");
 

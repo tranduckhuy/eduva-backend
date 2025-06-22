@@ -26,7 +26,6 @@ namespace Eduva.Application.Features.SubscriptionPlans.Commands.CreatePlan
                 Description = request.Description,
                 MaxUsers = request.MaxUsers,
                 StorageLimitGB = request.StorageLimitGB,
-                MaxMinutesPerMonth = request.MaxMinutesPerMonth,
                 PriceMonthly = request.PriceMonthly,
                 PricePerYear = request.PricePerYear,
                 Status = EntityStatus.Active

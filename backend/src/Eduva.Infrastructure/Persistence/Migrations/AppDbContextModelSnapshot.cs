@@ -507,6 +507,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("PaymentItemId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("PaymentMethod")
                         .IsRequired()
                         .HasColumnType("text");

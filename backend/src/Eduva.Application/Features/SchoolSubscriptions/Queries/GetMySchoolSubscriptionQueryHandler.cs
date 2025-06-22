@@ -44,8 +44,6 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Queries
                 BillingCycle = sub.BillingCycle,
                 MaxUsers = plan.MaxUsers,
                 StorageLimitGB = plan.StorageLimitGB,
-                MaxMinutesPerMonth = plan.MaxMinutesPerMonth,
-                AmountPaid = sub.AmountPaid
             };
         }
     }
