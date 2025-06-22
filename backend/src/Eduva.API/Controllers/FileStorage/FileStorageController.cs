@@ -17,16 +17,15 @@ namespace Eduva.API.Controllers.FileStorage
             _storageService = storageService;
         }
 
-        [HttpGet("sas-token/upload/{blobName}")]
+        [HttpPost("upload-tokens")]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
-        public async Task<IActionResult> GenerateUploadSasToken(string blobName)
+        public async Task<IActionResult> GenerateUploadSasToken([FromBody] List<string> blobNames)
         {
             return await HandleRequestAsync(async () =>
             {
-                var expiresOn = DateTimeOffset.UtcNow.AddHours(1);
-                var sasToken = await _storageService.GenerateUploadSasToken(blobName, expiresOn);
+                var sasTokens = await _storageService.GenerateUploadSasTokens(blobNames);
 
-                return (CustomCode.Success, new { SasToken = sasToken, ExpiresOn = expiresOn });
+                return (CustomCode.Success, new { UploadTokens = sasTokens });
             });
         }
 

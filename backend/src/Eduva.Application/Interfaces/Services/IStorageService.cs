@@ -2,7 +2,7 @@
 {
     public interface IStorageService
     {
-        Task<string> GenerateUploadSasToken(string blobName, DateTimeOffset expiresOn);
+        Task<ICollection<string>> GenerateUploadSasTokens(List<string> blobNames);
         string GetReadableUrl(string blobUrl);
         Task DeleteFileAsync(string blobName);
     }

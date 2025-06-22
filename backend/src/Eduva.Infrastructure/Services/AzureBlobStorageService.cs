@@ -18,7 +18,7 @@ namespace Eduva.Infrastructure.Services
             _containerClient = blobServiceClient.GetBlobContainerClient(_options.ContainerName);
         }
 
-        public Task<string> GenerateUploadSasToken(string blobName, DateTimeOffset expiresOn)
+        private string GenerateUploadSasToken(string blobName, DateTimeOffset expiresOn)
         {
             var blobClient = _containerClient.GetBlobClient(blobName);
 
@@ -32,7 +32,19 @@ namespace Eduva.Infrastructure.Services
 
             sasBuilder.SetPermissions(BlobSasPermissions.Write | BlobSasPermissions.Create);
 
-            return Task.FromResult(blobClient.GenerateSasUri(sasBuilder).ToString());
+            return blobClient.GenerateSasUri(sasBuilder).ToString();
+        }
+
+        public async Task<ICollection<string>> GenerateUploadSasTokens(List<string> blobNames)
+        {
+            var sasTokens = new List<string>();
+            var expiresOn = DateTimeOffset.UtcNow.AddHours(1);
+            foreach (var blobName in blobNames)
+            {
+                var sasToken = GenerateUploadSasToken(blobName, expiresOn);
+                sasTokens.Add(sasToken);
+            }
+            return await Task.FromResult(sasTokens);
         }
 
         public string GetReadableUrl(string blobUrl)
