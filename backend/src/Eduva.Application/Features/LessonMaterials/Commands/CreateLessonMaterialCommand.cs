@@ -1,23 +1,18 @@
-﻿using Eduva.Application.Features.LessonMaterials.Responses;
-using Eduva.Domain.Enums;
-using MediatR;
+﻿using MediatR;
 using System.Text.Json.Serialization;
 
 namespace Eduva.Application.Features.LessonMaterials.Commands
 {
-    public class CreateLessonMaterialCommand : IRequest<LessonMaterialResponse>
+    public class CreateLessonMaterialCommand : IRequest<Unit>
     {
         [JsonIgnore]
         public Guid CreatedBy { get; set; }
 
+        [JsonIgnore]
         public int? SchoolId { get; set; }
-        public string Title { get; set; } = string.Empty;
-        public string? Description { get; set; }
-        public ContentType ContentType { get; set; }
-        public string? Tag { get; set; }
-        public int Duration { get; set; }
-        public int FileSize { get; set; } // Size in bytes
-        public bool IsAIContent { get; set; }
-        public string SourceUrl { get; set; } = string.Empty;
+
+        public int FolderId { get; set; }
+
+        public List<LessonMaterialRequest> LessonMaterials { get; set; } = [];
     }
 }

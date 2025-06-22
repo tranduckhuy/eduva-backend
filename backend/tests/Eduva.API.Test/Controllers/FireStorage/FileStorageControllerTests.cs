@@ -25,7 +25,8 @@ namespace Eduva.API.Test.Controllers.FireStorage
             _controller = new FileStorageController(_loggerMock.Object, _storageServiceMock.Object);
         }
 
-        #region GenerateUploadSasToken Tests        [Test]
+        #region GenerateUploadSasTokenTests        
+        [Test]
         public async Task GenerateUploadSasToken_ShouldReturn200_WhenSuccessful()
         {
             // Arrange
@@ -45,7 +46,8 @@ namespace Eduva.API.Test.Controllers.FireStorage
 
             // Verify the service was called with correct parameters
             _storageServiceMock.Verify(s => s.GenerateUploadSasTokens(blobNames), Times.Once);
-        }        [Test]
+        }
+        [Test]
         public async Task GenerateUploadSasToken_ShouldReturn500_WhenServiceThrowsException()
         {
             // Arrange
@@ -61,7 +63,8 @@ namespace Eduva.API.Test.Controllers.FireStorage
             var objectResult = result as ObjectResult;
             Assert.That(objectResult, Is.Not.Null);
             Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status500InternalServerError));
-        }        [Test]
+        }
+        [Test]
         public async Task GenerateUploadSasToken_ShouldReturn400_WhenAppExceptionThrown()
         {
             // Arrange
@@ -77,13 +80,14 @@ namespace Eduva.API.Test.Controllers.FireStorage
             var objectResult = result as ObjectResult;
             Assert.That(objectResult, Is.Not.Null);
             Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status400BadRequest));
-        }        [Test]
+        }
+        [Test]
         public async Task GenerateUploadSasToken_ShouldReturn200_WhenMultipleBlobNamesProvided()
         {
             // Arrange
             var blobNames = new List<string> { "file1.pdf", "file2.jpg", "file3.docx" };
-            var expectedSasTokens = new List<string> 
-            { 
+            var expectedSasTokens = new List<string>
+            {
                 "https://storage.blob.core.windows.net/container/file1.pdf?sv=2021-12-02&sp=cw&sr=b&sig=signature1",
                 "https://storage.blob.core.windows.net/container/file2.jpg?sv=2021-12-02&sp=cw&sr=b&sig=signature2",
                 "https://storage.blob.core.windows.net/container/file3.docx?sv=2021-12-02&sp=cw&sr=b&sig=signature3"
@@ -308,7 +312,8 @@ namespace Eduva.API.Test.Controllers.FireStorage
 
         #endregion
 
-        #region Integration Tests        [Test]
+        #region IntegrationTests        
+        [Test]
         public async Task Controller_ShouldHandleAllMethods_WithDifferentBlobNames()
         {
             // Arrange

@@ -3,6 +3,7 @@ using Eduva.Application.Common.Models;
 using Eduva.Application.Features.AICreditPacks.Responses;
 using Eduva.Application.Features.Classes.Commands;
 using Eduva.Application.Features.Classes.Responses;
+using Eduva.Application.Features.LessonMaterials;
 using Eduva.Application.Features.LessonMaterials.Commands;
 using Eduva.Application.Features.LessonMaterials.Responses;
 using Eduva.Application.Features.Schools.Commands.CreateSchool;
@@ -22,6 +23,7 @@ namespace Eduva.Application.Common.Mappings
 
             // Lesson Materials mappings
             CreateMap<CreateLessonMaterialCommand, LessonMaterial>();
+            CreateMap<LessonMaterialRequest, LessonMaterial>();
             CreateMap<LessonMaterial, LessonMaterialResponse>()
                 .ForMember(dest => dest.CreatedById, opt => opt.MapFrom(src => src.CreatedBy))
                 .ForMember(dest => dest.CreatedByName,

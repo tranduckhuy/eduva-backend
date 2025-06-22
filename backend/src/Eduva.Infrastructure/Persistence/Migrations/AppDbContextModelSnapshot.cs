@@ -306,20 +306,15 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Eduva.Domain.Entities.FolderLessonMaterial", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<int>("FolderID")
                         .HasColumnType("integer");
 
-                    b.Property<int>("LessonMaterialID")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Order")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("LessonMaterialID")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -332,11 +327,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Eduva.Domain.Entities.LessonMaterial", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<string>("ContentType")
                         .IsRequired()
@@ -351,7 +344,8 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
-                    b.Property<int>("Duration")
+                    b.Property<int?>("Duration")
+                        .IsRequired()
                         .HasColumnType("integer");
 
                     b.Property<int>("FileSize")
@@ -414,8 +408,8 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.Property<string>("Feedback")
                         .HasColumnType("text");
 
-                    b.Property<int>("LessonMaterialId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("LessonMaterialId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("RequesterNote")
                         .HasColumnType("text");
@@ -454,8 +448,8 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset?>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("LessonMaterialId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("LessonMaterialId")
+                        .HasColumnType("uuid");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
