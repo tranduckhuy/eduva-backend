@@ -41,7 +41,7 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Commands
                     break;
 
                 case PaymentPurpose.CreditPackage:
-                    await HandleCreditPackageAsync(transaction, cancellationToken);
+                    await HandleCreditPackageAsync(transaction);
                     break;
 
                 default:
@@ -99,7 +99,7 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Commands
                 school.Status = EntityStatus.Active;
         }
 
-        private async Task HandleCreditPackageAsync(PaymentTransaction transaction, CancellationToken cancellationToken)
+        private async Task HandleCreditPackageAsync(PaymentTransaction transaction)
         {
             var creditPackRepo = _unitOfWork.GetRepository<AICreditPack, int>();
             var pack = await creditPackRepo.GetByIdAsync(transaction.PaymentItemId)
