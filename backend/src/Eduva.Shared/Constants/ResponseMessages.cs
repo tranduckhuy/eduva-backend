@@ -139,6 +139,35 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Invalid blob URL provided." } },
             { CustomCode.BlobNotFound, new MessageDetail {
                 HttpCode = StatusCodes.Status404NotFound, Message = "The specified blob was not found. Ensure the blob name is correct and try again." } },
+
+
+
+            // Payment Transaction Errors
+            { CustomCode.PaymentTransactionNotFound, new MessageDetail {
+                HttpCode = StatusCodes.Status404NotFound, Message = "Payment transaction not found" } },
+            { CustomCode.InvalidRelatedIdFormat, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Invalid format for RelatedId. It should be a valid GUID." } },
+            { CustomCode.AICreditPackNotFound, new MessageDetail {
+                HttpCode = StatusCodes.Status404NotFound, Message = "AI credit pack not found" } },
+            { CustomCode.AICreditPackAlreadyArchived, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "AI credit pack is already archived" } },
+            { CustomCode.AICreditPackAlreadyActive, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "AI credit pack is already active" } },
+            { CustomCode.AICreditPackMustBeArchived, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "AI credit pack must be archived to perform this action" } },
+            { CustomCode.AICreditPackNotActive, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "AI credit pack is not active" } },
+            { CustomCode.InvalidPaymentPurpose, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Invalid payment purpose. Please check the payment details and try again." } },
+
+
+
+
+            // Subscription Errors
+            { CustomCode.SchoolAndSubscriptionRequired, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "Forbidden. You must complete school and subscription information to access this resource." } },
+            { CustomCode.SubscriptionExpiredWithDataLossRisk, new MessageDetail {
+                HttpCode = StatusCodes.Status402PaymentRequired, Message = "Your subscription has expired and you are at risk of data loss. Please renew your subscription to continue using the service." } },
             #endregion
         };
 

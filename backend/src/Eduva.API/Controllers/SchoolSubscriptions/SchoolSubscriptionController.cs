@@ -25,11 +25,17 @@ namespace Eduva.API.Controllers.SchoolSubscriptions
         [Authorize(Roles = $"{nameof(Role.SchoolAdmin)}")]
         public async Task<IActionResult> CreatePaymentLink([FromBody] CreateSchoolSubscriptionCommand command)
         {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userIdStr, out var userId))
+                return Respond(CustomCode.UserIdNotFound);
+
+            command.UserId = userId;
+
             return await HandleRequestAsync(() => _mediator.Send(command));
         }
 
         [HttpGet("payos-return")]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)}")]
+        [AllowAnonymous]
         public async Task<IActionResult> PayOSReturn([FromQuery] ConfirmPayOSPaymentReturnCommand query)
         {
             return await HandleRequestAsync(() => _mediator.Send(query));

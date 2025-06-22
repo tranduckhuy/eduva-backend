@@ -59,7 +59,6 @@ namespace Eduva.API.Test.Controllers.SubscriptionPlan
                     PriceMonthly = 100000,
                     PricePerYear = 1000000,
                     StorageLimitGB = 10,
-                    MaxMinutesPerMonth = 500,
                     Status = Domain.Enums.EntityStatus.Active
                 }
             });
@@ -140,7 +139,6 @@ namespace Eduva.API.Test.Controllers.SubscriptionPlan
                 PriceMonthly = 500000,
                 PricePerYear = 5000000,
                 StorageLimitGB = 500,
-                MaxMinutesPerMonth = 5000,
                 Status = Domain.Enums.EntityStatus.Active,
                 Description = "Advanced plan with full features"
             };

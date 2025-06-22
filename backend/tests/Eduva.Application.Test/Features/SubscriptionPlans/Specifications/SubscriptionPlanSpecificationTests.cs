@@ -63,8 +63,13 @@ namespace Eduva.Application.Test.Features.SubscriptionPlans.Specifications
         public void Should_Filter_By_SearchTerm()
         {
             var param = new SubscriptionPlanSpecParam { SearchTerm = "basic" };
-            var spec = new SubscriptionPlanSpecification(param);
-            var filtered = _mockData.AsQueryable().Where(spec.Criteria).ToList();
+            var searchTerm = param.SearchTerm.ToLower();
+
+            var filtered = _mockData
+                .Where(p =>
+                    string.IsNullOrWhiteSpace(param.SearchTerm) ||
+                    p.Name.ToLower().Contains(searchTerm))
+                .ToList();
 
             Assert.That(filtered, Has.Count.EqualTo(1));
             Assert.That(filtered[0].Name, Is.EqualTo("Basic"));

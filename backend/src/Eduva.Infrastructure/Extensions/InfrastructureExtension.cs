@@ -61,6 +61,9 @@ namespace Eduva.Infrastructure.Extensions
             services.AddScoped<ISubscriptionPlanRepository, SubscriptionPlanRepository>();
             services.AddScoped<IClassroomRepository, ClassroomRepository>();
             services.AddScoped<ISchoolRepository, SchoolRepository>();
+            services.AddScoped<IPaymentTransactionRepository, PaymentTransactionRepository>();
+            services.AddScoped<IAICreditPackRepository, AICreditPackRepository>();
+
             services.AddScoped<PayOS>(provider =>
             {
                 var config = provider.GetRequiredService<IOptions<PayOSConfig>>().Value;
@@ -76,6 +79,9 @@ namespace Eduva.Infrastructure.Extensions
             {
                 client.Timeout = TimeSpan.FromSeconds(10);
             });
+
+
+            services.AddScoped<ISchoolSubscriptionService, SchoolSubscriptionService>();
 
             return services;
         }

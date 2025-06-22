@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
 using Eduva.Application.Common.Models;
+using Eduva.Application.Features.AICreditPacks.Responses;
 using Eduva.Application.Features.Classes.Commands;
 using Eduva.Application.Features.Classes.Responses;
 using Eduva.Application.Features.LessonMaterials.Commands;
 using Eduva.Application.Features.LessonMaterials.Responses;
 using Eduva.Application.Features.Schools.Commands.CreateSchool;
+using Eduva.Application.Features.SchoolSubscriptions.Responses;
 using Eduva.Application.Features.SubscriptionPlans.Responses;
 using Eduva.Application.Features.Users.Responses;
 using Eduva.Domain.Entities;
@@ -34,6 +36,18 @@ namespace Eduva.Application.Common.Mappings
             // Subscription Plan mappings
             CreateMap<Pagination<SubscriptionPlan>, Pagination<SubscriptionPlanResponse>>();
             CreateMap<SubscriptionPlan, SubscriptionPlanResponse>();
+
+            // AICreditPack mappings
+            CreateMap<Pagination<AICreditPack>, Pagination<AICreditPackResponse>>();
+            CreateMap<AICreditPack, AICreditPackResponse>();
+
+            // SchoolSubscription mappings
+            CreateMap<SchoolSubscription, MySchoolSubscriptionResponse>()
+                .ForMember(dest => dest.PlanName, opt => opt.MapFrom(src => src.Plan.Name))
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Plan.Description))
+                .ForMember(dest => dest.MaxUsers, opt => opt.MapFrom(src => src.Plan.MaxUsers))
+                .ForMember(dest => dest.StorageLimitGB, opt => opt.MapFrom(src => src.Plan.StorageLimitGB))
+                .ForMember(dest => dest.AmountPaid, opt => opt.MapFrom(src => src.PaymentTransaction.Amount));
 
             // Class mappings
             CreateMap<CreateClassCommand, Classroom>()

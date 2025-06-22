@@ -33,4 +33,8 @@
     <Using Include="NUnit.Framework" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Controllers\SchoolSubscription\" />
+  </ItemGroup>
+
 </Project>

@@ -1,6 +1,7 @@
 ﻿using Eduva.Application.Common.Specifications;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
 namespace Eduva.Application.Features.SubscriptionPlans.Specifications
@@ -29,7 +30,7 @@ namespace Eduva.Application.Features.SubscriptionPlans.Specifications
                  (param.ActiveOnly.Value && sp.Status == EntityStatus.Active) ||
                  (!param.ActiveOnly.Value && sp.Status != EntityStatus.Active)) &&
                 (string.IsNullOrWhiteSpace(param.SearchTerm) ||
-                 sp.Name.Contains(param.SearchTerm, StringComparison.OrdinalIgnoreCase));
+                 EF.Functions.Like(sp.Name, $"%{param.SearchTerm}%"));
         }
 
         private static Func<IQueryable<SubscriptionPlan>, IOrderedQueryable<SubscriptionPlan>>? BuildOrderBy(SubscriptionPlanSpecParam param)

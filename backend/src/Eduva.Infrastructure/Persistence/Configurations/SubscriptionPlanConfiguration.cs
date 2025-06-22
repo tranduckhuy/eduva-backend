@@ -21,10 +21,6 @@ namespace Eduva.Infrastructure.Persistence.Configurations
             builder.Property(sp => sp.StorageLimitGB)
                 .IsRequired();
 
-            builder.Property(sp => sp.MaxMinutesPerMonth)
-                .HasColumnType("numeric(18,2)") // decimal
-                .IsRequired();
-
             builder.Property(sp => sp.PriceMonthly)
                 .HasColumnType("numeric(18,2)") // decimal
                 .IsRequired();

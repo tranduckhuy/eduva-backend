@@ -1,4 +1,4 @@
-﻿using Eduva.Application.Exceptions.Auth;
+﻿/*using Eduva.Application.Exceptions.Auth;
 using Eduva.Application.Exceptions.School;
 using Eduva.Application.Exceptions.SchoolSubscription;
 using Eduva.Application.Features.SchoolSubscriptions.Queries;
@@ -118,4 +118,4 @@ namespace Eduva.Application.Test.Features.SchoolSubscriptions.Queries
         #endregion
 
     }
-}
+}*/

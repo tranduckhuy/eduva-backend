@@ -73,5 +73,20 @@ namespace Eduva.Shared.Enums
         InvalidBlobName = 4200,
         InvalidBlobUrl = 4201,
         BlobNotFound = 4202,
+
+
+        // Payment Transaction Errors
+        PaymentTransactionNotFound = 4300,
+        InvalidRelatedIdFormat = 4301,
+        AICreditPackNotFound = 4302,
+        AICreditPackAlreadyArchived = 4303,
+        AICreditPackAlreadyActive = 4304,
+        AICreditPackMustBeArchived = 4305,
+        AICreditPackNotActive = 4306,
+        InvalidPaymentPurpose = 4307,
+
+        // Subscription Errors
+        SchoolAndSubscriptionRequired = 4400,
+        SubscriptionExpiredWithDataLossRisk = 4401,
     }
 }

@@ -1,4 +1,5 @@
-﻿using Eduva.Application.Exceptions.School;
+﻿using Eduva.Application.Exceptions.PaymentTransaction;
+using Eduva.Application.Exceptions.School;
 using Eduva.Application.Exceptions.SchoolSubscription;
 using Eduva.Application.Exceptions.SubscriptionPlan;
 using Eduva.Application.Features.SchoolSubscriptions.Configurations;
@@ -32,17 +33,30 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Commands
         {
             var school = await GetSchoolAsync(request.SchoolId);
             var plan = await GetPlanAsync(request.PlanId);
-            var amount = GetBaseAmount(plan, request.BillingCycle);
+            var baseAmount = GetBaseAmount(plan, request.BillingCycle);
+
             var now = DateTimeOffset.UtcNow;
-            var orderCode = now.ToUnixTimeSeconds();
-            var transactionId = orderCode.ToString();
+            var transactionCode = now.ToUnixTimeSeconds().ToString();
 
-            var (finalAmount, deductedAmount, deductedPercent) = await CalculateFinalAmountAsync(request, school.Id, plan, amount, now);
+            var (finalAmount, deductedAmount, deductedPercent) = await CalculateFinalAmountAsync(request, school.Id, plan, baseAmount, now);
 
-            var subscription = CreateNewSubscription(request, plan, school.Id, finalAmount, now, transactionId);
-            await SaveSubscriptionAsync(subscription);
+            var paymentTransaction = new PaymentTransaction
+            {
+                UserId = request.UserId,
+                PaymentPurpose = PaymentPurpose.SchoolSubscription,
+                PaymentMethod = PaymentMethod.PayOS,
+                PaymentStatus = PaymentStatus.Pending,
+                PaymentItemId = request.PlanId,
+                Amount = finalAmount,
+                TransactionCode = transactionCode,
+                CreatedAt = now
+            };
 
-            var paymentRequest = BuildPaymentRequest(plan, request.BillingCycle, (int)finalAmount, school, orderCode);
+            var transactionRepo = _unitOfWork.GetRepository<PaymentTransaction, Guid>();
+            await transactionRepo.AddAsync(paymentTransaction);
+            await _unitOfWork.CommitAsync();
+
+            var paymentRequest = BuildPaymentRequest(plan, request.BillingCycle, (int)finalAmount, school, long.Parse(transactionCode));
             var result = await _payOSService.CreatePaymentLinkAsync(paymentRequest);
 
             var response = new CreatePaymentLinkResponse
@@ -52,7 +66,7 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Commands
                 Amount = (long)finalAmount,
                 DeductedAmount = deductedAmount,
                 DeductedPercent = deductedPercent,
-                TransactionId = transactionId,
+                TransactionCode = transactionCode,
             };
 
             return (CustomCode.Success, response);
@@ -91,10 +105,13 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Commands
             if (IsDowngrade(request, plan, existing))
                 throw new DowngradeNotAllowedException();
 
+            var transactionRepo = _unitOfWork.GetRepository<PaymentTransaction, Guid>();
+            var transaction = await transactionRepo.GetByIdAsync(existing.PaymentTransactionId) ?? throw new PaymentTransactionNotFoundException();
+
             var totalDays = existing.BillingCycle == BillingCycle.Monthly ? 30 : 365;
             var daysUsed = (now - existing.StartDate).TotalDays;
             var daysLeft = Math.Max(0, totalDays - daysUsed);
-            var oldDailyRate = (double)existing.AmountPaid / totalDays;
+            var oldDailyRate = (double)transaction.Amount / totalDays;
             var deducted = (decimal)(daysLeft * oldDailyRate);
             var newPlanAmount = request.BillingCycle == BillingCycle.Monthly ? plan.PriceMonthly : plan.PricePerYear;
             var percent = (double)deducted / (double)newPlanAmount * 100;
@@ -112,36 +129,9 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Commands
                 || (request.BillingCycle == BillingCycle.Yearly && newPlan.PricePerYear < current.Plan.PricePerYear);
         }
 
-        private static SchoolSubscription CreateNewSubscription(CreateSchoolSubscriptionCommand request, SubscriptionPlan plan, int schoolId, decimal amount, DateTimeOffset now, string transactionId)
-        {
-            return new SchoolSubscription
-            {
-                PlanId = plan.Id,
-                SchoolId = schoolId,
-                BillingCycle = request.BillingCycle,
-                SubscriptionStatus = SubscriptionStatus.Peding,
-                PaymentStatus = PaymentStatus.Pending,
-                PaymentMethod = PaymentMethod.PayOS,
-                TransactionId = transactionId,
-                AmountPaid = amount,
-                StartDate = now,
-                EndDate = request.BillingCycle == BillingCycle.Monthly ? now.AddMonths(1) : now.AddYears(1),
-                LastUsageResetDate = now,
-                PurchasedAt = now,
-                CurrentPeriodAIUsageMinutes = 0
-            };
-        }
-
-        private async Task SaveSubscriptionAsync(SchoolSubscription subscription)
-        {
-            var repo = _unitOfWork.GetCustomRepository<ISchoolSubscriptionRepository>();
-            await repo.AddAsync(subscription);
-            await _unitOfWork.CommitAsync();
-        }
-
         private PaymentData BuildPaymentRequest(SubscriptionPlan plan, BillingCycle cycle, int amount, School school, long orderCode)
         {
-            var billingCode = cycle == BillingCycle.Monthly ? "M" : "Y";
+            var billingCode = cycle == BillingCycle.Monthly ? " Thang" : " Nam";
             return new PaymentData(
                 orderCode: orderCode,
                 amount: amount,

@@ -44,7 +44,6 @@ namespace Eduva.Application.Test.Features.SubscriptionPlans.Commands.CreatePlan
                 PricePerYear = 1000000,
                 MaxUsers = 10,
                 StorageLimitGB = 5,
-                MaxMinutesPerMonth = 100
             };
 
             _repoMock.Setup(r => r.ExistsAsync(It.IsAny<Expression<Func<SubscriptionPlan, bool>>>()))
@@ -65,7 +64,6 @@ namespace Eduva.Application.Test.Features.SubscriptionPlans.Commands.CreatePlan
                 PricePerYear = 1000000,
                 MaxUsers = 10,
                 StorageLimitGB = 5,
-                MaxMinutesPerMonth = 100
             };
 
             var result1 = await _validator.TestValidateAsync(command);
@@ -90,7 +88,6 @@ namespace Eduva.Application.Test.Features.SubscriptionPlans.Commands.CreatePlan
                 PricePerYear = 100000,
                 MaxUsers = 10,
                 StorageLimitGB = 5,
-                MaxMinutesPerMonth = 100
             };
 
             _repoMock.Setup(r => r.ExistsAsync(It.IsAny<Expression<Func<SubscriptionPlan, bool>>>()))
@@ -110,7 +107,6 @@ namespace Eduva.Application.Test.Features.SubscriptionPlans.Commands.CreatePlan
                 PricePerYear = 1000000,
                 MaxUsers = 0,
                 StorageLimitGB = 5,
-                MaxMinutesPerMonth = 100
             };
 
             _repoMock.Setup(r => r.ExistsAsync(It.IsAny<Expression<Func<SubscriptionPlan, bool>>>()))
@@ -130,7 +126,6 @@ namespace Eduva.Application.Test.Features.SubscriptionPlans.Commands.CreatePlan
                 PricePerYear = 1000000,
                 MaxUsers = 10,
                 StorageLimitGB = -5,
-                MaxMinutesPerMonth = 100
             };
 
             _repoMock.Setup(r => r.ExistsAsync(It.IsAny<Expression<Func<SubscriptionPlan, bool>>>()))
@@ -138,26 +133,6 @@ namespace Eduva.Application.Test.Features.SubscriptionPlans.Commands.CreatePlan
 
             var result = await _validator.TestValidateAsync(command);
             result.ShouldHaveValidationErrorFor(c => c.StorageLimitGB);
-        }
-
-        [Test]
-        public async Task Should_Fail_When_MaxMinutesPerMonth_Is_Negative()
-        {
-            var command = new CreateSubscriptionPlanCommand
-            {
-                Name = "Test",
-                PriceMonthly = 100000,
-                PricePerYear = 1000000,
-                MaxUsers = 10,
-                StorageLimitGB = 10,
-                MaxMinutesPerMonth = -10
-            };
-
-            _repoMock.Setup(r => r.ExistsAsync(It.IsAny<Expression<Func<SubscriptionPlan, bool>>>()))
-                     .ReturnsAsync(false);
-
-            var result = await _validator.TestValidateAsync(command);
-            result.ShouldHaveValidationErrorFor(c => c.MaxMinutesPerMonth);
         }
 
         #endregion

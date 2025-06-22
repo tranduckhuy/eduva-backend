@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
@@ -11,6 +12,42 @@ namespace Eduva.Infrastructure.Persistence.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "AICreditPacks",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Price = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    Credits = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    BonusCredits = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    LastModifiedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    Status = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AICreditPacks", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AIServicePricings",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ServiceType = table.Column<string>(type: "text", nullable: false),
+                    PricePerMinuteCredits = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    LastModifiedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    Status = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AIServicePricings", x => x.Id);
+                });
+
             migrationBuilder.CreateTable(
                 name: "AspNetRoles",
                 columns: table => new
@@ -70,7 +107,6 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     Description = table.Column<string>(type: "text", nullable: true),
                     MaxUsers = table.Column<int>(type: "integer", nullable: false),
                     StorageLimitGB = table.Column<decimal>(type: "numeric", nullable: false),
-                    MaxMinutesPerMonth = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
                     PriceMonthly = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
                     PricePerYear = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
@@ -111,8 +147,8 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     FullName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     AvatarUrl = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     SchoolId = table.Column<int>(type: "integer", nullable: true),
-                    DOB = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     Status = table.Column<int>(type: "integer", nullable: false),
+                    TotalCredits = table.Column<int>(type: "integer", nullable: false),
                     RefreshToken = table.Column<string>(type: "text", nullable: true),
                     RefreshTokenExpiryTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     UserName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
@@ -142,52 +178,15 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "SchoolSubscription",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    StartDate = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    EndDate = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    SubscriptionStatus = table.Column<string>(type: "text", nullable: false),
-                    PaymentStatus = table.Column<string>(type: "text", nullable: false),
-                    PaymentMethod = table.Column<string>(type: "text", nullable: false),
-                    TransactionId = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    AmountPaid = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
-                    CurrentPeriodAIUsageMinutes = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
-                    LastUsageResetDate = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    PurchasedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    BillingCycle = table.Column<string>(type: "text", nullable: false),
-                    SchoolId = table.Column<int>(type: "integer", nullable: false),
-                    PlanId = table.Column<int>(type: "integer", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SchoolSubscription", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_SchoolSubscription_Schools_SchoolId",
-                        column: x => x.SchoolId,
-                        principalTable: "Schools",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_SchoolSubscription_SubscriptionPlans_PlanId",
-                        column: x => x.PlanId,
-                        principalTable: "SubscriptionPlans",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "AIUsageLogs",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    LessonTitleAtCreation = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    ContentType = table.Column<string>(type: "text", nullable: false),
-                    CostMinutes = table.Column<decimal>(type: "numeric", nullable: false),
+                    AIServiceType = table.Column<string>(type: "text", nullable: false),
+                    DurationSeconds = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    CreditsCharged = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
@@ -356,6 +355,32 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "PaymentTransactions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    PaymentPurpose = table.Column<string>(type: "text", nullable: false),
+                    PaymentItemId = table.Column<int>(type: "integer", nullable: false),
+                    RelatedId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    PaymentMethod = table.Column<string>(type: "text", nullable: false),
+                    PaymentStatus = table.Column<string>(type: "text", nullable: false),
+                    TransactionCode = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    Amount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PaymentTransactions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PaymentTransactions_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "UserNotifications",
                 columns: table => new
                 {
@@ -499,6 +524,79 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                         principalTable: "LessonMaterials",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SchoolSubscription",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    StartDate = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    EndDate = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    SubscriptionStatus = table.Column<string>(type: "text", nullable: false),
+                    BillingCycle = table.Column<string>(type: "text", nullable: false),
+                    SchoolId = table.Column<int>(type: "integer", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    PlanId = table.Column<int>(type: "integer", nullable: false),
+                    PaymentTransactionId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SchoolSubscription", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SchoolSubscription_PaymentTransactions_PaymentTransactionId",
+                        column: x => x.PaymentTransactionId,
+                        principalTable: "PaymentTransactions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_SchoolSubscription_Schools_SchoolId",
+                        column: x => x.SchoolId,
+                        principalTable: "Schools",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_SchoolSubscription_SubscriptionPlans_PlanId",
+                        column: x => x.PlanId,
+                        principalTable: "SubscriptionPlans",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserCreditTransactions",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    AICreditPackId = table.Column<int>(type: "integer", nullable: false),
+                    PaymentTransactionId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Credits = table.Column<int>(type: "integer", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserCreditTransactions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserCreditTransactions_AICreditPacks_AICreditPackId",
+                        column: x => x.AICreditPackId,
+                        principalTable: "AICreditPacks",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_UserCreditTransactions_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_UserCreditTransactions_PaymentTransactions_PaymentTransacti~",
+                        column: x => x.PaymentTransactionId,
+                        principalTable: "PaymentTransactions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -679,6 +777,11 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 column: "SchoolId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_PaymentTransactions_UserId",
+                table: "PaymentTransactions",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_QuestionComments_CreatedBy",
                 table: "QuestionComments",
                 column: "CreatedBy");
@@ -698,6 +801,11 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 table: "Schools",
                 column: "ContactEmail",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SchoolSubscription_PaymentTransactionId",
+                table: "SchoolSubscription",
+                column: "PaymentTransactionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SchoolSubscription_PlanId",
@@ -720,6 +828,21 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 column: "StudentId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_UserCreditTransactions_AICreditPackId",
+                table: "UserCreditTransactions",
+                column: "AICreditPackId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserCreditTransactions_PaymentTransactionId",
+                table: "UserCreditTransactions",
+                column: "PaymentTransactionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserCreditTransactions_UserId",
+                table: "UserCreditTransactions",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_UserNotifications_NotificationID",
                 table: "UserNotifications",
                 column: "NotificationID");
@@ -733,6 +856,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "AIServicePricings");
+
             migrationBuilder.DropTable(
                 name: "AIUsageLogs");
 
@@ -767,6 +893,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 name: "StudentClasses");
 
             migrationBuilder.DropTable(
+                name: "UserCreditTransactions");
+
+            migrationBuilder.DropTable(
                 name: "UserNotifications");
 
             migrationBuilder.DropTable(
@@ -780,6 +909,12 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "SubscriptionPlans");
+
+            migrationBuilder.DropTable(
+                name: "AICreditPacks");
+
+            migrationBuilder.DropTable(
+                name: "PaymentTransactions");
 
             migrationBuilder.DropTable(
                 name: "Notifications");

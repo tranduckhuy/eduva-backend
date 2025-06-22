@@ -11,16 +11,17 @@ namespace Eduva.Infrastructure.Persistence.Configurations
             builder.Property(aul => aul.UserId)
                 .IsRequired();
 
-            builder.Property(aul => aul.LessonTitleAtCreation)
-                .HasMaxLength(255);
-
-            builder.Property(aul => aul.ContentType)
+            builder.Property(aul => aul.AIServiceType)
                 .HasConversion<string>()
                 .IsRequired();
 
-            builder.Property(aul => aul.CostMinutes)
-                .IsRequired();
+            builder.Property(aul => aul.DurationSeconds)
+                .IsRequired()
+                .HasDefaultValue(0);
 
+            builder.Property(aul => aul.CreditsCharged)
+                .IsRequired()
+                .HasDefaultValue(0);
 
             // Relationships
             builder.HasOne(aul => aul.User)

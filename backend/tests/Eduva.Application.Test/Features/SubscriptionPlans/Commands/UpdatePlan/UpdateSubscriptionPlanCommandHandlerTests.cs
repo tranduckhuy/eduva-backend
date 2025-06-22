@@ -48,7 +48,6 @@ namespace Eduva.Application.Test.Features.SubscriptionPlans.Commands.UpdatePlan
                 Description = "Updated Description",
                 MaxUsers = 150,
                 StorageLimitGB = 100,
-                MaxMinutesPerMonth = 2000,
                 PriceMonthly = 299000,
                 PricePerYear = 2800000
             };
@@ -60,7 +59,6 @@ namespace Eduva.Application.Test.Features.SubscriptionPlans.Commands.UpdatePlan
                 Description = "Old Description",
                 MaxUsers = 100,
                 StorageLimitGB = 50,
-                MaxMinutesPerMonth = 1000,
                 PriceMonthly = 199000,
                 PricePerYear = 1900000,
                 Status = EntityStatus.Active
@@ -82,7 +80,6 @@ namespace Eduva.Application.Test.Features.SubscriptionPlans.Commands.UpdatePlan
                 Assert.That(result.Description, Is.EqualTo(command.Description));
                 Assert.That(result.MaxUsers, Is.EqualTo(command.MaxUsers));
                 Assert.That(result.StorageLimitGB, Is.EqualTo(command.StorageLimitGB));
-                Assert.That(result.MaxMinutesPerMonth, Is.EqualTo(command.MaxMinutesPerMonth));
                 Assert.That(result.PriceMonthly, Is.EqualTo(command.PriceMonthly));
                 Assert.That(result.PricePerYear, Is.EqualTo(command.PricePerYear));
             });

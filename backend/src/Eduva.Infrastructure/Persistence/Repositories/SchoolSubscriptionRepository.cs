@@ -12,24 +12,22 @@ namespace Eduva.Infrastructure.Persistence.Repositories
         {
         }
 
-        public async Task<SchoolSubscription?> FindByTransactionIdAsync(string transactionId)
+        public async Task<SchoolSubscription?> GetActiveSubscriptionBySchoolIdAsync(int schoolId, CancellationToken cancellationToken = default)
         {
             return await _context.SchoolSubscriptions
-                .FirstOrDefaultAsync(x => x.TransactionId == transactionId);
+                .Include(s => s.Plan)
+                .FirstOrDefaultAsync(s =>
+                    s.SchoolId == schoolId &&
+                    s.SubscriptionStatus == SubscriptionStatus.Active,
+                    cancellationToken);
         }
 
-        public async Task<SchoolSubscription?> GetActiveSubscriptionBySchoolIdAsync(int schoolId)
+        public async Task<SchoolSubscription?> GetByPaymentTransactionIdAsync(Guid paymentTransactionId, CancellationToken cancellationToken = default)
         {
             return await _context.SchoolSubscriptions
-                .Include(x => x.Plan)
-                .Where(x =>
-                    x.SchoolId == schoolId &&
-                    x.SubscriptionStatus == SubscriptionStatus.Active &&
-                    x.PaymentStatus == PaymentStatus.Paid &&
-                    x.EndDate > DateTimeOffset.UtcNow
-                )
-                .OrderByDescending(x => x.StartDate)
-                .FirstOrDefaultAsync();
+                .Include(s => s.Plan)
+                .Include(s => s.School)
+                .FirstOrDefaultAsync(s => s.PaymentTransactionId == paymentTransactionId, cancellationToken);
         }
 
         public async Task<int> CountSchoolsUsingPlanAsync(int planId, CancellationToken cancellationToken = default)
@@ -42,7 +40,24 @@ namespace Eduva.Infrastructure.Persistence.Repositories
         {
             return await _context.SchoolSubscriptions
                 .Include(s => s.Plan)
+                .Include(s => s.PaymentTransaction)
                 .Where(s => s.SchoolId == schoolId && s.SubscriptionStatus == SubscriptionStatus.Active)
+                .OrderByDescending(s => s.EndDate)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
+        public async Task<List<SchoolSubscription>> GetExpiringSubscriptionsAsync(DateTimeOffset currentTime)
+        {
+            return await _context.SchoolSubscriptions
+                .Where(s => s.SubscriptionStatus == SubscriptionStatus.Active && s.EndDate <= currentTime)
+                .ToListAsync();
+        }
+
+        public async Task<SchoolSubscription?> GetLatestSubscriptionBySchoolIdAsync(int schoolId, CancellationToken cancellationToken = default)
+        {
+            return await _context.SchoolSubscriptions
+                .Include(s => s.Plan)
+                .Where(s => s.SchoolId == schoolId)
                 .OrderByDescending(s => s.EndDate)
                 .FirstOrDefaultAsync(cancellationToken);
         }

@@ -26,32 +26,11 @@ namespace Eduva.Infrastructure.Persistence.Configurations
                 .HasConversion<string>()
                 .IsRequired();
 
-            builder.Property(ss => ss.PaymentStatus)
-                .HasConversion<string>()
-                .IsRequired();
-
-            builder.Property(ss => ss.PaymentMethod)
-                .HasConversion<string>()
-                .IsRequired();
-
-            builder.Property(ss => ss.TransactionId)
-                .HasMaxLength(255)
-                .IsRequired(false); // TransactionId can be null if not applicable
-
-            builder.Property(ss => ss.AmountPaid)
-                .HasColumnType("numeric(18,2)");
-
-            builder.Property(ss => ss.CurrentPeriodAIUsageMinutes)
-                .HasColumnType("numeric(18,2)");
-
-            builder.Property(ss => ss.LastUsageResetDate)
-                .IsRequired();
-
-            builder.Property(ss => ss.PurchasedAt)
-                .IsRequired();
-
             builder.Property(ss => ss.BillingCycle)
                 .HasConversion<string>()
+                .IsRequired();
+
+            builder.Property(ss => ss.PaymentTransactionId)
                 .IsRequired();
 
             // Relationships (Foreign Keys)
@@ -63,6 +42,11 @@ namespace Eduva.Infrastructure.Persistence.Configurations
             builder.HasOne(ss => ss.Plan)
                 .WithMany(sp => sp.SchoolSubscriptions)
                 .HasForeignKey(ss => ss.PlanId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(ss => ss.PaymentTransaction)
+                .WithMany()
+                .HasForeignKey(ss => ss.PaymentTransactionId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }

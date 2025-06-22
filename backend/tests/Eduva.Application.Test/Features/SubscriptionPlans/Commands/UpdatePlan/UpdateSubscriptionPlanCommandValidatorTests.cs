@@ -43,7 +43,6 @@ namespace Eduva.Application.Test.Features.SubscriptionPlans.Commands.UpdatePlan
                 Name = "Premium",
                 MaxUsers = 10,
                 StorageLimitGB = 5,
-                MaxMinutesPerMonth = 100,
                 PriceMonthly = 200000,
                 PricePerYear = 1900000
             };
@@ -64,7 +63,6 @@ namespace Eduva.Application.Test.Features.SubscriptionPlans.Commands.UpdatePlan
                 Name = "DuplicateName",
                 MaxUsers = 10,
                 StorageLimitGB = 5,
-                MaxMinutesPerMonth = 100,
                 PriceMonthly = 200000,
                 PricePerYear = 1900000
             };
@@ -86,7 +84,6 @@ namespace Eduva.Application.Test.Features.SubscriptionPlans.Commands.UpdatePlan
                 Name = "",
                 MaxUsers = 10,
                 StorageLimitGB = 5,
-                MaxMinutesPerMonth = 100,
                 PriceMonthly = 200000,
                 PricePerYear = 1900000
             };
@@ -105,7 +102,6 @@ namespace Eduva.Application.Test.Features.SubscriptionPlans.Commands.UpdatePlan
                 Name = "ValidName",
                 MaxUsers = maxUsers,
                 StorageLimitGB = 5,
-                MaxMinutesPerMonth = 100,
                 PriceMonthly = 200000,
                 PricePerYear = 1900000
             };
@@ -126,7 +122,6 @@ namespace Eduva.Application.Test.Features.SubscriptionPlans.Commands.UpdatePlan
                 Name = "Test",
                 MaxUsers = 10,
                 StorageLimitGB = storage,
-                MaxMinutesPerMonth = 100,
                 PriceMonthly = 200000,
                 PricePerYear = 1900000
             };
@@ -139,27 +134,6 @@ namespace Eduva.Application.Test.Features.SubscriptionPlans.Commands.UpdatePlan
         }
 
         [TestCase(-1)]
-        public async Task Should_Fail_When_MaxMinutesPerMonth_Is_Negative(int minutes)
-        {
-            var command = new UpdateSubscriptionPlanCommand
-            {
-                Id = 1,
-                Name = "Test",
-                MaxUsers = 10,
-                StorageLimitGB = 10,
-                MaxMinutesPerMonth = minutes,
-                PriceMonthly = 200000,
-                PricePerYear = 1900000
-            };
-
-            _repoMock.Setup(r => r.ExistsAsync(It.IsAny<Expression<Func<SubscriptionPlan, bool>>>()))
-                     .ReturnsAsync(false);
-
-            var result = await _validator.TestValidateAsync(command);
-            result.ShouldHaveValidationErrorFor(c => c.MaxMinutesPerMonth);
-        }
-
-        [TestCase(-1)]
         public async Task Should_Fail_When_PriceMonthly_Is_Negative(decimal priceMonthly)
         {
             var command = new UpdateSubscriptionPlanCommand
@@ -168,7 +142,6 @@ namespace Eduva.Application.Test.Features.SubscriptionPlans.Commands.UpdatePlan
                 Name = "Test",
                 MaxUsers = 10,
                 StorageLimitGB = 10,
-                MaxMinutesPerMonth = 100,
                 PriceMonthly = priceMonthly,
                 PricePerYear = 1900000
             };
@@ -189,7 +162,6 @@ namespace Eduva.Application.Test.Features.SubscriptionPlans.Commands.UpdatePlan
                 Name = "Test",
                 MaxUsers = 10,
                 StorageLimitGB = 10,
-                MaxMinutesPerMonth = 100,
                 PriceMonthly = 200000,
                 PricePerYear = pricePerYear
             };

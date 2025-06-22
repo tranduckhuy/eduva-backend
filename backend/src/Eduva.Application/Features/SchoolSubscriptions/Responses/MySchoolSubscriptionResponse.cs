@@ -15,8 +15,6 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Responses
 
         public int MaxUsers { get; set; }
         public decimal StorageLimitGB { get; set; }
-        public decimal MaxMinutesPerMonth { get; set; }
-
         public decimal AmountPaid { get; set; }
     }
 }

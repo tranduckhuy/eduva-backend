@@ -28,7 +28,6 @@ namespace Eduva.Infrastructure.Persistence.DbContext
         public DbSet<School> Schools { get; set; } = default!;
         public DbSet<SubscriptionPlan> SubscriptionPlans { get; set; } = default!;
         public DbSet<SchoolSubscription> SchoolSubscriptions { get; set; } = default!;
-        public DbSet<AIUsageLog> AIUsageLogs { get; set; } = default!;
         public DbSet<Classroom> Classes { get; set; } = default!;
         public DbSet<StudentClass> StudentClasses { get; set; } = default!;
         public DbSet<Folder> Folders { get; set; } = default!;
@@ -39,6 +38,11 @@ namespace Eduva.Infrastructure.Persistence.DbContext
         public DbSet<QuestionComment> QuestionComments { get; set; } = default!;
         public DbSet<Notification> Notifications { get; set; } = default!;
         public DbSet<UserNotification> UserNotifications { get; set; } = default!;
+        public DbSet<AIUsageLog> AIUsageLogs { get; set; } = default!;
+        public DbSet<UserCreditTransaction> UserCreditTransactions { get; set; } = default!;
+        public DbSet<PaymentTransaction> PaymentTransactions { get; set; } = default!;
+        public DbSet<AICreditPack> AICreditPacks { get; set; } = default!;
+        public DbSet<AIServicePricing> AIServicePricings { get; set; } = default!;
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
