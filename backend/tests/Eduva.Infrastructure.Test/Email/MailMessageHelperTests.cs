@@ -6,92 +6,137 @@ namespace Eduva.Infrastructure.Test.Email
     [TestFixture]
     public class MailMessageHelperTests
     {
+        private string _templateDir = default!;
+        private string _basePath = default!;
+
+        #region MailMessageHelperTests Setup and TearDown
+
+        [SetUp]
+        public void Setup()
+        {
+            _basePath = AppContext.BaseDirectory;
+            _templateDir = Path.Combine(_basePath, "email-templates");
+
+            if (!Directory.Exists(_templateDir))
+                Directory.CreateDirectory(_templateDir);
+        }
+
+        [TearDown]
+        public void Cleanup()
+        {
+            if (Directory.Exists(_templateDir))
+            {
+                foreach (var file in Directory.GetFiles(_templateDir))
+                {
+                    File.Delete(file);
+                }
+            }
+        }
+
+        #endregion
 
         #region MailMessageHelper Tests
 
-        // Verifies that the CreateMessage method builds an EmailMessage with the correct properties.
         [Test]
         public void CreateMessage_ShouldBuildCorrectEmailMessage()
         {
-            // Arrange
+            var templateFile = Path.Combine(_templateDir, "reset-password.html");
+            File.WriteAllText(templateFile, "Click here: {{reset_link}} - {{current_year}}");
+
             var user = new ApplicationUser
             {
                 Email = "user@example.com",
                 FullName = "Test User"
             };
             var token = "abc123";
-            var clientUrl = "https://example.com/confirm";
-            var subject = "Confirm Your Account";
-            var content = "confirm your account";
+            var clientUrl = "https://example.com/reset";
+            var subject = "Reset Your Password";
 
-            // Act
-            var message = MailMessageHelper.CreateMessage(user, token, clientUrl, subject, content);
+            var message = MailMessageHelper.CreateMessage(user, token, clientUrl, "reset-password.html", subject);
 
-            // Assert
             Assert.Multiple(() =>
             {
-                Assert.That(message, Is.Not.Null);
-                Assert.That(message.To, Has.Count.EqualTo(1));
                 Assert.That(message.To[0].Email, Is.EqualTo(user.Email));
                 Assert.That(message.To[0].DisplayName, Is.EqualTo(user.FullName));
                 Assert.That(message.Subject, Is.EqualTo(subject));
-                Assert.That(message.Content, Does.Contain("https://example.com/confirm"));
                 Assert.That(message.Content, Does.Contain("token=abc123"));
                 Assert.That(message.Content, Does.Contain("email=user@example.com"));
-                Assert.That(message.Content, Does.Contain("Please confirm your account by <a href='"));
+                Assert.That(message.Content, Does.Contain(DateTime.UtcNow.Year.ToString()));
+                Assert.That(message.Content, Does.Contain("Click here:"));
             });
         }
 
-        // Verifies that the CreateMessage method falls back to email when FullName is null.
         [Test]
         public void CreateMessage_ShouldFallbackToEmail_WhenFullNameIsNull()
         {
-            // Arrange
+            var templateFile = Path.Combine(_templateDir, "reset.html");
+            File.WriteAllText(templateFile, "Confirm here: {{reset_link}} - {{current_year}}");
+
             var user = new ApplicationUser
             {
-                Email = "user@example.com",
+                Email = "fallback@example.com",
                 FullName = null
             };
-            var token = "abc123";
-            var clientUrl = "https://example.com/reset";
-            var subject = "Reset Password";
-            var content = "reset your password";
 
-            // Act
-            var message = MailMessageHelper.CreateMessage(user, token, clientUrl, subject, content);
+            var message = MailMessageHelper.CreateMessage(user, "token321", "https://client.com/verify", "reset.html", "Reset");
 
-            // Assert
-            Assert.Multiple(() =>
-            {
-                Assert.That(message.To[0].DisplayName, Is.EqualTo(user.Email));
-                Assert.That(message.Subject, Is.EqualTo(subject));
-                Assert.That(message.Content, Does.Contain("token=abc123"));
-                Assert.That(message.Content, Does.Contain("email=user@example.com"));
-                Assert.That(message.Content, Does.Contain("Please reset your password by <a href='"));
-            });
+            Assert.That(message.To[0].DisplayName, Is.EqualTo(user.Email));
         }
 
-        // Verifies that the CreateMessage method correctly appends query parameters to the client URL.
         [Test]
         public void CreateMessage_ShouldHandleUrlWithExistingQueryParameters()
         {
-            // Arrange
-            var user = new ApplicationUser { Email = "abc@x.com", FullName = "ABC" };
-            var token = "t123";
-            var clientUrl = "https://app.com/action?existing=1";
-            var subject = "Join Class";
-            var content = "join the class";
+            var templateFile = Path.Combine(_templateDir, "query.html");
+            File.WriteAllText(templateFile, "Join here: {{reset_link}}");
 
-            // Act
-            var message = MailMessageHelper.CreateMessage(user, token, clientUrl, subject, content);
+            var user = new ApplicationUser { Email = "x@x.com", FullName = "X" };
 
-            // Assert
+            var clientUrl = "https://app.com/invite?x=1";
+            var message = MailMessageHelper.CreateMessage(user, "abc", clientUrl, "query.html", "Join");
+
+            Assert.That(message.Content, Does.Contain("x=1"));
+            Assert.That(message.Content, Does.Contain("token=abc"));
+            Assert.That(message.Content, Does.Contain("email=x@x.com"));
+        }
+
+        [Test]
+        public void CreateMessage_TemplateFileNotFound_ThrowsFileNotFoundException()
+        {
+            var user = new ApplicationUser { Email = "no@file.com", FullName = "No File" };
+
+            var ex = Assert.Throws<FileNotFoundException>(() =>
+                MailMessageHelper.CreateMessage(user, "token", "https://client.com", "notfound.html", "Subject"));
+
+            Assert.That(ex!.Message, Does.Contain("Email template file not found"));
+        }
+
+        [Test]
+        public async Task CreateMessageAsync_ShouldBuildCorrectOtpEmailMessage()
+        {
+            var filePath = Path.Combine(_templateDir, "otp-verification.html");
+            File.WriteAllText(filePath, "Your OTP is: {{otp_code}}, Year: {{current_year}}");
+
+            var user = new ApplicationUser { Email = "otp@eduva.com", FullName = "Otp User" };
+            var message = await MailMessageHelper.CreateMessageAsync(user, "654321", "OTP Subject");
+
             Assert.Multiple(() =>
             {
-                Assert.That(message.Content, Does.Contain("existing=1"));
-                Assert.That(message.Content, Does.Contain("token=t123"));
-                Assert.That(message.Content, Does.Contain("email=abc@x.com"));
+                Assert.That(message.Subject, Is.EqualTo("OTP Subject"));
+                Assert.That(message.To[0].Email, Is.EqualTo("otp@eduva.com"));
+                Assert.That(message.Content, Does.Contain("Your OTP is: 654321"));
+                Assert.That(message.Content, Does.Contain(DateTime.UtcNow.Year.ToString()));
             });
+        }
+
+        [Test]
+        public void CreateMessageAsync_TemplateFileNotFound_ThrowsFileNotFoundException()
+        {
+            var user = new ApplicationUser { Email = "otp@eduva.com", FullName = "Otp User" };
+
+            var ex = Assert.ThrowsAsync<FileNotFoundException>(async () =>
+                await MailMessageHelper.CreateMessageAsync(user, "123456", "OTP Subject"));
+
+            Assert.That(ex!.Message, Does.Contain("OTP template file not found"));
         }
 
         #endregion

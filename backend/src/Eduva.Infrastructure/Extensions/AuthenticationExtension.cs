@@ -102,7 +102,7 @@ namespace Eduva.Infrastructure.Extensions
 
         public static IdentityBuilder AddApplicationIdentity<TUser>(this IServiceCollection services) where TUser : class
         {
-            return services.AddIdentity<TUser, IdentityRole<Guid>>(options =>
+            var builder = services.AddIdentity<TUser, IdentityRole<Guid>>(options =>
             {
                 options.SignIn.RequireConfirmedEmail = true;
 
@@ -121,6 +121,13 @@ namespace Eduva.Infrastructure.Extensions
             })
             .AddEntityFrameworkStores<AppDbContext>()
             .AddDefaultTokenProviders();
+
+            services.Configure<DataProtectionTokenProviderOptions>(options =>
+            {
+                options.TokenLifespan = TimeSpan.FromSeconds(120);
+            });
+
+            return builder;
         }
     }
 }

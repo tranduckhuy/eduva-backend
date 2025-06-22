@@ -20,6 +20,16 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Eduva.Application\Eduva.Application.csproj" />
+
+  <Content Include="Configurations\Email\Templates\*.html">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Link>email-templates\%(Filename)%(Extension)</Link>
+  </Content>
+
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="Configurations\Email\Templates\reset-password.html" Link="email-templates\reset-password.html" />
   </ItemGroup>
 
 </Project>
