@@ -49,7 +49,6 @@ namespace Eduva.Infrastructure.Extensions
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             // Excel Service
-            services.AddScoped<IExcelService, ExcelService>();
             services.Configure<ImportTemplateConfig>(configuration.GetSection("ImportTemplate"));
 
             // Register repositories

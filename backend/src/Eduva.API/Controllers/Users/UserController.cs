@@ -1,7 +1,6 @@
 ﻿using Eduva.API.Controllers.Base;
 using Eduva.API.Models;
 using Eduva.Application.Features.Users.Commands;
-using Eduva.Application.Features.Users.DTOs;
 using Eduva.Application.Features.Users.Queries;
 using Eduva.Application.Features.Users.Requests;
 using Eduva.Application.Features.Users.Responses;
@@ -99,8 +98,8 @@ namespace Eduva.API.Controllers.Users
 
         [HttpPost("import")]
         [Authorize(Roles = nameof(Role.SchoolAdmin))]
-        [ProducesResponseType(typeof(ApiResponse<FileResponseDto>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> ImportUsersFromExcel([FromForm] ImportUsersFromExcelRequest request)
         {
             var file = request.File;
@@ -115,32 +114,30 @@ namespace Eduva.API.Controllers.Users
             if (!Guid.TryParse(userId, out var creatorId))
                 return Respond(CustomCode.UserIdNotFound);
 
-            var (code, fileResponse) = await _mediator.Send(new ImportUsersFromExcelCommand
+            var fileBytes = await _mediator.Send(new ImportUsersFromExcelCommand
             {
                 File = file,
                 CreatorId = creatorId
             });
 
-            if (fileResponse != null)
+            if (fileBytes != null)
             {
-                return Ok(new ApiResponse<FileResponseDto>
-                {
-                    StatusCode = (int)code,
-                    Message = "Import failed. Please fix the errors in the returned file.",
-                    Data = fileResponse
-                });
+                return File(
+                    fileContents: fileBytes,
+                    contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    fileDownloadName: $"user_import_error_{DateTime.Now:dd_MM_yyyy}.xlsx");
             }
 
-            return Ok(new ApiResponse<object>
-            {
-                StatusCode = (int)CustomCode.Success,
-                Message = "Import successful.",
-                Data = null
-            });
+            return File(
+                    fileContents: [],
+                    contentType: "application/octet-stream",
+                    fileDownloadName: "Empty.xlsx");
         }
 
         [HttpGet("import-template")]
         [Authorize(Roles = nameof(Role.SchoolAdmin))]
+        [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> DownloadUserImportTemplate()
         {
             try
@@ -148,27 +145,16 @@ namespace Eduva.API.Controllers.Users
                 var httpClient = _httpClientFactory.CreateClient("EduvaHttpClient");
                 var fileBytes = await httpClient.GetByteArrayAsync(_importTemplateConfig.Url);
 
-                return Ok(new ApiResponse<FileResponseDto>
-                {
-                    StatusCode = (int)CustomCode.Success,
-                    Message = "Template downloaded successfully.",
-                    Data = new FileResponseDto
-                    {
-                        FileName = "user_import_template.xlsx",
-                        Content = fileBytes
-                    }
-                });
+                return File(
+                    fileContents: fileBytes,
+                    contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    fileDownloadName: "user_import_template.xlsx"
+                );
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to fetch import template from Firebase");
-
-                return Ok(new ApiResponse<FileResponseDto>
-                {
-                    StatusCode = (int)CustomCode.SystemError,
-                    Message = "Failed to download import template.",
-                    Data = null
-                });
+                _logger.LogError(ex, "Unable to load template from Firebase.");
+                return BadRequest("The sample file could not be downloaded. Please try again later.");
             }
         }
     }
