@@ -6,25 +6,56 @@ namespace Eduva.Infrastructure.Email
 {
     public static class MailMessageHelper
     {
-        public static EmailMessage CreateMessage(ApplicationUser user, string token, string clientUrl, string subject, string content)
+        public static EmailMessage CreateMessage(ApplicationUser user, string token, string clientUrl, string templateFileName, string subject)
         {
+            var queryParams = new Dictionary<string, string?>
+        {
+            { "token", token },
+            { "email", user.Email }
+        };
 
-            var param = new Dictionary<string, string>
+            var link = QueryHelpers.AddQueryString(clientUrl, queryParams!);
+
+            var basePath = AppContext.BaseDirectory;
+            var templatePath = Path.Combine(basePath, "email-templates", templateFileName);
+
+            if (!File.Exists(templatePath))
             {
-                { "token", token },
-                { "email", user.Email! }
-            };
+                throw new FileNotFoundException("Email template file not found", templatePath);
+            }
 
-            var callbackUrl = QueryHelpers.AddQueryString(clientUrl, param!);
+            var htmlContent = File.ReadAllText(templatePath)
+                .Replace("{{reset_link}}", link)
+                .Replace("{{current_year}}", DateTime.UtcNow.Year.ToString());
 
-            var message = new EmailMessage(
-                [new EmailAddress(user.Email!, user.FullName ?? user.Email)],
+            return new EmailMessage(
+                [new EmailAddress(user.Email!, user.FullName ?? user.Email!)],
                 subject,
-                $"Please {content} by <a href='{callbackUrl}'>clicking here</a>.",
+                htmlContent,
                 null
             );
+        }
 
-            return message;
+        public static async Task<EmailMessage> CreateMessageAsync(ApplicationUser user, string otpCode, string subject)
+        {
+            var basePath = AppContext.BaseDirectory;
+            var templatePath = Path.Combine(basePath, "email-templates", "otp-verification.html");
+
+            if (!File.Exists(templatePath))
+                throw new FileNotFoundException("OTP template file not found", templatePath);
+
+            var template = await File.ReadAllTextAsync(templatePath);
+
+            var htmlBody = template
+                .Replace("{{otp_code}}", otpCode)
+                .Replace("{{current_year}}", DateTime.UtcNow.Year.ToString());
+
+            return new EmailMessage(
+                [new EmailAddress(user.Email!, user.FullName ?? user.Email!)],
+                subject,
+                htmlBody,
+                null
+            );
         }
     }
 }

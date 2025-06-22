@@ -57,6 +57,17 @@ namespace Eduva.Shared.Enums
         SchoolAlreadyActive = 4038,
         PlanAlreadyActive = 4039,
         PlanAlreadyArchived = 4040,
+        ClassNameAlreadyExistsForTeacher = 4041,
+        NotTeacherOfClass = 4042,
+        NotAdminForClassList = 4043,
+
+
+        InvalidRestrictedRole = 4044,
+        UserNotPartOfSchool = 4045,
+        FileIsRequired = 4046,
+        InvalidFileType = 4047,
+
+
 
         // File Storage Errors
         InvalidBlobName = 4200,

@@ -4,30 +4,47 @@ using Eduva.Application.Features.Classes.Responses;
 using Eduva.Application.Features.Classes.Utilities;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
+using Eduva.Domain.Entities;
+using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
+using Microsoft.AspNetCore.Identity;
 
 namespace Eduva.Application.Features.Classes.Commands
 {
     public class ResetClassCodeHandler : IRequestHandler<ResetClassCodeCommand, ClassResponse>
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public ResetClassCodeHandler(IUnitOfWork unitOfWork)
+        public ResetClassCodeHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
         {
             _unitOfWork = unitOfWork;
+            _userManager = userManager;
         }
 
         public async Task<ClassResponse> Handle(ResetClassCodeCommand request, CancellationToken cancellationToken)
         {
             var classroomRepository = _unitOfWork.GetCustomRepository<IClassroomRepository>();
+            
             // Get the classroom by ID
             var classroom = await classroomRepository.GetByIdAsync(request.Id)
                 ?? throw new AppException(CustomCode.ClassNotFound);
-            // Check if the teacher is authorized to update this class
-            if (classroom.TeacherId != request.TeacherId)
+                
+            // Get the current user
+            var userRepository = _unitOfWork.GetRepository<ApplicationUser, Guid>();
+            var currentUser = await userRepository.GetByIdAsync(request.TeacherId)
+                ?? throw new AppException(CustomCode.UserNotExists);
+
+            // Check user roles
+            var userRoles = await _userManager.GetRolesAsync(currentUser);
+            bool isTeacherOfClass = classroom.TeacherId == request.TeacherId;
+            bool isAdmin = userRoles.Contains(nameof(Role.SystemAdmin)) || userRoles.Contains(nameof(Role.SchoolAdmin));
+
+            // Only allow the teacher of the class or admins to reset the class code
+            if (!isTeacherOfClass && !isAdmin)
             {
-                throw new AppException(CustomCode.Unauthorized);
+                throw new AppException(CustomCode.NotTeacherOfClass);
             }
 
             // Generate new unique class code with retry

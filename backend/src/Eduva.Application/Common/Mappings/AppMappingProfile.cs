@@ -8,6 +8,7 @@ using Eduva.Application.Features.LessonMaterials.Responses;
 using Eduva.Application.Features.Schools.Commands.CreateSchool;
 using Eduva.Application.Features.SchoolSubscriptions.Responses;
 using Eduva.Application.Features.SubscriptionPlans.Responses;
+using Eduva.Application.Features.Users.Responses;
 using Eduva.Domain.Entities;
 
 namespace Eduva.Application.Common.Mappings
@@ -16,6 +17,9 @@ namespace Eduva.Application.Common.Mappings
     {
         public AppMappingProfile()
         {
+            // User mappings
+            CreateMap<ApplicationUser, UserResponse>();
+
             // Lesson Materials mappings
             CreateMap<CreateLessonMaterialCommand, LessonMaterial>();
             CreateMap<LessonMaterial, LessonMaterialResponse>()

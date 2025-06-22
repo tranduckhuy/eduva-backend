@@ -31,7 +31,7 @@ namespace Eduva.Infrastructure.Test.Services
         private AuthService _authService = default!;
         private const string ValidClientUrl = "https://localhost:9001/api/auth/confirm-email";
 
-        #region AuthServiceTests Setup
+        #region AuthServiceTests Setup and TearDown
 
         [SetUp]
         public void Setup()
@@ -61,6 +61,23 @@ namespace Eduva.Infrastructure.Test.Services
                 _logger.Object,
                 jwtHandler,
                 _tokenService.Object);
+
+            CreateEmailTemplate("verify-email.html", "<html>{{verify_link}} {{current_year}}</html>");
+            CreateEmailTemplate("otp-verification.html", "<html>Your code: {{otp_code}} {{current_year}}</html>");
+            CreateEmailTemplate("reset-password.html", "<html>Reset: {{reset_link}} {{current_year}}</html>");
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            var dir = Path.Combine(AppContext.BaseDirectory, "email-templates");
+            if (Directory.Exists(dir))
+            {
+                foreach (var file in Directory.GetFiles(dir))
+                {
+                    File.Delete(file);
+                }
+            }
         }
 
         #endregion
@@ -841,6 +858,23 @@ namespace Eduva.Infrastructure.Test.Services
             Assert.That(result, Is.EqualTo(CustomCode.ResetPasswordEmailSent));
         }
 
+        [Test]
+        public async Task ForgotPasswordAsync_ShouldSendEmail_WithExpectedSubject()
+        {
+            var user = new ApplicationUser { Email = "forgot@example.com", FullName = "Forgot User" };
+            _userManager.Setup(x => x.FindByEmailAsync(user.Email)).ReturnsAsync(user);
+            _userManager.Setup(x => x.GeneratePasswordResetTokenAsync(user)).ReturnsAsync("reset-token");
+
+            _emailSender.Setup(x => x.SendEmailAsync(It.Is<EmailMessage>(m =>
+                m.Subject.Contains("Đặt Lại Mật Khẩu")
+            ))).Returns(Task.CompletedTask).Verifiable();
+
+            var dto = new ForgotPasswordRequestDto { Email = user.Email, ClientUrl = ValidClientUrl };
+            await _authService.ForgotPasswordAsync(dto);
+
+            _emailSender.Verify();
+        }
+
         #endregion
 
         // Tests for ResetPasswordAsync method - valid token, user not found, new password same as old, etc.
@@ -1070,6 +1104,20 @@ namespace Eduva.Infrastructure.Test.Services
                 It.Is<DateTime>(dt => dt > DateTime.UtcNow)), Times.Once);
         }
 
+        [Test]
+        public async Task LogoutAsync_UserNotFound_ShouldNotThrow()
+        {
+            var userId = Guid.NewGuid().ToString();
+            var token = GenerateJwtAccessToken(userId, DateTime.UtcNow.AddMinutes(5));
+
+            _userManager.Setup(x => x.FindByIdAsync(userId)).ReturnsAsync((ApplicationUser?)null);
+
+            await _authService.LogoutAsync(userId, token);
+
+            _userManager.Verify(x => x.UpdateAsync(It.IsAny<ApplicationUser>()), Times.Never);
+            _tokenService.Verify(x => x.BlacklistTokenAsync(It.IsAny<string>(), It.IsAny<DateTime>()), Times.Once);
+        }
+
         #endregion
 
         // Tests for RequestEnable2FaOtpAsync method - user not found, already enabled, wrong password, etc.
@@ -1257,6 +1305,29 @@ namespace Eduva.Infrastructure.Test.Services
         #region ConfirmDisable2FaOtpAsync Tests
 
         [Test]
+        public void ConfirmDisable2FaOtpAsync_UpdateFails_ThrowsAppException()
+        {
+            var user = new ApplicationUser { TwoFactorEnabled = true };
+
+            _userManager.Setup(x => x.FindByIdAsync(It.IsAny<string>())).ReturnsAsync(user);
+            _userManager.Setup(x => x.VerifyTwoFactorTokenAsync(user, It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
+            _userManager.Setup(x => x.UpdateAsync(user)).ReturnsAsync(IdentityResult.Failed(new IdentityError
+            {
+                Description = "Failed to disable 2FA"
+            }));
+
+            var dto = new Confirm2FaDto { UserId = Guid.NewGuid(), OtpCode = "123456" };
+
+            var ex = Assert.ThrowsAsync<AppException>(() => _authService.ConfirmDisable2FaOtpAsync(dto));
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.ProvidedInformationIsInValid));
+                Assert.That(ex.Errors, Contains.Item("Failed to disable 2FA"));
+            });
+        }
+
+        [Test]
         public void ConfirmDisable2FaOtpAsync_UserNotFound_Throws()
         {
             _userManager.Setup(x => x.FindByIdAsync(It.IsAny<string>())).ReturnsAsync((ApplicationUser?)null);
@@ -1312,6 +1383,17 @@ namespace Eduva.Infrastructure.Test.Services
             _tokenService.Verify(x => x.BlacklistAllUserTokensAsync(userId), Times.Once);
         }
 
+        [Test]
+        public async Task InvalidateAllUserTokensAsync_UserNotFound_StillBlacklists()
+        {
+            var userId = Guid.NewGuid().ToString();
+            _userManager.Setup(x => x.FindByIdAsync(userId)).ReturnsAsync((ApplicationUser?)null);
+
+            await _authService.InvalidateAllUserTokensAsync(userId);
+
+            _tokenService.Verify(x => x.BlacklistAllUserTokensAsync(userId), Times.Once);
+        }
+
         #endregion
 
         // Tests for Confirm2FaChangeAsync method - user not found, valid OTP, invalid OTP.
@@ -1342,6 +1424,49 @@ namespace Eduva.Infrastructure.Test.Services
 
         #endregion
 
+
+        #region SendConfirmEmailMessage_TemplateFileNotFound_ThrowsFileNotFoundException
+
+        [Test]
+        public void SendConfirmEmailMessage_TemplateFileNotFound_ThrowsFileNotFoundException()
+        {
+            var user = new ApplicationUser { Email = "test@example.com" };
+
+            var basePath = AppContext.BaseDirectory;
+            var templatePath = Path.Combine(basePath, "email-templates", "verify-email.html");
+            if (File.Exists(templatePath)) File.Delete(templatePath);
+
+            _userManager.Setup(x => x.GenerateEmailConfirmationTokenAsync(user)).ReturnsAsync("token");
+
+            var ex = Assert.ThrowsAsync<FileNotFoundException>(() =>
+            {
+                var method = typeof(AuthService).GetMethod("SendConfirmEmailMessage", BindingFlags.NonPublic | BindingFlags.Instance);
+                return (Task)method!.Invoke(_authService, new object[] { ValidClientUrl, user })!;
+            });
+
+            Assert.That(ex!.Message, Contains.Substring("Template file not found"));
+        }
+
+        #endregion
+
+        #region SendOtpEmailMessage_TemplateFileNotFound_ThrowsFileNotFoundException
+
+        [Test]
+        public void SendOtpEmailMessage_TemplateFileNotFound_ThrowsFileNotFoundException()
+        {
+            var user = new ApplicationUser { Email = "otp@example.com" };
+
+            var basePath = AppContext.BaseDirectory;
+            var templatePath = Path.Combine(basePath, "email-templates", "otp-verification.html");
+            if (File.Exists(templatePath)) File.Delete(templatePath);
+
+            var method = typeof(AuthService).GetMethod("SendOtpEmailMessage", BindingFlags.NonPublic | BindingFlags.Instance);
+            var task = (Task)method!.Invoke(_authService, new object[] { user, "123456" })!;
+
+            Assert.ThrowsAsync<FileNotFoundException>(() => task);
+        }
+
+        #endregion
 
         #region Helper Methods
 
@@ -1400,6 +1525,17 @@ namespace Eduva.Infrastructure.Test.Services
             var store = new Mock<IUserStore<T>>();
             return new Mock<UserManager<T>>(store.Object, null!, null!, null!, null!, null!, null!, null!, null!);
         }
+
+        // Create Email Template
+        private static void CreateEmailTemplate(string fileName, string content)
+        {
+            var dir = Path.Combine(AppContext.BaseDirectory, "email-templates");
+            Directory.CreateDirectory(dir);
+
+            var filePath = Path.Combine(dir, fileName);
+            File.WriteAllText(filePath, content);
+        }
+
 
         #endregion
 

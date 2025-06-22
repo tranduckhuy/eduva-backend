@@ -127,6 +127,47 @@ namespace Eduva.API.Test.Controllers.SubscriptionPlan
             Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
         }
 
+        [Test]
+        public async Task GetSubscriptionPlanDetail_ShouldReturn200_WhenSuccess()
+        {
+            // Arrange
+            var expectedResponse = new SubscriptionPlanDetailResponse
+            {
+                Id = 99,
+                Name = "Ultimate Plan",
+                MaxUsers = 100,
+                PriceMonthly = 500000,
+                PricePerYear = 5000000,
+                StorageLimitGB = 500,
+                Status = Domain.Enums.EntityStatus.Active,
+                Description = "Advanced plan with full features"
+            };
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<GetSubscriptionPlanDetailQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(expectedResponse);
+
+            // Act
+            var result = await _controller.GetSubscriptionPlanDetail(99);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(200));
+
+            dynamic? value = objectResult.Value;
+            Assert.That(value, Is.Not.Null);
+            Assert.That(value.StatusCode, Is.EqualTo((int)CustomCode.Success));
+
+            var plan = value.Data as SubscriptionPlanDetailResponse;
+            Assert.That(plan, Is.Not.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(plan!.Id, Is.EqualTo(expectedResponse.Id));
+                Assert.That(plan.Name, Is.EqualTo(expectedResponse.Name));
+            });
+        }
+
         #endregion
 
         #region CreateSubscriptionPlan Tests
