@@ -25,20 +25,18 @@ namespace Eduva.API.Test.Controllers.FireStorage
             _controller = new FileStorageController(_loggerMock.Object, _storageServiceMock.Object);
         }
 
-        #region GenerateUploadSasToken Tests
-
-        [Test]
+        #region GenerateUploadSasToken Tests        [Test]
         public async Task GenerateUploadSasToken_ShouldReturn200_WhenSuccessful()
         {
             // Arrange
-            var blobName = "test-file.pdf";
-            var expectedSasToken = "https://storage.blob.core.windows.net/container/test-file.pdf?sv=2021-12-02&st=2023-01-01T00%3A00%3A00Z&se=2023-01-01T01%3A00%3A00Z&sr=b&sp=cw&sig=signature";
+            var blobNames = new List<string> { "test-file.pdf" };
+            var expectedSasTokens = new List<string> { "https://storage.blob.core.windows.net/container/test-file.pdf?sv=2021-12-02&st=2023-01-01T00%3A00%3A00Z&se=2023-01-01T01%3A00%3A00Z&sr=b&sp=cw&sig=signature" };
 
-            _storageServiceMock.Setup(s => s.GenerateUploadSasToken(blobName, It.IsAny<DateTimeOffset>()))
-                .ReturnsAsync(expectedSasToken);
+            _storageServiceMock.Setup(s => s.GenerateUploadSasTokens(blobNames))
+                .ReturnsAsync(expectedSasTokens);
 
             // Act
-            var result = await _controller.GenerateUploadSasToken(blobName);
+            var result = await _controller.GenerateUploadSasToken(blobNames);
 
             // Assert
             var objectResult = result as ObjectResult;
@@ -46,43 +44,86 @@ namespace Eduva.API.Test.Controllers.FireStorage
             Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status200OK));
 
             // Verify the service was called with correct parameters
-            _storageServiceMock.Verify(s => s.GenerateUploadSasToken(blobName, It.IsAny<DateTimeOffset>()), Times.Once);
-        }
-
-        [Test]
+            _storageServiceMock.Verify(s => s.GenerateUploadSasTokens(blobNames), Times.Once);
+        }        [Test]
         public async Task GenerateUploadSasToken_ShouldReturn500_WhenServiceThrowsException()
         {
             // Arrange
-            var blobName = "test-file.pdf";
+            var blobNames = new List<string> { "test-file.pdf" };
 
-            _storageServiceMock.Setup(s => s.GenerateUploadSasToken(blobName, It.IsAny<DateTimeOffset>()))
+            _storageServiceMock.Setup(s => s.GenerateUploadSasTokens(blobNames))
                 .ThrowsAsync(new Exception("Storage service error"));
 
             // Act
-            var result = await _controller.GenerateUploadSasToken(blobName);
+            var result = await _controller.GenerateUploadSasToken(blobNames);
 
             // Assert
             var objectResult = result as ObjectResult;
             Assert.That(objectResult, Is.Not.Null);
             Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status500InternalServerError));
-        }
-
-        [Test]
+        }        [Test]
         public async Task GenerateUploadSasToken_ShouldReturn400_WhenAppExceptionThrown()
         {
             // Arrange
-            var blobName = "test-file.pdf";
+            var blobNames = new List<string> { "test-file.pdf" };
 
-            _storageServiceMock.Setup(s => s.GenerateUploadSasToken(blobName, It.IsAny<DateTimeOffset>()))
+            _storageServiceMock.Setup(s => s.GenerateUploadSasTokens(blobNames))
                 .ThrowsAsync(new AppException(CustomCode.InvalidBlobName));
 
             // Act
-            var result = await _controller.GenerateUploadSasToken(blobName);
+            var result = await _controller.GenerateUploadSasToken(blobNames);
 
             // Assert
             var objectResult = result as ObjectResult;
             Assert.That(objectResult, Is.Not.Null);
             Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status400BadRequest));
+        }        [Test]
+        public async Task GenerateUploadSasToken_ShouldReturn200_WhenMultipleBlobNamesProvided()
+        {
+            // Arrange
+            var blobNames = new List<string> { "file1.pdf", "file2.jpg", "file3.docx" };
+            var expectedSasTokens = new List<string> 
+            { 
+                "https://storage.blob.core.windows.net/container/file1.pdf?sv=2021-12-02&sp=cw&sr=b&sig=signature1",
+                "https://storage.blob.core.windows.net/container/file2.jpg?sv=2021-12-02&sp=cw&sr=b&sig=signature2",
+                "https://storage.blob.core.windows.net/container/file3.docx?sv=2021-12-02&sp=cw&sr=b&sig=signature3"
+            };
+
+            _storageServiceMock.Setup(s => s.GenerateUploadSasTokens(blobNames))
+                .ReturnsAsync(expectedSasTokens);
+
+            // Act
+            var result = await _controller.GenerateUploadSasToken(blobNames);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status200OK));
+
+            // Verify the service was called with correct parameters
+            _storageServiceMock.Verify(s => s.GenerateUploadSasTokens(blobNames), Times.Once);
+        }
+
+        [Test]
+        public async Task GenerateUploadSasToken_ShouldReturn200_WhenEmptyListProvided()
+        {
+            // Arrange
+            var blobNames = new List<string>();
+            var expectedSasTokens = new List<string>();
+
+            _storageServiceMock.Setup(s => s.GenerateUploadSasTokens(blobNames))
+                .ReturnsAsync(expectedSasTokens);
+
+            // Act
+            var result = await _controller.GenerateUploadSasToken(blobNames);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status200OK));
+
+            // Verify the service was called with correct parameters
+            _storageServiceMock.Verify(s => s.GenerateUploadSasTokens(blobNames), Times.Once);
         }
 
         #endregion
@@ -267,34 +308,34 @@ namespace Eduva.API.Test.Controllers.FireStorage
 
         #endregion
 
-        #region Integration Tests
-
-        [Test]
+        #region Integration Tests        [Test]
         public async Task Controller_ShouldHandleAllMethods_WithDifferentBlobNames()
         {
             // Arrange
             var blobNames = new[] { "file1.pdf", "file2.jpg", "file3.docx" };
-            var expectedSasToken = "sas-token-url";
+            var expectedSasTokens = new List<string> { "sas-token-url-1", "sas-token-url-2", "sas-token-url-3" };
             var expectedReadableUrl = "readable-url";
 
             foreach (var blobName in blobNames)
             {
-                _storageServiceMock.Setup(s => s.GenerateUploadSasToken(blobName, It.IsAny<DateTimeOffset>()))
-                    .ReturnsAsync(expectedSasToken);
                 _storageServiceMock.Setup(s => s.GetReadableUrl(blobName))
                     .Returns(expectedReadableUrl);
                 _storageServiceMock.Setup(s => s.DeleteFileAsync(blobName))
                     .Returns(Task.CompletedTask);
             }
 
+            _storageServiceMock.Setup(s => s.GenerateUploadSasTokens(It.IsAny<List<string>>()))
+                .ReturnsAsync(expectedSasTokens);
+
             // Act & Assert
+            // Test GenerateUploadSasToken with all blob names
+            var blobNamesList = blobNames.ToList();
+            var sasResult = await _controller.GenerateUploadSasToken(blobNamesList);
+            var sasObjectResult = sasResult as ObjectResult;
+            Assert.That(sasObjectResult?.StatusCode, Is.EqualTo(StatusCodes.Status200OK));
+
             foreach (var blobName in blobNames)
             {
-                // Test GenerateUploadSasToken
-                var sasResult = await _controller.GenerateUploadSasToken(blobName);
-                var sasObjectResult = sasResult as ObjectResult;
-                Assert.That(sasObjectResult?.StatusCode, Is.EqualTo(StatusCodes.Status200OK));
-
                 // Test GetReadableUrl
                 var urlResult = _controller.GetReadableUrl(blobName);
                 var urlObjectResult = urlResult as ObjectResult;
@@ -307,9 +348,9 @@ namespace Eduva.API.Test.Controllers.FireStorage
             }
 
             // Verify all service calls were made
+            _storageServiceMock.Verify(s => s.GenerateUploadSasTokens(It.IsAny<List<string>>()), Times.Once);
             foreach (var blobName in blobNames)
             {
-                _storageServiceMock.Verify(s => s.GenerateUploadSasToken(blobName, It.IsAny<DateTimeOffset>()), Times.Once);
                 _storageServiceMock.Verify(s => s.GetReadableUrl(blobName), Times.Once);
                 _storageServiceMock.Verify(s => s.DeleteFileAsync(blobName), Times.Once);
             }
