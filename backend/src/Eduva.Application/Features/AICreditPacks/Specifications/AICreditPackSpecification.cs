@@ -1,6 +1,7 @@
 ﻿using Eduva.Application.Common.Specifications;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
 namespace Eduva.Application.Features.AICreditPacks.Specifications
@@ -24,14 +25,12 @@ namespace Eduva.Application.Features.AICreditPacks.Specifications
 
         private static Expression<Func<AICreditPack, bool>> BuildCriteria(AICreditPackSpecParam param)
         {
-            var searchTerm = param.SearchTerm?.ToLower() ?? "";
-
             return pack =>
-                (param.ActiveOnly == null ||
-                 (param.ActiveOnly.Value && pack.Status == EntityStatus.Active) ||
-                 (!param.ActiveOnly.Value && pack.Status != EntityStatus.Active)) &&
-                (string.IsNullOrWhiteSpace(param.SearchTerm) ||
-                 pack.Name.ToLower().Contains(searchTerm));
+                 (param.ActiveOnly == null ||
+                  (param.ActiveOnly.Value && pack.Status == EntityStatus.Active) ||
+                  (!param.ActiveOnly.Value && pack.Status != EntityStatus.Active)) &&
+                 (string.IsNullOrWhiteSpace(param.SearchTerm) ||
+                  EF.Functions.Like(pack.Name, $"%{param.SearchTerm}%"));
         }
 
         private static Func<IQueryable<AICreditPack>, IOrderedQueryable<AICreditPack>>? BuildOrderBy(AICreditPackSpecParam param)

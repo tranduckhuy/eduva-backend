@@ -70,7 +70,7 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Commands
             var duration = cycle == BillingCycle.Monthly ? 30 : 365;
 
             var subRepo = _unitOfWork.GetCustomRepository<ISchoolSubscriptionRepository>();
-            var oldSub = await subRepo.GetLatestPaidBySchoolIdAsync(school.Id);
+            var oldSub = await subRepo.GetLatestPaidBySchoolIdAsync(school.Id, cancellationToken);
             if (oldSub is not null && oldSub.SubscriptionStatus == SubscriptionStatus.Active)
             {
                 oldSub.SubscriptionStatus = SubscriptionStatus.Expired;

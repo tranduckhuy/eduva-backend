@@ -54,18 +54,16 @@ namespace Eduva.API.Middlewares
                 return;
             }
 
-            if (roles.Contains(nameof(Role.SchoolAdmin)) && string.IsNullOrEmpty(schoolId))
+            if (roles.Contains(nameof(Role.SchoolAdmin)) && string.IsNullOrEmpty(schoolId)
+                && !context.Request.Path.StartsWithSegments("/api/schools"))
             {
-                if (!context.Request.Path.StartsWithSegments("/api/schools"))
+                context.Response.StatusCode = 403;
+                await context.Response.WriteAsync(JsonConvert.SerializeObject(new ApiResponse<object>
                 {
-                    context.Response.StatusCode = 403;
-                    await context.Response.WriteAsync(JsonConvert.SerializeObject(new ApiResponse<object>
-                    {
-                        StatusCode = (int)CustomCode.SchoolAndSubscriptionRequired,
-                        Message = "Forbidden. You must complete school and subscription information to access this resource.",
-                    }));
-                    return;
-                }
+                    StatusCode = (int)CustomCode.SchoolAndSubscriptionRequired,
+                    Message = "Forbidden. You must complete school and subscription information to access this resource.",
+                }));
+                return;
             }
 
             if (string.IsNullOrEmpty(schoolId) || !int.TryParse(schoolId, out int schoolIdInt))
