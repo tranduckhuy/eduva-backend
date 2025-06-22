@@ -139,6 +139,18 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Invalid blob URL provided." } },
             { CustomCode.BlobNotFound, new MessageDetail {
                 HttpCode = StatusCodes.Status404NotFound, Message = "The specified blob was not found. Ensure the blob name is correct and try again." } },
+                
+            // Student Class Errors
+            { CustomCode.UserNotStudent, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "User is not a student. Only students can enroll in classes." } },
+            { CustomCode.ClassNotActive, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Class is not active. You can only enroll in active classes." } },
+            { CustomCode.StudentAlreadyEnrolled, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "You are already enrolled in this class." } },
+            { CustomCode.StudentCannotEnrollDifferentSchool, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "You cannot enroll in a class from a different school." } },
+            { CustomCode.EnrollmentFailed, new MessageDetail {
+                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to enroll in the class. Please try again later." } },
             #endregion
         };
 

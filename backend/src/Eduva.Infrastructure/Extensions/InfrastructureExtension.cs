@@ -61,6 +61,7 @@ namespace Eduva.Infrastructure.Extensions
             services.AddScoped<ISubscriptionPlanRepository, SubscriptionPlanRepository>();
             services.AddScoped<IClassroomRepository, ClassroomRepository>();
             services.AddScoped<ISchoolRepository, SchoolRepository>();
+            services.AddScoped<IStudentClassRepository, StudentClassRepository>();
             services.AddScoped<PayOS>(provider =>
             {
                 var config = provider.GetRequiredService<IOptions<PayOSConfig>>().Value;

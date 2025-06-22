@@ -67,6 +67,12 @@ namespace Eduva.Shared.Enums
         FileIsRequired = 4046,
         InvalidFileType = 4047,
 
+        // Student Class Errors
+        UserNotStudent = 4048,
+        ClassNotActive = 4049,
+        StudentAlreadyEnrolled = 4050,
+        StudentCannotEnrollDifferentSchool = 4051,
+        EnrollmentFailed = 4052,
 
 
         // File Storage Errors
