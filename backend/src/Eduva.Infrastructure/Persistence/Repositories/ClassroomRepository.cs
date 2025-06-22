@@ -10,5 +10,13 @@ namespace Eduva.Infrastructure.Persistence.Repositories
         public ClassroomRepository(AppDbContext context) : base(context)
         {
         }
+
+        public async Task<Classroom?> FindByClassCodeAsync(string classCode)
+        {
+            return await _dbSet
+                .Include(c => c.Teacher)
+                .Include(c => c.School)
+                .FirstOrDefaultAsync(c => c.ClassCode == classCode);
+        }
     }
 }
