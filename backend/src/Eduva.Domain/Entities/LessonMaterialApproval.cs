@@ -5,11 +5,11 @@ namespace Eduva.Domain.Entities
 {
     public class LessonMaterialApproval : BaseEntity<int>
     {
-        public int LessonMaterialId { get; set; }
+        public Guid LessonMaterialId { get; set; }
         public Guid ApproverId { get; set; }
         public LessonMaterialStatus StatusChangeTo { get; set; }
         public string? RequesterNote { get; set; }
-        public string? Feedback {  get; set; }
+        public string? Feedback { get; set; }
 
         // Navigation properties
         public virtual ApplicationUser Approver { get; set; } = default!;

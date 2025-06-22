@@ -3,7 +3,6 @@ using Eduva.API.Controllers.Base;
 using Eduva.API.Models;
 using Eduva.Application.Features.LessonMaterials.Commands;
 using Eduva.Application.Features.LessonMaterials.Queries;
-using Eduva.Application.Features.LessonMaterials.Responses;
 using Eduva.Application.Features.LessonMaterials.Specifications;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
@@ -26,7 +25,7 @@ namespace Eduva.API.Controllers.LessonMaterials
 
         [HttpPost]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
-        [ProducesResponseType(typeof(ApiResponse<LessonMaterialResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
         public async Task<IActionResult> CreateLessonMaterial([FromBody] CreateLessonMaterialCommand command)
         {
@@ -36,12 +35,15 @@ namespace Eduva.API.Controllers.LessonMaterials
                 return Respond(CustomCode.UserIdNotFound);
             }
 
+            // Get schoolID from claims or context if needed
+            var schoolId = int.Parse(User.FindFirstValue("SchoolId") ?? "0");
+            command.SchoolId = schoolId > 0 ? schoolId : null;
+
             command.CreatedBy = Guid.Parse(userId);
 
             return await HandleRequestAsync(async () =>
             {
-                var response = await _mediator.Send(command);
-                return (CustomCode.Success, response);
+                await _mediator.Send(command);
             });
 
         }

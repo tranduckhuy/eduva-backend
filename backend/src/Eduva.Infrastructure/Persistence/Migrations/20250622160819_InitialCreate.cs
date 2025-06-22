@@ -319,8 +319,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 name: "LessonMaterials",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     SchoolId = table.Column<int>(type: "integer", nullable: true),
                     Title = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     Description = table.Column<string>(type: "text", nullable: true),
@@ -472,7 +471,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    LessonMaterialId = table.Column<int>(type: "integer", nullable: false),
+                    LessonMaterialId = table.Column<Guid>(type: "uuid", nullable: false),
                     ApproverId = table.Column<Guid>(type: "uuid", nullable: false),
                     StatusChangeTo = table.Column<string>(type: "text", nullable: false),
                     RequesterNote = table.Column<string>(type: "text", nullable: true),
@@ -501,7 +500,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    LessonMaterialId = table.Column<int>(type: "integer", nullable: false),
+                    LessonMaterialId = table.Column<Guid>(type: "uuid", nullable: false),
                     Title = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     Content = table.Column<string>(type: "text", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uuid", nullable: false),
@@ -603,11 +602,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 name: "FolderLessonMaterials",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     FolderID = table.Column<int>(type: "integer", nullable: false),
-                    LessonMaterialID = table.Column<int>(type: "integer", nullable: false),
-                    Order = table.Column<int>(type: "integer", nullable: false)
+                    LessonMaterialID = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {

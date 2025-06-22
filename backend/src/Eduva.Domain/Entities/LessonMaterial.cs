@@ -3,7 +3,7 @@ using Eduva.Domain.Enums;
 
 namespace Eduva.Domain.Entities
 {
-    public class LessonMaterial : BaseTimestampedEntity<int>
+    public class LessonMaterial : BaseTimestampedEntity<Guid>
     {
         public int? SchoolId { get; set; }
         public string Title { get; set; } = string.Empty;
@@ -11,7 +11,7 @@ namespace Eduva.Domain.Entities
         public ContentType ContentType { get; set; }
         public string? Tag { get; set; } = string.Empty;
         public LessonMaterialStatus LessonStatus { get; set; }
-        public int Duration { get; set; }
+        public int? Duration { get; set; }
         public int FileSize { get; set; } // Size in bytes
         public bool IsAIContent { get; set; }
         public string SourceUrl { get; set; } = string.Empty;
@@ -21,8 +21,8 @@ namespace Eduva.Domain.Entities
         // Navigation Properties
         public virtual ApplicationUser CreatedByUser { get; set; } = default!;
         public virtual School? School { get; set; } // Nullable
-        public virtual ICollection<FolderLessonMaterial> FolderLessonMaterials { get; set; } = new List<FolderLessonMaterial>();
-        public virtual ICollection<LessonMaterialApproval> LessonMaterialApprovals { get; set; } = new List<LessonMaterialApproval>();
-        public virtual ICollection<LessonMaterialQuestion> LessonMaterialQuestions { get; set; } = new List<LessonMaterialQuestion>();
+        public virtual ICollection<FolderLessonMaterial> FolderLessonMaterials { get; set; } = [];
+        public virtual ICollection<LessonMaterialApproval> LessonMaterialApprovals { get; set; } = [];
+        public virtual ICollection<LessonMaterialQuestion> LessonMaterialQuestions { get; set; } = [];
     }
 }

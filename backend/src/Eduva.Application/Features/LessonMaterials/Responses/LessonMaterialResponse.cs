@@ -4,7 +4,7 @@ namespace Eduva.Application.Features.LessonMaterials.Responses
 {
     public class LessonMaterialResponse
     {
-        public int Id { get; set; }
+        public Guid Id { get; set; }
         public int? SchoolId { get; set; }
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }

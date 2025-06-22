@@ -52,7 +52,8 @@ namespace Eduva.Infrastructure.Test.Services
         public void Constructor_ShouldThrowException_WhenNullOptionsProvided()
         {
             // Act & Assert
-            Assert.Throws<NullReferenceException>(() => new AzureBlobStorageService(null!));        }
+            Assert.Throws<NullReferenceException>(() => new AzureBlobStorageService(null!));
+        }
 
         #endregion
 
@@ -72,7 +73,7 @@ namespace Eduva.Infrastructure.Test.Services
             var result = await _service.GenerateUploadSasTokens(blobNames);
 
             // Assert
-            Assert.That(result.Count, Is.EqualTo(2));
+            Assert.That(result, Has.Count.EqualTo(2));
             Assert.That(result.All(token => !string.IsNullOrEmpty(token)), Is.True);
         }
 
@@ -86,7 +87,8 @@ namespace Eduva.Infrastructure.Test.Services
             var result = await _service.GenerateUploadSasTokens(blobNames);
 
             // Assert
-            Assert.That(result.Count, Is.EqualTo(0));        }
+            Assert.That(result, Is.Empty);
+        }
 
         #endregion
 
@@ -313,7 +315,7 @@ namespace Eduva.Infrastructure.Test.Services
             var result = await _service.GenerateUploadSasTokens(blobNames);
 
             // Assert
-            Assert.That(result.Count, Is.EqualTo(3));
+            Assert.That(result, Has.Count.EqualTo(3));
             Assert.That(result.All(r => !string.IsNullOrEmpty(r)), Is.True);
         }
 
