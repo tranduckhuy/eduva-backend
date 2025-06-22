@@ -48,13 +48,10 @@ namespace Eduva.Application.Features.LessonMaterials.Commands
                 // Create folder-lesson material relationships
                 for (int i = 0; i < createdLessonMaterials.Count; i++)
                 {
-                    var materialRequest = request.LessonMaterials[i];
-                    var lessonMaterial = createdLessonMaterials[i];
-
                     var folderLessonMaterial = new FolderLessonMaterial
                     {
                         FolderID = request.FolderId,
-                        LessonMaterialID = lessonMaterial.Id,
+                        LessonMaterialID = createdLessonMaterials[i].Id,
                     };
 
                     await folderLessonMaterialRepository.AddAsync(folderLessonMaterial);
