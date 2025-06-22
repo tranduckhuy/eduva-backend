@@ -7,7 +7,9 @@ namespace Eduva.Infrastructure.Services
 {
     public class SchoolSubscriptionService : ISchoolSubscriptionService
     {
-        private readonly IUnitOfWork _unitOfWork; public SchoolSubscriptionService(IUnitOfWork unitOfWork)
+        private readonly IUnitOfWork _unitOfWork;
+
+        public SchoolSubscriptionService(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
         }

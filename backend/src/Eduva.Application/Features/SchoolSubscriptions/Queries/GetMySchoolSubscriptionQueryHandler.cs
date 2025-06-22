@@ -1,4 +1,5 @@
-﻿using Eduva.Application.Exceptions.Auth;
+﻿using AutoMapper;
+using Eduva.Application.Exceptions.Auth;
 using Eduva.Application.Exceptions.School;
 using Eduva.Application.Exceptions.SchoolSubscription;
 using Eduva.Application.Features.SchoolSubscriptions.Responses;
@@ -12,11 +13,13 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Queries
     {
         private readonly ISchoolSubscriptionRepository _schoolSubscriptionRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IMapper _mapper;
 
-        public GetMySchoolSubscriptionQueryHandler(IUnitOfWork unitOfWork)
+        public GetMySchoolSubscriptionQueryHandler(IUnitOfWork unitOfWork, IMapper mapper)
         {
             _userRepository = unitOfWork.GetCustomRepository<IUserRepository>();
             _schoolSubscriptionRepository = unitOfWork.GetCustomRepository<ISchoolSubscriptionRepository>();
+            _mapper = mapper;
         }
 
         public async Task<MySchoolSubscriptionResponse> Handle(GetMySchoolSubscriptionQuery request, CancellationToken cancellationToken)
@@ -32,19 +35,7 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Queries
             var sub = await _schoolSubscriptionRepository.GetLatestPaidBySchoolIdAsync(user.SchoolId.Value, cancellationToken)
                        ?? throw new SchoolSubscriptionNotFoundException();
 
-            var plan = sub.Plan;
-
-            return new MySchoolSubscriptionResponse
-            {
-                PlanName = plan.Name,
-                Description = plan.Description,
-                StartDate = sub.StartDate,
-                EndDate = sub.EndDate,
-                SubscriptionStatus = sub.SubscriptionStatus,
-                BillingCycle = sub.BillingCycle,
-                MaxUsers = plan.MaxUsers,
-                StorageLimitGB = plan.StorageLimitGB,
-            };
+            return _mapper.Map<MySchoolSubscriptionResponse>(sub);
         }
     }
 }

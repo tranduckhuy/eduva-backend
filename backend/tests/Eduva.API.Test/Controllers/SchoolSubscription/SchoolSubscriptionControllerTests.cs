@@ -180,7 +180,6 @@ namespace Eduva.API.Test.Controllers.SchoolSubscription
                 BillingCycle = BillingCycle.Monthly,
                 MaxUsers = 100,
                 StorageLimitGB = 50,
-                MaxMinutesPerMonth = 1000,
                 AmountPaid = 990000
             };
 

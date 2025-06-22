@@ -3,18 +3,18 @@ using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using System.Linq.Expressions;
 
-namespace Eduva.Application.Features.SubscriptionPlans.Specifications
+namespace Eduva.Application.Features.AICreditPacks.Specifications
 {
-    public class SubscriptionPlanSpecification : ISpecification<SubscriptionPlan>
+    public class AICreditPackSpecification : ISpecification<AICreditPack>
     {
-        public Expression<Func<SubscriptionPlan, bool>> Criteria { get; private set; }
-        public Func<IQueryable<SubscriptionPlan>, IOrderedQueryable<SubscriptionPlan>>? OrderBy { get; private set; }
-        public List<Expression<Func<SubscriptionPlan, object>>> Includes { get; private set; } = [];
-        public Func<IQueryable<SubscriptionPlan>, IQueryable<SubscriptionPlan>>? Selector { get; init; }
+        public Expression<Func<AICreditPack, bool>> Criteria { get; private set; }
+        public Func<IQueryable<AICreditPack>, IOrderedQueryable<AICreditPack>>? OrderBy { get; private set; }
+        public List<Expression<Func<AICreditPack, object>>> Includes { get; } = [];
+        public Func<IQueryable<AICreditPack>, IQueryable<AICreditPack>>? Selector { get; init; }
         public int Skip { get; private set; }
         public int Take { get; private set; }
 
-        public SubscriptionPlanSpecification(SubscriptionPlanSpecParam param)
+        public AICreditPackSpecification(AICreditPackSpecParam param)
         {
             Criteria = BuildCriteria(param);
             OrderBy = BuildOrderBy(param);
@@ -22,19 +22,19 @@ namespace Eduva.Application.Features.SubscriptionPlans.Specifications
             Take = param.PageSize;
         }
 
-        private static Expression<Func<SubscriptionPlan, bool>> BuildCriteria(SubscriptionPlanSpecParam param)
+        private static Expression<Func<AICreditPack, bool>> BuildCriteria(AICreditPackSpecParam param)
         {
             var searchTerm = param.SearchTerm?.ToLower() ?? "";
 
-            return sp =>
+            return pack =>
                 (param.ActiveOnly == null ||
-                 (param.ActiveOnly.Value && sp.Status == EntityStatus.Active) ||
-                 (!param.ActiveOnly.Value && sp.Status != EntityStatus.Active)) &&
+                 (param.ActiveOnly.Value && pack.Status == EntityStatus.Active) ||
+                 (!param.ActiveOnly.Value && pack.Status != EntityStatus.Active)) &&
                 (string.IsNullOrWhiteSpace(param.SearchTerm) ||
-                 sp.Name.ToLower().Contains(searchTerm));
+                 pack.Name.ToLower().Contains(searchTerm));
         }
 
-        private static Func<IQueryable<SubscriptionPlan>, IOrderedQueryable<SubscriptionPlan>>? BuildOrderBy(SubscriptionPlanSpecParam param)
+        private static Func<IQueryable<AICreditPack>, IOrderedQueryable<AICreditPack>>? BuildOrderBy(AICreditPackSpecParam param)
         {
             if (string.IsNullOrWhiteSpace(param.SortBy))
                 return null;
@@ -47,8 +47,8 @@ namespace Eduva.Application.Features.SubscriptionPlans.Specifications
                     ? q => q.OrderByDescending(x => x.Name)
                     : q => q.OrderBy(x => x.Name),
                 "price" => isDescending
-                    ? q => q.OrderByDescending(x => x.PriceMonthly)
-                    : q => q.OrderBy(x => x.PriceMonthly),
+                    ? q => q.OrderByDescending(x => x.Price)
+                    : q => q.OrderBy(x => x.Price),
                 _ => isDescending
                     ? q => q.OrderByDescending(x => x.CreatedAt)
                     : q => q.OrderBy(x => x.CreatedAt)

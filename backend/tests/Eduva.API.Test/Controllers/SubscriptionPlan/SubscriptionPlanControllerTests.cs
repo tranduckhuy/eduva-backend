@@ -1,4 +1,4 @@
-﻿/*using Eduva.API.Controllers.SubscriptionPlans;
+﻿using Eduva.API.Controllers.SubscriptionPlans;
 using Eduva.Application.Common.Models;
 using Eduva.Application.Features.SubscriptionPlans.Commands.ActivatePlan;
 using Eduva.Application.Features.SubscriptionPlans.Commands.ArchivePlan;
@@ -59,7 +59,6 @@ namespace Eduva.API.Test.Controllers.SubscriptionPlan
                     PriceMonthly = 100000,
                     PricePerYear = 1000000,
                     StorageLimitGB = 10,
-                    MaxMinutesPerMonth = 500,
                     Status = Domain.Enums.EntityStatus.Active
                 }
             });
@@ -335,4 +334,4 @@ namespace Eduva.API.Test.Controllers.SubscriptionPlan
         #endregion
 
     }
-}*/
+}

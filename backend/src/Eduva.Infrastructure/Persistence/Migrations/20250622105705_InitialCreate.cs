@@ -148,6 +148,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     AvatarUrl = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     SchoolId = table.Column<int>(type: "integer", nullable: true),
                     Status = table.Column<int>(type: "integer", nullable: false),
+                    TotalCredits = table.Column<int>(type: "integer", nullable: false),
                     RefreshToken = table.Column<string>(type: "text", nullable: true),
                     RefreshTokenExpiryTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     UserName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),

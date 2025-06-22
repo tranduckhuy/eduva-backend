@@ -133,6 +133,21 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status404NotFound, Message = "Payment transaction not found" } },
             { CustomCode.InvalidRelatedIdFormat, new MessageDetail {
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Invalid format for RelatedId. It should be a valid GUID." } },
+            { CustomCode.AICreditPackNotFound, new MessageDetail {
+                HttpCode = StatusCodes.Status404NotFound, Message = "AI credit pack not found" } },
+            { CustomCode.AICreditPackAlreadyArchived, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "AI credit pack is already archived" } },
+            { CustomCode.AICreditPackAlreadyActive, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "AI credit pack is already active" } },
+            { CustomCode.AICreditPackMustBeArchived, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "AI credit pack must be archived to perform this action" } },
+            { CustomCode.AICreditPackNotActive, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "AI credit pack is not active" } },
+            { CustomCode.InvalidPaymentPurpose, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Invalid payment purpose. Please check the payment details and try again." } },
+
+
+
 
             // Subscription Errors
             { CustomCode.SchoolAndSubscriptionRequired, new MessageDetail {

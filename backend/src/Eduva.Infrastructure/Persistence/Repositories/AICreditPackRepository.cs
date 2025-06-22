@@ -4,9 +4,9 @@ using Eduva.Infrastructure.Persistence.DbContext;
 
 namespace Eduva.Infrastructure.Persistence.Repositories
 {
-    public class SubscriptionPlanRepository : GenericRepository<SubscriptionPlan, int>, ISubscriptionPlanRepository
+    internal class AICreditPackRepository : GenericRepository<AICreditPack, int>, IAICreditPackRepository
     {
-        public SubscriptionPlanRepository(AppDbContext context) : base(context)
+        public AICreditPackRepository(AppDbContext context) : base(context)
         {
 
         }

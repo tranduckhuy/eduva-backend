@@ -10,7 +10,6 @@ using Eduva.Infrastructure.Persistence.DbContext;
 using Eduva.Infrastructure.Persistence.Repositories;
 using Eduva.Infrastructure.Persistence.UnitOfWork;
 using Eduva.Infrastructure.Services;
-using Eduva.Infrastructure.Services.BackgroundJobs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -58,6 +57,8 @@ namespace Eduva.Infrastructure.Extensions
             services.AddScoped<IClassroomRepository, ClassroomRepository>();
             services.AddScoped<ISchoolRepository, SchoolRepository>();
             services.AddScoped<IPaymentTransactionRepository, PaymentTransactionRepository>();
+            services.AddScoped<IAICreditPackRepository, AICreditPackRepository>();
+
             services.AddScoped<PayOS>(provider =>
             {
                 var config = provider.GetRequiredService<IOptions<PayOSConfig>>().Value;
@@ -67,8 +68,6 @@ namespace Eduva.Infrastructure.Extensions
             // Payment Configuration
             services.Configure<PayOSConfig>(configuration.GetSection(PayOSConfig.ConfigName));
             services.AddScoped<IPayOSService, PayOSService>();
-
-            services.AddHostedService<SubscriptionExpiryJob>();
 
             services.AddScoped<ISchoolSubscriptionService, SchoolSubscriptionService>();
 

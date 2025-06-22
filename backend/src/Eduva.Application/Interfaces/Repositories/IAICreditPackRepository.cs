@@ -2,8 +2,7 @@
 
 namespace Eduva.Application.Interfaces.Repositories
 {
-    public interface ISubscriptionPlanRepository : IGenericRepository<SubscriptionPlan, int>
+    public interface IAICreditPackRepository : IGenericRepository<AICreditPack, int>
     {
-
     }
 }

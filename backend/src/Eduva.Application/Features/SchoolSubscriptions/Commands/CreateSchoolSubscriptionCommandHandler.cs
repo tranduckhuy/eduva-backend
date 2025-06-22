@@ -46,6 +46,7 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Commands
                 PaymentPurpose = PaymentPurpose.SchoolSubscription,
                 PaymentMethod = PaymentMethod.PayOS,
                 PaymentStatus = PaymentStatus.Pending,
+                PaymentItemId = request.PlanId,
                 Amount = finalAmount,
                 TransactionCode = transactionCode,
                 CreatedAt = now

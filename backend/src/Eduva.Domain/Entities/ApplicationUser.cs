@@ -11,6 +11,7 @@ namespace Eduva.Domain.Entities
         public int? SchoolId { get; set; }
         public EntityStatus Status { get; set; } = EntityStatus.Active;
 
+        public int TotalCredits { get; set; } = 0;
         public string? RefreshToken { get; set; }
         public DateTimeOffset? RefreshTokenExpiryTime { get; set; }
 

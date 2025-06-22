@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Eduva.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250622043433_InitialCreate")]
+    [Migration("20250622105705_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -194,6 +194,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                         .HasColumnType("text");
 
                     b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TotalCredits")
                         .HasColumnType("integer");
 
                     b.Property<bool>("TwoFactorEnabled")
