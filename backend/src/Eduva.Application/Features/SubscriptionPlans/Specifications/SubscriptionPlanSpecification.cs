@@ -40,16 +40,31 @@ namespace Eduva.Application.Features.SubscriptionPlans.Specifications
             if (string.IsNullOrWhiteSpace(param.SortBy))
                 return null;
 
-            bool isDescending = param.SortDirection.Equals("desc", StringComparison.OrdinalIgnoreCase);
+            bool isDescending = param.SortDirection?.ToLower() == "desc";
+            string sortBy = param.SortBy.ToLower();
 
-            return param.SortBy.ToLower() switch
+            return sortBy switch
             {
                 "name" => isDescending
                     ? q => q.OrderByDescending(x => x.Name)
                     : q => q.OrderBy(x => x.Name),
-                "price" => isDescending
+
+                "storage" => isDescending
+                    ? q => q.OrderByDescending(x => x.StorageLimitGB)
+                    : q => q.OrderBy(x => x.StorageLimitGB),
+
+                "users" => isDescending
+                    ? q => q.OrderByDescending(x => x.MaxUsers)
+                    : q => q.OrderBy(x => x.MaxUsers),
+
+                "monthly" => isDescending
                     ? q => q.OrderByDescending(x => x.PriceMonthly)
                     : q => q.OrderBy(x => x.PriceMonthly),
+
+                "yearly" => isDescending
+                    ? q => q.OrderByDescending(x => x.PricePerYear)
+                    : q => q.OrderBy(x => x.PricePerYear),
+
                 _ => isDescending
                     ? q => q.OrderByDescending(x => x.CreatedAt)
                     : q => q.OrderBy(x => x.CreatedAt)
