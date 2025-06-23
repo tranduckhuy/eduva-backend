@@ -66,6 +66,12 @@ namespace Eduva.Shared.Enums
         UserNotPartOfSchool = 4045,
         FileIsRequired = 4046,
         InvalidFileType = 4047,
+        UserAlreadyLocked = 4053,
+        UserNotLocked = 4054,
+        CannotLockSelf = 4055,
+        CannotUnlockSelf = 4056,
+        InvalidTemplateType = 4057,
+        FileDownloadFailed = 4058,
 
         // Student Class Errors
         UserNotStudent = 4048,
