@@ -1,19 +1,25 @@
 ﻿using Eduva.Application.Common.Mappings;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
+using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace Eduva.Application.Features.LessonMaterials.Commands
 {
     public class CreateLessonMaterialHandler : IRequestHandler<CreateLessonMaterialCommand, Unit>
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ILogger<CreateLessonMaterialHandler> _logger;
+        private readonly IStorageService _storageService;
 
-        public CreateLessonMaterialHandler(IUnitOfWork unitOfWork)
+        public CreateLessonMaterialHandler(IUnitOfWork unitOfWork, ILogger<CreateLessonMaterialHandler> logger, IStorageService storageService)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
+            _storageService = storageService;
         }
 
         public async Task<Unit> Handle(CreateLessonMaterialCommand request, CancellationToken cancellationToken)
@@ -62,9 +68,15 @@ namespace Eduva.Application.Features.LessonMaterials.Commands
 
                 return Unit.Value;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 await _unitOfWork.RollbackAsync();
+
+                _logger.LogError(ex, "Error creating lesson materials.");
+
+                // Remove blobs if any were created
+                await _storageService.DeleteRangeFileAsync(request.BlobNames);
+
                 throw;
             }
         }

@@ -80,6 +80,19 @@ namespace Eduva.Infrastructure.Services
             }
         }
 
+        public async Task DeleteRangeFileAsync(List<string> blobNames)
+        {
+            foreach (var blobName in blobNames)
+            {
+                var blobClient = _containerClient.GetBlobClient(blobName);
+                var response = await blobClient.DeleteIfExistsAsync();
+                if (!response.Value)
+                {
+                    throw new BlobNotFoundException();
+                }
+            }
+        }
+
         private static string GetBlobNameFromUrl(string blobUrl)
         {
             var uri = new Uri(blobUrl);
