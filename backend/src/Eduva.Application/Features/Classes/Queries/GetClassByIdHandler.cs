@@ -25,16 +25,14 @@ namespace Eduva.Application.Features.Classes.Queries
 
             if (classroom == null)
             {
-                throw new AppException(CustomCode.ClassNotFound,
-                    new[] { $"Class with ID {request.Id} not found" });
+                throw new AppException(CustomCode.ClassNotFound);
             }
 
             // Check if the user has access to this class (teacher, school admin, or student enrolled)
             bool hasAccess = await HasAccessToClass(classroom, request.UserId);
             if (!hasAccess)
             {
-                throw new AppException(CustomCode.Unauthorized,
-                    new[] { "You are not authorized to access this class" });
+                throw new AppException(CustomCode.Unauthorized);
             }
 
             var response = AppMapper.Mapper.Map<ClassResponse>(classroom);

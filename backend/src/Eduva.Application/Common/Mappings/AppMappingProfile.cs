@@ -83,14 +83,10 @@ namespace Eduva.Application.Common.Mappings
 
             // Folder mappings
             CreateMap<Folder, FolderResponse>()
-                .ForMember(dest => dest.OwnerName, opt => opt.MapFrom((src, dest) =>
-                {
-                    if (src.OwnerType == OwnerType.Personal)
-                    {
-                        return src.User?.FullName ?? string.Empty;
-                    }
-                    return src.Class?.Name ?? string.Empty;
-                }));
+                .ForMember(dest => dest.OwnerName, opt => opt.MapFrom(src =>
+                    src.OwnerType == OwnerType.Personal
+                        ? (src.User != null ? src.User.FullName : string.Empty)
+                        : (src.Class != null ? src.Class.Name : string.Empty)));
             CreateMap<Pagination<Folder>, Pagination<FolderResponse>>();
         }
     }
