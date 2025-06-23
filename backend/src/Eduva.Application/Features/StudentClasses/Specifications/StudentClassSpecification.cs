@@ -12,7 +12,7 @@ namespace Eduva.Application.Features.StudentClasses.Specifications
 
         public List<Expression<Func<StudentClass, object>>> Includes { get; private set; } = [];
 
-        public Func<IQueryable<StudentClass>, IQueryable<StudentClass>>? Selector { get; private set; }
+        public Func<IQueryable<StudentClass>, IQueryable<StudentClass>>? Selector { get; }
 
         public int Skip { get; private set; }
 
@@ -22,17 +22,17 @@ namespace Eduva.Application.Features.StudentClasses.Specifications
         {
             Criteria = sc =>
                 sc.StudentId == param.StudentId &&
-                (string.IsNullOrEmpty(param.SearchTerm) || 
+                (string.IsNullOrEmpty(param.SearchTerm) ||
                     sc.Class.Name.ToLower().Contains(param.SearchTerm.ToLower()) ||
                     (sc.Class.ClassCode != null && sc.Class.ClassCode.ToLower().Contains(param.SearchTerm.ToLower())) ||
                     (sc.Class.Teacher != null && sc.Class.Teacher.FullName != null && sc.Class.Teacher.FullName.ToLower().Contains(param.SearchTerm.ToLower())) ||
                     (sc.Class.School != null && sc.Class.School.Name.ToLower().Contains(param.SearchTerm.ToLower()))) &&
                 (string.IsNullOrEmpty(param.ClassName) || sc.Class.Name.ToLower().Contains(param.ClassName.ToLower())) &&
-                (string.IsNullOrEmpty(param.TeacherName) || (sc.Class.Teacher != null && sc.Class.Teacher.FullName != null && 
+                (string.IsNullOrEmpty(param.TeacherName) || (sc.Class.Teacher != null && sc.Class.Teacher.FullName != null &&
                     sc.Class.Teacher.FullName.ToLower().Contains(param.TeacherName.ToLower()))) &&
-                (string.IsNullOrEmpty(param.SchoolName) || (sc.Class.School != null && 
+                (string.IsNullOrEmpty(param.SchoolName) || (sc.Class.School != null &&
                     sc.Class.School.Name.ToLower().Contains(param.SchoolName.ToLower()))) &&
-                (string.IsNullOrEmpty(param.ClassCode) || (sc.Class.ClassCode != null && 
+                (string.IsNullOrEmpty(param.ClassCode) || (sc.Class.ClassCode != null &&
                     sc.Class.ClassCode.ToLower().Contains(param.ClassCode.ToLower()))) &&
                 (!param.ClassStatus.HasValue || sc.Class.Status == param.ClassStatus);
 

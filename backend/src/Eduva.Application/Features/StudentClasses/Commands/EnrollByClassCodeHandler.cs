@@ -19,7 +19,8 @@ namespace Eduva.Application.Features.StudentClasses.Commands
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
-        }        public async Task<StudentClassResponse> Handle(EnrollByClassCodeCommand request, CancellationToken cancellationToken)
+        }
+        public async Task<StudentClassResponse> Handle(EnrollByClassCodeCommand request, CancellationToken cancellationToken)
         {
             // Check if student exists
             var userRepository = _unitOfWork.GetRepository<ApplicationUser, Guid>();
@@ -43,24 +44,23 @@ namespace Eduva.Application.Features.StudentClasses.Commands
             {
                 throw new AppException(CustomCode.ClassNotActive);
             }
-              // Use specialized StudentClassRepository
+            // Use specialized StudentClassRepository
             var studentClassRepository = _unitOfWork.GetCustomRepository<IStudentClassRepository>();
-            
+
             // Check if student is already enrolled in this class
             bool alreadyEnrolled = await studentClassRepository.IsStudentEnrolledInClassAsync(request.StudentId, classroom.Id);
             if (alreadyEnrolled)
             {
                 throw new AppException(CustomCode.StudentAlreadyEnrolled);
             }
-
             // Use StudentClassRepository to get classes the student has enrolled in
             var existingClasses = await studentClassRepository.GetClassesForStudentAsync(request.StudentId);
-            
-            if (existingClasses.Any())
+
+            if (existingClasses.Count > 0)
             {
                 // Get the school of the first class the student has enrolled in
-                var firstClass = existingClasses.First();
-                
+                var firstClass = existingClasses[0];
+
                 // Compare school ID with the current class
                 if (firstClass.SchoolId != classroom.SchoolId)
                 {
@@ -94,7 +94,7 @@ namespace Eduva.Application.Features.StudentClasses.Commands
                     EnrolledAt = studentClass.EnrolledAt,
                     ClassStatus = classroom.Status
                 };
-                
+
                 return response;
             }
             catch (Exception)
