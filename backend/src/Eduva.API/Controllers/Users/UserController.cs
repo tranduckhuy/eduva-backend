@@ -1,15 +1,19 @@
 ﻿using Eduva.API.Controllers.Base;
 using Eduva.API.Models;
 using Eduva.Application.Common.Exceptions;
+using Eduva.Application.Common.Models;
 using Eduva.Application.Features.Users.Commands;
 using Eduva.Application.Features.Users.Queries;
 using Eduva.Application.Features.Users.Requests;
 using Eduva.Application.Features.Users.Responses;
+using Eduva.Application.Features.Users.Specifications;
+using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using Eduva.Infrastructure.Configurations.ExcelTemplate;
 using Eduva.Shared.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using System.Security.Claims;
@@ -22,12 +26,14 @@ namespace Eduva.API.Controllers.Users
         private readonly IMediator _mediator;
         private readonly ImportTemplateConfig _importTemplateConfig;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public UserController(ILogger<UserController> logger, IOptions<ImportTemplateConfig> importTemplateOptions, IHttpClientFactory httpClientFactory, IMediator mediator) : base(logger)
+        public UserController(ILogger<UserController> logger, IOptions<ImportTemplateConfig> importTemplateOptions, IHttpClientFactory httpClientFactory, IMediator mediator, UserManager<ApplicationUser> userManager) : base(logger)
         {
             _mediator = mediator;
             _importTemplateConfig = importTemplateOptions.Value;
             _httpClientFactory = httpClientFactory;
+            _userManager = userManager;
         }
 
         // Get the current user information
@@ -63,6 +69,31 @@ namespace Eduva.API.Controllers.Users
                     return (CustomCode.Success, result);
                 }
             );
+        }
+
+        [HttpGet]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
+        [ProducesResponseType(typeof(ApiResponse<Pagination<UserResponse>>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetUsersAsync([FromQuery] UserSpecParam param)
+        {
+            if (User.IsInRole(nameof(Role.SchoolAdmin)))
+            {
+                var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (!Guid.TryParse(userIdStr, out var userId))
+                    return Respond(CustomCode.UserIdNotFound);
+
+                var user = await _userManager.FindByIdAsync(userId.ToString());
+                if (user?.SchoolId == null)
+                    return Respond(CustomCode.UserNotPartOfSchool);
+
+                param.SchoolId = user.SchoolId;
+            }
+
+            return await HandleRequestAsync(async () =>
+            {
+                var result = await _mediator.Send(new GetUsersBySpecQuery(param));
+                return (CustomCode.Success, result);
+            });
         }
 
         // Update user profile

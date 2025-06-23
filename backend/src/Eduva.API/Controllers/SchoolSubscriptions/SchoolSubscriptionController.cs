@@ -34,13 +34,6 @@ namespace Eduva.API.Controllers.SchoolSubscriptions
             return await HandleRequestAsync(() => _mediator.Send(command));
         }
 
-        [HttpGet("payos-return")]
-        [AllowAnonymous]
-        public async Task<IActionResult> PayOSReturn([FromQuery] ConfirmPayOSPaymentReturnCommand query)
-        {
-            return await HandleRequestAsync(() => _mediator.Send(query));
-        }
-
         [HttpGet("current")]
         [Authorize(Roles = $"{nameof(Role.SchoolAdmin)}")]
         public async Task<IActionResult> GetCurrentSubscription()

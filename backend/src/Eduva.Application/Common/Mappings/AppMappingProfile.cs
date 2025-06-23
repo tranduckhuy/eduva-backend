@@ -22,6 +22,7 @@ namespace Eduva.Application.Common.Mappings
         {
             // User mappings
             CreateMap<ApplicationUser, UserResponse>();
+            CreateMap<Pagination<ApplicationUser>, Pagination<UserResponse>>();
 
             // Lesson Materials mappings
             CreateMap<CreateLessonMaterialCommand, LessonMaterial>();

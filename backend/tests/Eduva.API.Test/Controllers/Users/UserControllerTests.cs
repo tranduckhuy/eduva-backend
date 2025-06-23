@@ -3,10 +3,12 @@ using Eduva.API.Models;
 using Eduva.Application.Features.Users.Commands;
 using Eduva.Application.Features.Users.Queries;
 using Eduva.Application.Features.Users.Responses;
+using Eduva.Domain.Entities;
 using Eduva.Infrastructure.Configurations.ExcelTemplate;
 using Eduva.Shared.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -23,6 +25,7 @@ namespace Eduva.API.Test.Controllers.Users
         private UserController _controller = default!;
         private Mock<IOptions<ImportTemplateConfig>> _importTemplateOptionsMock = default!;
         private Mock<IHttpClientFactory> _httpClientFactoryMock = default!;
+        private Mock<UserManager<ApplicationUser>> _userManagerMock = default!;
 
 
         #region UserController Setup
@@ -34,6 +37,19 @@ namespace Eduva.API.Test.Controllers.Users
             _loggerMock = new Mock<ILogger<UserController>>();
             _importTemplateOptionsMock = new Mock<IOptions<ImportTemplateConfig>>();
             _httpClientFactoryMock = new Mock<IHttpClientFactory>();
+            var storeMock = new Mock<IUserStore<ApplicationUser>>();
+
+            _userManagerMock = new Mock<UserManager<ApplicationUser>>(
+                storeMock.Object,
+                Mock.Of<IOptions<IdentityOptions>>(),
+                Mock.Of<IPasswordHasher<ApplicationUser>>(),
+                new List<IUserValidator<ApplicationUser>>(),
+                new List<IPasswordValidator<ApplicationUser>>(),
+                Mock.Of<ILookupNormalizer>(),
+                new IdentityErrorDescriber(),
+                Mock.Of<IServiceProvider>(),
+                Mock.Of<ILogger<UserManager<ApplicationUser>>>()
+            );
 
             _importTemplateOptionsMock
                 .Setup(o => o.Value)
@@ -43,7 +59,8 @@ namespace Eduva.API.Test.Controllers.Users
                 _loggerMock.Object,
                 _importTemplateOptionsMock.Object,
                 _httpClientFactoryMock.Object,
-                _mediatorMock.Object
+                _mediatorMock.Object,
+                _userManagerMock.Object
             );
         }
 
