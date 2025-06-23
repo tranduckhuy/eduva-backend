@@ -1,8 +1,12 @@
 ﻿using Eduva.API.Controllers.Base;
+using Eduva.Application.Common.Models;
 using Eduva.Application.Features.Schools.Commands.ActivateSchool;
 using Eduva.Application.Features.Schools.Commands.ArchiveSchool;
 using Eduva.Application.Features.Schools.Commands.CreateSchool;
 using Eduva.Application.Features.Schools.Commands.UpdateSchool;
+using Eduva.Application.Features.Schools.Queries;
+using Eduva.Application.Features.Schools.Responses;
+using Eduva.Application.Features.Schools.Specifications;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
@@ -21,6 +25,43 @@ namespace Eduva.API.Controllers.Schools
         public SchoolController(IMediator mediator, ILogger<SchoolController> logger) : base(logger)
         {
             _mediator = mediator;
+        }
+
+        [HttpGet]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)}")]
+        public async Task<IActionResult> GetSchools([FromQuery] SchoolSpecParam specParam)
+        {
+            return await HandleRequestAsync<Pagination<SchoolResponse>>(async () =>
+            {
+                var result = await _mediator.Send(new GetSchoolQuery(specParam));
+                return (CustomCode.Success, result);
+            });
+        }
+
+        [HttpGet("{id}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)}")]
+        public async Task<IActionResult> GetSchoolById(int id)
+        {
+            return await HandleRequestAsync<SchoolDetailResponse>(async () =>
+            {
+                var result = await _mediator.Send(new GetSchoolByIdQuery(id));
+                return (CustomCode.Success, result);
+            });
+        }
+
+        [HttpGet("current")]
+        [Authorize(Roles = $"{nameof(Role.SchoolAdmin)}")]
+        public async Task<IActionResult> GetCurrentSchool()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userId, out var schoolAdminId))
+                return Respond(CustomCode.UserIdNotFound);
+
+            return await HandleRequestAsync<SchoolResponse>(async () =>
+            {
+                var result = await _mediator.Send(new GetMySchoolQuery(schoolAdminId));
+                return (CustomCode.Success, result);
+            });
         }
 
         [HttpPost]

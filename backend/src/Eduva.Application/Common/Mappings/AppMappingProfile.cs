@@ -7,6 +7,7 @@ using Eduva.Application.Features.LessonMaterials;
 using Eduva.Application.Features.LessonMaterials.Commands;
 using Eduva.Application.Features.LessonMaterials.Responses;
 using Eduva.Application.Features.Schools.Commands.CreateSchool;
+using Eduva.Application.Features.Schools.Responses;
 using Eduva.Application.Features.SchoolSubscriptions.Responses;
 using Eduva.Application.Features.SubscriptionPlans.Responses;
 using Eduva.Application.Features.Users.Responses;
@@ -31,10 +32,6 @@ namespace Eduva.Application.Common.Mappings
                 .ReverseMap();
             CreateMap<Pagination<LessonMaterial>, Pagination<LessonMaterialResponse>>();
 
-
-            // School mappings
-            CreateMap<CreateSchoolCommand, School>();
-
             // Subscription Plan mappings
             CreateMap<Pagination<SubscriptionPlan>, Pagination<SubscriptionPlanResponse>>();
             CreateMap<SubscriptionPlan, SubscriptionPlanResponse>();
@@ -42,6 +39,11 @@ namespace Eduva.Application.Common.Mappings
             // AICreditPack mappings
             CreateMap<Pagination<AICreditPack>, Pagination<AICreditPackResponse>>();
             CreateMap<AICreditPack, AICreditPackResponse>();
+
+            // School mappings
+            CreateMap<CreateSchoolCommand, School>();
+            CreateMap<Pagination<School>, Pagination<SchoolResponse>>();
+            CreateMap<School, SchoolResponse>();
 
             // SchoolSubscription mappings
             CreateMap<SchoolSubscription, MySchoolSubscriptionResponse>()
