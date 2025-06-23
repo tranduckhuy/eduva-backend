@@ -165,26 +165,62 @@ namespace Eduva.API.Controllers.Users
             }
         }
 
-        [HttpGet("import-template")]
-        [Authorize(Roles = nameof(Role.SchoolAdmin))]
+        [HttpPut("{userId:guid}/lock")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> LockUserAccount(Guid userId)
+        {
+            var executorIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(executorIdStr, out var executorId))
+                return Respond(CustomCode.UserIdNotFound);
+
+            var command = new LockAccountCommand(userId, executorId);
+            return await HandleRequestAsync(() => _mediator.Send(command));
+        }
+
+        [HttpPut("{userId:guid}/unlock")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> UnlockUserAccount(Guid userId)
+        {
+            var executorIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(executorIdStr, out var executorId))
+                return Respond(CustomCode.UserIdNotFound);
+
+            var command = new UnlockAccountCommand(userId, executorId);
+            return await HandleRequestAsync(() => _mediator.Send(command));
+        }
+
+        [HttpGet("import-template/{type}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
         [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> DownloadUserImportTemplate()
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> DownloadImportTemplate(ImportTemplateType type)
         {
             try
             {
+                var url = _importTemplateConfig.GetUrl(type);
+
+                if (string.IsNullOrWhiteSpace(url))
+                    return Respond(CustomCode.InvalidTemplateType);
+
                 var httpClient = _httpClientFactory.CreateClient("EduvaHttpClient");
-                var fileBytes = await httpClient.GetByteArrayAsync(_importTemplateConfig.Url);
+                var fileBytes = await httpClient.GetByteArrayAsync(url);
 
                 return File(
                     fileContents: fileBytes,
                     contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    fileDownloadName: "user_import_template.xlsx"
+                    fileDownloadName: $"{type.ToString().ToLowerInvariant()}_import_template.xlsx"
                 );
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "Failed to fetch template from remote server.");
+                return Respond(CustomCode.FileDownloadFailed);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unable to load template from Firebase.");
+                _logger.LogError(ex, "Unexpected error occurred while downloading template.");
                 return Respond(CustomCode.SystemError);
             }
         }

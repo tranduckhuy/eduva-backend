@@ -53,7 +53,7 @@ namespace Eduva.API.Test.Controllers.Users
 
             _importTemplateOptionsMock
                 .Setup(o => o.Value)
-                .Returns(new ImportTemplateConfig { Url = "https://mock-url.com/template.xlsx" });
+                .Returns(new ImportTemplateConfig { UrlTemplateImportUser = "https://mock-url.com/template.xlsx" });
 
             _controller = new UserController(
                 _loggerMock.Object,

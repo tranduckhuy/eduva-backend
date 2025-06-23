@@ -130,7 +130,18 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status400BadRequest, Message = "File is required for this operation." } },
             { CustomCode.InvalidFileType, new MessageDetail {
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Invalid file type. Please upload a valid file." } },
-
+            { CustomCode.UserAlreadyLocked, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "User account is already locked." } },
+            { CustomCode.CannotLockSelf, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "You cannot lock your own account." } },
+            { CustomCode.CannotUnlockSelf, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "You cannot unlock your own account." } },
+            { CustomCode.UserNotLocked, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "User account is not locked." } },
+            { CustomCode.InvalidTemplateType, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Invalid template type provided. Please use a valid template type." } },
+            { CustomCode.FileDownloadFailed, new MessageDetail {
+                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to download the file. Please try again later." } },
 
             // File Storage Errors
             { CustomCode.InvalidBlobName, new MessageDetail {
@@ -151,6 +162,7 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to update folder" } },
             { CustomCode.FolderDeleteFailed, new MessageDetail {
                 HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to delete folder" } },
+
             // Student Class Errors
             { CustomCode.UserNotStudent, new MessageDetail {
                 HttpCode = StatusCodes.Status403Forbidden, Message = "User is not a student. Only students can enroll in classes." } },
@@ -162,8 +174,6 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status400BadRequest, Message = "You cannot enroll in a class from a different school." } },
             { CustomCode.EnrollmentFailed, new MessageDetail {
                 HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to enroll in the class. Please try again later." } },
-
-
 
             // Payment Transaction Errors
             { CustomCode.PaymentTransactionNotFound, new MessageDetail {
@@ -183,15 +193,11 @@ namespace Eduva.Shared.Constants
             { CustomCode.InvalidPaymentPurpose, new MessageDetail {
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Invalid payment purpose. Please check the payment details and try again." } },
 
-
-
-
             // Subscription Errors
             { CustomCode.SchoolAndSubscriptionRequired, new MessageDetail {
                 HttpCode = StatusCodes.Status403Forbidden, Message = "Forbidden. You must complete school and subscription information to access this resource." } },
             { CustomCode.SubscriptionExpiredWithDataLossRisk, new MessageDetail {
                 HttpCode = StatusCodes.Status402PaymentRequired, Message = "Your subscription has expired and you are at risk of data loss. Please renew your subscription to continue using the service." } },
-
 
             // Forbidden
             { CustomCode.SchoolInactive, new MessageDetail {
