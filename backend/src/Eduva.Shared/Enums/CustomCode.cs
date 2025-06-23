@@ -100,5 +100,13 @@ namespace Eduva.Shared.Enums
         SchoolInactive = 4500,
         SubscriptionInvalid = 4501,
         ExceedUserLimit = 4502,
+
+        // Folder Errors
+        FolderNotFound = 4600,
+        FolderNameAlreadyExists = 4601,
+        FolderCreateFailed = 4602,
+        FolderUpdateFailed = 4603,
+        FolderDeleteFailed = 4604,
+
     }
 }
