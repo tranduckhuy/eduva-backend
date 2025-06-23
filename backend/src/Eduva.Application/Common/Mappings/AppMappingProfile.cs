@@ -9,6 +9,7 @@ using Eduva.Application.Features.LessonMaterials.Responses;
 using Eduva.Application.Features.Schools.Commands.CreateSchool;
 using Eduva.Application.Features.Schools.Responses;
 using Eduva.Application.Features.SchoolSubscriptions.Responses;
+using Eduva.Application.Features.StudentClasses.Responses;
 using Eduva.Application.Features.SubscriptionPlans.Responses;
 using Eduva.Application.Features.Users.Responses;
 using Eduva.Domain.Entities;
@@ -67,6 +68,15 @@ namespace Eduva.Application.Common.Mappings
                 .ForMember(dest => dest.SchoolName, opt => opt.MapFrom(src => src.School != null ? src.School.Name : string.Empty))
                 .ReverseMap();
             CreateMap<Pagination<Classroom>, Pagination<ClassResponse>>();
+
+            // StudentClass mappings
+            CreateMap<StudentClass, StudentClassResponse>()
+                .ForMember(dest => dest.ClassName, opt => opt.MapFrom(src => src.Class.Name))
+                .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Class.Teacher != null ? src.Class.Teacher.FullName ?? string.Empty : string.Empty))
+                .ForMember(dest => dest.SchoolName, opt => opt.MapFrom(src => src.Class.School != null ? src.Class.School.Name : string.Empty))
+                .ForMember(dest => dest.ClassCode, opt => opt.MapFrom(src => src.Class.ClassCode ?? string.Empty))
+                .ForMember(dest => dest.ClassStatus, opt => opt.MapFrom(src => src.Class.Status));
+            CreateMap<Pagination<StudentClass>, Pagination<StudentClassResponse>>();
         }
     }
 }
