@@ -4,6 +4,7 @@ using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using System.Security.Claims;
 
 namespace Eduva.API.Middlewares
@@ -11,10 +12,15 @@ namespace Eduva.API.Middlewares
     public class SubscriptionValidationMiddleware
     {
         private readonly RequestDelegate _next;
+        private readonly JsonSerializerSettings _jsonSettings;
 
         public SubscriptionValidationMiddleware(RequestDelegate next)
         {
             _next = next;
+            _jsonSettings = new JsonSerializerSettings
+            {
+                ContractResolver = new CamelCasePropertyNamesContractResolver()
+            };
         }
 
         public async Task Invoke(HttpContext context, ISchoolSubscriptionService subscriptionService)
@@ -34,7 +40,6 @@ namespace Eduva.API.Middlewares
             var roles = context.User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value).ToList();
 
             context.Response.ContentType = "application/json";
-
             if (string.IsNullOrEmpty(userId) || roles.Count == 0)
             {
                 context.Response.StatusCode = 401;
@@ -42,7 +47,7 @@ namespace Eduva.API.Middlewares
                 {
                     StatusCode = (int)CustomCode.Unauthorized,
                     Message = "Unauthorized. User ID or roles not found.",
-                }));
+                }, _jsonSettings));
 
                 return;
             }
@@ -62,7 +67,7 @@ namespace Eduva.API.Middlewares
                 {
                     StatusCode = (int)CustomCode.SchoolAndSubscriptionRequired,
                     Message = "Forbidden. You must complete school and subscription information to access this resource.",
-                }));
+                }, _jsonSettings));
                 return;
             }
 
@@ -73,7 +78,7 @@ namespace Eduva.API.Middlewares
                 {
                     StatusCode = (int)CustomCode.SchoolNotFound,
                     Message = "School not found or invalid school ID.",
-                }));
+                }, _jsonSettings));
                 return;
             }
 
@@ -86,7 +91,7 @@ namespace Eduva.API.Middlewares
                 {
                     StatusCode = (int)CustomCode.SchoolSubscriptionNotFound,
                     Message = "School subscription not found.",
-                }));
+                }, _jsonSettings));
                 return;
             }
 
@@ -107,7 +112,7 @@ namespace Eduva.API.Middlewares
                 {
                     StatusCode = (int)CustomCode.SubscriptionExpiredWithDataLossRisk,
                     Message = "School subscription has expired. Access denied. Please renew your subscription.",
-                }));
+                }, _jsonSettings));
                 return;
             }
 
