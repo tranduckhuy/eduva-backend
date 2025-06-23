@@ -83,11 +83,27 @@ namespace Eduva.Application.Common.Mappings
 
             // Folder mappings
             CreateMap<Folder, FolderResponse>()
-                .ForMember(dest => dest.OwnerName, opt => opt.MapFrom(src =>
-                    src.OwnerType == OwnerType.Personal
-                        ? (src.User != null ? src.User.FullName : string.Empty)
-                        : (src.Class != null ? src.Class.Name : string.Empty)));
+                .ForMember(dest => dest.OwnerName, opt => opt.MapFrom(src => GetOwnerName(src)));
             CreateMap<Pagination<Folder>, Pagination<FolderResponse>>();
+        }
+        private static string GetOwnerName(Folder folder)
+        {
+            if (folder.OwnerType == OwnerType.Personal)
+            {
+                return folder.User != null ? GetUserFullName(folder.User) : string.Empty;
+            }
+
+            return folder.Class != null ? GetClassName(folder.Class) : string.Empty;
+        }
+
+        private static string GetUserFullName(ApplicationUser user)
+        {
+            return user != null ? user.FullName ?? string.Empty : string.Empty;
+        }
+
+        private static string GetClassName(Classroom classroom)
+        {
+            return classroom != null ? classroom.Name ?? string.Empty : string.Empty;
         }
     }
 }
