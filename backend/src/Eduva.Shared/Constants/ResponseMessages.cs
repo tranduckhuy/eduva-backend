@@ -140,6 +140,17 @@ namespace Eduva.Shared.Constants
             { CustomCode.BlobNotFound, new MessageDetail {
                 HttpCode = StatusCodes.Status404NotFound, Message = "The specified blob was not found. Ensure the blob name is correct and try again." } },
                 
+            // Folder Errors
+            { CustomCode.FolderNotFound, new MessageDetail {
+                HttpCode = StatusCodes.Status404NotFound, Message = "Folder not found" } },
+            { CustomCode.FolderNameAlreadyExists, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "A folder with this name already exists" } },
+            { CustomCode.FolderCreateFailed, new MessageDetail {
+                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to create folder" } },
+            { CustomCode.FolderUpdateFailed, new MessageDetail {
+                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to update folder" } },
+            { CustomCode.FolderDeleteFailed, new MessageDetail {
+                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to delete folder" } },
             // Student Class Errors
             { CustomCode.UserNotStudent, new MessageDetail {
                 HttpCode = StatusCodes.Status403Forbidden, Message = "User is not a student. Only students can enroll in classes." } },

@@ -3,6 +3,7 @@ using Eduva.Application.Common.Models;
 using Eduva.Application.Features.AICreditPacks.Responses;
 using Eduva.Application.Features.Classes.Commands;
 using Eduva.Application.Features.Classes.Responses;
+using Eduva.Application.Features.Folders.Responses;
 using Eduva.Application.Features.LessonMaterials;
 using Eduva.Application.Features.LessonMaterials.Commands;
 using Eduva.Application.Features.LessonMaterials.Responses;
@@ -13,6 +14,7 @@ using Eduva.Application.Features.StudentClasses.Responses;
 using Eduva.Application.Features.SubscriptionPlans.Responses;
 using Eduva.Application.Features.Users.Responses;
 using Eduva.Domain.Entities;
+using Eduva.Domain.Enums;
 
 namespace Eduva.Application.Common.Mappings
 {
@@ -78,6 +80,18 @@ namespace Eduva.Application.Common.Mappings
                 .ForMember(dest => dest.ClassCode, opt => opt.MapFrom(src => src.Class.ClassCode ?? string.Empty))
                 .ForMember(dest => dest.ClassStatus, opt => opt.MapFrom(src => src.Class.Status));
             CreateMap<Pagination<StudentClass>, Pagination<StudentClassResponse>>();
+
+            // Folder mappings
+            CreateMap<Folder, FolderResponse>()
+                .ForMember(dest => dest.OwnerName, opt => opt.MapFrom((src, dest) =>
+                {
+                    if (src.OwnerType == OwnerType.Personal)
+                    {
+                        return src.User?.FullName ?? string.Empty;
+                    }
+                    return src.Class?.Name ?? string.Empty;
+                }));
+            CreateMap<Pagination<Folder>, Pagination<FolderResponse>>();
         }
     }
 }
