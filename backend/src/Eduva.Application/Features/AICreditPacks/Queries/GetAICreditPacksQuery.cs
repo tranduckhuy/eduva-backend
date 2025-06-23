@@ -5,6 +5,5 @@ using MediatR;
 
 namespace Eduva.Application.Features.AICreditPacks.Queries
 {
-    public record GetAICreditPacksQuery(AICreditPackSpecParam Param)
-        : IRequest<Pagination<AICreditPackResponse>>;
+    public record GetAICreditPacksQuery(AICreditPackSpecParam Param) : IRequest<Pagination<AICreditPackResponse>>;
 }

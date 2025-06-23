@@ -47,39 +47,46 @@ public class ImportUsersFromExcelCommandHandler : IRequestHandler<ImportUsersFro
         await request.File.CopyToAsync(stream, cancellationToken);
         stream.Position = 0;
 
-        using var package = new ExcelPackage(stream);
-        var worksheet = package.Workbook.Worksheets[0];
-        var rowCount = GetLastDataRow(worksheet);
-
-        ClearOldComments(worksheet, rowCount);
-
-        var (validCommands, creationErrors) = await ValidateWorksheetAsync(worksheet, rowCount, cancellationToken);
-
-        if (creationErrors.Count > 0)
-        {
-            AddErrorCommentsToWorksheet(worksheet, creationErrors);
-            using var output = new MemoryStream();
-            await package.SaveAsAsync(output, cancellationToken);
-            return output.ToArray();
-        }
-
-        await _schoolValidationService.ValidateCanAddUsersAsync(creator.SchoolId!.Value, validCommands.Count, cancellationToken);
-
-        await _unitOfWork.BeginTransactionAsync();
         try
         {
-            foreach (var (_, cmd) in validCommands)
+            using var package = new ExcelPackage(stream);
+            var worksheet = package.Workbook.Worksheets[0];
+            var rowCount = GetLastDataRow(worksheet);
+
+            ClearOldComments(worksheet, rowCount);
+
+            var (validCommands, creationErrors) = await ValidateWorksheetAsync(worksheet, rowCount, cancellationToken);
+
+            if (creationErrors.Count > 0)
             {
-                cmd.CreatorId = request.CreatorId;
-                await _mediator.Send(cmd, cancellationToken);
+                AddErrorCommentsToWorksheet(worksheet, creationErrors);
+                using var output = new MemoryStream();
+                await package.SaveAsAsync(output, cancellationToken);
+                return output.ToArray();
             }
-            await _unitOfWork.CommitAsync();
-            return null;
+
+            await _schoolValidationService.ValidateCanAddUsersAsync(creator.SchoolId!.Value, validCommands.Count, cancellationToken);
+
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                foreach (var (_, cmd) in validCommands)
+                {
+                    cmd.CreatorId = request.CreatorId;
+                    await _mediator.Send(cmd, cancellationToken);
+                }
+                await _unitOfWork.CommitAsync();
+                return null;
+            }
+            catch
+            {
+                await _unitOfWork.RollbackAsync();
+                throw new AppException(CustomCode.SystemError);
+            }
         }
         catch
         {
-            await _unitOfWork.RollbackAsync();
-            throw new AppException(CustomCode.SystemError);
+            throw new AppException(CustomCode.InvalidFileType);
         }
     }
 
@@ -90,6 +97,9 @@ public class ImportUsersFromExcelCommandHandler : IRequestHandler<ImportUsersFro
 
         var extension = Path.GetExtension(request.File.FileName);
         if (!string.Equals(extension, ".xlsx", StringComparison.OrdinalIgnoreCase))
+            throw new AppException(CustomCode.InvalidFileType);
+
+        if (!request.File.ContentType.Contains("spreadsheetml", StringComparison.OrdinalIgnoreCase))
             throw new AppException(CustomCode.InvalidFileType);
 
         var userRepo = _unitOfWork.GetCustomRepository<IUserRepository>();

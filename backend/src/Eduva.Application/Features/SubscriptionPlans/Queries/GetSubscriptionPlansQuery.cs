@@ -5,6 +5,5 @@ using MediatR;
 
 namespace Eduva.Application.Features.SubscriptionPlans.Queries
 {
-    public record GetSubscriptionPlansQuery(SubscriptionPlanSpecParam Param)
-        : IRequest<Pagination<SubscriptionPlanResponse>>;
+    public record GetSubscriptionPlansQuery(SubscriptionPlanSpecParam Param) : IRequest<Pagination<SubscriptionPlanResponse>>;
 }
