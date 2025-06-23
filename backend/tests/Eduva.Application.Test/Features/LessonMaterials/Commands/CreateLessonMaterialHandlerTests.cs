@@ -344,6 +344,7 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
             _mockUnitOfWork.Verify(x => x.RollbackAsync(), Times.Once);
             _mockStorageService.Verify(x => x.DeleteRangeFileAsync(request.BlobNames), Times.Once);
         }
+
         [Test]
         public void Handle_ExceptionThrown_LogsError()
         {
@@ -375,15 +376,13 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
 
             // Act & Assert
             Assert.ThrowsAsync<Exception>(
-                async () => await _handler.Handle(request, CancellationToken.None));
-
-            // Verify that error was logged
+                async () => await _handler.Handle(request, CancellationToken.None));            // Verify that error was logged
             _mockLogger.Verify(
                 x => x.Log(
                     LogLevel.Error,
                     It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Error creating lesson materials: Test exception")),
-                    It.IsAny<Exception>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Error creating lesson materials")),
+                    It.Is<Exception>(ex => ex.Message == "Test exception"),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
         }

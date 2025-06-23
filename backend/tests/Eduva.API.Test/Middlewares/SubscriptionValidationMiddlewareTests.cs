@@ -4,7 +4,6 @@ using Eduva.API.Models;
 using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
-using Eduva.Shared.Enums;
 using Microsoft.AspNetCore.Http;
 using Moq;
 using Newtonsoft.Json;
@@ -54,7 +53,7 @@ namespace Eduva.API.Test.Middlewares
         {
             // Arrange
             SetupEndpoint(SubscriptionAccessLevel.ReadOnly);
-            SetupUser(null, new[] { "Teacher" });
+            SetupUser(null, new[] { nameof(Role.Teacher) });
 
             // Act
             await _middleware.Invoke(_httpContext, _subscriptionServiceMock.Object);
@@ -263,8 +262,8 @@ namespace Eduva.API.Test.Middlewares
 
         private void SetupEndpoint(SubscriptionAccessLevel accessLevel)
         {
-            var endpoint = new Endpoint(c => Task.CompletedTask, 
-                new EndpointMetadataCollection(new SubscriptionAccessAttribute(accessLevel)), 
+            var endpoint = new Endpoint(c => Task.CompletedTask,
+                new EndpointMetadataCollection(new SubscriptionAccessAttribute(accessLevel)),
                 "TestEndpoint");
             _httpContext.SetEndpoint(endpoint);
         }
@@ -272,13 +271,13 @@ namespace Eduva.API.Test.Middlewares
         private void SetupUser(string? userId, string[] roles, string? schoolId = "1")
         {
             var claims = new List<Claim>();
-            
+
             if (!string.IsNullOrEmpty(userId))
                 claims.Add(new Claim(ClaimTypes.NameIdentifier, userId));
-            
+
             foreach (var role in roles)
                 claims.Add(new Claim(ClaimTypes.Role, role));
-            
+
             if (!string.IsNullOrEmpty(schoolId))
                 claims.Add(new Claim("SchoolId", schoolId));
 
