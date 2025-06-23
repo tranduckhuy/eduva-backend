@@ -168,6 +168,16 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status403Forbidden, Message = "Forbidden. You must complete school and subscription information to access this resource." } },
             { CustomCode.SubscriptionExpiredWithDataLossRisk, new MessageDetail {
                 HttpCode = StatusCodes.Status402PaymentRequired, Message = "Your subscription has expired and you are at risk of data loss. Please renew your subscription to continue using the service." } },
+
+
+            // Forbidden
+            { CustomCode.SchoolInactive, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "School is inactive. Please contact support for assistance." } },
+            { CustomCode.SubscriptionInvalid, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "Subscription is invalid. Please check your subscription status." } },
+            { CustomCode.ExceedUserLimit, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You have exceeded the maximum number of users allowed by your subscription plan." } },
+
             #endregion
         };
 

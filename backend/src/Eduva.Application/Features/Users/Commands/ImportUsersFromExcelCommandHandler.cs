@@ -1,7 +1,11 @@
 ﻿using Eduva.Application.Common.Exceptions;
+using Eduva.Application.Exceptions.School;
 using Eduva.Application.Interfaces;
+using Eduva.Application.Interfaces.Repositories;
+using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
+using Eduva.Shared.Enums;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
@@ -17,22 +21,27 @@ public class ImportUsersFromExcelCommandHandler : IRequestHandler<ImportUsersFro
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMediator _mediator;
     private readonly IValidator<CreateUserByAdminCommand> _validator;
+    private readonly ISchoolValidationService _schoolValidationService;
 
     public ImportUsersFromExcelCommandHandler(
         UserManager<ApplicationUser> userManager,
         IUnitOfWork unitOfWork,
         IMediator mediator,
-        IValidator<CreateUserByAdminCommand> validator)
+        IValidator<CreateUserByAdminCommand> validator,
+        ISchoolValidationService schoolValidationService)
     {
         _userManager = userManager;
         _unitOfWork = unitOfWork;
         _mediator = mediator;
         _validator = validator;
+        _schoolValidationService = schoolValidationService;
     }
 
     public async Task<byte[]?> Handle(ImportUsersFromExcelCommand request, CancellationToken cancellationToken)
     {
         ExcelPackage.License.SetNonCommercialPersonal("EDUVA");
+
+        var creator = await ValidateRequestAsync(request);
 
         using var stream = new MemoryStream();
         await request.File.CopyToAsync(stream, cancellationToken);
@@ -54,6 +63,8 @@ public class ImportUsersFromExcelCommandHandler : IRequestHandler<ImportUsersFro
             return output.ToArray();
         }
 
+        await _schoolValidationService.ValidateCanAddUsersAsync(creator.SchoolId!.Value, validCommands.Count, cancellationToken);
+
         await _unitOfWork.BeginTransactionAsync();
         try
         {
@@ -68,8 +79,27 @@ public class ImportUsersFromExcelCommandHandler : IRequestHandler<ImportUsersFro
         catch
         {
             await _unitOfWork.RollbackAsync();
-            throw new AppException(Shared.Enums.CustomCode.SystemError);
+            throw new AppException(CustomCode.SystemError);
         }
+    }
+
+    private async Task<ApplicationUser> ValidateRequestAsync(ImportUsersFromExcelCommand request)
+    {
+        if (request.File == null || request.File.Length == 0)
+            throw new AppException(CustomCode.FileIsRequired);
+
+        var extension = Path.GetExtension(request.File.FileName);
+        if (!string.Equals(extension, ".xlsx", StringComparison.OrdinalIgnoreCase))
+            throw new AppException(CustomCode.InvalidFileType);
+
+        var userRepo = _unitOfWork.GetCustomRepository<IUserRepository>();
+        var user = await userRepo.GetByIdAsync(request.CreatorId)
+                   ?? throw new AppException(CustomCode.UserNotExists);
+
+        if (user.SchoolId == null)
+            throw new SchoolNotFoundException();
+
+        return user;
     }
 
     private static void ClearOldComments(ExcelWorksheet worksheet, int rowCount)

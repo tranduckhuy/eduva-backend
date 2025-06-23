@@ -67,6 +67,28 @@ namespace Eduva.Infrastructure.Persistence.Repositories
             return GetByIdAsync(id);
         }
 
+        public async Task<TEntity?> FirstOrDefaultAsync(
+            Expression<Func<TEntity, bool>> predicate,
+            Func<IQueryable<TEntity>, IQueryable<TEntity>>? include = null,
+            CancellationToken cancellationToken = default)
+        {
+            IQueryable<TEntity> query = _dbSet;
+
+            if (include != null)
+            {
+                query = include(query);
+            }
+
+            return await query.FirstOrDefaultAsync(predicate, cancellationToken);
+        }
+
+        public async Task<int> CountAsync(
+            Expression<Func<TEntity, bool>> predicate,
+            CancellationToken cancellationToken = default)
+        {
+            return await _dbSet.CountAsync(predicate, cancellationToken);
+        }
+
         public async Task<Pagination<TEntity>> GetWithSpecAsync<TSpec>(TSpec spec) where TSpec : ISpecification<TEntity>
         {
             var query = _context.Set<TEntity>().AsQueryable();
