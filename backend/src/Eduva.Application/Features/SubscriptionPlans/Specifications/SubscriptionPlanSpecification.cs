@@ -25,12 +25,14 @@ namespace Eduva.Application.Features.SubscriptionPlans.Specifications
 
         private static Expression<Func<SubscriptionPlan, bool>> BuildCriteria(SubscriptionPlanSpecParam param)
         {
+            var loweredSearchTerm = param.SearchTerm?.ToLower();
+
             return sp =>
                 (param.ActiveOnly == null ||
                  (param.ActiveOnly.Value && sp.Status == EntityStatus.Active) ||
                  (!param.ActiveOnly.Value && sp.Status != EntityStatus.Active)) &&
-                (string.IsNullOrWhiteSpace(param.SearchTerm) ||
-                 EF.Functions.Like(sp.Name, $"%{param.SearchTerm}%"));
+                (string.IsNullOrWhiteSpace(loweredSearchTerm) ||
+                 EF.Functions.Like(sp.Name.ToLower(), $"%{loweredSearchTerm}%"));
         }
 
         private static Func<IQueryable<SubscriptionPlan>, IOrderedQueryable<SubscriptionPlan>>? BuildOrderBy(SubscriptionPlanSpecParam param)

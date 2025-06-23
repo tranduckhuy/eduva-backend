@@ -88,5 +88,11 @@ namespace Eduva.Shared.Enums
         // Subscription Errors
         SchoolAndSubscriptionRequired = 4400,
         SubscriptionExpiredWithDataLossRisk = 4401,
+
+
+        // Forbidden Errors
+        SchoolInactive = 4500,
+        SubscriptionInvalid = 4501,
+        ExceedUserLimit = 4502,
     }
 }

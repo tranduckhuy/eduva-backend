@@ -81,6 +81,7 @@ namespace Eduva.Infrastructure.Extensions
 
 
             services.AddScoped<ISchoolSubscriptionService, SchoolSubscriptionService>();
+            services.AddScoped<ISchoolValidationService, SchoolValidationService>();
 
             return services;
         }

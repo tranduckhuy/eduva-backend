@@ -1,5 +1,6 @@
 ﻿using Eduva.API.Controllers.Base;
 using Eduva.API.Models;
+using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Features.Users.Commands;
 using Eduva.Application.Features.Users.Queries;
 using Eduva.Application.Features.Users.Requests;
@@ -102,36 +103,35 @@ namespace Eduva.API.Controllers.Users
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> ImportUsersFromExcel([FromForm] ImportUsersFromExcelRequest request)
         {
-            var file = request.File;
-
-            if (file is null || file.Length == 0)
-                return Respond(CustomCode.FileIsRequired);
-
-            if (!Path.GetExtension(file.FileName).Equals(".xlsx", StringComparison.OrdinalIgnoreCase))
-                return Respond(CustomCode.InvalidFileType);
-
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(userId, out var creatorId))
                 return Respond(CustomCode.UserIdNotFound);
 
-            var fileBytes = await _mediator.Send(new ImportUsersFromExcelCommand
+            try
             {
-                File = file,
-                CreatorId = creatorId
-            });
+                var fileBytes = await _mediator.Send(new ImportUsersFromExcelCommand
+                {
+                    File = request.File,
+                    CreatorId = creatorId
+                });
 
-            if (fileBytes != null)
-            {
+                if (fileBytes != null)
+                {
+                    return File(
+                        fileContents: fileBytes,
+                        contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        fileDownloadName: $"user_import_error_{DateTime.Now:dd_MM_yyyy}.xlsx");
+                }
+
                 return File(
-                    fileContents: fileBytes,
-                    contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    fileDownloadName: $"user_import_error_{DateTime.Now:dd_MM_yyyy}.xlsx");
+                        fileContents: [],
+                        contentType: "application/octet-stream",
+                        fileDownloadName: "Empty.xlsx");
             }
-
-            return File(
-                    fileContents: [],
-                    contentType: "application/octet-stream",
-                    fileDownloadName: "Empty.xlsx");
+            catch (AppException ex)
+            {
+                return Respond(ex.StatusCode);
+            }
         }
 
         [HttpGet("import-template")]
@@ -154,7 +154,7 @@ namespace Eduva.API.Controllers.Users
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unable to load template from Firebase.");
-                return BadRequest("The sample file could not be downloaded. Please try again later.");
+                return Respond(CustomCode.SystemError);
             }
         }
     }
