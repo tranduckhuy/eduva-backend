@@ -22,12 +22,15 @@ namespace Eduva.Application.Features.LessonMaterials.Commands
 
             RuleFor(x => x.FolderId)
                 .GreaterThan(0).WithMessage("Folder ID must be greater than zero.")
-                .MustAsync(FolderExists).WithMessage("The specified folder does not exist.");
-
-            RuleFor(x => x.LessonMaterials)
+                .MustAsync(FolderExists).WithMessage("The specified folder does not exist.");            RuleFor(x => x.BlobNames)
+                .NotNull().WithMessage("Blob names list is required.")
+                .NotEmpty().WithMessage("At least one blob name must be provided.")
+                .Must(x => x == null || x.Count <= 10).WithMessage("Cannot upload more than 10 lesson materials at once.");            RuleFor(x => x.LessonMaterials)
                 .NotNull().WithMessage("Lesson materials list is required.")
                 .NotEmpty().WithMessage("At least one lesson material must be provided.")
-                .Must(x => x.Count <= 10).WithMessage("Cannot upload more than 10 lesson materials at once."); RuleForEach(x => x.LessonMaterials)
+                .Must(x => x == null || x.Count <= 10).WithMessage("Cannot upload more than 10 lesson materials at once."); 
+                
+            RuleForEach(x => x.LessonMaterials)
                 .SetValidator(new LessonMaterialRequestValidator());
         }
 

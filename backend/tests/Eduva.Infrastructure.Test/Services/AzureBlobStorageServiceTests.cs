@@ -227,6 +227,43 @@ namespace Eduva.Infrastructure.Test.Services
 
         #endregion
 
+        #region DeleteRangeFileAsync Tests
+        [Test]
+        public async Task DeleteRangeFileAsync_ShouldDeleteAllFiles_WhenAllBlobsExist()
+        {
+            // Arrange
+            var blobNames = new List<string> { "file1.pdf", "file2.jpg" };
+            var mockResponse = Response.FromValue(true, Mock.Of<Response>());
+
+            _blobClientMock.Setup(b => b.DeleteIfExistsAsync(It.IsAny<DeleteSnapshotsOption>(), It.IsAny<BlobRequestConditions>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(mockResponse);
+
+            // Act
+            await _service.DeleteRangeFileAsync(blobNames);
+
+            // Assert
+            _containerClientMock.Verify(c => c.GetBlobClient(It.IsAny<string>()), Times.Exactly(2));
+            _blobClientMock.Verify(b => b.DeleteIfExistsAsync(It.IsAny<DeleteSnapshotsOption>(), It.IsAny<BlobRequestConditions>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+        }
+
+        [Test]
+        public void DeleteRangeFileAsync_ShouldThrowBlobNotFoundException_WhenAnyBlobDoesNotExist()
+        {
+            // Arrange
+            var blobNames = new List<string> { "existing-file.pdf", "non-existent-file.jpg" };
+            var successResponse = Response.FromValue(true, Mock.Of<Response>());
+            var failureResponse = Response.FromValue(false, Mock.Of<Response>());
+
+            _blobClientMock.SetupSequence(b => b.DeleteIfExistsAsync(It.IsAny<DeleteSnapshotsOption>(), It.IsAny<BlobRequestConditions>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(successResponse)
+                .ReturnsAsync(failureResponse);
+
+            // Act & Assert
+            Assert.ThrowsAsync<BlobNotFoundException>(async () => await _service.DeleteRangeFileAsync(blobNames));
+        }
+
+        #endregion
+
         #region Edge Cases and Error Handling
 
         [Test]

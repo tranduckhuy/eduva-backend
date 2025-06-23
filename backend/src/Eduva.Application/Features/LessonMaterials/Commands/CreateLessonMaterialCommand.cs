@@ -13,6 +13,8 @@ namespace Eduva.Application.Features.LessonMaterials.Commands
 
         public int FolderId { get; set; }
 
+
+        public List<string> BlobNames { get; set; } = [];
         public List<LessonMaterialRequest> LessonMaterials { get; set; } = [];
     }
 }
