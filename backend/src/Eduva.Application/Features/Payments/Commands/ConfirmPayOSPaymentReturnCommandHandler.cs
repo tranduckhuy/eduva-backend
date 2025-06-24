@@ -11,7 +11,7 @@ using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using MediatR;
 
-namespace Eduva.Application.Features.SchoolSubscriptions.Commands
+namespace Eduva.Application.Features.Payments.Commands
 {
     public class ConfirmPayOSPaymentReturnCommandHandler : IRequestHandler<ConfirmPayOSPaymentReturnCommand, Unit>
     {

@@ -1,6 +1,6 @@
 ﻿using Net.payOS.Types;
 
-namespace Eduva.Application.Features.SchoolSubscriptions.Configurations.PayOSService
+namespace Eduva.Application.Interfaces.Services
 {
     public interface IPayOSService
     {

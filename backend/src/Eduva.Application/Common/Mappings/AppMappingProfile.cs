@@ -9,7 +9,7 @@ using Eduva.Application.Features.LessonMaterials.Commands;
 using Eduva.Application.Features.LessonMaterials.Responses;
 using Eduva.Application.Features.Schools.Commands.CreateSchool;
 using Eduva.Application.Features.Schools.Responses;
-using Eduva.Application.Features.SchoolSubscriptions.Responses;
+using Eduva.Application.Features.Payments.Responses;
 using Eduva.Application.Features.StudentClasses.Responses;
 using Eduva.Application.Features.SubscriptionPlans.Responses;
 using Eduva.Application.Features.Users.Responses;

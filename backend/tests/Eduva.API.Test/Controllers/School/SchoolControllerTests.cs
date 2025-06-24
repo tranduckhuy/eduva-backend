@@ -1,9 +1,14 @@
 ﻿using Eduva.API.Controllers.Schools;
 using Eduva.API.Models;
+using Eduva.Application.Common.Models;
 using Eduva.Application.Features.Schools.Commands.ActivateSchool;
 using Eduva.Application.Features.Schools.Commands.ArchiveSchool;
 using Eduva.Application.Features.Schools.Commands.CreateSchool;
 using Eduva.Application.Features.Schools.Commands.UpdateSchool;
+using Eduva.Application.Features.Schools.Queries;
+using Eduva.Application.Features.Schools.Responses;
+using Eduva.Application.Features.Schools.Specifications;
+using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -240,6 +245,102 @@ namespace Eduva.API.Test.Controllers.School
             var objectResult = result as ObjectResult;
             Assert.That(objectResult, Is.Not.Null);
             Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
+        }
+
+        #endregion
+
+        #region GetSchools Tests
+
+        [Test]
+        public async Task GetSchools_ShouldReturnOk_WithPaginationData()
+        {
+            // Arrange
+            var param = new SchoolSpecParam { PageIndex = 1, PageSize = 10 };
+            var mockPagination = new Pagination<SchoolResponse>
+            {
+                PageIndex = 1,
+                PageSize = 10,
+                Count = 1,
+                Data = new List<SchoolResponse>
+        {
+            new() { Id = 1, Name = "Test", Status = EntityStatus.Active }
+        }
+            };
+
+            _mediatorMock
+                .Setup(m => m.Send(It.Is<GetSchoolQuery>(q => q.Param == param), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(mockPagination);
+
+            // Act
+            var result = await _controller.GetSchools(param);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+        }
+
+        #endregion
+
+        #region GetSchoolById Tests
+
+        [Test]
+        public async Task GetSchoolById_ShouldReturnOk_WhenIdIsValid()
+        {
+            var schoolDetail = new SchoolDetailResponse
+            {
+                Id = 1,
+                Name = "Test",
+                ContactEmail = "test@email.com",
+                Status = EntityStatus.Active
+            };
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<GetSchoolByIdQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(schoolDetail);
+
+            var result = await _controller.GetSchoolById(1);
+
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+        }
+
+        #endregion
+
+        #region GetCurrentSchool Tests
+
+        [Test]
+        public async Task GetCurrentSchool_ShouldReturnUserIdNotFound_WhenUserIdIsInvalid()
+        {
+            SetupUser("not-a-guid");
+            var result = await _controller.GetCurrentSchool();
+            var objectResult = result as ObjectResult;
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task GetCurrentSchool_ShouldReturnOk_WhenUserIdIsValid()
+        {
+            var userId = Guid.NewGuid();
+            SetupUser(userId.ToString());
+
+            _mediatorMock
+                .Setup(m => m.Send(It.Is<GetMySchoolQuery>(q => q.SchoolAdminId == userId), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new SchoolResponse { Id = 1, Name = "Test School", Status = EntityStatus.Active });
+
+            var result = await _controller.GetCurrentSchool();
+
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
         }
 
         #endregion

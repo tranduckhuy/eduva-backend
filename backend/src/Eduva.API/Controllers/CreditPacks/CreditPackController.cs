@@ -1,4 +1,5 @@
 ﻿using Eduva.API.Controllers.Base;
+using Eduva.API.Models;
 using Eduva.Application.Common.Models;
 using Eduva.Application.Features.AICreditPacks.Commands.ActivateCreditPacks;
 using Eduva.Application.Features.AICreditPacks.Commands.ArchiveCreditPacks;
@@ -31,6 +32,7 @@ namespace Eduva.API.Controllers.CreditPacks
 
         [HttpGet]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}")]
+        [ProducesResponseType(typeof(ApiResponse<Pagination<AICreditPackResponse>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAICreditPacks([FromQuery] AICreditPackSpecParam specParam)
         {
             return await HandleRequestAsync<Pagination<AICreditPackResponse>>(async () =>
@@ -42,6 +44,7 @@ namespace Eduva.API.Controllers.CreditPacks
 
         [HttpPost]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)}")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> CreateAICreditPack([FromBody] CreateAICreditPackCommand command)
         {
             return await HandleRequestAsync(() => _mediator.Send(command));
@@ -49,6 +52,7 @@ namespace Eduva.API.Controllers.CreditPacks
 
         [HttpPut("{id}")]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)}")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateAICreditPack(int id, [FromBody] UpdateAICreditPackCommand command)
         {
             command.Id = id;
@@ -57,6 +61,7 @@ namespace Eduva.API.Controllers.CreditPacks
 
         [HttpPut("{id}/archive")]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)}")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> ArchiveAICreditPack(int id)
         {
             var command = new ArchiveAICreditPackCommand(id);
@@ -65,6 +70,7 @@ namespace Eduva.API.Controllers.CreditPacks
 
         [HttpPut("{id}/activate")]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)}")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> ActivateAICreditPack(int id)
         {
             var command = new ActivateAICreditPackCommand(id);
@@ -73,6 +79,7 @@ namespace Eduva.API.Controllers.CreditPacks
 
         [HttpDelete("{id}")]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)}")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> DeleteAICreditPack(int id)
         {
             var command = new DeleteAICreditPackCommand(id);

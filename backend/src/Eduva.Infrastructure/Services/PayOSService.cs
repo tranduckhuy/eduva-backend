@@ -1,7 +1,8 @@
-﻿using Net.payOS;
+﻿using Eduva.Application.Interfaces.Services;
+using Net.payOS;
 using Net.payOS.Types;
 
-namespace Eduva.Application.Features.SchoolSubscriptions.Configurations.PayOSService
+namespace Eduva.Application.Features.Payments.Configurations.PayOSService
 {
     public class PayOSService : IPayOSService
     {

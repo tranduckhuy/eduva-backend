@@ -462,6 +462,7 @@ namespace Eduva.Infrastructure.Test.Services
                 UserId = Guid.NewGuid(),
                 CurrentPassword = "oldpass",
                 NewPassword = "newpass123",
+                ConfirmPassword = "newpass123",
                 LogoutBehavior = LogoutBehavior.LogoutAllIncludingCurrent
             };
 
@@ -482,7 +483,8 @@ namespace Eduva.Infrastructure.Test.Services
             var dto = new ChangePasswordRequestDto
             {
                 UserId = userId,
-                NewPassword = "newpass"
+                NewPassword = "newpass",
+                ConfirmPassword = "newpass"
             };
 
             Assert.ThrowsAsync<NewPasswordSameAsOldException>(() => _authService.ChangePasswordAsync(dto));
@@ -503,7 +505,8 @@ namespace Eduva.Infrastructure.Test.Services
             {
                 UserId = userId,
                 CurrentPassword = "oldpass",
-                NewPassword = "newpass"
+                NewPassword = "newpass",
+                ConfirmPassword = "newpass"
             };
 
             var ex = Assert.ThrowsAsync<AppException>(() => _authService.ChangePasswordAsync(dto));
@@ -525,7 +528,8 @@ namespace Eduva.Infrastructure.Test.Services
             {
                 UserId = Guid.NewGuid(),
                 CurrentPassword = "oldpass",
-                NewPassword = "newpass"
+                NewPassword = "newpass",
+                ConfirmPassword = "newpass"
             };
 
             Assert.ThrowsAsync<UserNotExistsException>(() => _authService.ChangePasswordAsync(dto));

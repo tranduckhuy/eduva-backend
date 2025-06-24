@@ -1,4 +1,5 @@
-﻿using Eduva.API.Controllers.Base;
+﻿using Eduva.API.Attributes;
+using Eduva.API.Controllers.Base;
 using Eduva.API.Models;
 using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Common.Models;
@@ -73,6 +74,7 @@ namespace Eduva.API.Controllers.Users
 
         [HttpGet]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         [ProducesResponseType(typeof(ApiResponse<Pagination<UserResponse>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetUsersAsync([FromQuery] UserSpecParam param)
         {
@@ -117,6 +119,7 @@ namespace Eduva.API.Controllers.Users
 
         [HttpPost]
         [Authorize(Roles = nameof(Role.SchoolAdmin))]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> CreateUserAsync([FromBody] CreateUserByAdminCommand command)
         {
@@ -130,6 +133,7 @@ namespace Eduva.API.Controllers.Users
 
         [HttpPost("import")]
         [Authorize(Roles = nameof(Role.SchoolAdmin))]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
         [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> ImportUsersFromExcel([FromForm] ImportUsersFromExcelRequest request)
@@ -167,6 +171,7 @@ namespace Eduva.API.Controllers.Users
 
         [HttpPut("{userId:guid}/lock")]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> LockUserAccount(Guid userId)
         {
@@ -180,6 +185,7 @@ namespace Eduva.API.Controllers.Users
 
         [HttpPut("{userId:guid}/unlock")]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> UnlockUserAccount(Guid userId)
         {
@@ -193,6 +199,7 @@ namespace Eduva.API.Controllers.Users
 
         [HttpGet("import-template/{type}")]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> DownloadImportTemplate(ImportTemplateType type)

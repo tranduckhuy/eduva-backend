@@ -1,4 +1,4 @@
-﻿using Eduva.Application.Features.SchoolSubscriptions.Configurations.PayOSService;
+﻿using Eduva.Application.Features.Payments.Configurations.PayOSService;
 using Net.payOS;
 using Net.payOS.Types;
 

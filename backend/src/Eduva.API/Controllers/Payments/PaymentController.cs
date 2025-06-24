@@ -1,5 +1,5 @@
 ﻿using Eduva.API.Controllers.Base;
-using Eduva.Application.Features.SchoolSubscriptions.Commands;
+using Eduva.Application.Features.Payments.Commands;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

@@ -1,6 +1,6 @@
 ﻿using Eduva.Domain.Enums;
 
-namespace Eduva.Application.Features.SchoolSubscriptions.Responses
+namespace Eduva.Application.Features.Payments.Responses
 {
     public class MySchoolSubscriptionResponse
     {

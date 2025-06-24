@@ -2,11 +2,11 @@
 using Eduva.Application.Exceptions.School;
 using Eduva.Application.Exceptions.SchoolSubscription;
 using Eduva.Application.Exceptions.SubscriptionPlan;
-using Eduva.Application.Features.SchoolSubscriptions.Configurations;
-using Eduva.Application.Features.SchoolSubscriptions.Configurations.PayOSService;
-using Eduva.Application.Features.SchoolSubscriptions.Responses;
+using Eduva.Application.Features.Payments.Configurations;
+using Eduva.Application.Features.Payments.Responses;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
+using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
@@ -14,7 +14,7 @@ using MediatR;
 using Microsoft.Extensions.Options;
 using Net.payOS.Types;
 
-namespace Eduva.Application.Features.SchoolSubscriptions.Commands
+namespace Eduva.Application.Features.Payments.Commands
 {
     public class CreateSchoolSubscriptionCommandHandler : IRequestHandler<CreateSchoolSubscriptionCommand, (CustomCode, CreatePaymentLinkResponse)>
     {
