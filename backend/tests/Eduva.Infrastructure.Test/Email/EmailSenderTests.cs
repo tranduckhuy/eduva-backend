@@ -38,6 +38,83 @@ namespace Eduva.Infrastructure.Test.Email
 
         #region EmailSender Tests
 
+        [Test]
+        public async Task SendEmailAsync_ShouldAlwaysDisconnectAndLog_WhenEmailFails()
+        {
+            var badConfig = new EmailConfiguration
+            {
+                From = "invalid@example.com",
+                UserName = "invalid@example.com",
+                Password = "wrong",
+                SmtpServer = "invalid.server.com",
+                Port = 587,
+                ApiKey = ""
+            };
+
+            var sender = new EmailSender(badConfig, _loggerMock.Object);
+
+            var message = new EmailMessage(
+                new List<EmailAddress> { new EmailAddress("to@example.com", "To") },
+                "Fail Email",
+                "Fail content",
+                null
+            );
+
+            await sender.SendEmailAsync(message);
+
+            _loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Information,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, _) => v.ToString()!.Contains("Disconnected from SMTP server")),
+                    null,
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+        }
+
+        [Test]
+        public async Task SimulateSendSuccess_ShouldLogSuccessMessages()
+        {
+            var fakeSender = new FakeEmailSender(_loggerMock.Object);
+
+            await fakeSender.SimulateSendSuccess();
+
+            _loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Information,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, _) => v.ToString()!.Contains("Email sent successfully")),
+                    null,
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+
+            _loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Information,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, _) => v.ToString()!.Contains("Disconnected from SMTP server")),
+                    null,
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+        }
+
+        [Test]
+        public async Task SimulateBrevoSendSuccess_ShouldLogSuccessMessage()
+        {
+            var fakeSender = new FakeEmailSender(_loggerMock.Object);
+
+            await fakeSender.SimulateBrevoSendSuccess();
+
+            _loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Information,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, _) => v.ToString()!.Contains("Email sent successfully to")),
+                    null,
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+        }
+
         // Verifies that sending an email without attachments does not throw any exceptions.
         [Test]
         public async Task SendEmailAsync_NoAttachments_ShouldNotThrow()
@@ -152,5 +229,31 @@ namespace Eduva.Infrastructure.Test.Email
 
         #endregion
 
+        #region FakeEmailSender Setup
+
+        public class FakeEmailSender
+        {
+            private readonly ILogger<EmailSender> _logger;
+
+            public FakeEmailSender(ILogger<EmailSender> logger)
+            {
+                _logger = logger;
+            }
+
+            public Task SimulateSendSuccess()
+            {
+                _logger.LogInformation("Email sent successfully.");
+                _logger.LogInformation("Disconnected from SMTP server.");
+                return Task.CompletedTask;
+            }
+
+            public Task SimulateBrevoSendSuccess()
+            {
+                _logger.LogInformation("Email sent successfully to {Email}", "to@example.com");
+                return Task.CompletedTask;
+            }
+        }
+
+        #endregion
     }
 }

@@ -250,6 +250,73 @@ namespace Eduva.Application.Test.Features.SubscriptionPlans.Specifications
             });
         }
 
+        [Test]
+        public void Should_Handle_Null_SortDirection()
+        {
+            var param = new SubscriptionPlanSpecParam
+            {
+                SortBy = "name",
+                SortDirection = null!
+            };
+
+            var spec = new SubscriptionPlanSpecification(param);
+            var sorted = spec.OrderBy!(_mockData.AsQueryable()).ToList();
+
+            Assert.That(sorted[0].Name, Is.EqualTo("Basic")); // Ascending mặc định
+        }
+
+        [Test]
+        public void Should_Sort_By_StorageLimitGB_Asc()
+        {
+            _mockData[0].StorageLimitGB = 30;
+            _mockData[1].StorageLimitGB = 10;
+            _mockData[2].StorageLimitGB = 20;
+
+            var param = new SubscriptionPlanSpecParam { SortBy = "storage", SortDirection = "asc" };
+            var spec = new SubscriptionPlanSpecification(param);
+            var sorted = spec.OrderBy!(_mockData.AsQueryable()).ToList();
+
+            Assert.That(sorted[0].StorageLimitGB, Is.EqualTo(10));
+        }
+
+        [Test]
+        public void Should_Sort_By_MaxUsers_Desc()
+        {
+            _mockData[0].MaxUsers = 10;
+            _mockData[1].MaxUsers = 30;
+            _mockData[2].MaxUsers = 20;
+
+            var param = new SubscriptionPlanSpecParam { SortBy = "users", SortDirection = "desc" };
+            var spec = new SubscriptionPlanSpecification(param);
+            var sorted = spec.OrderBy!(_mockData.AsQueryable()).ToList();
+
+            Assert.That(sorted[0].MaxUsers, Is.EqualTo(30));
+        }
+
+        [Test]
+        public void Should_Sort_By_PriceMonthly_Asc()
+        {
+            var param = new SubscriptionPlanSpecParam { SortBy = "monthly", SortDirection = "asc" };
+            var spec = new SubscriptionPlanSpecification(param);
+            var sorted = spec.OrderBy!(_mockData.AsQueryable()).ToList();
+
+            Assert.That(sorted[0].PriceMonthly, Is.EqualTo(100000));
+        }
+
+        [Test]
+        public void Should_Sort_By_PricePerYear_Desc()
+        {
+            _mockData[0].PricePerYear = 1000000;
+            _mockData[1].PricePerYear = 3000000;
+            _mockData[2].PricePerYear = 2000000;
+
+            var param = new SubscriptionPlanSpecParam { SortBy = "yearly", SortDirection = "desc" };
+            var spec = new SubscriptionPlanSpecification(param);
+            var sorted = spec.OrderBy!(_mockData.AsQueryable()).ToList();
+
+            Assert.That(sorted[0].PricePerYear, Is.EqualTo(3000000));
+        }
+
         #endregion
 
     }

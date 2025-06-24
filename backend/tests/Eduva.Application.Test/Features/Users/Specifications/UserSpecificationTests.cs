@@ -10,6 +10,44 @@ public class UserSpecificationTests
     #region UserSpecification Tests
 
     [Test]
+    public void Should_Set_Selector_When_Manually_Assigned()
+    {
+        var param = new UserSpecParam();
+        var spec = new UserSpecification(param)
+        {
+            Selector = q => q.Select(u => new ApplicationUser { Id = u.Id }) // dummy projection
+        };
+
+        var users = new List<ApplicationUser> {
+        new() { Id = Guid.NewGuid() },
+        new() { Id = Guid.NewGuid() }
+    }.AsQueryable();
+
+        var result = spec.Selector!(users).ToList();
+
+        Assert.That(result, Has.Count.EqualTo(2));
+    }
+
+    [Test]
+    public void Should_Fallback_To_Default_Order_When_SortBy_Invalid_Asc()
+    {
+        var param = new UserSpecParam
+        {
+            SortBy = "unknown",
+            SortDirection = "asc"
+        };
+
+        var spec = new UserSpecification(param);
+        var queryable = new[] {
+        new ApplicationUser { FullName = "Z" },
+        new ApplicationUser { FullName = "A" }
+    }.AsQueryable();
+
+        var result = spec.OrderBy!(queryable).ToList();
+        Assert.That(result[0].FullName, Is.EqualTo("A"));
+    }
+
+    [Test]
     public void Should_Filter_By_SchoolId_And_SearchTerm()
     {
         var param = new UserSpecParam

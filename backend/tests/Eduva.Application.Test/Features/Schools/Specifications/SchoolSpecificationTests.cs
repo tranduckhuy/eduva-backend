@@ -25,6 +25,47 @@ public class SchoolSpecificationTests
 
     #region Tests
 
+    [Test]
+    public void Selector_ShouldProjectCorrectly()
+    {
+        var spec = new SchoolSpecification(new SchoolSpecParam { PageIndex = 1, PageSize = 10 })
+        {
+            Selector = q => q.Select(s => new School { Id = s.Id }) // Dummy projection
+        };
+
+        var query = _schools.AsQueryable();
+        var projected = spec.Selector?.Invoke(query).ToList();
+
+        Assert.That(projected, Is.All.Not.Null);
+    }
+
+    [Test]
+    public void Criteria_ShouldHandle_NullSearchTerm()
+    {
+        var spec = new SchoolSpecification(new SchoolSpecParam { SearchTerm = null, PageIndex = 1, PageSize = 10 });
+        var result = _schools.AsQueryable().Where(spec.Criteria).ToList();
+
+        Assert.That(result, Is.Not.Null);
+    }
+
+    [TestCase("contactemail")]
+    [TestCase("contactphone")]
+    [TestCase("createdat")]
+    [TestCase("unknown")]
+    public void OrderBy_ShouldSortCorrectly_Asc(string sortBy)
+    {
+        var spec = new SchoolSpecification(new SchoolSpecParam
+        {
+            SortBy = sortBy,
+            SortDirection = "asc",
+            PageIndex = 1,
+            PageSize = 10
+        });
+
+        var result = spec.OrderBy?.Invoke(_schools.AsQueryable()).ToList();
+        Assert.That(result, Is.Not.Null);
+    }
+
     [TestCase(null, TestName = "Criteria_ShouldReturnAll_When_ActiveOnlyIsNull")]
     [TestCase(true, TestName = "Criteria_ShouldReturnActive_When_ActiveOnlyIsTrue")]
     [TestCase(false, TestName = "Criteria_ShouldReturnInactive_When_ActiveOnlyIsFalse")]

@@ -55,6 +55,32 @@ public class LockAccountCommandHandlerTests
     #region LockAccountCommandHandler Tests 
 
     [Test]
+    public async Task Should_Lock_User_When_LockoutEnd_Is_Expired()
+    {
+        var targetUser = CreateUser(Guid.NewGuid());
+        var executorUser = CreateUser(Guid.NewGuid());
+
+        targetUser.LockoutEnd = DateTimeOffset.UtcNow.AddMinutes(-10);
+
+        var command = new LockAccountCommand(targetUser.Id, executorUser.Id);
+
+        _userManagerMock.Setup(x => x.FindByIdAsync(command.UserId.ToString())).ReturnsAsync(targetUser);
+        _userManagerMock.Setup(x => x.FindByIdAsync(command.ExecutorId.ToString())).ReturnsAsync(executorUser);
+
+        _userManagerMock.Setup(x => x.GetRolesAsync(It.IsAny<ApplicationUser>()))
+            .ReturnsAsync([Role.Teacher.ToString()]);
+
+        _userManagerMock.Setup(x => x.UpdateAsync(targetUser))
+            .ReturnsAsync(IdentityResult.Success);
+
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        Assert.That(result, Is.EqualTo(Unit.Value));
+        _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<ApplicationUser>()), Times.Once);
+        _unitOfWorkMock.Verify(x => x.CommitAsync(), Times.Once);
+    }
+
+    [Test]
     public void Should_Throw_When_SelfLocking()
     {
         var userId = Guid.NewGuid();

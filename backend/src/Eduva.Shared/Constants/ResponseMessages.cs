@@ -142,6 +142,8 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Invalid template type provided. Please use a valid template type." } },
             { CustomCode.FileDownloadFailed, new MessageDetail {
                 HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to download the file. Please try again later." } },
+            { CustomCode.IncorrectCurrentPassword, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "The current password provided is incorrect. Please try again." } },
 
             // File Storage Errors
             { CustomCode.InvalidBlobName, new MessageDetail {

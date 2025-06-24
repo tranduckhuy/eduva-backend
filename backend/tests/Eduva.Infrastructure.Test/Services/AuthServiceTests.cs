@@ -401,138 +401,189 @@ namespace Eduva.Infrastructure.Test.Services
         #region ChangePasswordAsync Tests
 
         [Test]
-        public async Task ChangePasswordAsync_KeepAllSessions_ShouldNotInvalidateAnything()
+        public async Task ChangePasswordAsync_ShouldThrow_WhenUserNotFound()
         {
-            var user = new ApplicationUser();
-            _userManager.Setup(x => x.FindByIdAsync(It.IsAny<string>())).ReturnsAsync(user);
-            _userManager.Setup(x => x.CheckPasswordAsync(user, It.IsAny<string>())).ReturnsAsync(false);
-            _userManager.Setup(x => x.ChangePasswordAsync(user, It.IsAny<string>(), It.IsAny<string>()))
-                .ReturnsAsync(IdentityResult.Success);
-
-            var dto = new ChangePasswordRequestDto
+            var userId = Guid.NewGuid();
+            var request = new ChangePasswordRequestDto
             {
-                UserId = Guid.NewGuid(),
-                CurrentPassword = "oldpass",
-                NewPassword = "newpass123",
+                UserId = userId,
+                CurrentPassword = "old",
+                NewPassword = "new"
+            };
+
+            _userManager.Setup(x => x.FindByIdAsync(userId.ToString()))
+                .ReturnsAsync((ApplicationUser?)null);
+
+            try
+            {
+                await _authService.ChangePasswordAsync(request);
+                Assert.Fail("Expected exception was not thrown");
+            }
+            catch (UserNotExistsException ex)
+            {
+                Assert.That(ex.StatusCode, Is.EqualTo(CustomCode.UserNotExists));
+            }
+        }
+
+        [Test]
+        public async Task ChangePasswordAsync_ShouldThrow_WhenCurrentPasswordIncorrect()
+        {
+            var user = new ApplicationUser { Id = Guid.NewGuid() };
+
+            _userManager.Setup(x => x.FindByIdAsync(user.Id.ToString()))
+                        .ReturnsAsync(user);
+            _userManager.Setup(x => x.CheckPasswordAsync(user, "wrong"))
+                        .ReturnsAsync(false);
+
+            var request = new ChangePasswordRequestDto
+            {
+                UserId = user.Id,
+                CurrentPassword = "wrong",
+                NewPassword = "new"
+            };
+
+            try
+            {
+                await _authService.ChangePasswordAsync(request);
+                Assert.Fail("Expected AppException was not thrown.");
+            }
+            catch (AppException ex)
+            {
+                Assert.That(ex.StatusCode, Is.EqualTo(CustomCode.IncorrectCurrentPassword));
+            }
+        }
+
+        [Test]
+        public async Task ChangePasswordAsync_ShouldThrow_WhenNewPasswordSameAsOld()
+        {
+            var user = new ApplicationUser { Id = Guid.NewGuid() };
+
+            _userManager.Setup(x => x.FindByIdAsync(user.Id.ToString()))
+                        .ReturnsAsync(user);
+            _userManager.Setup(x => x.CheckPasswordAsync(user, "same"))
+                        .ReturnsAsync(true); // Current password
+
+            var request = new ChangePasswordRequestDto
+            {
+                UserId = user.Id,
+                CurrentPassword = "same",
+                NewPassword = "same"
+            };
+
+            try
+            {
+                await _authService.ChangePasswordAsync(request);
+                Assert.Fail("Expected NewPasswordSameAsOldException was not thrown.");
+            }
+            catch (NewPasswordSameAsOldException ex)
+            {
+                Assert.That(ex, Is.Not.Null);
+            }
+        }
+
+        [Test]
+        public async Task ChangePasswordAsync_ShouldThrow_WhenChangePasswordFails()
+        {
+            var user = new ApplicationUser { Id = Guid.NewGuid() };
+
+            _userManager.Setup(x => x.FindByIdAsync(user.Id.ToString()))
+                        .ReturnsAsync(user);
+            _userManager.Setup(x => x.CheckPasswordAsync(user, "old"))
+                        .ReturnsAsync(true);
+            _userManager.Setup(x => x.ChangePasswordAsync(user, "old", "new"))
+                        .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "Something went wrong" }));
+
+            var request = new ChangePasswordRequestDto
+            {
+                UserId = user.Id,
+                CurrentPassword = "old",
+                NewPassword = "new"
+            };
+
+            try
+            {
+                await _authService.ChangePasswordAsync(request);
+                Assert.Fail("Expected AppException was not thrown.");
+            }
+            catch (AppException ex)
+            {
+                Assert.Multiple(() =>
+                {
+                    Assert.That(ex.StatusCode, Is.EqualTo(CustomCode.ProvidedInformationIsInValid));
+                    Assert.That(ex.Errors, Contains.Item("Something went wrong"));
+                });
+            }
+        }
+
+        [Test]
+        public async Task ChangePasswordAsync_ShouldLogoutAllSessions_WhenConfigured()
+        {
+            var user = new ApplicationUser { Id = Guid.NewGuid() };
+
+            _userManager.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
+            _userManager.Setup(x => x.CheckPasswordAsync(user, "old")).ReturnsAsync(true);
+            _userManager.Setup(x => x.ChangePasswordAsync(user, "old", "new")).ReturnsAsync(IdentityResult.Success);
+
+            var request = new ChangePasswordRequestDto
+            {
+                UserId = user.Id,
+                CurrentPassword = "old",
+                NewPassword = "new",
+                LogoutBehavior = LogoutBehavior.LogoutAllIncludingCurrent
+            };
+
+            var result = await _authService.ChangePasswordAsync(request);
+
+            Assert.That(result, Is.EqualTo(CustomCode.Success));
+            _tokenService.Verify(x => x.BlacklistAllUserTokensAsync(user.Id.ToString()), Times.Once);
+        }
+
+        [Test]
+        public async Task ChangePasswordAsync_ShouldLogoutOtherSessionsOnly_WhenConfigured()
+        {
+            var user = new ApplicationUser { Id = Guid.NewGuid() };
+
+            _userManager.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
+            _userManager.Setup(x => x.CheckPasswordAsync(user, "old")).ReturnsAsync(true);
+            _userManager.Setup(x => x.ChangePasswordAsync(user, "old", "new")).ReturnsAsync(IdentityResult.Success);
+
+            var request = new ChangePasswordRequestDto
+            {
+                UserId = user.Id,
+                CurrentPassword = "old",
+                NewPassword = "new",
+                LogoutBehavior = LogoutBehavior.LogoutOthersOnly,
+                CurrentAccessToken = "access-token"
+            };
+
+            var result = await _authService.ChangePasswordAsync(request);
+
+            Assert.That(result, Is.EqualTo(CustomCode.Success));
+            _tokenService.Verify(x => x.BlacklistAllUserTokensExceptAsync(user.Id.ToString(), "access-token"), Times.Once);
+        }
+
+        [Test]
+        public async Task ChangePasswordAsync_ShouldKeepAllSessions_WhenConfigured()
+        {
+            var user = new ApplicationUser { Id = Guid.NewGuid() };
+
+            _userManager.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
+            _userManager.Setup(x => x.CheckPasswordAsync(user, "old")).ReturnsAsync(true);
+            _userManager.Setup(x => x.ChangePasswordAsync(user, "old", "new")).ReturnsAsync(IdentityResult.Success);
+
+            var request = new ChangePasswordRequestDto
+            {
+                UserId = user.Id,
+                CurrentPassword = "old",
+                NewPassword = "new",
                 LogoutBehavior = LogoutBehavior.KeepAllSessions
             };
 
-            var result = await _authService.ChangePasswordAsync(dto);
+            var result = await _authService.ChangePasswordAsync(request);
 
             Assert.That(result, Is.EqualTo(CustomCode.Success));
             _tokenService.Verify(x => x.BlacklistAllUserTokensAsync(It.IsAny<string>()), Times.Never);
             _tokenService.Verify(x => x.BlacklistAllUserTokensExceptAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-        }
-
-        [Test]
-        public async Task ChangePasswordAsync_LogoutOthersOnly_ShouldKeepCurrentToken()
-        {
-            var user = new ApplicationUser();
-            _userManager.Setup(x => x.FindByIdAsync(It.IsAny<string>())).ReturnsAsync(user);
-            _userManager.Setup(x => x.CheckPasswordAsync(user, It.IsAny<string>())).ReturnsAsync(false);
-            _userManager.Setup(x => x.ChangePasswordAsync(user, It.IsAny<string>(), It.IsAny<string>()))
-                .ReturnsAsync(IdentityResult.Success);
-
-            var dto = new ChangePasswordRequestDto
-            {
-                UserId = Guid.NewGuid(),
-                CurrentPassword = "oldpass",
-                NewPassword = "newpass123",
-                LogoutBehavior = LogoutBehavior.LogoutOthersOnly,
-                CurrentAccessToken = "token123"
-            };
-
-            var result = await _authService.ChangePasswordAsync(dto);
-
-            Assert.That(result, Is.EqualTo(CustomCode.Success));
-            _tokenService.Verify(x => x.BlacklistAllUserTokensExceptAsync(dto.UserId.ToString(), dto.CurrentAccessToken), Times.Once);
-        }
-
-        [Test]
-        public async Task ChangePasswordAsync_LogoutAllIncludingCurrent_ShouldInvalidateAll()
-        {
-            var user = new ApplicationUser();
-            _userManager.Setup(x => x.FindByIdAsync(It.IsAny<string>())).ReturnsAsync(user);
-            _userManager.Setup(x => x.CheckPasswordAsync(user, It.IsAny<string>())).ReturnsAsync(false);
-            _userManager.Setup(x => x.ChangePasswordAsync(user, It.IsAny<string>(), It.IsAny<string>()))
-                .ReturnsAsync(IdentityResult.Success);
-
-            var dto = new ChangePasswordRequestDto
-            {
-                UserId = Guid.NewGuid(),
-                CurrentPassword = "oldpass",
-                NewPassword = "newpass123",
-                ConfirmPassword = "newpass123",
-                LogoutBehavior = LogoutBehavior.LogoutAllIncludingCurrent
-            };
-
-            var result = await _authService.ChangePasswordAsync(dto);
-
-            Assert.That(result, Is.EqualTo(CustomCode.Success));
-            _tokenService.Verify(x => x.BlacklistAllUserTokensAsync(dto.UserId.ToString()), Times.Once);
-        }
-
-        [Test]
-        public void ChangePasswordAsync_NewPasswordSameAsOld_ThrowsException()
-        {
-            var user = new ApplicationUser();
-            var userId = Guid.NewGuid();
-            _userManager.Setup(x => x.FindByIdAsync(userId.ToString())).ReturnsAsync(user);
-            _userManager.Setup(x => x.CheckPasswordAsync(user, "newpass")).ReturnsAsync(true);
-
-            var dto = new ChangePasswordRequestDto
-            {
-                UserId = userId,
-                NewPassword = "newpass",
-                ConfirmPassword = "newpass"
-            };
-
-            Assert.ThrowsAsync<NewPasswordSameAsOldException>(() => _authService.ChangePasswordAsync(dto));
-        }
-
-        [Test]
-        public void ChangePasswordAsync_ChangeFails_ThrowsAppException()
-        {
-            var user = new ApplicationUser();
-            var userId = Guid.NewGuid();
-
-            _userManager.Setup(x => x.FindByIdAsync(userId.ToString())).ReturnsAsync(user);
-            _userManager.Setup(x => x.CheckPasswordAsync(user, It.IsAny<string>())).ReturnsAsync(false);
-            _userManager.Setup(x => x.ChangePasswordAsync(user, It.IsAny<string>(), It.IsAny<string>()))
-                .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "Something went wrong" }));
-
-            var dto = new ChangePasswordRequestDto
-            {
-                UserId = userId,
-                CurrentPassword = "oldpass",
-                NewPassword = "newpass",
-                ConfirmPassword = "newpass"
-            };
-
-            var ex = Assert.ThrowsAsync<AppException>(() => _authService.ChangePasswordAsync(dto));
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(ex, Is.Not.Null);
-                Assert.That(ex!.Errors, Is.Not.Null.And.Not.Empty);
-                Assert.That(ex.Errors!.FirstOrDefault(), Is.EqualTo("Something went wrong"));
-            });
-        }
-
-        [Test]
-        public void ChangePasswordAsync_UserNotFound_ThrowsException()
-        {
-            _userManager.Setup(x => x.FindByIdAsync(It.IsAny<string>())).ReturnsAsync((ApplicationUser?)null);
-
-            var dto = new ChangePasswordRequestDto
-            {
-                UserId = Guid.NewGuid(),
-                CurrentPassword = "oldpass",
-                NewPassword = "newpass",
-                ConfirmPassword = "newpass"
-            };
-
-            Assert.ThrowsAsync<UserNotExistsException>(() => _authService.ChangePasswordAsync(dto));
         }
 
         #endregion
@@ -1427,7 +1478,6 @@ namespace Eduva.Infrastructure.Test.Services
         }
 
         #endregion
-
 
         #region SendConfirmEmailMessage_TemplateFileNotFound_ThrowsFileNotFoundException
 

@@ -55,6 +55,25 @@ public class UnlockAccountCommandHandlerTests
     #region UnlockAccountCommandHandler Tests
 
     [Test]
+    public void Should_Throw_When_Lockout_Expired_And_User_NotLocked()
+    {
+        var targetUser = CreateUser(Guid.NewGuid());
+        var executorUser = CreateUser(Guid.NewGuid());
+
+        targetUser.LockoutEnd = DateTimeOffset.UtcNow.AddMinutes(-5);
+
+        var command = new UnlockAccountCommand(targetUser.Id, executorUser.Id);
+
+        _userManagerMock.Setup(x => x.FindByIdAsync(command.UserId.ToString())).ReturnsAsync(targetUser);
+        _userManagerMock.Setup(x => x.FindByIdAsync(command.ExecutorId.ToString())).ReturnsAsync(executorUser);
+        _userManagerMock.Setup(x => x.GetRolesAsync(It.IsAny<ApplicationUser>()))
+            .ReturnsAsync([Role.Teacher.ToString()]);
+
+        var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, CancellationToken.None));
+        Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.UserNotLocked));
+    }
+
+    [Test]
     public void Should_Throw_When_SelfUnlocking()
     {
         var userId = Guid.NewGuid();
