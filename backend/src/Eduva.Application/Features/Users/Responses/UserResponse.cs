@@ -10,5 +10,15 @@
         public int? SchoolId { get; set; }
         public List<string> Roles { get; set; } = [];
         public int CreditBalance { get; set; }
+        public bool Is2FAEnabled { get; set; }
+        public bool IsEmailConfirmed { get; set; }
+        public UserSubscriptionResponse? UserSubscriptionResponse { get; set; }
+
+    }
+
+    public class UserSubscriptionResponse
+    {
+        public bool IsSubscriptionActive { get; set; }
+        public DateTimeOffset SubscriptionEndDate { get; set; }
     }
 }

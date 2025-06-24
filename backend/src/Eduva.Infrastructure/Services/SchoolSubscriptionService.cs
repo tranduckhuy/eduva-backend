@@ -21,5 +21,31 @@ namespace Eduva.Infrastructure.Services
 
             return await schoolSubscriptionRepository.GetLatestSubscriptionBySchoolIdAsync(schoolId);
         }
+
+        // Is the current user linked to a school with an active subscription?
+        public async Task<(bool isActive, DateTimeOffset endDate)> GetUserSubscriptionStatusAsync(Guid userId)
+        {
+            var schoolSubscriptionRepository = _unitOfWork.GetCustomRepository<ISchoolSubscriptionRepository>();
+            var userRepository = _unitOfWork.GetRepository<ApplicationUser, Guid>();
+
+            // Get the user's school ID
+            var user = await userRepository.GetByIdAsync(userId);
+            if (user == null || user.SchoolId == null)
+            {
+                return (false, DateTimeOffset.MinValue);
+            }
+
+            // Check if the school has an active subscription
+            var subscription = await schoolSubscriptionRepository.GetLatestSubscriptionBySchoolIdAsync(user.SchoolId.Value);
+
+            if (subscription == null)
+            {
+                return (false, DateTimeOffset.MinValue);
+            }
+
+            var isActive = subscription != null && subscription.EndDate > DateTimeOffset.UtcNow;
+
+            return (isActive, subscription?.EndDate ?? DateTimeOffset.MinValue);
+        }
     }
 }
