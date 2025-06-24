@@ -2,7 +2,6 @@
 using Eduva.Application.Exceptions.School;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
-using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using Eduva.Infrastructure.Services;
@@ -17,7 +16,7 @@ namespace Eduva.Infrastructure.Test.Services
         private Mock<IUnitOfWork> _unitOfWorkMock = null!;
         private Mock<IGenericRepository<School, int>> _schoolRepoMock = null!;
         private Mock<IUserRepository> _userRepoMock = null!;
-        private ISchoolValidationService _service = null!;
+        private SchoolValidationService _service = null!;
 
         #region SchoolValidationServiceTest Setup
 

@@ -36,6 +36,8 @@ namespace Eduva.API.Test.Controllers.Base
     [TestFixture]
     public class BaseControllerTests
     {
+        private static readonly string[] DefaultError = ["Error"];
+
         private FakeController _controller = default!;
         private Mock<ILogger<FakeController>> _loggerMock = default!;
 
@@ -55,7 +57,7 @@ namespace Eduva.API.Test.Controllers.Base
         [Test]
         public void Respond_ShouldReturn500_WhenCodeNotInDictionary()
         {
-            var result = _controller.CallRespond((CustomCode)999, null, new[] { "Error" });
+            var result = _controller.CallRespond((CustomCode)999, null, DefaultError);
 
             var objectResult = result as ObjectResult;
             objectResult.Should().NotBeNull();

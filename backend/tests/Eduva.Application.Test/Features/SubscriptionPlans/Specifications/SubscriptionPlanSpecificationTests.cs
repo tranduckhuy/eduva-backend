@@ -43,15 +43,26 @@ namespace Eduva.Application.Test.Features.SubscriptionPlans.Specifications
             var spec = new SubscriptionPlanSpecification(param);
             var filtered = _mockData.AsQueryable().Where(spec.Criteria).ToList();
 
-            Assert.That(filtered.Count, Is.EqualTo(3));
+            Assert.That(filtered, Has.Count.EqualTo(3));
         }
 
         [Test]
         public void Should_Sort_By_StorageLimitGB_Desc()
         {
+            _mockData[0].StorageLimitGB = 10;
+            _mockData[1].StorageLimitGB = 30;
+            _mockData[2].StorageLimitGB = 20;
+
             var param = new SubscriptionPlanSpecParam { SortBy = "storage", SortDirection = "desc" };
             var spec = new SubscriptionPlanSpecification(param);
             var sorted = spec.OrderBy!(_mockData.AsQueryable()).ToList();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(sorted[0].StorageLimitGB, Is.EqualTo(30));
+                Assert.That(sorted[1].StorageLimitGB, Is.EqualTo(20));
+                Assert.That(sorted[2].StorageLimitGB, Is.EqualTo(10));
+            });
         }
 
         [Test]

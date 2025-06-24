@@ -199,7 +199,7 @@ public class ImportUsersFromExcelCommandHandlerTests
 
         // Assert
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Length, Is.GreaterThan(0));
+        Assert.That(result!, Is.Not.Empty);
     }
 
     [Test]
@@ -361,7 +361,7 @@ public class ImportUsersFromExcelCommandHandlerTests
 
     #region Helper Methods
 
-    private byte[] GenerateExcelWithInvalidRows()
+    private static byte[] GenerateExcelWithInvalidRows()
     {
         ExcelPackage.License.SetNonCommercialPersonal("EDUVA");
 
@@ -386,7 +386,7 @@ public class ImportUsersFromExcelCommandHandlerTests
         return stream.ToArray();
     }
 
-    private byte[] GenerateValidExcel()
+    private static byte[] GenerateValidExcel()
     {
         ExcelPackage.License.SetNonCommercialPersonal("EDUVA");
 

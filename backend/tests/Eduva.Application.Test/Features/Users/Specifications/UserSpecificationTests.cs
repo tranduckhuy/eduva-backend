@@ -27,7 +27,7 @@ public class UserSpecificationTests
             Assert.That(spec.Criteria, Is.Not.Null);
             Assert.That(spec.Skip, Is.EqualTo(5));
             Assert.That(spec.Take, Is.EqualTo(5));
-            Assert.That(spec.Includes.Count, Is.EqualTo(1));
+            Assert.That(spec.Includes, Has.Count.EqualTo(1));
         });
         Assert.That(spec.Includes[0].Body.ToString(), Does.Contain("u.School"));
     }
