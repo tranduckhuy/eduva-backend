@@ -1,6 +1,7 @@
 ﻿using Eduva.API.Controllers.Users;
 using Eduva.API.Models;
 using Eduva.Application.Common.Exceptions;
+using Eduva.Application.Common.Models;
 using Eduva.Application.Features.Users.Commands;
 using Eduva.Application.Features.Users.Queries;
 using Eduva.Application.Features.Users.Requests;
@@ -397,6 +398,75 @@ namespace Eduva.API.Test.Controllers.Users
         #region GetUsersAsync Tests
 
         [Test]
+        public async Task GetUsersAsync_ShouldReturnInternalServerError_WhenMediatorThrows()
+        {
+            SetupUser(Guid.NewGuid().ToString(), role: nameof(Role.SystemAdmin));
+
+            _mediatorMock.Setup(m => m.Send(It.IsAny<GetUsersBySpecQuery>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new Exception("Unexpected error"));
+
+            var result = await _controller.GetUsersAsync(new UserSpecParam());
+
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
+        }
+
+        [Test]
+        public async Task GetUsersAsync_ShouldCallMediator_WhenSystemAdmin()
+        {
+            SetupUser(Guid.NewGuid().ToString(), role: nameof(Role.SystemAdmin));
+
+            var param = new UserSpecParam();
+
+            _mediatorMock.Setup(m => m.Send(It.IsAny<GetUsersBySpecQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new Pagination<UserResponse> { PageIndex = 1, PageSize = 10, Count = 0, Data = [] });
+
+            var result = await _controller.GetUsersAsync(param);
+
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+        }
+
+        [Test]
+        public async Task GetUsersAsync_ShouldCallMediator_WhenSchoolAdminHasValidSchoolId()
+        {
+            var userId = Guid.NewGuid();
+            SetupUser(userId.ToString(), role: nameof(Role.SchoolAdmin));
+
+            var schoolId = 123;
+            _userManagerMock.Setup(u => u.FindByIdAsync(userId.ToString()))
+                .ReturnsAsync(new ApplicationUser { Id = userId, SchoolId = schoolId });
+
+            var param = new UserSpecParam();
+
+            _mediatorMock.Setup(m => m.Send(It.IsAny<GetUsersBySpecQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new Pagination<UserResponse> { PageIndex = 1, PageSize = 10, Count = 1, Data = [] });
+
+            var result = await _controller.GetUsersAsync(param);
+
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+                Assert.That(response.Data, Is.InstanceOf<Pagination<UserResponse>>());
+            });
+
+            _mediatorMock.Verify(m => m.Send(
+                It.Is<GetUsersBySpecQuery>(q => ((UserSpecParam)q.Param).SchoolId == schoolId),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+
+        [Test]
         public async Task GetUsersAsync_ShouldReturnUserIdNotFound_WhenUserIdIsInvalid()
         {
             SetupUser("invalid-guid", role: nameof(Role.SchoolAdmin));
@@ -434,6 +504,56 @@ namespace Eduva.API.Test.Controllers.Users
         #endregion
 
         #region ImportUsersFromExcel Tests
+
+        [Test]
+        public async Task ImportUsersFromExcel_ShouldReturnFile_WhenFileBytesIsNotNull()
+        {
+            var userId = Guid.NewGuid();
+            SetupUser(userId.ToString());
+
+            var fileBytes = new byte[] { 1, 2, 3 };
+
+            var fileMock = new Mock<IFormFile>();
+            var request = new ImportUsersFromExcelRequest { File = fileMock.Object };
+
+            _mediatorMock.Setup(m => m.Send(It.IsAny<ImportUsersFromExcelCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(fileBytes);
+
+            var result = await _controller.ImportUsersFromExcel(request);
+
+            var fileResult = result as FileContentResult;
+            Assert.That(fileResult, Is.Not.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(fileResult!.FileContents, Is.EqualTo(fileBytes));
+                Assert.That(fileResult.ContentType, Is.EqualTo("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+                Assert.That(fileResult.FileDownloadName, Does.Contain("user_import_error_"));
+            });
+        }
+
+        [Test]
+        public async Task ImportUsersFromExcel_ShouldReturnEmptyFile_WhenFileBytesIsNull()
+        {
+            var userId = Guid.NewGuid();
+            SetupUser(userId.ToString());
+
+            var fileMock = new Mock<IFormFile>();
+            var request = new ImportUsersFromExcelRequest { File = fileMock.Object };
+
+            _mediatorMock.Setup(m => m.Send(It.IsAny<ImportUsersFromExcelCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((byte[]?)null);
+
+            var result = await _controller.ImportUsersFromExcel(request);
+
+            var fileResult = result as FileContentResult;
+            Assert.That(fileResult, Is.Not.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(fileResult!.FileContents, Is.Empty);
+                Assert.That(fileResult.ContentType, Is.EqualTo("application/octet-stream"));
+                Assert.That(fileResult.FileDownloadName, Is.EqualTo("Empty.xlsx"));
+            });
+        }
 
         [Test]
         public async Task ImportUsersFromExcel_ShouldReturnAppExceptionStatusCode_WhenThrown()
@@ -556,6 +676,47 @@ namespace Eduva.API.Test.Controllers.Users
         #endregion
 
         #region DownloadImportTemplate Tests
+
+        [Test]
+        public async Task DownloadImportTemplate_ShouldReturnFile_WhenDownloadSucceeds()
+        {
+            var type = ImportTemplateType.User;
+            var fileBytes = new byte[] { 11, 22, 33 };
+
+            _importTemplateOptionsMock.Setup(o => o.Value)
+                .Returns(new ImportTemplateConfig { UrlTemplateImportUser = "https://mock-url.com/template.xlsx" });
+
+            var handler = new Mock<HttpMessageHandler>();
+            handler.Protected()
+                .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(new HttpResponseMessage
+                {
+                    StatusCode = System.Net.HttpStatusCode.OK,
+                    Content = new ByteArrayContent(fileBytes)
+                });
+
+            var client = new HttpClient(handler.Object);
+            _httpClientFactoryMock.Setup(f => f.CreateClient("EduvaHttpClient")).Returns(client);
+
+            _controller = new UserController(
+                _loggerMock.Object,
+                _importTemplateOptionsMock.Object,
+                _httpClientFactoryMock.Object,
+                _mediatorMock.Object,
+                _userManagerMock.Object
+            );
+
+            var result = await _controller.DownloadImportTemplate(type);
+
+            var fileResult = result as FileContentResult;
+            Assert.That(fileResult, Is.Not.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(fileResult!.FileContents, Is.EqualTo(fileBytes));
+                Assert.That(fileResult.ContentType, Is.EqualTo("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+                Assert.That(fileResult.FileDownloadName, Is.EqualTo("user_import_template.xlsx")); // or similar
+            });
+        }
 
         [Test]
         public async Task DownloadImportTemplate_ShouldReturnSystemError_WhenExceptionThrown()

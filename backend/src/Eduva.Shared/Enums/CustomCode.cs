@@ -79,7 +79,7 @@ namespace Eduva.Shared.Enums
         StudentAlreadyEnrolled = 4050,
         StudentCannotEnrollDifferentSchool = 4051,
         EnrollmentFailed = 4052,
-
+        IncorrectCurrentPassword = 4059,
 
         // File Storage Errors
         InvalidBlobName = 4200,

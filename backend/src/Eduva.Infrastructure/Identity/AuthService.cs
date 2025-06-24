@@ -447,7 +447,12 @@ namespace Eduva.Infrastructure.Identity
         {
             var user = await _userManager.FindByIdAsync(request.UserId.ToString()) ?? throw new UserNotExistsException();
 
-            if (await _userManager.CheckPasswordAsync(user, request.NewPassword))
+            if (!await _userManager.CheckPasswordAsync(user, request.CurrentPassword))
+            {
+                throw new AppException(CustomCode.IncorrectCurrentPassword);
+            }
+
+            if (request.CurrentPassword == request.NewPassword)
             {
                 throw new NewPasswordSameAsOldException();
             }

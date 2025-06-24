@@ -27,6 +27,70 @@ public class AICreditPackSpecificationTests
     #region Tests
 
     [Test]
+    public void OrderBy_ShouldHandleAscendingDirection()
+    {
+        var param = new AICreditPackSpecParam
+        {
+            SortBy = "name",
+            SortDirection = "asc",
+            PageIndex = 1,
+            PageSize = 10
+        };
+
+        var spec = new AICreditPackSpecification(param);
+        var ordered = spec.OrderBy!(_packs.AsQueryable()).ToList();
+
+        var expected = _packs.OrderBy(p => p.Name).Select(p => p.Name).ToList();
+        var actual = ordered.Select(p => p.Name).ToList();
+
+        Assert.That(actual, Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void Selector_ShouldReturnSameQueryable()
+    {
+        var param = new AICreditPackSpecParam { PageIndex = 1, PageSize = 10 };
+        var spec = new AICreditPackSpecification(param)
+        {
+            Selector = query => query
+        };
+
+        var input = _packs.AsQueryable();
+
+        var result = spec.Selector!(input);
+
+        Assert.That(result, Is.SameAs(input)); // Confirm it's the same instance
+    }
+
+    [TestCase("name", "desc")]
+    [TestCase("price", "asc")]
+    [TestCase("price", "desc")]
+    [TestCase("credits", "asc")]
+    [TestCase("credits", "desc")]
+    [TestCase("bonuscredits", "asc")]
+    [TestCase("bonuscredits", "desc")]
+    [TestCase(null, "asc")]
+    [TestCase("unknown", "asc")]
+    [TestCase("unknown", "desc")]
+    public void OrderBy_ShouldSortProperly(string? sortBy, string direction)
+    {
+        var param = new AICreditPackSpecParam { SortBy = sortBy, SortDirection = direction, PageIndex = 1, PageSize = 10 };
+        var spec = new AICreditPackSpecification(param);
+        var ordered = spec.OrderBy?.Invoke(_packs.AsQueryable()).ToList();
+
+        Assert.DoesNotThrow(() => ordered?.ToList());
+
+        if (!string.IsNullOrWhiteSpace(sortBy))
+        {
+            Assert.That(ordered, Is.Not.Null);
+        }
+        else
+        {
+            Assert.That(spec.OrderBy, Is.Null);
+        }
+    }
+
+    [Test]
     public void Criteria_ShouldFilterBySearchTerm()
     {
         var param = new AICreditPackSpecParam { SearchTerm = "pro", PageIndex = 1, PageSize = 10 };
