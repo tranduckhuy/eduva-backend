@@ -1,6 +1,7 @@
 ﻿using Eduva.Application.Common.Mappings;
 using Eduva.Application.Exceptions.Auth;
 using Eduva.Application.Features.Users.Queries;
+using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Moq;
@@ -11,6 +12,7 @@ namespace Eduva.Application.Test.Features.Users.Queries
     public class GetUserProfileHandlerTests
     {
         private Mock<UserManager<ApplicationUser>> _userManagerMock = default!;
+        private Mock<ISchoolSubscriptionService> _schoolSubscriptionServiceMock = default!;
         private GetUserProfileHandler _handler = default!;
 
         #region GetUserProfileHandler Setup
@@ -19,7 +21,8 @@ namespace Eduva.Application.Test.Features.Users.Queries
         public void Setup()
         {
             _userManagerMock = MockUserManager<ApplicationUser>();
-            _handler = new GetUserProfileHandler(_userManagerMock.Object);
+            _schoolSubscriptionServiceMock = new Mock<ISchoolSubscriptionService>();
+            _handler = new GetUserProfileHandler(_userManagerMock.Object, _schoolSubscriptionServiceMock.Object);
 
             // Initialize AutoMapper
             _ = AppMapper.Mapper;
