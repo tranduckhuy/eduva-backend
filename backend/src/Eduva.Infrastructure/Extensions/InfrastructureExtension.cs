@@ -1,5 +1,5 @@
-using Eduva.Application.Features.SchoolSubscriptions.Configurations;
-using Eduva.Application.Features.SchoolSubscriptions.Configurations.PayOSService;
+using Eduva.Application.Features.Payments.Configurations;
+using Eduva.Application.Features.Payments.Configurations.PayOSService;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Application.Interfaces.Services;

@@ -1,4 +1,6 @@
-﻿using Eduva.API.Controllers.Base;
+﻿using Eduva.API.Attributes;
+using Eduva.API.Controllers.Base;
+using Eduva.API.Models;
 using Eduva.Application.Common.Models;
 using Eduva.Application.Features.Schools.Commands.ActivateSchool;
 using Eduva.Application.Features.Schools.Commands.ArchiveSchool;
@@ -28,7 +30,8 @@ namespace Eduva.API.Controllers.Schools
         }
 
         [HttpGet]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)}")]
+        [Authorize(Roles = nameof(Role.SystemAdmin))]
+        [ProducesResponseType(typeof(ApiResponse<Pagination<SchoolResponse>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetSchools([FromQuery] SchoolSpecParam specParam)
         {
             return await HandleRequestAsync<Pagination<SchoolResponse>>(async () =>
@@ -39,7 +42,8 @@ namespace Eduva.API.Controllers.Schools
         }
 
         [HttpGet("{id}")]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)}")]
+        [Authorize(Roles = nameof(Role.SystemAdmin))]
+        [ProducesResponseType(typeof(ApiResponse<SchoolDetailResponse>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetSchoolById(int id)
         {
             return await HandleRequestAsync<SchoolDetailResponse>(async () =>
@@ -50,7 +54,9 @@ namespace Eduva.API.Controllers.Schools
         }
 
         [HttpGet("current")]
-        [Authorize(Roles = $"{nameof(Role.SchoolAdmin)}")]
+        [Authorize(Roles = nameof(Role.SchoolAdmin))]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
+        [ProducesResponseType(typeof(ApiResponse<SchoolResponse>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetCurrentSchool()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -65,7 +71,8 @@ namespace Eduva.API.Controllers.Schools
         }
 
         [HttpPost]
-        [Authorize(Roles = $"{nameof(Role.SchoolAdmin)}")]
+        [Authorize(Roles = nameof(Role.SchoolAdmin))]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> CreateSchool([FromBody] CreateSchoolCommand command)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -78,7 +85,9 @@ namespace Eduva.API.Controllers.Schools
         }
 
         [HttpPut("{id}")]
-        [Authorize(Roles = $"{nameof(Role.SchoolAdmin)}")]
+        [Authorize(Roles = nameof(Role.SchoolAdmin))]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateSchool(int id, [FromBody] UpdateSchoolCommand command)
         {
             command.Id = id;
@@ -86,7 +95,8 @@ namespace Eduva.API.Controllers.Schools
         }
 
         [HttpPut("{id}/archive")]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)}")]
+        [Authorize(Roles = nameof(Role.SystemAdmin))]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> ArchiveSchool(int id)
         {
             var command = new ArchiveSchoolCommand(id);
@@ -94,12 +104,12 @@ namespace Eduva.API.Controllers.Schools
         }
 
         [HttpPut("{id}/activate")]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)}")]
+        [Authorize(Roles = nameof(Role.SystemAdmin))]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> ActivateSchool(int id)
         {
             var command = new ActivateSchoolCommand(id);
             return await HandleRequestAsync(() => _mediator.Send(command));
         }
-
     }
 }

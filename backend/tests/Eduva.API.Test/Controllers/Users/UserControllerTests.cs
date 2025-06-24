@@ -1,9 +1,13 @@
 ﻿using Eduva.API.Controllers.Users;
 using Eduva.API.Models;
+using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Features.Users.Commands;
 using Eduva.Application.Features.Users.Queries;
+using Eduva.Application.Features.Users.Requests;
 using Eduva.Application.Features.Users.Responses;
+using Eduva.Application.Features.Users.Specifications;
 using Eduva.Domain.Entities;
+using Eduva.Domain.Enums;
 using Eduva.Infrastructure.Configurations.ExcelTemplate;
 using Eduva.Shared.Enums;
 using MediatR;
@@ -13,6 +17,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using Moq.Protected;
 using System.Security.Claims;
 
 namespace Eduva.API.Test.Controllers.Users
@@ -389,13 +394,258 @@ namespace Eduva.API.Test.Controllers.Users
 
         #endregion
 
+        #region GetUsersAsync Tests
+
+        [Test]
+        public async Task GetUsersAsync_ShouldReturnUserIdNotFound_WhenUserIdIsInvalid()
+        {
+            SetupUser("invalid-guid", role: nameof(Role.SchoolAdmin));
+
+            var result = await _controller.GetUsersAsync(new UserSpecParam());
+
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+
+        [Test]
+        public async Task GetUsersAsync_ShouldReturnUserNotPartOfSchool_WhenSchoolIdIsNull()
+        {
+            var userId = Guid.NewGuid();
+            SetupUser(userId.ToString(), role: nameof(Role.SchoolAdmin));
+
+            _userManagerMock.Setup(u => u.FindByIdAsync(userId.ToString()))
+                .ReturnsAsync(new ApplicationUser { Id = userId, SchoolId = null });
+
+            var result = await _controller.GetUsersAsync(new UserSpecParam());
+
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserNotPartOfSchool));
+        }
+
+        #endregion
+
+        #region ImportUsersFromExcel Tests
+
+        [Test]
+        public async Task ImportUsersFromExcel_ShouldReturnAppExceptionStatusCode_WhenThrown()
+        {
+            var userId = Guid.NewGuid();
+            SetupUser(userId.ToString());
+
+            var fileMock = new Mock<IFormFile>();
+            var request = new ImportUsersFromExcelRequest
+            {
+                File = fileMock.Object
+            };
+
+            _mediatorMock.Setup(m => m.Send(It.IsAny<ImportUsersFromExcelCommand>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new AppException(CustomCode.InvalidFileType));
+
+            var result = await _controller.ImportUsersFromExcel(request);
+
+            var objectResult = result as ObjectResult;
+            var response = objectResult!.Value as ApiResponse<object>;
+
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.InvalidFileType));
+        }
+
+        [Test]
+        public async Task ImportUsersFromExcel_ShouldReturnUserIdNotFound_WhenUserIdIsInvalid()
+        {
+            SetupUser("invalid-guid");
+
+            var request = new ImportUsersFromExcelRequest
+            {
+                File = Mock.Of<IFormFile>()
+            };
+
+            var result = await _controller.ImportUsersFromExcel(request);
+
+            var objectResult = result as ObjectResult;
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        #endregion
+
+        #region LockUserAccount Tests
+
+        [Test]
+        public async Task LockUserAccount_ShouldReturnUserIdNotFound_WhenUserIdIsInvalid()
+        {
+            SetupUser("invalid-guid");
+            var result = await _controller.LockUserAccount(Guid.NewGuid());
+
+            var objectResult = result as ObjectResult;
+            var response = objectResult!.Value as ApiResponse<object>;
+
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task LockUserAccount_ShouldCallMediator_WhenRequestIsValid()
+        {
+            var executorId = Guid.NewGuid();
+            SetupUser(executorId.ToString());
+
+            var targetUserId = Guid.NewGuid();
+            _mediatorMock.Setup(m => m.Send(It.IsAny<LockAccountCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(Unit.Value);
+
+            var result = await _controller.LockUserAccount(targetUserId);
+
+            var objectResult = result as ObjectResult;
+            var response = objectResult!.Value as ApiResponse<object>;
+
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+
+            _mediatorMock.Verify(m => m.Send(
+                It.Is<LockAccountCommand>(cmd =>
+                    cmd.UserId == targetUserId && cmd.ExecutorId == executorId),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        #endregion
+
+        #region UnlockUserAccount Tests
+
+        [Test]
+        public async Task UnlockUserAccount_ShouldReturnUserIdNotFound_WhenUserIdIsInvalid()
+        {
+            SetupUser("invalid-guid");
+            var result = await _controller.UnlockUserAccount(Guid.NewGuid());
+
+            var objectResult = result as ObjectResult;
+            var response = objectResult!.Value as ApiResponse<object>;
+
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task UnlockUserAccount_ShouldCallMediator_WhenRequestIsValid()
+        {
+            var executorId = Guid.NewGuid();
+            SetupUser(executorId.ToString());
+
+            var targetUserId = Guid.NewGuid();
+            _mediatorMock.Setup(m => m.Send(It.IsAny<UnlockAccountCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(Unit.Value);
+
+            var result = await _controller.UnlockUserAccount(targetUserId);
+
+            var objectResult = result as ObjectResult;
+            var response = objectResult!.Value as ApiResponse<object>;
+
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+
+            _mediatorMock.Verify(m => m.Send(
+                It.Is<UnlockAccountCommand>(cmd =>
+                    cmd.UserId == targetUserId && cmd.ExecutorId == executorId),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        #endregion
+
+        #region DownloadImportTemplate Tests
+
+        [Test]
+        public async Task DownloadImportTemplate_ShouldReturnSystemError_WhenExceptionThrown()
+        {
+            var mockClient = new Mock<HttpMessageHandler>();
+            mockClient
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .ThrowsAsync(new Exception("Unexpected"));
+
+            var clientFactory = new Mock<IHttpClientFactory>();
+            clientFactory.Setup(f => f.CreateClient("EduvaHttpClient"))
+                .Returns(new HttpClient(mockClient.Object));
+
+            _httpClientFactoryMock = clientFactory;
+            _controller = new UserController(
+                _loggerMock.Object,
+                _importTemplateOptionsMock.Object,
+                _httpClientFactoryMock.Object,
+                _mediatorMock.Object,
+                _userManagerMock.Object
+            );
+
+            var result = await _controller.DownloadImportTemplate(ImportTemplateType.User);
+
+            var objectResult = result as ObjectResult;
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.SystemError));
+        }
+
+        [Test]
+        public async Task DownloadImportTemplate_ShouldReturnInvalidTemplateType_WhenUrlIsEmpty()
+        {
+            _importTemplateOptionsMock.Setup(x => x.Value)
+                .Returns(new ImportTemplateConfig());
+
+            var result = await _controller.DownloadImportTemplate((ImportTemplateType)999);
+
+            var objectResult = result as ObjectResult;
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.InvalidTemplateType));
+        }
+
+        [Test]
+        public async Task DownloadImportTemplate_ShouldReturnFileDownloadFailed_WhenHttpFails()
+        {
+            var mockClient = new Mock<HttpMessageHandler>();
+            mockClient
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .ThrowsAsync(new HttpRequestException());
+
+            var clientFactory = new Mock<IHttpClientFactory>();
+            clientFactory.Setup(f => f.CreateClient("EduvaHttpClient"))
+                .Returns(new HttpClient(mockClient.Object));
+
+            _httpClientFactoryMock = clientFactory;
+            _controller = new UserController(
+                _loggerMock.Object,
+                _importTemplateOptionsMock.Object,
+                _httpClientFactoryMock.Object,
+                _mediatorMock.Object,
+                _userManagerMock.Object
+            );
+
+            var result = await _controller.DownloadImportTemplate(ImportTemplateType.User);
+
+            var objectResult = result as ObjectResult;
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.FileDownloadFailed));
+        }
+
+        #endregion
+
         #region Helper Methods
 
-        private void SetupUser(string? userId)
+        private void SetupUser(string? userId, string? role = null)
         {
             var claims = new List<Claim>();
             if (userId != null)
                 claims.Add(new Claim(ClaimTypes.NameIdentifier, userId));
+
+            if (role != null)
+                claims.Add(new Claim(ClaimTypes.Role, role));
 
             var identity = new ClaimsIdentity(claims);
             var user = new ClaimsPrincipal(identity);
@@ -407,5 +657,6 @@ namespace Eduva.API.Test.Controllers.Users
         }
 
         #endregion
+
     }
 }

@@ -1,6 +1,6 @@
-﻿using Eduva.Application.Features.SchoolSubscriptions.Configurations;
+﻿using Eduva.Application.Features.Payments.Configurations;
 
-namespace Eduva.Application.Test.Features.SchoolSubscriptions.Configurations
+namespace Eduva.Application.Test.Features.Payment.Configurations
 {
     [TestFixture]
     public class PayOSConfigTests

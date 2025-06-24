@@ -49,5 +49,4 @@ namespace Eduva.Infrastructure.Services
                 throw new AppException(CustomCode.ExceedUserLimit);
         }
     }
-
 }

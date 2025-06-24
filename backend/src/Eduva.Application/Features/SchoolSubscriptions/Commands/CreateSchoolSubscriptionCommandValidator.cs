@@ -1,6 +1,6 @@
 ﻿using FluentValidation;
 
-namespace Eduva.Application.Features.SchoolSubscriptions.Commands
+namespace Eduva.Application.Features.Payments.Commands
 {
     public class CreateSchoolSubscriptionCommandValidator : AbstractValidator<CreateSchoolSubscriptionCommand>
     {

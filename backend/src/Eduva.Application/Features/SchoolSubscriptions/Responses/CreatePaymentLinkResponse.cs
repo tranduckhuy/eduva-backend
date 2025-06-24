@@ -1,4 +1,4 @@
-﻿namespace Eduva.Application.Features.SchoolSubscriptions.Responses
+﻿namespace Eduva.Application.Features.Payments.Responses
 {
     public class CreatePaymentLinkResponse
     {

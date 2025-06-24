@@ -1,5 +1,7 @@
 ﻿using Eduva.API.Controllers.Base;
+using Eduva.API.Models;
 using Eduva.Application.Features.CreditTransactions.Commands;
+using Eduva.Application.Features.CreditTransactions.Responses;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
@@ -23,6 +25,7 @@ namespace Eduva.API.Controllers.CreditTransactions
 
         [HttpPost("payment-link")]
         [Authorize(Roles = $"{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}, {nameof(Role.SystemAdmin)}")]
+        [ProducesResponseType(typeof(ApiResponse<CreateCreditPackPaymentLinkResponse>), StatusCodes.Status200OK)]
         public async Task<IActionResult> CreatePaymentLink([FromBody] CreateCreditPackPaymentLinkCommand command)
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
