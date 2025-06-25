@@ -1,7 +1,6 @@
 ﻿using Eduva.Application.Common.Mappings;
 using Eduva.Application.Exceptions.Auth;
 using Eduva.Application.Features.Users.Commands;
-using Eduva.Application.Features.Users.Responses;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Domain.Entities;
@@ -58,7 +57,15 @@ namespace Eduva.Application.Test.Features.Users.Commands
                 Email = "test@example.com",
                 PhoneNumber = "1234567890",
                 AvatarUrl = "https://example.com/old-avatar.jpg",
-                SchoolId = 1
+                SchoolId = 1,
+                School = new School
+                {
+                    Id = 1,
+                    Name = "Test School",
+                    ContactEmail = "contact@school.edu",
+                    ContactPhone = "123456789",
+                    WebsiteUrl = "https://school.edu"
+                }
             };
 
             _userRepositoryMock
@@ -81,7 +88,9 @@ namespace Eduva.Application.Test.Features.Users.Commands
                 Assert.That(result.PhoneNumber, Is.EqualTo(command.PhoneNumber));
                 Assert.That(result.AvatarUrl, Is.EqualTo(command.AvatarUrl));
                 Assert.That(result.Email, Is.EqualTo(existingUser.Email));
-                Assert.That(result.SchoolId, Is.EqualTo(existingUser.SchoolId));
+
+                Assert.That(result.School, Is.Not.Null);
+                Assert.That(result.School!.Id, Is.EqualTo(existingUser.SchoolId));
             });
 
             // Verify the user properties were updated
@@ -95,7 +104,9 @@ namespace Eduva.Application.Test.Features.Users.Commands
             _userRepositoryMock.Verify(r => r.GetByIdAsync(userId), Times.Once);
             _userRepositoryMock.Verify(r => r.Update(existingUser), Times.Once);
             _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Once);
-        }        [Test]
+        }
+
+        [Test]
         public async Task Handle_ShouldUpdateOnlyProvidedFields_WhenSomeFieldsAreEmpty()
         {
             // Arrange
@@ -142,7 +153,8 @@ namespace Eduva.Application.Test.Features.Users.Commands
                 Assert.That(existingUser.FullName, Is.EqualTo(command.FullName));
                 Assert.That(existingUser.PhoneNumber, Is.EqualTo("1234567890"));
                 Assert.That(existingUser.AvatarUrl, Is.EqualTo("https://example.com/avatar.jpg"));
-            });        }
+            });
+        }
 
         [Test]
         public void Handle_ShouldThrowUserNotExistsException_WhenUserDoesNotExist()
@@ -168,7 +180,9 @@ namespace Eduva.Application.Test.Features.Users.Commands
             _userRepositoryMock.Verify(r => r.GetByIdAsync(userId), Times.Once);
             _userRepositoryMock.Verify(r => r.Update(It.IsAny<ApplicationUser>()), Times.Never);
             _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Never);
-        }        [Test]
+        }
+
+        [Test]
         public async Task Handle_ShouldNotUpdateAnyFields_WhenAllFieldsAreEmpty()
         {
             // Arrange
