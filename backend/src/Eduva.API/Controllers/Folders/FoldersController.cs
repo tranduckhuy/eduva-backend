@@ -28,19 +28,48 @@ namespace Eduva.API.Controllers.Folders
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
         public async Task<IActionResult> CreateFolder([FromBody] CreateFolderCommand command)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var currentUserId))
+            try
             {
-                return Respond(CustomCode.ProvidedInformationIsInValid);
+                var validationResult = CheckModelStateValidity();
+                if (validationResult != null)
+                {
+                    return validationResult;
+                }
+
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var currentUserId))
+                {
+                    return Respond(CustomCode.UserIdNotFound);
+                }
+
+                if (string.IsNullOrWhiteSpace(command.ClassIdString))
+                {
+                    command.ClassId = null;
+                }
+                else
+                {
+                    if (Guid.TryParse(command.ClassIdString, out var classId))
+                    {
+                        command.ClassId = classId;
+                    }
+                    else
+                    {
+                        return Respond(CustomCode.ProvidedInformationIsInValid);
+                    }
+                }
+
+                command.CurrentUserId = currentUserId;
+
+                return await HandleRequestAsync(async () =>
+                {
+                    var result = await _mediator.Send(command);
+                    return (CustomCode.Created, result);
+                });
             }
-
-            command.CurrentUserId = currentUserId;
-
-            return await HandleRequestAsync(async () =>
+            catch (Exception)
             {
-                var result = await _mediator.Send(command);
-                return (CustomCode.Created, result);
-            });
+                return Respond(CustomCode.FolderCreateFailed);
+            }
         }
 
         [HttpGet]
