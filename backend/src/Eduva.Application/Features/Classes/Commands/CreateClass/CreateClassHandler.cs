@@ -5,10 +5,11 @@ using Eduva.Application.Features.Classes.Utilities;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Domain.Entities;
+using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
 
-namespace Eduva.Application.Features.Classes.Commands
+namespace Eduva.Application.Features.Classes.Commands.CreateClass
 {
     public class CreateClassHandler : IRequestHandler<CreateClassCommand, ClassResponse>
     {
@@ -21,6 +22,22 @@ namespace Eduva.Application.Features.Classes.Commands
         public async Task<ClassResponse> Handle(CreateClassCommand request, CancellationToken cancellationToken)
         {
             var classroomRepository = _unitOfWork.GetCustomRepository<IClassroomRepository>();
+
+            // Check if the school exists and is active
+            var schoolRepository = _unitOfWork.GetRepository<School, int>();
+            var school = await schoolRepository.GetByIdAsync(request.SchoolId);
+
+            if (school == null)
+            {
+                throw new AppException(CustomCode.SchoolNotFound);
+            }
+
+            if (school.Status != EntityStatus.Active)
+            {
+                throw new AppException(CustomCode.SchoolInactive,
+                    new[] { "Cannot create classes for inactive schools" });
+            }
+
             // Check if the class name already exists for this teacher
             bool classExistsForTeacher = await classroomRepository.ExistsAsync(c =>
                 c.TeacherId == request.TeacherId &&

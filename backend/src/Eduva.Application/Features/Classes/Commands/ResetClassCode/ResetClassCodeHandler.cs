@@ -1,6 +1,7 @@
 using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Common.Mappings;
 using Eduva.Application.Features.Classes.Responses;
+using Eduva.Application.Features.Classes.Utilities;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Domain.Entities;
@@ -9,20 +10,20 @@ using Eduva.Shared.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 
-namespace Eduva.Application.Features.Classes.Commands
+namespace Eduva.Application.Features.Classes.Commands.ResetClassCode
 {
-    public class UpdateClassHandler : IRequestHandler<UpdateClassCommand, ClassResponse>
+    public class ResetClassCodeHandler : IRequestHandler<ResetClassCodeCommand, ClassResponse>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<ApplicationUser> _userManager;
 
-        public UpdateClassHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
+        public ResetClassCodeHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
         }
 
-        public async Task<ClassResponse> Handle(UpdateClassCommand request, CancellationToken cancellationToken)
+        public async Task<ClassResponse> Handle(ResetClassCodeCommand request, CancellationToken cancellationToken)
         {
             var classroomRepository = _unitOfWork.GetCustomRepository<IClassroomRepository>();
 
@@ -40,33 +41,32 @@ namespace Eduva.Application.Features.Classes.Commands
             bool isTeacherOfClass = classroom.TeacherId == request.TeacherId;
             bool isAdmin = userRoles.Contains(nameof(Role.SystemAdmin)) || userRoles.Contains(nameof(Role.SchoolAdmin));
 
-            // Only allow the teacher of the class or admins to update the class
+            // Only allow the teacher of the class or admins to reset the class code
             if (!isTeacherOfClass && !isAdmin)
             {
                 throw new AppException(CustomCode.NotTeacherOfClass);
             }
 
-            // Check if the school exists
-            var schoolRepository = _unitOfWork.GetRepository<School, int>();
-            var school = await schoolRepository.GetByIdAsync(classroom.SchoolId)
-                ?? throw new AppException(CustomCode.SchoolNotFound);
+            // Generate new unique class code with retry
+            string newClassCode;
+            bool codeExists;
+            int maxAttempts = 5;
+            int attempt = 0;
 
-            // Check if the new class name already exists for the same teacher (excluding current class)
-            if (classroom.Name.ToLower() != request.Name.ToLower())
+            do
             {
-                bool classExists = await classroomRepository.ExistsAsync(c =>
-                    c.Id != request.Id &&
-                    c.TeacherId == classroom.TeacherId &&  // Only check within the scope of the same teacher
-                    c.Name.ToLower() == request.Name.ToLower());
-                if (classExists)
-                {
-                    throw new AppException(CustomCode.ClassNameAlreadyExistsForTeacher);
-                }
-            }
+                newClassCode = ClassCodeGenerator.GenerateClassCode();
+                codeExists = await classroomRepository.ExistsAsync(c =>
+                    c.Id != classroom.Id && c.ClassCode == newClassCode);
+                attempt++;
+            } while (codeExists && attempt < maxAttempts);
 
-            // Update only the fields that should be updated
-            classroom.Name = request.Name;
-            classroom.Status = request.Status;
+            if (codeExists)
+            {
+                throw new AppException(CustomCode.ClassCodeDuplicate);
+            }
+            // Update class with new class code
+            classroom.ClassCode = newClassCode;
             classroom.LastModifiedAt = DateTimeOffset.UtcNow;
 
             classroomRepository.Update(classroom);
@@ -75,10 +75,9 @@ namespace Eduva.Application.Features.Classes.Commands
             {
                 await _unitOfWork.CommitAsync();
 
-                // Map the response with teacher and school information
                 var response = AppMapper.Mapper.Map<ClassResponse>(classroom);
                 response.TeacherName = classroom.Teacher?.FullName ?? string.Empty;
-                response.SchoolName = school.Name;
+                response.SchoolName = classroom.School?.Name ?? string.Empty;
 
                 return response;
             }

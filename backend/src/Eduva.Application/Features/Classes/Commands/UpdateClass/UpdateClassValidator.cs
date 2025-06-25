@@ -1,7 +1,6 @@
-using Eduva.Application.Features.Classes.Commands;
 using FluentValidation;
 
-namespace Eduva.Application.Features.Classes.Commands
+namespace Eduva.Application.Features.Classes.Commands.UpdateClass
 {
     public class UpdateClassValidator : AbstractValidator<UpdateClassCommand>
     {
@@ -13,9 +12,6 @@ namespace Eduva.Application.Features.Classes.Commands
             RuleFor(x => x.Name)
                 .NotEmpty().WithMessage("Class name is required.")
                 .MaximumLength(100).WithMessage("Class name must not exceed 100 characters.");
-
-            RuleFor(x => x.Status)
-                .IsInEnum().WithMessage("Invalid status value.");
         }
     }
 }

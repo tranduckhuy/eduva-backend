@@ -6,7 +6,7 @@ using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using MediatR;
 
-namespace Eduva.Application.Features.Classes.Queries
+namespace Eduva.Application.Features.Classes.Queries.GetTeacherClasses
 {
     public class GetTeacherClassesHandler : IRequestHandler<GetTeacherClassesQuery, Pagination<ClassResponse>>
     {
