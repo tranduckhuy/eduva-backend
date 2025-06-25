@@ -105,6 +105,13 @@ namespace Eduva.API.Controllers.Auth
             return await HandleRequestAsync(() => _authService.ConfirmDisable2FaOtpAsync(request));
         }
 
+        [HttpPost("resend-otp")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> ResendOtp([FromBody] ResendOtpRequestDto dto)
+        {
+            return await HandleRequestAsync(() => _authService.ResendOtpAsync(dto));
+        }
+
         [HttpPost("forgot-password")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto dto)

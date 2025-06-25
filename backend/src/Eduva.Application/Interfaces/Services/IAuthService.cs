@@ -20,5 +20,6 @@ namespace Eduva.Application.Interfaces.Services
         Task<CustomCode> ConfirmEnable2FaOtpAsync(Confirm2FaDto request);
         Task<CustomCode> RequestDisable2FaOtpAsync(Request2FaDto request);
         Task<CustomCode> ConfirmDisable2FaOtpAsync(Confirm2FaDto request);
+        Task<CustomCode> ResendOtpAsync(ResendOtpRequestDto dto);
     }
 }
