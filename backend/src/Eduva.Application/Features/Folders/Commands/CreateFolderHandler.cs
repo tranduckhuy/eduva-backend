@@ -1,5 +1,4 @@
 using Eduva.Application.Common.Exceptions;
-
 using Eduva.Application.Common.Mappings;
 using Eduva.Application.Features.Folders.Responses;
 using Eduva.Application.Interfaces;
@@ -8,19 +7,16 @@ using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
-using Microsoft.Extensions.Logging;
 
 namespace Eduva.Application.Features.Folders.Commands
 {
     public class CreateFolderHandler : IRequestHandler<CreateFolderCommand, FolderResponse>
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly ILogger<CreateFolderHandler> _logger;
 
-        public CreateFolderHandler(IUnitOfWork unitOfWork, ILogger<CreateFolderHandler> logger)
+        public CreateFolderHandler(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
-            _logger = logger;
         }
 
         public async Task<FolderResponse> Handle(CreateFolderCommand request, CancellationToken cancellationToken)
@@ -29,8 +25,8 @@ namespace Eduva.Application.Features.Folders.Commands
             request.OwnerType = OwnerType.Personal;
             request.UserId = request.CurrentUserId;
 
-            // If classId is provided, check if a class folder can be created
-            if (request.ClassId.HasValue)
+            // If classId is provided and not empty, check if a class folder can be created
+            if (request.ClassId.HasValue && request.ClassId.Value != Guid.Empty)
             {
                 var classRepository = _unitOfWork.GetRepository<Classroom, Guid>();
                 var classroom = await classRepository.GetByIdAsync(request.ClassId.Value);
@@ -46,6 +42,11 @@ namespace Eduva.Application.Features.Folders.Commands
                     // If class doesn't exist or user is not the teacher -> create personal folder
                     request.ClassId = null;
                 }
+            }
+            else
+            {
+                // Explicitly set ClassId to null if it's empty or not provided
+                request.ClassId = null;
             }
 
             // Check for duplicate folder name within the same scope
@@ -84,10 +85,9 @@ namespace Eduva.Application.Features.Folders.Commands
 
                 return AppMapper.Mapper.Map<FolderResponse>(folder);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 await _unitOfWork.RollbackAsync();
-                _logger.LogError(ex, "Failed to create folder: {Message}", ex.Message);
                 throw new AppException(CustomCode.FolderCreateFailed);
             }
         }

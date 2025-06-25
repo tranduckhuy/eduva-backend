@@ -12,6 +12,10 @@ namespace Eduva.Application.Features.Folders.Commands
         [JsonIgnore]
         public Guid? UserId { get; set; }
 
+        [JsonPropertyName("classId")]
+        public string? ClassIdString { get; set; }
+
+        [JsonIgnore]
         public Guid? ClassId { get; set; }
 
         [JsonIgnore]
