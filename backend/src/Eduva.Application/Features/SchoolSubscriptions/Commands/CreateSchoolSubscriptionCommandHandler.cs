@@ -1,7 +1,9 @@
-﻿using Eduva.Application.Exceptions.PaymentTransaction;
+﻿using Eduva.Application.Exceptions.Auth;
+using Eduva.Application.Exceptions.PaymentTransaction;
 using Eduva.Application.Exceptions.School;
 using Eduva.Application.Exceptions.SchoolSubscription;
 using Eduva.Application.Exceptions.SubscriptionPlan;
+using Eduva.Application.Features.Payments.Commands;
 using Eduva.Application.Features.Payments.Configurations;
 using Eduva.Application.Features.Payments.Responses;
 using Eduva.Application.Interfaces;
@@ -14,7 +16,7 @@ using MediatR;
 using Microsoft.Extensions.Options;
 using Net.payOS.Types;
 
-namespace Eduva.Application.Features.Payments.Commands
+namespace Eduva.Application.Features.SchoolSubscriptions.Commands
 {
     public class CreateSchoolSubscriptionCommandHandler : IRequestHandler<CreateSchoolSubscriptionCommand, (CustomCode, CreatePaymentLinkResponse)>
     {
@@ -31,6 +33,15 @@ namespace Eduva.Application.Features.Payments.Commands
 
         public async Task<(CustomCode, CreatePaymentLinkResponse)> Handle(CreateSchoolSubscriptionCommand request, CancellationToken cancellationToken)
         {
+            var userRepo = _unitOfWork.GetRepository<ApplicationUser, Guid>();
+            var user = await userRepo.GetByIdAsync(request.UserId) ?? throw new Exception("User not found");
+            if (user.SchoolId == null)
+            {
+                throw new UserNotPartOfSchoolException();
+            }
+
+            request.SchoolId = user.SchoolId.Value;
+
             var school = await GetSchoolAsync(request.SchoolId);
             var plan = await GetPlanAsync(request.PlanId);
             var baseAmount = GetBaseAmount(plan, request.BillingCycle);
@@ -124,9 +135,9 @@ namespace Eduva.Application.Features.Payments.Commands
 
         private static bool IsDowngrade(CreateSchoolSubscriptionCommand request, SubscriptionPlan newPlan, SchoolSubscription current)
         {
-            return (current.BillingCycle == BillingCycle.Yearly && request.BillingCycle == BillingCycle.Monthly)
-                || (request.BillingCycle == BillingCycle.Monthly && newPlan.PriceMonthly < current.Plan.PriceMonthly)
-                || (request.BillingCycle == BillingCycle.Yearly && newPlan.PricePerYear < current.Plan.PricePerYear);
+            return current.BillingCycle == BillingCycle.Yearly && request.BillingCycle == BillingCycle.Monthly
+                || request.BillingCycle == BillingCycle.Monthly && newPlan.PriceMonthly < current.Plan.PriceMonthly
+                || request.BillingCycle == BillingCycle.Yearly && newPlan.PricePerYear < current.Plan.PricePerYear;
         }
 
         private PaymentData BuildPaymentRequest(SubscriptionPlan plan, BillingCycle cycle, int amount, School school, long orderCode)

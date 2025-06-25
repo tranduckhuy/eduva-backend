@@ -14,7 +14,6 @@ namespace Eduva.Infrastructure.Extensions.Providers
     {
         private readonly TimeSpan _tokenLifespan;
         private readonly ILogger<SixDigitTokenProvider<TUser>> _logger;
-        private readonly Random _random = new();
 
         public SixDigitTokenProvider(IOptions<SixDigitTokenProviderOptions> options, ILogger<SixDigitTokenProvider<TUser>> logger)
         {
