@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace Eduva.Application.Features.Classes.Commands
+namespace Eduva.Application.Features.Classes.Commands.ResetClassCode
 {
     public class ResetClassCodeValidator : AbstractValidator<ResetClassCodeCommand>
     {

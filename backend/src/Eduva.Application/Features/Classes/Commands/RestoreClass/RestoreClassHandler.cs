@@ -7,25 +7,33 @@ using Eduva.Shared.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 
-namespace Eduva.Application.Features.Classes.Commands
+namespace Eduva.Application.Features.Classes.Commands.RestoreClass
 {
-    public class DeleteClassHandler : IRequestHandler<DeleteClassCommand, bool>
+    public class RestoreClassHandler : IRequestHandler<RestoreClassCommand, Unit>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<ApplicationUser> _userManager;
 
-        public DeleteClassHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
+        public RestoreClassHandler(
+            IUnitOfWork unitOfWork,
+            UserManager<ApplicationUser> userManager)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
         }
 
-        public async Task<bool> Handle(DeleteClassCommand request, CancellationToken cancellationToken)
+        public async Task<Unit> Handle(RestoreClassCommand request, CancellationToken cancellationToken)
         {
             var classroomRepository = _unitOfWork.GetCustomRepository<IClassroomRepository>();
-
+            // Get the classroom by ID
             var classroom = await classroomRepository.GetByIdAsync(request.Id)
                 ?? throw new AppException(CustomCode.ClassNotFound);
+
+            // Check if the class is not archived
+            if (classroom.Status != EntityStatus.Archived)
+            {
+                throw new AppException(CustomCode.ClassNotArchived);
+            }
 
             // Get the current user
             var userRepository = _unitOfWork.GetRepository<ApplicationUser, Guid>();
@@ -37,25 +45,26 @@ namespace Eduva.Application.Features.Classes.Commands
             bool isTeacherOfClass = classroom.TeacherId == request.TeacherId;
             bool isAdmin = userRoles.Contains(nameof(Role.SystemAdmin)) || userRoles.Contains(nameof(Role.SchoolAdmin));
 
-            // Only allow the teacher of the class or admins to delete the class
+            // Only allow the teacher of the class or admins to restore the class
             if (!isTeacherOfClass && !isAdmin)
             {
                 throw new AppException(CustomCode.NotTeacherOfClass);
             }
-
-            classroom.Status = EntityStatus.Archived;
-            classroom.LastModifiedAt = DateTimeOffset.UtcNow;
-            classroomRepository.Update(classroom);
-
             try
             {
+                // Set the class status to active
+                classroom.Status = EntityStatus.Active;
+                classroom.LastModifiedAt = DateTimeOffset.UtcNow;
+
+                classroomRepository.Update(classroom);
                 await _unitOfWork.CommitAsync();
-                return true;
+
+                return Unit.Value;
             }
             catch (Exception)
             {
                 await _unitOfWork.RollbackAsync();
-                throw new AppException(CustomCode.ClassArchiveFailed);
+                throw new AppException(CustomCode.ClassRestoreFailed);
             }
         }
     }

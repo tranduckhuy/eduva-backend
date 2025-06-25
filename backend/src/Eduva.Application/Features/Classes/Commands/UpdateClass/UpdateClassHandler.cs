@@ -1,7 +1,4 @@
 using Eduva.Application.Common.Exceptions;
-using Eduva.Application.Common.Mappings;
-using Eduva.Application.Features.Classes.Responses;
-using Eduva.Application.Features.Classes.Utilities;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Domain.Entities;
@@ -10,27 +7,27 @@ using Eduva.Shared.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 
-namespace Eduva.Application.Features.Classes.Commands
+namespace Eduva.Application.Features.Classes.Commands.UpdateClass
 {
-    public class ResetClassCodeHandler : IRequestHandler<ResetClassCodeCommand, ClassResponse>
+    public class UpdateClassHandler : IRequestHandler<UpdateClassCommand, Unit>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<ApplicationUser> _userManager;
 
-        public ResetClassCodeHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
+        public UpdateClassHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
         }
 
-        public async Task<ClassResponse> Handle(ResetClassCodeCommand request, CancellationToken cancellationToken)
+        public async Task<Unit> Handle(UpdateClassCommand request, CancellationToken cancellationToken)
         {
             var classroomRepository = _unitOfWork.GetCustomRepository<IClassroomRepository>();
-            
+
             // Get the classroom by ID
             var classroom = await classroomRepository.GetByIdAsync(request.Id)
                 ?? throw new AppException(CustomCode.ClassNotFound);
-                
+
             // Get the current user
             var userRepository = _unitOfWork.GetRepository<ApplicationUser, Guid>();
             var currentUser = await userRepository.GetByIdAsync(request.TeacherId)
@@ -41,45 +38,35 @@ namespace Eduva.Application.Features.Classes.Commands
             bool isTeacherOfClass = classroom.TeacherId == request.TeacherId;
             bool isAdmin = userRoles.Contains(nameof(Role.SystemAdmin)) || userRoles.Contains(nameof(Role.SchoolAdmin));
 
-            // Only allow the teacher of the class or admins to reset the class code
+            // Only allow the teacher of the class or admins to update the class
             if (!isTeacherOfClass && !isAdmin)
             {
                 throw new AppException(CustomCode.NotTeacherOfClass);
             }
 
-            // Generate new unique class code with retry
-            string newClassCode;
-            bool codeExists;
-            int maxAttempts = 5;
-            int attempt = 0;
-
-            do
+            // Check if the new class name already exists for the same teacher (excluding current class)
+            if (classroom.Name.ToLower() != request.Name.ToLower())
             {
-                newClassCode = ClassCodeGenerator.GenerateClassCode();
-                codeExists = await classroomRepository.ExistsAsync(c =>
-                    c.Id != classroom.Id && c.ClassCode == newClassCode);
-                attempt++;
-            } while (codeExists && attempt < maxAttempts);
-
-            if (codeExists)
-            {
-                throw new AppException(CustomCode.ClassCodeDuplicate);
+                bool classExists = await classroomRepository.ExistsAsync(c =>
+                    c.Id != request.Id &&
+                    c.TeacherId == classroom.TeacherId &&
+                    // Only check within the scope of the same teacher
+                    c.Name.ToLower() == request.Name.ToLower());
+                if (classExists)
+                {
+                    throw new AppException(CustomCode.ClassNameAlreadyExistsForTeacher);
+                }
             }
-            // Update class with new class code
-            classroom.ClassCode = newClassCode;
-            classroom.LastModifiedAt = DateTimeOffset.UtcNow;
 
+            // Update only the fields that should be updated
+            classroom.Name = request.Name;
+            classroom.LastModifiedAt = DateTimeOffset.UtcNow;
             classroomRepository.Update(classroom);
 
             try
             {
                 await _unitOfWork.CommitAsync();
-
-                var response = AppMapper.Mapper.Map<ClassResponse>(classroom);
-                response.TeacherName = classroom.Teacher?.FullName ?? string.Empty;
-                response.SchoolName = classroom.School?.Name ?? string.Empty;
-
-                return response;
+                return Unit.Value;
             }
             catch (Exception)
             {

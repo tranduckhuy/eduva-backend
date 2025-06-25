@@ -11,7 +11,7 @@ using Eduva.Shared.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 
-namespace Eduva.Application.Features.Classes.Queries
+namespace Eduva.Application.Features.Classes.Queries.GetClasses
 {
     public class GetClassesHandler : IRequestHandler<GetClassesQuery, Pagination<ClassResponse>>
     {

@@ -1,7 +1,7 @@
 using Eduva.Application.Features.Classes.Responses;
 using MediatR;
 
-namespace Eduva.Application.Features.Classes.Queries
+namespace Eduva.Application.Features.Classes.Queries.GetClassById
 {
     public class GetClassByIdQuery : IRequest<ClassResponse>
     {

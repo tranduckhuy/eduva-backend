@@ -7,7 +7,7 @@ using Eduva.Domain.Entities;
 using Eduva.Shared.Enums;
 using MediatR;
 
-namespace Eduva.Application.Features.Classes.Queries
+namespace Eduva.Application.Features.Classes.Queries.GetClassById
 {
     public class GetClassByIdHandler : IRequestHandler<GetClassByIdQuery, ClassResponse>
     {
