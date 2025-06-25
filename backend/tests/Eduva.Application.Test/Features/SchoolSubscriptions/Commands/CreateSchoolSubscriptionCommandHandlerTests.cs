@@ -1,9 +1,12 @@
-﻿using Eduva.Application.Exceptions.PaymentTransaction;
+﻿using Eduva.Application.Common.Exceptions;
+using Eduva.Application.Exceptions.Auth;
+using Eduva.Application.Exceptions.PaymentTransaction;
 using Eduva.Application.Exceptions.School;
 using Eduva.Application.Exceptions.SchoolSubscription;
 using Eduva.Application.Exceptions.SubscriptionPlan;
 using Eduva.Application.Features.Payments.Commands;
 using Eduva.Application.Features.Payments.Configurations;
+using Eduva.Application.Features.SchoolSubscriptions.Commands;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Application.Interfaces.Services;
@@ -29,6 +32,8 @@ public class CreateSchoolSubscriptionCommandHandlerTests
     private Mock<IGenericRepository<SubscriptionPlan, int>> _planRepo = null!;
     private Mock<IGenericRepository<PaymentTransaction, Guid>> _paymentRepo = null!;
     private Mock<ISchoolSubscriptionRepository> _schoolSubRepo = null!;
+    private Mock<IGenericRepository<ApplicationUser, Guid>> _userRepo = null!;
+    private ApplicationUser _testUser = null!;
 
     #region CreateSchoolSubscriptionCommandHandlerTests Setup
 
@@ -39,11 +44,17 @@ public class CreateSchoolSubscriptionCommandHandlerTests
         _payOsServiceMock = new Mock<IPayOSService>();
         _payOsOptions = Options.Create(new PayOSConfig { CancelUrl = "cancel", ReturnUrl = "return" });
 
+        _userRepo = new Mock<IGenericRepository<ApplicationUser, Guid>>();
         _schoolRepo = new Mock<IGenericRepository<School, int>>();
         _planRepo = new Mock<IGenericRepository<SubscriptionPlan, int>>();
         _paymentRepo = new Mock<IGenericRepository<PaymentTransaction, Guid>>();
         _schoolSubRepo = new Mock<ISchoolSubscriptionRepository>();
 
+        _testUser = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = 123 };
+
+        _userRepo.Setup(r => r.GetByIdAsync(_testUser.Id)).ReturnsAsync(_testUser);
+
+        _unitOfWorkMock.Setup(u => u.GetRepository<ApplicationUser, Guid>()).Returns(_userRepo.Object);
         _unitOfWorkMock.Setup(u => u.GetRepository<School, int>()).Returns(_schoolRepo.Object);
         _unitOfWorkMock.Setup(u => u.GetRepository<SubscriptionPlan, int>()).Returns(_planRepo.Object);
         _unitOfWorkMock.Setup(u => u.GetRepository<PaymentTransaction, Guid>()).Returns(_paymentRepo.Object);
@@ -141,13 +152,29 @@ public class CreateSchoolSubscriptionCommandHandlerTests
     [Test]
     public async Task Should_Use_Correct_BillingCode_For_Yearly()
     {
-        var plan = new SubscriptionPlan { Id = 1, Name = "Plus", PricePerYear = 1000000, Status = EntityStatus.Active };
-        var school = new School { Id = 123, Name = "Eduva School", ContactEmail = "email@test.com", ContactPhone = "0123456789" };
-        var command = new CreateSchoolSubscriptionCommand { SchoolId = school.Id, PlanId = plan.Id, BillingCycle = BillingCycle.Yearly, UserId = Guid.NewGuid() };
+        // Arrange
+        var plan = new SubscriptionPlan
+        {
+            Id = 1,
+            Name = "Plus",
+            PricePerYear = 1000000,
+            Status = EntityStatus.Active
+        };
 
+        var school = new School
+        {
+            Id = 123,
+            Name = "Eduva School",
+            ContactEmail = "email@test.com",
+            ContactPhone = "0123456789"
+        };
+
+        _testUser.SchoolId = school.Id;
+        _userRepo.Setup(r => r.GetByIdAsync(_testUser.Id)).ReturnsAsync(_testUser);
         _schoolRepo.Setup(r => r.GetByIdAsync(school.Id)).ReturnsAsync(school);
         _planRepo.Setup(r => r.GetByIdAsync(plan.Id)).ReturnsAsync(plan);
-        _schoolSubRepo.Setup(r => r.GetActiveSubscriptionBySchoolIdAsync(school.Id, It.IsAny<CancellationToken>())).ReturnsAsync((SchoolSubscription?)null);
+        _schoolSubRepo.Setup(r => r.GetActiveSubscriptionBySchoolIdAsync(school.Id, It.IsAny<CancellationToken>()))
+                      .ReturnsAsync((SchoolSubscription?)null);
 
         var payOsResult = new CreatePaymentResult(
             bin: "9704",
@@ -163,18 +190,28 @@ public class CreateSchoolSubscriptionCommandHandlerTests
             expiredAt: null
         );
 
-        _payOsServiceMock.Setup(s =>
-            s.CreatePaymentLinkAsync(It.Is<PaymentData>(p => p.description.Contains(" Nam"))))
+        _payOsServiceMock
+            .Setup(s => s.CreatePaymentLinkAsync(It.Is<PaymentData>(p => p.description.Contains(" Nam"))))
             .ReturnsAsync(payOsResult);
 
+        var command = new CreateSchoolSubscriptionCommand
+        {
+            PlanId = plan.Id,
+            BillingCycle = BillingCycle.Yearly,
+            UserId = _testUser.Id
+        };
+
+        // Act
         var result = await _handler.Handle(command, default);
 
+        // Assert
         Assert.That(result.Item2.CheckoutUrl, Is.EqualTo("https://checkout.url"));
     }
 
     [Test]
     public async Task Should_Apply_Minimum_Amount_When_Final_Less_Than_10000()
     {
+        // Arrange
         var oldPlan = new SubscriptionPlan { Id = 1, PriceMonthly = 300000, PricePerYear = 800000 };
         var newPlan = new SubscriptionPlan { Id = 2, PriceMonthly = 300000, PricePerYear = 1200000, Status = EntityStatus.Active };
         var now = DateTimeOffset.UtcNow;
@@ -193,20 +230,21 @@ public class CreateSchoolSubscriptionCommandHandlerTests
             Amount = 300000
         };
 
-        _schoolRepo.Setup(r => r.GetByIdAsync(It.IsAny<int>())).ReturnsAsync(new School
+        var school = new School
         {
-            Id = 1,
+            Id = 123,
             Name = "Test School",
             ContactEmail = "school@test.com",
             ContactPhone = "0123456789"
-        });
+        };
 
+        _testUser.SchoolId = school.Id;
+        _userRepo.Setup(r => r.GetByIdAsync(_testUser.Id)).ReturnsAsync(_testUser);
+        _schoolRepo.Setup(r => r.GetByIdAsync(school.Id)).ReturnsAsync(school);
         _planRepo.Setup(r => r.GetByIdAsync(newPlan.Id)).ReturnsAsync(newPlan);
-
         _schoolSubRepo
-            .Setup(r => r.GetActiveSubscriptionBySchoolIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetActiveSubscriptionBySchoolIdAsync(school.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(subscription);
-
         _paymentRepo.Setup(r => r.GetByIdAsync(subscription.PaymentTransactionId))
             .ReturnsAsync(transaction);
 
@@ -227,14 +265,15 @@ public class CreateSchoolSubscriptionCommandHandlerTests
 
         var command = new CreateSchoolSubscriptionCommand
         {
-            SchoolId = 1,
             PlanId = newPlan.Id,
             BillingCycle = BillingCycle.Monthly,
-            UserId = Guid.NewGuid()
+            UserId = _testUser.Id
         };
 
+        // Act
         var result = await _handler.Handle(command, default);
 
+        // Assert
         Assert.That(result.Item2.Amount, Is.EqualTo(10000));
     }
 
@@ -250,14 +289,30 @@ public class CreateSchoolSubscriptionCommandHandlerTests
     [Test]
     public async Task Should_Create_Subscription_When_Valid_And_No_Existing()
     {
-        var plan = new SubscriptionPlan { Id = 1, Name = "Plus", PriceMonthly = 200000, PricePerYear = 1000000, Status = EntityStatus.Active };
-        var school = new School { Id = 123, Name = "Eduva School", ContactEmail = "email@test.com", ContactPhone = "0123456789" };
-        var command = new CreateSchoolSubscriptionCommand { SchoolId = school.Id, PlanId = plan.Id, BillingCycle = BillingCycle.Monthly, UserId = Guid.NewGuid() };
+        // Arrange
+        var plan = new SubscriptionPlan
+        {
+            Id = 1,
+            Name = "Plus",
+            PriceMonthly = 200000,
+            PricePerYear = 1000000,
+            Status = EntityStatus.Active
+        };
 
+        var school = new School
+        {
+            Id = 123,
+            Name = "Eduva School",
+            ContactEmail = "email@test.com",
+            ContactPhone = "0123456789"
+        };
+
+        _testUser.SchoolId = school.Id;
+        _userRepo.Setup(r => r.GetByIdAsync(_testUser.Id)).ReturnsAsync(_testUser);
         _schoolRepo.Setup(r => r.GetByIdAsync(school.Id)).ReturnsAsync(school);
         _planRepo.Setup(r => r.GetByIdAsync(plan.Id)).ReturnsAsync(plan);
         _schoolSubRepo.Setup(r => r.GetActiveSubscriptionBySchoolIdAsync(school.Id, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((SchoolSubscription?)null);
+                      .ReturnsAsync((SchoolSubscription?)null);
 
         _payOsServiceMock.Setup(s => s.CreatePaymentLinkAsync(It.IsAny<PaymentData>()))
             .ReturnsAsync(new CreatePaymentResult(
@@ -274,9 +329,17 @@ public class CreateSchoolSubscriptionCommandHandlerTests
                 qrCode: "QRCodeHere"
             ));
 
+        var command = new CreateSchoolSubscriptionCommand
+        {
+            PlanId = plan.Id,
+            BillingCycle = BillingCycle.Monthly,
+            UserId = _testUser.Id
+        };
 
+        // Act
         var result = await _handler.Handle(command, default);
 
+        // Assert
         Assert.Multiple(() =>
         {
             Assert.That(result.Item1, Is.EqualTo(CustomCode.Success));
@@ -288,17 +351,35 @@ public class CreateSchoolSubscriptionCommandHandlerTests
     [Test]
     public void Should_Throw_When_School_NotFound()
     {
-        _schoolRepo.Setup(r => r.GetByIdAsync(It.IsAny<int>())).ReturnsAsync((School?)null);
-        var command = new CreateSchoolSubscriptionCommand { SchoolId = 123 };
+        _testUser.SchoolId = 999;
+        _userRepo.Setup(r => r.GetByIdAsync(_testUser.Id)).ReturnsAsync(_testUser);
+        _schoolRepo.Setup(r => r.GetByIdAsync(999)).ReturnsAsync((School?)null);
+
+        var command = new CreateSchoolSubscriptionCommand
+        {
+            PlanId = 1,
+            BillingCycle = BillingCycle.Monthly,
+            UserId = _testUser.Id
+        };
+
         Assert.ThrowsAsync<SchoolNotFoundException>(() => _handler.Handle(command, default));
     }
 
     [Test]
     public void Should_Throw_When_Plan_NotFound()
     {
-        _schoolRepo.Setup(r => r.GetByIdAsync(It.IsAny<int>())).ReturnsAsync(new School());
-        _planRepo.Setup(r => r.GetByIdAsync(It.IsAny<int>())).ReturnsAsync((SubscriptionPlan?)null);
-        var command = new CreateSchoolSubscriptionCommand { SchoolId = 123, PlanId = 1 };
+        _testUser.SchoolId = 123;
+        _userRepo.Setup(r => r.GetByIdAsync(_testUser.Id)).ReturnsAsync(_testUser);
+        _schoolRepo.Setup(r => r.GetByIdAsync(123)).ReturnsAsync(new School());
+        _planRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync((SubscriptionPlan?)null);
+
+        var command = new CreateSchoolSubscriptionCommand
+        {
+            PlanId = 1,
+            BillingCycle = BillingCycle.Monthly,
+            UserId = _testUser.Id
+        };
+
         Assert.ThrowsAsync<PlanNotFoundException>(() => _handler.Handle(command, default));
     }
 
@@ -306,9 +387,19 @@ public class CreateSchoolSubscriptionCommandHandlerTests
     public void Should_Throw_When_Plan_IsNotActive()
     {
         var plan = new SubscriptionPlan { Status = EntityStatus.Inactive };
-        _schoolRepo.Setup(r => r.GetByIdAsync(It.IsAny<int>())).ReturnsAsync(new School());
+
+        _testUser.SchoolId = 123;
+        _userRepo.Setup(r => r.GetByIdAsync(_testUser.Id)).ReturnsAsync(_testUser);
+        _schoolRepo.Setup(r => r.GetByIdAsync(123)).ReturnsAsync(new School());
         _planRepo.Setup(r => r.GetByIdAsync(It.IsAny<int>())).ReturnsAsync(plan);
-        var command = new CreateSchoolSubscriptionCommand { SchoolId = 123, PlanId = 1 };
+
+        var command = new CreateSchoolSubscriptionCommand
+        {
+            PlanId = 1,
+            BillingCycle = BillingCycle.Monthly,
+            UserId = _testUser.Id
+        };
+
         Assert.ThrowsAsync<PlanNotActiveException>(() => _handler.Handle(command, default));
     }
 
@@ -316,38 +407,54 @@ public class CreateSchoolSubscriptionCommandHandlerTests
     public void Should_Throw_When_SamePlanAndCycle_Exists()
     {
         var now = DateTimeOffset.UtcNow;
-        var plan = new SubscriptionPlan { Id = 1, PriceMonthly = 200000, PricePerYear = 1000000, Status = EntityStatus.Active };
-        var current = new SchoolSubscription { PlanId = 1, BillingCycle = BillingCycle.Monthly, StartDate = now.AddDays(-5) };
 
-        _schoolRepo.Setup(r => r.GetByIdAsync(It.IsAny<int>())).ReturnsAsync(new School());
-        _planRepo.Setup(r => r.GetByIdAsync(It.IsAny<int>())).ReturnsAsync(plan);
-        _schoolSubRepo.Setup(r => r.GetActiveSubscriptionBySchoolIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(current);
-
-        var command = new CreateSchoolSubscriptionCommand { PlanId = 1, BillingCycle = BillingCycle.Monthly };
-        Assert.ThrowsAsync<SchoolSubscriptionAlreadyExistsException>(() => _handler.Handle(command, default));
-    }
-
-    [Test]
-    public void Should_Throw_When_Downgrade_Yearly_To_Monthly()
-    {
-        var currentPlan = new SubscriptionPlan { Id = 1, PriceMonthly = 200000, PricePerYear = 1000000 };
-        var newPlan = new SubscriptionPlan { Id = 2, PriceMonthly = 100000, PricePerYear = 500000, Status = EntityStatus.Active };
-
-        var existing = new SchoolSubscription
+        var plan = new SubscriptionPlan
         {
-            Plan = currentPlan,
-            PlanId = currentPlan.Id,
-            BillingCycle = BillingCycle.Yearly,
-            StartDate = DateTimeOffset.UtcNow.AddDays(-10),
-            PaymentTransactionId = Guid.NewGuid()
+            Id = 1,
+            Name = "Gói A",
+            PriceMonthly = 200000,
+            PricePerYear = 1000000,
+            Status = EntityStatus.Active
         };
 
-        _schoolRepo.Setup(r => r.GetByIdAsync(It.IsAny<int>())).ReturnsAsync(new School());
-        _planRepo.Setup(r => r.GetByIdAsync(newPlan.Id)).ReturnsAsync(newPlan);
-        _schoolSubRepo.Setup(r => r.GetActiveSubscriptionBySchoolIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(existing);
+        var transaction = new PaymentTransaction
+        {
+            Id = Guid.NewGuid(),
+            Amount = 200000
+        };
 
-        var command = new CreateSchoolSubscriptionCommand { PlanId = newPlan.Id, BillingCycle = BillingCycle.Monthly };
-        Assert.ThrowsAsync<DowngradeNotAllowedException>(() => _handler.Handle(command, default));
+        var user = new ApplicationUser
+        {
+            Id = _testUser.Id,
+            Email = _testUser.Email,
+            SchoolId = 123
+        };
+
+        var current = new SchoolSubscription
+        {
+            Plan = plan,
+            PlanId = plan.Id,
+            BillingCycle = BillingCycle.Monthly,
+            StartDate = now.AddDays(-5),
+            PaymentTransactionId = transaction.Id,
+            PaymentTransaction = transaction
+        };
+
+        _userRepo.Setup(r => r.GetByIdAsync(_testUser.Id)).ReturnsAsync(user);
+        _schoolRepo.Setup(r => r.GetByIdAsync(123)).ReturnsAsync(new School { Id = 123 });
+        _planRepo.Setup(r => r.GetByIdAsync(plan.Id)).ReturnsAsync(plan);
+        _schoolSubRepo.Setup(r => r.GetActiveSubscriptionBySchoolIdAsync(123, It.IsAny<CancellationToken>()))
+                      .ReturnsAsync(current);
+        _paymentRepo.Setup(r => r.GetByIdAsync(transaction.Id)).ReturnsAsync(transaction);
+
+        var command = new CreateSchoolSubscriptionCommand
+        {
+            PlanId = plan.Id,
+            BillingCycle = BillingCycle.Monthly,
+            UserId = _testUser.Id
+        };
+
+        Assert.ThrowsAsync<SchoolSubscriptionAlreadyExistsException>(() => _handler.Handle(command, default));
     }
 
     [Test]
@@ -356,30 +463,119 @@ public class CreateSchoolSubscriptionCommandHandlerTests
         var currentPlan = new SubscriptionPlan { Id = 1, PriceMonthly = 200000, PricePerYear = 800000 };
         var newPlan = new SubscriptionPlan { Id = 2, PriceMonthly = 300000, PricePerYear = 1200000, Status = EntityStatus.Active };
 
+        var transactionId = Guid.NewGuid();
+
+        var user = new ApplicationUser
+        {
+            Id = _testUser.Id,
+            Email = _testUser.Email,
+            SchoolId = 123
+        };
+
         var current = new SchoolSubscription
         {
             Plan = currentPlan,
             PlanId = currentPlan.Id,
             BillingCycle = BillingCycle.Monthly,
             StartDate = DateTimeOffset.UtcNow.AddDays(-5),
-            PaymentTransactionId = Guid.NewGuid()
+            PaymentTransactionId = transactionId
         };
 
-        _schoolRepo.Setup(r => r.GetByIdAsync(It.IsAny<int>())).ReturnsAsync(new School());
+        _userRepo.Setup(r => r.GetByIdAsync(_testUser.Id)).ReturnsAsync(user);
+        _schoolRepo.Setup(r => r.GetByIdAsync(123)).ReturnsAsync(new School { Id = 123 });
+        _planRepo.Setup(r => r.GetByIdAsync(currentPlan.Id)).ReturnsAsync(currentPlan);
         _planRepo.Setup(r => r.GetByIdAsync(newPlan.Id)).ReturnsAsync(newPlan);
-        _schoolSubRepo
-            .Setup(r => r.GetActiveSubscriptionBySchoolIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(current);
-        _paymentRepo.Setup(r => r.GetByIdAsync(current.PaymentTransactionId)).ReturnsAsync((PaymentTransaction?)null);
+        _schoolSubRepo.Setup(r => r.GetActiveSubscriptionBySchoolIdAsync(123, It.IsAny<CancellationToken>()))
+                      .ReturnsAsync(current);
+        _paymentRepo.Setup(r => r.GetByIdAsync(transactionId)).ReturnsAsync((PaymentTransaction?)null);
 
         var command = new CreateSchoolSubscriptionCommand
         {
             PlanId = newPlan.Id,
-            BillingCycle = BillingCycle.Monthly
+            BillingCycle = BillingCycle.Monthly,
+            UserId = _testUser.Id
         };
 
-        Assert.ThrowsAsync<PaymentTransactionNotFoundException>(() =>
-            _handler.Handle(command, default));
+        Assert.ThrowsAsync<PaymentTransactionNotFoundException>(() => _handler.Handle(command, default));
+    }
+
+    [Test]
+    public void Should_Throw_When_Downgrade_Yearly_To_Monthly()
+    {
+        var currentPlan = new SubscriptionPlan { Id = 1, PriceMonthly = 200000, PricePerYear = 1000000 };
+        var newPlan = new SubscriptionPlan { Id = 2, PriceMonthly = 100000, PricePerYear = 500000, Status = EntityStatus.Active };
+
+        var transaction = new PaymentTransaction
+        {
+            Id = Guid.NewGuid(),
+            Amount = 1000000
+        };
+
+        var user = new ApplicationUser
+        {
+            Id = _testUser.Id,
+            Email = _testUser.Email,
+            SchoolId = 123
+        };
+
+        var existing = new SchoolSubscription
+        {
+            Plan = currentPlan,
+            PlanId = currentPlan.Id,
+            BillingCycle = BillingCycle.Yearly,
+            StartDate = DateTimeOffset.UtcNow.AddDays(-10),
+            PaymentTransactionId = transaction.Id,
+            PaymentTransaction = transaction
+        };
+
+        _userRepo.Setup(r => r.GetByIdAsync(_testUser.Id)).ReturnsAsync(user);
+        _schoolRepo.Setup(r => r.GetByIdAsync(123)).ReturnsAsync(new School { Id = 123 });
+        _planRepo.Setup(r => r.GetByIdAsync(currentPlan.Id)).ReturnsAsync(currentPlan);
+        _planRepo.Setup(r => r.GetByIdAsync(newPlan.Id)).ReturnsAsync(newPlan);
+        _schoolSubRepo.Setup(r => r.GetActiveSubscriptionBySchoolIdAsync(123, It.IsAny<CancellationToken>()))
+                      .ReturnsAsync(existing);
+        _paymentRepo.Setup(r => r.GetByIdAsync(transaction.Id)).ReturnsAsync(transaction);
+
+        var command = new CreateSchoolSubscriptionCommand
+        {
+            PlanId = newPlan.Id,
+            BillingCycle = BillingCycle.Monthly,
+            UserId = _testUser.Id
+        };
+
+        Assert.ThrowsAsync<DowngradeNotAllowedException>(() => _handler.Handle(command, default));
+    }
+
+    [Test]
+    public void Should_Throw_When_User_Not_Found()
+    {
+        var command = new CreateSchoolSubscriptionCommand
+        {
+            UserId = Guid.NewGuid()
+        };
+
+        _userRepo.Setup(r => r.GetByIdAsync(command.UserId)).ReturnsAsync((ApplicationUser?)null);
+
+        Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, default));
+    }
+
+    [Test]
+    public void Should_Throw_When_User_Not_In_School()
+    {
+        var user = new ApplicationUser
+        {
+            Id = Guid.NewGuid(),
+            SchoolId = null
+        };
+
+        _userRepo.Setup(r => r.GetByIdAsync(user.Id)).ReturnsAsync(user);
+
+        var command = new CreateSchoolSubscriptionCommand
+        {
+            UserId = user.Id
+        };
+
+        Assert.ThrowsAsync<UserNotPartOfSchoolException>(() => _handler.Handle(command, default));
     }
 
     #endregion

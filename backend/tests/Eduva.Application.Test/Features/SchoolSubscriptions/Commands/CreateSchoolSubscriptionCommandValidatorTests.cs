@@ -51,21 +51,6 @@ public class CreateSchoolSubscriptionCommandValidatorTests
     }
 
     [Test]
-    public void Should_Fail_When_SchoolId_Is_Zero()
-    {
-        var command = new CreateSchoolSubscriptionCommand
-        {
-            PlanId = 1,
-            SchoolId = 0,
-            BillingCycle = BillingCycle.Monthly
-        };
-
-        var result = _validator.TestValidate(command);
-        result.ShouldHaveValidationErrorFor(x => x.SchoolId)
-              .WithErrorMessage("SchoolId must be greater than 0.");
-    }
-
-    [Test]
     public void Should_Fail_When_BillingCycle_Is_Invalid()
     {
         var command = new CreateSchoolSubscriptionCommand

@@ -10,10 +10,6 @@ namespace Eduva.Application.Features.Payments.Commands
                 .GreaterThan(0)
                 .WithMessage("PlanId must be greater than 0.");
 
-            RuleFor(x => x.SchoolId)
-                .GreaterThan(0)
-                .WithMessage("SchoolId must be greater than 0.");
-
             RuleFor(x => x.BillingCycle)
                 .IsInEnum()
                 .WithMessage("BillingCycle is invalid.");

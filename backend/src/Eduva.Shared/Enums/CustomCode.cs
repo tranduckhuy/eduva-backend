@@ -55,12 +55,6 @@ namespace Eduva.Shared.Enums
         UserNotPartOfSchool = 4045,
         FileIsRequired = 4046,
         InvalidFileType = 4047,
-        UserAlreadyLocked = 4053,
-        UserNotLocked = 4054,
-        CannotLockSelf = 4055,
-        CannotUnlockSelf = 4056,
-        InvalidTemplateType = 4057,
-        FileDownloadFailed = 4058,
 
         // Student Class Errors
         UserNotStudent = 4048,
@@ -68,14 +62,21 @@ namespace Eduva.Shared.Enums
         StudentAlreadyEnrolled = 4050,
         StudentCannotEnrollDifferentSchool = 4051,
         EnrollmentFailed = 4052,
+
+        UserAlreadyLocked = 4053,
+        UserNotLocked = 4054,
+        CannotLockSelf = 4055,
+        CannotUnlockSelf = 4056,
+        InvalidTemplateType = 4057,
+        FileDownloadFailed = 4058,
         IncorrectCurrentPassword = 4059,
         OtpResendTooSoon = 4060,
+        UserNotFound = 4061,
 
         // File Storage Errors
         InvalidBlobName = 4200,
         InvalidBlobUrl = 4201,
         BlobNotFound = 4202,
-
 
         // Payment Transaction Errors
         PaymentTransactionNotFound = 4300,
@@ -90,7 +91,6 @@ namespace Eduva.Shared.Enums
         // Subscription Errors
         SchoolAndSubscriptionRequired = 4400,
         SubscriptionExpiredWithDataLossRisk = 4401,
-
 
         // Forbidden Errors
         SchoolInactive = 4500,
