@@ -29,7 +29,6 @@ namespace Eduva.API.Controllers.CreditPacks
             _mediator = mediator;
         }
 
-
         [HttpGet]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}")]
         [ProducesResponseType(typeof(ApiResponse<Pagination<AICreditPackResponse>>), StatusCodes.Status200OK)]

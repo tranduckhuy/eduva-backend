@@ -2,6 +2,7 @@
 using Eduva.API.Models;
 using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Common.Models;
+using Eduva.Application.Features.Schools.Responses;
 using Eduva.Application.Features.Users.Commands;
 using Eduva.Application.Features.Users.Queries;
 using Eduva.Application.Features.Users.Requests;
@@ -103,6 +104,7 @@ namespace Eduva.API.Test.Controllers.Users
             Assert.That(response, Is.Not.Null);
             Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
         }
+
         [Test]
         public async Task GetUserProfileAsync_ShouldReturnOk_WhenRequestIsValid()
         {
@@ -117,7 +119,14 @@ namespace Eduva.API.Test.Controllers.Users
                 Email = "test@example.com",
                 PhoneNumber = "1234567890",
                 AvatarUrl = "https://example.com/avatar.jpg",
-                SchoolId = 1,
+                School = new SchoolResponse
+                {
+                    Id = 1,
+                    Name = "Test School",
+                    ContactEmail = "contact@test.edu.vn",
+                    ContactPhone = "123456789",
+                    WebsiteUrl = "https://test.edu.vn"
+                },
                 Roles = new List<string> { "Student" },
                 CreditBalance = 100
             };
@@ -183,7 +192,14 @@ namespace Eduva.API.Test.Controllers.Users
                 Email = "test@example.com",
                 PhoneNumber = "1234567890",
                 AvatarUrl = "https://example.com/avatar.jpg",
-                SchoolId = 1,
+                School = new SchoolResponse
+                {
+                    Id = 1,
+                    Name = "Test School",
+                    ContactEmail = "contact@test.edu.vn",
+                    ContactPhone = "123456789",
+                    WebsiteUrl = "https://test.edu.vn"
+                },
                 Roles = new List<string> { "Student" },
                 CreditBalance = 100
             };
@@ -294,15 +310,24 @@ namespace Eduva.API.Test.Controllers.Users
             var expectedUserResponse = new UserResponse
             {
                 Id = validUserId,
-                FullName = command.FullName,
-                PhoneNumber = command.PhoneNumber,
-                AvatarUrl = command.AvatarUrl,
+                FullName = "Test User",
                 Email = "test@example.com",
-                SchoolId = 1,
+                PhoneNumber = "1234567890",
+                AvatarUrl = "https://example.com/avatar.jpg",
+                School = new SchoolResponse
+                {
+                    Id = 1,
+                    Name = "Test School",
+                    ContactEmail = "contact@test.edu.vn",
+                    ContactPhone = "123456789",
+                    WebsiteUrl = "https://test.edu.vn"
+                },
                 Roles = new List<string> { "Student" },
                 CreditBalance = 100
-            }; _mediatorMock
-                .Setup(m => m.Send(It.IsAny<UpdateUserProfileCommand>(), It.IsAny<CancellationToken>()))
+            };
+
+            _mediatorMock
+                            .Setup(m => m.Send(It.IsAny<UpdateUserProfileCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedUserResponse);
 
             // Act

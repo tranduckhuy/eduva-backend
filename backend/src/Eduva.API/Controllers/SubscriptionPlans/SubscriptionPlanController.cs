@@ -32,7 +32,6 @@ namespace Eduva.API.Controllers.SubscriptionPlans
 
         [HttpGet]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
-        [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         [ProducesResponseType(typeof(ApiResponse<Pagination<SubscriptionPlanResponse>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetSubscriptionPlans([FromQuery] SubscriptionPlanSpecParam specParam)
         {
