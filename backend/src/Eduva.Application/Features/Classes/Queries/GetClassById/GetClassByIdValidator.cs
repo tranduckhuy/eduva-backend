@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace Eduva.Application.Features.Classes.Queries
+namespace Eduva.Application.Features.Classes.Queries.GetClassById
 {
     public class GetClassByIdValidator : AbstractValidator<GetClassByIdQuery>
     {

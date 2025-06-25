@@ -90,26 +90,6 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status400BadRequest, Message = "You cannot switch to a lower-tier plan or a shorter billing cycle." } },
             { CustomCode.SchoolSubscriptionAlreadyExists, new MessageDetail {
                 HttpCode = StatusCodes.Status400BadRequest, Message = "You are already subscribed to this plan and billing cycle." } },
-            { CustomCode.ClassNotFound, new MessageDetail {
-                HttpCode = StatusCodes.Status404NotFound, Message = "Class not found" } },
-            { CustomCode.ClassNameAlreadyExists, new MessageDetail {
-                HttpCode = StatusCodes.Status400BadRequest, Message = "Class name already exists in this school" } },
-            { CustomCode.ClassNameAlreadyExistsForTeacher, new MessageDetail {
-                HttpCode = StatusCodes.Status400BadRequest, Message = "You already have a class with this name" } },
-            { CustomCode.ClassCodeDuplicate, new MessageDetail {
-                HttpCode = StatusCodes.Status400BadRequest, Message = "Class code is duplicated, please try again" } },
-            { CustomCode.ClassCreateFailed, new MessageDetail {
-                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to create class" } },
-            { CustomCode.ClassUpdateFailed, new MessageDetail {
-                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to update class" } },
-            { CustomCode.ClassArchiveFailed, new MessageDetail {
-                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to archive class" } },
-            { CustomCode.ClassCodeResetFailed, new MessageDetail {
-                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to reset class code" } },
-            { CustomCode.NotTeacherOfClass, new MessageDetail {
-                HttpCode = StatusCodes.Status403Forbidden, Message = "You do not have permission to modify this class as you are not the teacher of this class" } },
-            { CustomCode.NotAdminForClassList, new MessageDetail {
-                HttpCode = StatusCodes.Status403Forbidden, Message = "Only system administrators and school administrators can view all classes" } },
             { CustomCode.SchoolAlreadyArchived, new MessageDetail {
                 HttpCode = StatusCodes.Status400BadRequest, Message = "School is already archived" } },
             { CustomCode.SubscriptionPlanMustBeArchived, new MessageDetail {
@@ -210,6 +190,40 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status403Forbidden, Message = "Subscription is invalid. Please check your subscription status." } },
             { CustomCode.ExceedUserLimit, new MessageDetail {
                 HttpCode = StatusCodes.Status403Forbidden, Message = "You have exceeded the maximum number of users allowed by your subscription plan." } },
+
+            // Class Errors
+            { CustomCode.ClassNotFound, new MessageDetail {
+                HttpCode = StatusCodes.Status404NotFound, Message = "Class not found" } },
+            { CustomCode.ClassNameAlreadyExists, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Class name already exists in this school" } },
+            { CustomCode.ClassCodeDuplicate, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Class code is duplicated, please try again" } },
+            { CustomCode.ClassCreateFailed, new MessageDetail {
+                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to create class" } },
+            { CustomCode.ClassUpdateFailed, new MessageDetail {
+                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to update class" } },
+            { CustomCode.ClassArchiveFailed, new MessageDetail {
+                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to archive class" } },
+            { CustomCode.ClassCodeResetFailed, new MessageDetail {
+                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to reset class code" } },
+            { CustomCode.ClassAlreadyArchived, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Class is already archived" } },
+            { CustomCode.ClassNotArchived, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Class is not archived and cannot be restored" } },
+            { CustomCode.ClassMustBeArchivedBeforeDelete, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Class must be archived before it can be permanently deleted" } },
+            { CustomCode.CannotCreateClassForInactiveSchool, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Cannot create classes for inactive schools" } },
+            { CustomCode.ClassRestoreFailed, new MessageDetail {
+                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to restore class" } },
+            { CustomCode.ClassDeleteFailed, new MessageDetail {
+                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to delete class" } },
+            { CustomCode.ClassNameAlreadyExistsForTeacher, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "You already have a class with this name" } },
+            { CustomCode.NotTeacherOfClass, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You do not have permission to modify this class as you are not the teacher of this class" } },
+            { CustomCode.NotAdminForClassList, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "Only system administrators and school administrators can view all classes" } },
 
             #endregion
         };

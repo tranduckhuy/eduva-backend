@@ -2,8 +2,13 @@ using Eduva.API.Controllers.Base;
 using Eduva.API.Models;
 using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Common.Models;
-using Eduva.Application.Features.Classes.Commands;
-using Eduva.Application.Features.Classes.Queries;
+using Eduva.Application.Features.Classes.Commands.ArchiveClass;
+using Eduva.Application.Features.Classes.Commands.CreateClass;
+using Eduva.Application.Features.Classes.Commands.ResetClassCode;
+using Eduva.Application.Features.Classes.Commands.RestoreClass;
+using Eduva.Application.Features.Classes.Commands.UpdateClass;
+using Eduva.Application.Features.Classes.Queries.GetClasses;
+using Eduva.Application.Features.Classes.Queries.GetTeacherClasses;
 using Eduva.Application.Features.Classes.Responses;
 using Eduva.Application.Features.Classes.Specifications;
 using Eduva.Domain.Enums;
@@ -96,7 +101,7 @@ namespace Eduva.API.Controllers.Classes
         }
 
         [HttpPut("{id}")]
-        [ProducesResponseType(typeof(ApiResponse<ClassResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}")]
         public async Task<IActionResult> UpdateClass(Guid id, [FromBody] UpdateClassCommand command)
         {
@@ -113,17 +118,13 @@ namespace Eduva.API.Controllers.Classes
             command.Id = id;
             command.TeacherId = currentUserId;
 
-            return await HandleRequestAsync(async () =>
-            {
-                var result = await _mediator.Send(command);
-                return (CustomCode.Success, result);
-            });
+            return await HandleRequestAsync(async () => await _mediator.Send(command));
         }
 
-        [HttpDelete("{id}")]
-        [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+        [HttpPut("{id}/archive")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}")]
-        public async Task<IActionResult> DeleteClass(Guid id)
+        public async Task<IActionResult> ArchiveClass(Guid id)
         {
             var validationResult = CheckModelStateValidity();
             if (validationResult != null)
@@ -135,24 +136,55 @@ namespace Eduva.API.Controllers.Classes
             if (!Guid.TryParse(userId, out var currentUserId))
                 return Respond(CustomCode.UserIdNotFound);
 
-            var command = new DeleteClassCommand
+            var command = new ArchiveClassCommand
             {
                 Id = id,
                 TeacherId = currentUserId
-            };
-
-            try
+            }; try
             {
-                bool result = await _mediator.Send(command);
-                return Respond(CustomCode.Success, result);
+                await _mediator.Send(command);
+                return Respond(CustomCode.Success);
             }
             catch (AppException ex)
             {
                 return Respond(ex.StatusCode, null, ex.Errors);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Unexpected error deleting class: {ExMessage}", ex.Message);
+                return Respond(CustomCode.SystemError);
+            }
+        }
+
+        [HttpPut("{id}/restore")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}")]
+        public async Task<IActionResult> RestoreClass(Guid id)
+        {
+            var validationResult = CheckModelStateValidity();
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userId, out var currentUserId))
+                return Respond(CustomCode.UserIdNotFound);
+
+            var command = new RestoreClassCommand
+            {
+                Id = id,
+                TeacherId = currentUserId
+            }; try
+            {
+                await _mediator.Send(command);
+                return Respond(CustomCode.Success);
+            }
+            catch (AppException ex)
+            {
+                return Respond(ex.StatusCode, null, ex.Errors);
+            }
+            catch (Exception)
+            {
                 return Respond(CustomCode.SystemError);
             }
         }

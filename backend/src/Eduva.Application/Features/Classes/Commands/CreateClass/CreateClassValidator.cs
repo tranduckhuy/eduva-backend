@@ -3,7 +3,7 @@ using Eduva.Application.Interfaces.Repositories;
 using Eduva.Domain.Entities;
 using FluentValidation;
 
-namespace Eduva.Application.Features.Classes.Commands
+namespace Eduva.Application.Features.Classes.Commands.CreateClass
 {
     public class CreateClassValidator : AbstractValidator<CreateClassCommand>
     {
