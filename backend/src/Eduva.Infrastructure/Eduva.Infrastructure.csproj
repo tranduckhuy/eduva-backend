@@ -29,7 +29,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Update="Configurations\Email\Templates\reset-password.html" Link="email-templates\reset-password.html" />
+  <Content Include="Configurations\Email\Templates\*.html">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </Content>
+</ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Extensions\Providers\" />
   </ItemGroup>
 
 </Project>

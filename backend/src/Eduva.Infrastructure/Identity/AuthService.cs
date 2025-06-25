@@ -6,10 +6,12 @@ using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using Eduva.Infrastructure.Email;
+using Eduva.Infrastructure.Extensions.Providers;
 using Eduva.Infrastructure.Identity.Interfaces;
 using Eduva.Infrastructure.Services;
 using Eduva.Shared.Enums;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -23,15 +25,17 @@ namespace Eduva.Infrastructure.Identity
         private readonly ILogger<AuthService> _logger;
         private readonly JwtHandler _jwtHandler;
         private readonly ITokenBlackListService _tokenBlackListService;
+        private readonly IServiceProvider _serviceProvider;
 
         public AuthService(UserManager<ApplicationUser> userManager, IEmailSender emailSender, ILogger<AuthService> logger,
-            JwtHandler jwtHandler, ITokenBlackListService tokenBlackListService)
+            JwtHandler jwtHandler, ITokenBlackListService tokenBlackListService, IServiceProvider serviceProvider)
         {
             _userManager = userManager;
             _emailSender = emailSender;
             _logger = logger;
             _jwtHandler = jwtHandler;
             _tokenBlackListService = tokenBlackListService;
+            _serviceProvider = serviceProvider;
         }
 
         public async Task<CustomCode> RegisterAsync(RegisterRequestDto request)
@@ -131,9 +135,9 @@ namespace Eduva.Infrastructure.Identity
 
             if (await _userManager.GetTwoFactorEnabledAsync(user))
             {
-                var token = await _userManager.GenerateTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider);
+                var otp = await GetOtpProvider().GenerateAsync("OTP", _userManager, user);
 
-                await SendOtpEmailMessage(user, token);
+                await SendOtpEmailMessage(user, otp);
 
                 return (CustomCode.RequiresOtpVerification, new AuthResultDto
                 {
@@ -191,11 +195,13 @@ namespace Eduva.Infrastructure.Identity
                 throw new AppException(CustomCode.Forbidden);
             }
 
-            var isValid = await _userManager.VerifyTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider, request.OtpCode);
+            var isValid = await _userManager.VerifyTwoFactorTokenAsync(user, "OTP", request.OtpCode);
             if (!isValid)
             {
                 throw new OtpInvalidOrExpireException();
             }
+
+            await GetOtpProvider().ForceClearOtpClaimsAsync(_userManager, user);
 
             var roles = await _userManager.GetRolesAsync(user);
             var claims = await _userManager.GetClaimsAsync(user);
@@ -206,16 +212,16 @@ namespace Eduva.Infrastructure.Identity
 
         private async Task Send2FaOtpEmailAsync(ApplicationUser user, string subject)
         {
-            var otpCode = await _userManager.GenerateTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider);
+            var otp = await GetOtpProvider().GenerateAsync("OTP", _userManager, user);
 
-            var message = await MailMessageHelper.CreateMessageAsync(user, otpCode, subject);
+            var message = await MailMessageHelper.CreateMessageAsync(user, otp, subject);
 
             await _emailSender.SendEmailAsync(message);
         }
 
         private async Task<CustomCode> Confirm2FaChangeAsync(ApplicationUser user, string otpCode, bool enable)
         {
-            var isValidOtp = await _userManager.VerifyTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider, otpCode);
+            var isValidOtp = await _userManager.VerifyTwoFactorTokenAsync(user, "OTP", otpCode);
             if (!isValidOtp)
             {
                 throw new OtpInvalidOrExpireException();
@@ -230,8 +236,11 @@ namespace Eduva.Infrastructure.Identity
                 throw new AppException(CustomCode.ProvidedInformationIsInValid, errors);
             }
 
+            await GetOtpProvider().ForceClearOtpClaimsAsync(_userManager, user);
+
             return CustomCode.Success;
         }
+
         public async Task<CustomCode> RequestEnable2FaOtpAsync(Request2FaDto request)
         {
             var user = await _userManager.FindByIdAsync(request.UserId.ToString()) ?? throw new UserNotExistsException();
@@ -502,6 +511,49 @@ namespace Eduva.Infrastructure.Identity
             // Invalidate all tokens for this user
             await _tokenBlackListService.BlacklistAllUserTokensAsync(userId);
             _logger.LogInformation("All tokens invalidated for user {UserId}", userId);
+        }
+
+        public async Task<CustomCode> ResendOtpAsync(ResendOtpRequestDto dto)
+        {
+            var user = await _userManager.FindByEmailAsync(dto.Email)
+                ?? throw new UserNotExistsException();
+
+            // Check resend throttle
+            await EnsureOtpThrottleAsync(user);
+
+
+            var subject = dto.Purpose switch
+            {
+                OtpPurpose.Login => "Xác thực OTP đăng nhập",
+                OtpPurpose.Enable2FA => "Bật xác thực 2 yếu tố - EDUVA",
+                OtpPurpose.Disable2FA => "Tắt xác thực 2 yếu tố - EDUVA",
+                _ => "Xác thực OTP"
+            };
+
+            var otp = await GetOtpProvider().GenerateAsync("OTP", _userManager, user);
+
+            var message = await MailMessageHelper.CreateMessageAsync(user, otp, subject);
+
+            await _emailSender.SendEmailAsync(message);
+
+            return CustomCode.OtpSentSuccessfully;
+        }
+
+        private async Task EnsureOtpThrottleAsync(ApplicationUser user)
+        {
+            var otpProvider = GetOtpProvider();
+            if (otpProvider == null)
+            {
+                _logger.LogError("OTP Provider could not be resolved from service provider.");
+                throw new InvalidOperationException("OTP Provider not available.");
+            }
+
+            await otpProvider.CheckOtpThrottleAsync(_userManager, user);
+        }
+
+        private SixDigitTokenProvider<ApplicationUser> GetOtpProvider()
+        {
+            return _serviceProvider.GetRequiredService<SixDigitTokenProvider<ApplicationUser>>();
         }
     }
 }

@@ -80,6 +80,7 @@ namespace Eduva.Shared.Enums
         StudentCannotEnrollDifferentSchool = 4051,
         EnrollmentFailed = 4052,
         IncorrectCurrentPassword = 4059,
+        OtpResendTooSoon = 4060,
 
         // File Storage Errors
         InvalidBlobName = 4200,

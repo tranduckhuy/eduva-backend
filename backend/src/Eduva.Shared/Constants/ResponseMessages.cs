@@ -144,6 +144,8 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to download the file. Please try again later." } },
             { CustomCode.IncorrectCurrentPassword, new MessageDetail {
                 HttpCode = StatusCodes.Status400BadRequest, Message = "The current password provided is incorrect. Please try again." } },
+            { CustomCode.OtpResendTooSoon, new MessageDetail {
+                HttpCode = StatusCodes.Status429TooManyRequests, Message = "You have requested an OTP too soon. Please wait 120s before requesting a new OTP." } },
 
             // File Storage Errors
             { CustomCode.InvalidBlobName, new MessageDetail {
