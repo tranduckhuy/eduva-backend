@@ -146,6 +146,8 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status400BadRequest, Message = "The current password provided is incorrect. Please try again." } },
             { CustomCode.OtpResendTooSoon, new MessageDetail {
                 HttpCode = StatusCodes.Status429TooManyRequests, Message = "You have requested an OTP too soon. Please wait 120s before requesting a new OTP." } },
+            { CustomCode.UserNotFound, new MessageDetail {
+                HttpCode = StatusCodes.Status404NotFound, Message = "User not found. Please check the user ID and try again." } },
 
             // File Storage Errors
             { CustomCode.InvalidBlobName, new MessageDetail {

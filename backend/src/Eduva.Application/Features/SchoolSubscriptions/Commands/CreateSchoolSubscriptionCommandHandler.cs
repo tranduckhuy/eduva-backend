@@ -1,4 +1,5 @@
-﻿using Eduva.Application.Exceptions.Auth;
+﻿using Eduva.Application.Common.Exceptions;
+using Eduva.Application.Exceptions.Auth;
 using Eduva.Application.Exceptions.PaymentTransaction;
 using Eduva.Application.Exceptions.School;
 using Eduva.Application.Exceptions.SchoolSubscription;
@@ -34,7 +35,7 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Commands
         public async Task<(CustomCode, CreatePaymentLinkResponse)> Handle(CreateSchoolSubscriptionCommand request, CancellationToken cancellationToken)
         {
             var userRepo = _unitOfWork.GetRepository<ApplicationUser, Guid>();
-            var user = await userRepo.GetByIdAsync(request.UserId) ?? throw new Exception("User not found");
+            var user = await userRepo.GetByIdAsync(request.UserId) ?? throw new AppException(CustomCode.UserNotFound);
             if (user.SchoolId == null)
             {
                 throw new UserNotPartOfSchoolException();
