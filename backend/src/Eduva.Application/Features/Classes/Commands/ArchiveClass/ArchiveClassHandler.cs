@@ -27,13 +27,12 @@ namespace Eduva.Application.Features.Classes.Commands.ArchiveClass
 
             // Get the classroom by ID
             var classroom = await classroomRepository.GetByIdAsync(request.Id)
-                ?? throw new AppException(CustomCode.ClassNotFound);
-
+                ?? throw new AppException(CustomCode.ClassNotFound);            
+                
             // Check if the class is already archived
             if (classroom.Status == EntityStatus.Archived)
             {
-                throw new AppException(CustomCode.ClassArchiveFailed,
-                    new[] { "Class is already archived" });
+                throw new AppException(CustomCode.ClassAlreadyArchived);
             }
 
             // Get the current user

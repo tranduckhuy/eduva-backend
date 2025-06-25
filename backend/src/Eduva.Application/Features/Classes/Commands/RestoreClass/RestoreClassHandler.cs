@@ -25,14 +25,14 @@ namespace Eduva.Application.Features.Classes.Commands.RestoreClass
         public async Task<Unit> Handle(RestoreClassCommand request, CancellationToken cancellationToken)
         {
             var classroomRepository = _unitOfWork.GetCustomRepository<IClassroomRepository>();
-
             // Get the classroom by ID
             var classroom = await classroomRepository.GetByIdAsync(request.Id)
-                ?? throw new AppException(CustomCode.ClassNotFound);            // Check if the class is not archived
+                ?? throw new AppException(CustomCode.ClassNotFound);
+
+            // Check if the class is not archived
             if (classroom.Status != EntityStatus.Archived)
             {
-                throw new AppException(CustomCode.ClassArchiveFailed,
-                    new[] { "Class is not archived and cannot be restored" });
+                throw new AppException(CustomCode.ClassNotArchived);
             }
 
             // Get the current user
@@ -64,7 +64,7 @@ namespace Eduva.Application.Features.Classes.Commands.RestoreClass
             catch (Exception)
             {
                 await _unitOfWork.RollbackAsync();
-                throw new AppException(CustomCode.ClassArchiveFailed);
+                throw new AppException(CustomCode.ClassRestoreFailed);
             }
         }
     }

@@ -31,11 +31,9 @@ namespace Eduva.Application.Features.Classes.Commands.CreateClass
             {
                 throw new AppException(CustomCode.SchoolNotFound);
             }
-
             if (school.Status != EntityStatus.Active)
             {
-                throw new AppException(CustomCode.SchoolInactive,
-                    new[] { "Cannot create classes for inactive schools" });
+                throw new AppException(CustomCode.CannotCreateClassForInactiveSchool);
             }
 
             // Check if the class name already exists for this teacher
