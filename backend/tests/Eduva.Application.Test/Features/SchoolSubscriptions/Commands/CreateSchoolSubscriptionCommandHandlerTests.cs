@@ -1,4 +1,5 @@
-﻿using Eduva.Application.Exceptions.Auth;
+﻿using Eduva.Application.Common.Exceptions;
+using Eduva.Application.Exceptions.Auth;
 using Eduva.Application.Exceptions.PaymentTransaction;
 using Eduva.Application.Exceptions.School;
 using Eduva.Application.Exceptions.SchoolSubscription;
@@ -555,7 +556,7 @@ public class CreateSchoolSubscriptionCommandHandlerTests
 
         _userRepo.Setup(r => r.GetByIdAsync(command.UserId)).ReturnsAsync((ApplicationUser?)null);
 
-        Assert.ThrowsAsync<Exception>(() => _handler.Handle(command, default));
+        Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, default));
     }
 
     [Test]
