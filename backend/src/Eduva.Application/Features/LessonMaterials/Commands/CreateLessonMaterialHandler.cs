@@ -56,8 +56,8 @@ namespace Eduva.Application.Features.LessonMaterials.Commands
                 {
                     var folderLessonMaterial = new FolderLessonMaterial
                     {
-                        FolderID = request.FolderId,
-                        LessonMaterialID = createdLessonMaterials[i].Id,
+                        FolderId = request.FolderId,
+                        LessonMaterialId = createdLessonMaterials[i].Id,
                     };
 
                     await folderLessonMaterialRepository.AddAsync(folderLessonMaterial);

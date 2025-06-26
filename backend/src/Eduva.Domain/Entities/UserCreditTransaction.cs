@@ -2,7 +2,7 @@
 
 namespace Eduva.Domain.Entities
 {
-    public class UserCreditTransaction : BaseEntity<int>
+    public class UserCreditTransaction : BaseEntity<Guid>
     {
         public Guid UserId { get; set; }
 

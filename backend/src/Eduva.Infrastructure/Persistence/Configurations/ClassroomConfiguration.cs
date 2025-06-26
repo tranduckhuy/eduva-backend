@@ -12,11 +12,15 @@ namespace Eduva.Infrastructure.Persistence.Configurations
                 .IsRequired();
 
             builder.Property(c => c.Name)
-                .HasMaxLength(255) 
+                .HasMaxLength(255)
                 .IsRequired();
 
             builder.Property(c => c.ClassCode)
                 .HasMaxLength(10);
+
+            builder.Property(c => c.Status)
+                .HasConversion<string>()
+                .IsRequired();
 
             // Relationships
             builder.HasOne(c => c.School)

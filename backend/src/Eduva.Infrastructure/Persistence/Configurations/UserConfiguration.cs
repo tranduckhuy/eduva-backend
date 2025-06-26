@@ -24,6 +24,10 @@ namespace Eduva.Infrastructure.Persistence.Configurations
             builder.Property(u => u.SchoolId)
                 .IsRequired(false);
 
+            builder.Property(u => u.Status)
+                .IsRequired()
+                .HasConversion<string>();
+
             // Relationships
             builder.HasOne(u => u.School)
                    .WithMany(s => s.Users)

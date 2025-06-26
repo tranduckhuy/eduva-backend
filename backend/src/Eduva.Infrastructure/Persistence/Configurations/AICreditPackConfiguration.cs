@@ -25,6 +25,10 @@ namespace Eduva.Infrastructure.Persistence.Configurations
                 .IsRequired()
                 .HasDefaultValue(0);
 
+            builder.Property(x => x.Status)
+                .HasConversion<string>()
+                .IsRequired();
+
             // Relationships
             builder.HasMany(x => x.UserCreditTransactions)
                 .WithOne()

@@ -3,7 +3,7 @@ using Eduva.Domain.Enums;
 
 namespace Eduva.Domain.Entities
 {
-    public class AIUsageLog : BaseEntity<int>
+    public class AIUsageLog : BaseEntity<Guid>
     {
         public Guid UserId { get; set; }
         public AIServiceType AIServiceType { get; set; }

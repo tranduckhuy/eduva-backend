@@ -2,7 +2,7 @@
 
 namespace Eduva.Domain.Entities
 {
-    public class LessonMaterialQuestion : BaseTimestampedEntity<int>
+    public class LessonMaterialQuestion : BaseTimestampedEntity<Guid>
     {
         public Guid LessonMaterialId { get; set; }
         public string Title { get; set; } = default!;

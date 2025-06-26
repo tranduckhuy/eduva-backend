@@ -56,7 +56,7 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
             {
                 CreatedBy = Guid.NewGuid(),
                 SchoolId = 1,
-                FolderId = 1,
+                FolderId = Guid.NewGuid(),
                 BlobNames = new List<string> { "test.pdf" },
                 LessonMaterials = new List<LessonMaterialRequest>
                 {
@@ -99,7 +99,7 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
             {
                 CreatedBy = Guid.NewGuid(),
                 SchoolId = 1,
-                FolderId = 1,
+                FolderId = Guid.NewGuid(),
                 BlobNames = new List<string> { "test1.pdf", "test2.pdf", "test3.pdf" },
                 LessonMaterials = new List<LessonMaterialRequest>
                 {
@@ -148,7 +148,7 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
             {
                 CreatedBy = Guid.NewGuid(),
                 SchoolId = 1,
-                FolderId = 1,
+                FolderId = Guid.NewGuid(),
                 BlobNames = new List<string> { "test.pdf" },
                 LessonMaterials = new List<LessonMaterialRequest>
                 {
@@ -192,7 +192,7 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
             {
                 CreatedBy = Guid.NewGuid(),
                 SchoolId = 1,
-                FolderId = 1,
+                FolderId = Guid.NewGuid(),
                 BlobNames = new List<string> { "test.pdf" },
                 LessonMaterials = new List<LessonMaterialRequest>
                 {
@@ -220,8 +220,8 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
             Assert.That(capturedFolderLessonMaterial, Is.Not.Null);
             Assert.Multiple(() =>
             {
-                Assert.That(capturedFolderLessonMaterial.FolderID, Is.EqualTo(request.FolderId));
-                Assert.That(capturedFolderLessonMaterial.LessonMaterialID, Is.Not.EqualTo(Guid.Empty));
+                Assert.That(capturedFolderLessonMaterial.FolderId, Is.EqualTo(request.FolderId));
+                Assert.That(capturedFolderLessonMaterial.LessonMaterialId, Is.Not.EqualTo(Guid.Empty));
             });
         }
 
@@ -236,7 +236,7 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
             {
                 CreatedBy = Guid.NewGuid(),
                 SchoolId = 1,
-                FolderId = 1,
+                FolderId = Guid.NewGuid(),
                 BlobNames = new List<string> { "test.pdf", "test2.pdf" },
                 LessonMaterials = new List<LessonMaterialRequest>
                 {
@@ -273,7 +273,7 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
             {
                 CreatedBy = Guid.NewGuid(),
                 SchoolId = 1,
-                FolderId = 1,
+                FolderId = Guid.NewGuid(),
                 BlobNames = new List<string> { "test.pdf" },
                 LessonMaterials = new List<LessonMaterialRequest>
                 {
@@ -312,7 +312,7 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
             {
                 CreatedBy = Guid.NewGuid(),
                 SchoolId = 1,
-                FolderId = 1,
+                FolderId = Guid.NewGuid(),
                 BlobNames = new List<string> { "test.pdf" },
                 LessonMaterials = new List<LessonMaterialRequest>
                 {
@@ -353,7 +353,7 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
             {
                 CreatedBy = Guid.NewGuid(),
                 SchoolId = 1,
-                FolderId = 1,
+                FolderId = Guid.NewGuid(),
                 BlobNames = new List<string> { "test.pdf" },
                 LessonMaterials = new List<LessonMaterialRequest>
                 {
@@ -399,7 +399,7 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
             {
                 CreatedBy = Guid.NewGuid(),
                 SchoolId = 1,
-                FolderId = 1,
+                FolderId = Guid.NewGuid(),
                 BlobNames = new List<string>(),
                 LessonMaterials = new List<LessonMaterialRequest>()
             };
@@ -423,7 +423,7 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
             {
                 CreatedBy = Guid.NewGuid(),
                 SchoolId = null,
-                FolderId = 1,
+                FolderId = Guid.NewGuid(),
                 BlobNames = new List<string> { "test.pdf" },
                 LessonMaterials = new List<LessonMaterialRequest>
                 {
@@ -459,7 +459,7 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
             {
                 CreatedBy = Guid.NewGuid(),
                 SchoolId = 1,
-                FolderId = 1,
+                FolderId = Guid.NewGuid(),
                 BlobNames = new List<string> { "test.pdf" },
                 LessonMaterials = new List<LessonMaterialRequest>
                 {
@@ -493,7 +493,7 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
             {
                 CreatedBy = Guid.NewGuid(),
                 SchoolId = 1,
-                FolderId = 1,
+                FolderId = Guid.NewGuid(),
                 BlobNames = new List<string> { "test.pdf" },
                 LessonMaterials = new List<LessonMaterialRequest>
                 {

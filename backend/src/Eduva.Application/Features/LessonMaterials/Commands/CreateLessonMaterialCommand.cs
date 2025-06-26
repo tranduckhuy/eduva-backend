@@ -11,8 +11,7 @@ namespace Eduva.Application.Features.LessonMaterials.Commands
         [JsonIgnore]
         public int? SchoolId { get; set; }
 
-        public int FolderId { get; set; }
-
+        public Guid FolderId { get; set; }
 
         public List<string> BlobNames { get; set; } = [];
         public List<LessonMaterialRequest> LessonMaterials { get; set; } = [];

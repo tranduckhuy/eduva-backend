@@ -288,7 +288,7 @@ namespace Eduva.API.Test.Middlewares
         {
             return new SchoolSubscription
             {
-                Id = 1,
+                Id = Guid.NewGuid(),
                 StartDate = DateTimeOffset.UtcNow.AddDays(-30),
                 EndDate = endDate,
                 SubscriptionStatus = SubscriptionStatus.Active,

@@ -29,6 +29,10 @@ namespace Eduva.Infrastructure.Persistence.Configurations
                 .HasColumnType("numeric(18,2)") // decimal
                 .IsRequired();
 
+            builder.Property(sp => sp.Status)
+                .IsRequired()
+                .HasConversion<string>();
+
             // Relationships
             builder.HasMany(sp => sp.SchoolSubscriptions)
                 .WithOne(ss => ss.Plan)

@@ -39,7 +39,7 @@ namespace Eduva.Infrastructure.Persistence.Configurations
 
             builder.HasMany(f => f.FolderLessonMaterials)
                 .WithOne(flm => flm.Folder)
-                .HasForeignKey(flm => flm.FolderID)
+                .HasForeignKey(flm => flm.FolderId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }

@@ -3,7 +3,7 @@ using Eduva.Domain.Enums;
 
 namespace Eduva.Domain.Entities
 {
-    public class LessonMaterialApproval : BaseEntity<int>
+    public class LessonMaterialApproval : BaseEntity<Guid>
     {
         public Guid LessonMaterialId { get; set; }
         public Guid ApproverId { get; set; }

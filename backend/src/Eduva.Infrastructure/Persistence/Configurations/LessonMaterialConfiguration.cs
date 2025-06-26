@@ -61,7 +61,7 @@ namespace Eduva.Infrastructure.Persistence.Configurations
 
             builder.HasMany(lm => lm.FolderLessonMaterials)
                 .WithOne(flm => flm.LessonMaterial)
-                .HasForeignKey(flm => flm.LessonMaterialID)
+                .HasForeignKey(flm => flm.LessonMaterialId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasMany(lm => lm.LessonMaterialApprovals)

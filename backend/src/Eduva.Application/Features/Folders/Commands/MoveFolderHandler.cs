@@ -26,7 +26,7 @@ namespace Eduva.Application.Features.Folders.Commands
 
         public async Task<FolderResponse> Handle(MoveFolderCommand request, CancellationToken cancellationToken)
         {
-            var folderRepository = _unitOfWork.GetRepository<Folder, int>();
+            var folderRepository = _unitOfWork.GetRepository<Folder, Guid>();
 
             // Retrieve folder
             var folder = await folderRepository.GetByIdAsync(request.Id);
