@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace Eduva.Application.Features.StudentClasses.Commands
+namespace Eduva.Application.Features.Classes.Commands.EnrollByClassCode
 {
     public class EnrollByClassCodeValidator : AbstractValidator<EnrollByClassCodeCommand>
     {

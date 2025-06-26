@@ -4,7 +4,7 @@ namespace Eduva.Application.Features.Folders.Responses
 {
     public class FolderResponse
     {
-        public int Id { get; set; }
+        public Guid Id { get; set; }
         public Guid? UserId { get; set; }
         public Guid? ClassId { get; set; }
         public string OwnerName { get; set; } = string.Empty; // Username or Class name

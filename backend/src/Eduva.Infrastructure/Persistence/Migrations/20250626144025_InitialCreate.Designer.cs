@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Eduva.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250626121357_InitialCreate")]
+    [Migration("20250626144025_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -87,8 +87,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -291,8 +292,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<Guid?>("UserId")
                         .HasColumnType("uuid");
@@ -340,7 +342,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("CreatedBy")
+                    b.Property<Guid>("CreatedByUserId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Description")
@@ -389,7 +391,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CreatedBy");
+                    b.HasIndex("CreatedByUserId");
 
                     b.HasIndex("SchoolId");
 
@@ -440,7 +442,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("CreatedBy")
+                    b.Property<Guid>("CreatedByUserId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset?>("LastModifiedAt")
@@ -459,7 +461,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CreatedBy");
+                    b.HasIndex("CreatedByUserId");
 
                     b.HasIndex("LessonMaterialId");
 
@@ -547,7 +549,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("CreatedBy")
+                    b.Property<Guid>("CreatedByUserId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset?>("LastModifiedAt")
@@ -556,7 +558,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("ParentCommentId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("QuestionID")
+                    b.Property<Guid>("QuestionId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("Status")
@@ -564,11 +566,11 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CreatedBy");
+                    b.HasIndex("CreatedByUserId");
 
                     b.HasIndex("ParentCommentId");
 
-                    b.HasIndex("QuestionID");
+                    b.HasIndex("QuestionId");
 
                     b.ToTable("QuestionComments");
                 });
@@ -702,6 +704,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
+                    b.Property<bool>("IsRecommended")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTimeOffset?>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -772,20 +777,17 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsRead")
                         .HasColumnType("boolean");
 
-                    b.Property<int>("NotificationID")
-                        .HasColumnType("integer");
-
                     b.Property<Guid>("NotificationId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("TargetUserID")
+                    b.Property<Guid>("TargetUserId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
                     b.HasIndex("NotificationId");
 
-                    b.HasIndex("TargetUserID");
+                    b.HasIndex("TargetUserId");
 
                     b.ToTable("UserNotifications");
                 });
@@ -952,7 +954,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.HasOne("Eduva.Domain.Entities.ApplicationUser", "Teacher")
                         .WithMany("ClassesAsTeacher")
                         .HasForeignKey("TeacherId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("School");
@@ -1000,7 +1002,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 {
                     b.HasOne("Eduva.Domain.Entities.ApplicationUser", "CreatedByUser")
                         .WithMany("CreatedLessonMaterials")
-                        .HasForeignKey("CreatedBy")
+                        .HasForeignKey("CreatedByUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1019,7 +1021,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.HasOne("Eduva.Domain.Entities.ApplicationUser", "Approver")
                         .WithMany("ApprovedLessonMaterials")
                         .HasForeignKey("ApproverId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Eduva.Domain.Entities.LessonMaterial", "LessonMaterial")
@@ -1037,7 +1039,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 {
                     b.HasOne("Eduva.Domain.Entities.ApplicationUser", "CreatedByUser")
                         .WithMany("CreatedLessonMaterialQuestions")
-                        .HasForeignKey("CreatedBy")
+                        .HasForeignKey("CreatedByUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1067,7 +1069,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 {
                     b.HasOne("Eduva.Domain.Entities.ApplicationUser", "CreatedByUser")
                         .WithMany("CreatedQuestionComments")
-                        .HasForeignKey("CreatedBy")
+                        .HasForeignKey("CreatedByUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1078,7 +1080,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
                     b.HasOne("Eduva.Domain.Entities.LessonMaterialQuestion", "Question")
                         .WithMany("Comments")
-                        .HasForeignKey("QuestionID")
+                        .HasForeignKey("QuestionId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -1172,7 +1174,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
                     b.HasOne("Eduva.Domain.Entities.ApplicationUser", "TargetUser")
                         .WithMany("ReceivedNotifications")
-                        .HasForeignKey("TargetUserID")
+                        .HasForeignKey("TargetUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

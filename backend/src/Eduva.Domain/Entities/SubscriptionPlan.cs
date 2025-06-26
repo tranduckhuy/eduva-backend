@@ -10,6 +10,7 @@ namespace Eduva.Domain.Entities
         public decimal StorageLimitGB { get; set; }
         public decimal PriceMonthly { get; set; }
         public decimal PricePerYear { get; set; }
+        public bool IsRecommended { get; set; } = false;
 
         // Navigation properties
         public virtual ICollection<SchoolSubscription> SchoolSubscriptions { get; set; } = [];

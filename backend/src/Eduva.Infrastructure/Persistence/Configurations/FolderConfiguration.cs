@@ -22,6 +22,10 @@ namespace Eduva.Infrastructure.Persistence.Configurations
             builder.Property(f => f.Order)
                 .IsRequired();
 
+            builder.Property(f => f.Status)
+                .HasConversion<string>()
+                .IsRequired();
+
             // Relationships
             // UserID is nullable, so IsRequired(false)
             builder.HasOne(f => f.User)

@@ -8,7 +8,7 @@ namespace Eduva.Infrastructure.Persistence.Configurations
     {
         public void Configure(EntityTypeBuilder<LessonMaterial> builder)
         {
-            builder.Property(lm => lm.CreatedBy)
+            builder.Property(lm => lm.CreatedByUserId)
                 .IsRequired();
 
             builder.Property(lm => lm.Title)
@@ -45,7 +45,7 @@ namespace Eduva.Infrastructure.Persistence.Configurations
                 .HasConversion<string>()
                 .IsRequired();
 
-            builder.Property(lm => lm.CreatedBy)
+            builder.Property(lm => lm.CreatedByUserId)
                 .IsRequired();
 
             // Relationships

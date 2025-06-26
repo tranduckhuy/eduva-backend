@@ -165,22 +165,25 @@ namespace Eduva.Infrastructure.Extensions
                         Id = new Guid("1a1a1a1a-1a1a-1a1a-1a1a-1a1a1a1a1a1a"),
                         UserId = new Guid("1a1a1a1a-1a1a-1a1a-1a1a-1a1a1a1a1a1a"),
                         Amount = 100000m,
+                        PaymentPurpose = PaymentPurpose.SchoolSubscription,
                         PaymentMethod = PaymentMethod.PayOS,
-                        PaymentStatus = PaymentStatus.Pending,
-                        CreatedAt = DateTimeOffset.UtcNow,
+                        PaymentStatus = PaymentStatus.Paid,
                         PaymentItemId = 1, // Subscription Plan ID
-                        RelatedId = null,
+                        RelatedId = "4a1a1a1a-4a1a-4a1a-4a1a-4a1a1a1a1a1a",
+                        TransactionCode = "TXN-1234567890"
+
                     },
                     new PaymentTransaction
                     {
-                        Id = new Guid("2b2b2b2b-2b2b-2b2b-2b2b-2b2b2b2b2b2bb"),
+                        Id = new Guid("2b2b2b2b-2b2b-2b2b-2b2b-2b2b2b2b2b2b"),
                         UserId = new Guid("1a1a1a1a-1a1a-1a1a-1a1a-1a1a1a1a1a1a"),
                         Amount = 50000m,
+                        PaymentPurpose = PaymentPurpose.CreditPackage,
                         PaymentMethod = PaymentMethod.PayOS,
-                        PaymentStatus = PaymentStatus.Pending,
-                        CreatedAt = DateTimeOffset.UtcNow,
+                        PaymentStatus = PaymentStatus.Paid,
                         PaymentItemId = 1, // AI Credit Pack ID
-                        RelatedId = null,
+                        RelatedId = "3a1a1a1a-1a1a-1a1a-1a1a-1a1a1a1a1a1a",
+                        TransactionCode = "TXN-0987654321"
                     }
                 };
 
@@ -194,9 +197,9 @@ namespace Eduva.Infrastructure.Extensions
                 {
                     Id = new Guid("3a1a1a1a-1a1a-1a1a-1a1a-1a1a1a1a1a1a"),
                     UserId = new Guid("1a1a1a1a-1a1a-1a1a-1a1a-1a1a1a1a1a1a"),
-                    PaymentTransactionId = new Guid("2b2b2b2b-2b2b-2b2b-2b2b-2b2b2b2b2b2bb"),
+                    PaymentTransactionId = new Guid("2b2b2b2b-2b2b-2b2b-2b2b-2b2b2b2b2b2b"),
                     AICreditPackId = 1,
-                    Credits = 1000,
+                    Credits = 1000
                 };
                 context.UserCreditTransactions.Add(transaction);
                 await context.SaveChangesAsync();
@@ -292,13 +295,28 @@ namespace Eduva.Infrastructure.Extensions
                     SchoolId = 1,
                     ContentType = ContentType.Video,
                     SourceUrl = "https://example.com/video.mp4",
-                    CreatedBy = new Guid("4a4a4a4a-4a4a-4a4a-4a4a-4a4a4a4a4a4a"), // Huy Dinh Trong
+                    CreatedByUserId = new Guid("4a4a4a4a-4a4a-4a4a-4a4a-4a4a4a4a4a4a"), // Huy Dinh Trong
                     FileSize = 10485760, // 10 MB
                     Duration = 0,
                     Visibility = LessonMaterialVisibility.Private,
                     LessonStatus = LessonMaterialStatus.Approved
                 };
                 context.LessonMaterials.Add(lessonMaterial);
+                await context.SaveChangesAsync();
+            }
+
+            if (!await context.LessonMaterialApprovals.AnyAsync())
+            {
+                var lessonMaterialApproval = new LessonMaterialApproval
+                {
+                    Id = new Guid("3d3d3d3d-3d3d-3d3d-3d3d-3d3d3d3d3d3d"),
+                    LessonMaterialId = new Guid("3c3c3c3c-3c3c-3c3c-3c3c-3c3c3c3c3c3c"), // Giới thiệu về Đại số
+                    ApproverId = new Guid("2a2a2a2a-2a2a-2a2a-2a2a-2a2a2a2a2a2a"), // Quy Nguyen Xuan
+                    StatusChangeTo = LessonMaterialStatus.Approved,
+                    RequesterNote = "Đây là bài giảng về Đại số.",
+                    Feedback = "Bài giảng đã được phê duyệt và sẵn sàng sử dụng.",
+                };
+                context.LessonMaterialApprovals.Add(lessonMaterialApproval);
                 await context.SaveChangesAsync();
             }
 
@@ -311,6 +329,35 @@ namespace Eduva.Infrastructure.Extensions
                     LessonMaterialId = new Guid("3c3c3c3c-3c3c-3c3c-3c3c-3c3c3c3c3c3c"), // Giới thiệu về Đại số
                 };
                 context.FolderLessonMaterials.Add(folderLessonMaterial);
+                await context.SaveChangesAsync();
+            }
+
+            if (!await context.LessonMaterialQuestions.AnyAsync())
+            {
+                var lessonMaterialQuestion = new LessonMaterialQuestion
+                {
+                    Id = new Guid("1a1a1a1a-1a1a-1a1a-1a1a-1a1a1a1a1a1a"),
+                    LessonMaterialId = new Guid("3c3c3c3c-3c3c-3c3c-3c3c-3c3c3c3c3c3c"), // Giới thiệu về Đại số
+                    Title = "Câu hỏi về phương trình Đại số lớp 10",
+                    Content = "Giúp em giải thích phương trình bậc nhất và bậc hai trong Đại số lớp 10.",
+                    CreatedByUserId = new Guid("5a5a5a5a-5a5a-5a5a-5a5a-5a5a5a5a5a5a"), // Dung Nguyen Ngoc
+                };
+                context.LessonMaterialQuestions.Add(lessonMaterialQuestion);
+                await context.SaveChangesAsync();
+            }
+
+            if (!await context.QuestionComments.AnyAsync())
+            {
+                var questionComment = new QuestionComment
+                {
+                    Id = new Guid("1a1a1a1a-1a1a-1a1a-1a1a-1a1a1a1a1a1a"),
+                    QuestionId = new Guid("1a1a1a1a-1a1a-1a1a-1a1a-1a1a1a1a1a1a"), // Câu hỏi về phương trình Đại số lớp 10
+                    Content = "Phương trình bậc nhất có dạng ax + b = 0, trong đó a và b là các hằng số. " +
+                    "Phương trình bậc hai có dạng ax^2 + bx + c = 0. Để giải phương trình bậc nhất, ta chỉ cần chuyển b sang bên phải và chia cho a. " +
+                    "Đối với phương trình bậc hai, ta có thể sử dụng công thức nghiệm hoặc phương pháp phân tích đa thức.",
+                    CreatedByUserId = new Guid("4a4a4a4a-4a4a-4a4a-4a4a-4a4a4a4a4a4a"), // Huy Dinh Trong
+                };
+                context.QuestionComments.Add(questionComment);
                 await context.SaveChangesAsync();
             }
         }

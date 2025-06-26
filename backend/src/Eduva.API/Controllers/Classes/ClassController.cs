@@ -4,10 +4,12 @@ using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Common.Models;
 using Eduva.Application.Features.Classes.Commands.ArchiveClass;
 using Eduva.Application.Features.Classes.Commands.CreateClass;
+using Eduva.Application.Features.Classes.Commands.EnrollByClassCode;
 using Eduva.Application.Features.Classes.Commands.ResetClassCode;
 using Eduva.Application.Features.Classes.Commands.RestoreClass;
 using Eduva.Application.Features.Classes.Commands.UpdateClass;
 using Eduva.Application.Features.Classes.Queries.GetClasses;
+using Eduva.Application.Features.Classes.Queries.GetStudentClasses;
 using Eduva.Application.Features.Classes.Queries.GetTeacherClasses;
 using Eduva.Application.Features.Classes.Responses;
 using Eduva.Application.Features.Classes.Specifications;
@@ -77,7 +79,7 @@ namespace Eduva.API.Controllers.Classes
             });
         }
 
-        [HttpGet("my-classes")]
+        [HttpGet("teaching")]
         [ProducesResponseType(typeof(ApiResponse<Pagination<ClassResponse>>), StatusCodes.Status200OK)]
         [Authorize(Roles = $"{nameof(Role.Teacher)}")]
         public async Task<IActionResult> GetTeacherClasses([FromQuery] ClassSpecParam classSpecParam)
@@ -95,6 +97,31 @@ namespace Eduva.API.Controllers.Classes
             return await HandleRequestAsync(async () =>
             {
                 var query = new GetTeacherClassesQuery(classSpecParam, teacherId);
+                var result = await _mediator.Send(query);
+                return (CustomCode.Success, result);
+            });
+        }
+
+        [HttpGet("enrollment")]
+        [ProducesResponseType(typeof(ApiResponse<Pagination<StudentClassResponse>>), StatusCodes.Status200OK)]
+        [Authorize(Roles = $"{nameof(Role.Student)}")]
+        public async Task<IActionResult> GetMyClasses([FromQuery] StudentClassSpecParam specParam)
+        {
+            var validationResult = CheckModelStateValidity();
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userId, out var studentId))
+                return Respond(CustomCode.UserIdNotFound);
+
+            // Create query with spec params
+            var query = new GetStudentClassesQuery(specParam, studentId);
+
+            return await HandleRequestAsync(async () =>
+            {
                 var result = await _mediator.Send(query);
                 return (CustomCode.Success, result);
             });
@@ -215,6 +242,38 @@ namespace Eduva.API.Controllers.Classes
                 var result = await _mediator.Send(command);
                 return (CustomCode.Success, result);
             });
+        }
+
+        [HttpPost("enroll-by-code")]
+        [ProducesResponseType(typeof(ApiResponse<StudentClassResponse>), StatusCodes.Status200OK)]
+        [Authorize(Roles = $"{nameof(Role.Student)}")]
+        public async Task<IActionResult> EnrollByClassCode([FromBody] EnrollByClassCodeCommand command)
+        {
+            var validationResult = CheckModelStateValidity();
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userId, out var studentId))
+                return Respond(CustomCode.UserIdNotFound);
+
+            command.StudentId = studentId;
+
+            try
+            {
+                var result = await _mediator.Send(command);
+                return Respond(CustomCode.Success, result);
+            }
+            catch (AppException ex)
+            {
+                return Respond(ex.StatusCode, null, ex.Errors);
+            }
+            catch (Exception)
+            {
+                return Respond(CustomCode.SystemError);
+            }
         }
     }
 }

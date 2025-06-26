@@ -26,7 +26,7 @@ namespace Eduva.Shared.Constants
             { CustomCode.PasswordResetSuccessful, new MessageDetail {
                 HttpCode = StatusCodes.Status200OK, Message = "Password reset successful" } },
             { CustomCode.RequiresOtpVerification, new MessageDetail {
-                HttpCode = StatusCodes.Status403Forbidden, Message = "OTP verification required." } },
+                HttpCode = StatusCodes.Status200OK, Message = "OTP verification required." } },
             { CustomCode.OtpSentSuccessfully, new MessageDetail {
                 HttpCode = StatusCodes.Status200OK, Message = "OTP sent successfully" } },
 

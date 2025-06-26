@@ -42,7 +42,7 @@ namespace Eduva.Infrastructure.Persistence.Configurations
             builder.HasMany(u => u.ClassesAsTeacher)
                     .WithOne(c => c.Teacher)
                     .HasForeignKey(c => c.TeacherId)
-                    .OnDelete(DeleteBehavior.Restrict);
+                    .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasMany(u => u.StudentClasses)
                     .WithOne(sc => sc.Student)
@@ -56,27 +56,27 @@ namespace Eduva.Infrastructure.Persistence.Configurations
 
             builder.HasMany(u => u.CreatedLessonMaterials)
                     .WithOne(lm => lm.CreatedByUser)
-                    .HasForeignKey(lm => lm.CreatedBy)
+                    .HasForeignKey(lm => lm.CreatedByUserId)
                     .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasMany(u => u.ApprovedLessonMaterials)
                     .WithOne(lm => lm.Approver)
                     .HasForeignKey(lm => lm.ApproverId)
-                    .OnDelete(DeleteBehavior.Restrict);
+                    .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasMany(u => u.CreatedLessonMaterialQuestions)
                     .WithOne(q => q.CreatedByUser)
-                    .HasForeignKey(q => q.CreatedBy)
+                    .HasForeignKey(q => q.CreatedByUserId)
                     .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasMany(u => u.CreatedQuestionComments)
                     .WithOne(c => c.CreatedByUser)
-                    .HasForeignKey(c => c.CreatedBy)
+                    .HasForeignKey(c => c.CreatedByUserId)
                     .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasMany(u => u.ReceivedNotifications)
                     .WithOne(un => un.TargetUser)
-                    .HasForeignKey(un => un.TargetUserID)
+                    .HasForeignKey(un => un.TargetUserId)
                     .OnDelete(DeleteBehavior.Cascade);
 
         }

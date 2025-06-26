@@ -43,7 +43,7 @@ namespace Eduva.Application.Features.LessonMaterials.Commands
                     lessonMaterial.Id = Guid.NewGuid();
                     lessonMaterial.LessonStatus = LessonMaterialStatus.Draft;
                     lessonMaterial.Visibility = LessonMaterialVisibility.Private;
-                    lessonMaterial.CreatedBy = request.CreatedBy;
+                    lessonMaterial.CreatedByUserId = request.CreatedBy;
                     lessonMaterial.SchoolId = request.SchoolId;
 
                     // Add to repository

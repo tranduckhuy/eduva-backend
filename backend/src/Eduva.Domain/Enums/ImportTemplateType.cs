@@ -2,6 +2,6 @@
 {
     public enum ImportTemplateType
     {
-        User = 1,
+        User = 0
     }
 }

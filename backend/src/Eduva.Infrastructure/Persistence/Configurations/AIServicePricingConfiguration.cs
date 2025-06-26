@@ -15,6 +15,10 @@ namespace Eduva.Infrastructure.Persistence.Configurations
             builder.Property(asp => asp.PricePerMinuteCredits)
                 .HasColumnType("decimal(18,2)")
                 .IsRequired();
+
+            builder.Property(asp => asp.Status)
+                .HasConversion<string>()
+                .IsRequired();
         }
     }
 }

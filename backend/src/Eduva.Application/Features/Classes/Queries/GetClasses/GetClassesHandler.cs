@@ -33,12 +33,22 @@ namespace Eduva.Application.Features.Classes.Queries.GetClasses
 
             // Check user roles
             var userRoles = await _userManager.GetRolesAsync(currentUser);
-            bool isAdmin = userRoles.Contains(nameof(Role.SystemAdmin)) || userRoles.Contains(nameof(Role.SchoolAdmin));
+            bool isSystemAdmin = userRoles.Contains(nameof(Role.SystemAdmin));
+            bool isSchoolAdmin = userRoles.Contains(nameof(Role.SchoolAdmin));
 
-            // Only allow admins to view all classes
-            if (!isAdmin)
+            // Only allow admins to view classes
+            if (!isSystemAdmin && !isSchoolAdmin)
             {
                 throw new AppException(CustomCode.NotAdminForClassList);
+            }
+
+            if (isSchoolAdmin && !isSystemAdmin)
+            {
+                if (currentUser.SchoolId == null)
+                {
+                    throw new AppException(CustomCode.SchoolNotFound);
+                }
+                request.ClassSpecParam.SchoolId = currentUser.SchoolId.Value;
             }
 
             var spec = new ClassSpecification(request.ClassSpecParam);
