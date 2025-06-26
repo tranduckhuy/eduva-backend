@@ -28,6 +28,7 @@ namespace Eduva.Application.Features.SubscriptionPlans.Commands.UpdatePlan
             plan.StorageLimitGB = request.StorageLimitGB;
             plan.PriceMonthly = request.PriceMonthly;
             plan.PricePerYear = request.PricePerYear;
+            plan.IsRecommended = request.IsRecommended;
             plan.LastModifiedAt = DateTimeOffset.UtcNow;
 
             repo.Update(plan);

@@ -1,7 +1,10 @@
 ﻿using Eduva.API.Controllers.Base;
 using Eduva.API.Models;
+using Eduva.Application.Common.Models;
 using Eduva.Application.Features.CreditTransactions.Commands;
+using Eduva.Application.Features.CreditTransactions.Queries;
 using Eduva.Application.Features.CreditTransactions.Responses;
+using Eduva.Application.Features.CreditTransactions.Specifications;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
@@ -21,6 +24,18 @@ namespace Eduva.API.Controllers.CreditTransactions
             : base(logger)
         {
             _mediator = mediator;
+        }
+
+        [HttpGet]
+        [Authorize(Roles = nameof(Role.SystemAdmin))]
+        [ProducesResponseType(typeof(ApiResponse<Pagination<CreditTransactionResponse>>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetUserCreditTransactions([FromQuery] CreditTransactionSpecParam specParam)
+        {
+            return await HandleRequestAsync<Pagination<CreditTransactionResponse>>(async () =>
+            {
+                var result = await _mediator.Send(new GetCreditTransactionQuery(specParam));
+                return (CustomCode.Success, result);
+            });
         }
 
         [HttpPost("payment-link")]
