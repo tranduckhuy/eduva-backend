@@ -62,5 +62,13 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                 .FirstOrDefaultAsync(cancellationToken);
         }
 
+        public async Task<SchoolSubscription?> GetByIdWithDetailsAsync(Guid id, CancellationToken cancellationToken)
+        {
+            return await _context.SchoolSubscriptions
+                .Include(x => x.School)
+                .Include(x => x.Plan)
+                .Include(x => x.PaymentTransaction)
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        }
     }
 }

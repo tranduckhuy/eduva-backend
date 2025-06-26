@@ -87,6 +87,7 @@ namespace Eduva.Shared.Enums
         AICreditPackMustBeArchived = 4305,
         AICreditPackNotActive = 4306,
         InvalidPaymentPurpose = 4307,
+        CreditTransactionNotFound = 4308,
 
         // Subscription Errors
         SchoolAndSubscriptionRequired = 4400,
