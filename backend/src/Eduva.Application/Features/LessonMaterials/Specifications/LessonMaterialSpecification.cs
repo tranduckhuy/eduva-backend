@@ -25,7 +25,7 @@ namespace Eduva.Application.Features.LessonMaterials.Specifications
                 (!param.CreatedByUserId.HasValue || lm.CreatedByUserId == param.CreatedByUserId) &&
                 (string.IsNullOrEmpty(param.SearchTerm) || lm.Title.ToLower().Contains(param.SearchTerm.ToLower())) &&
                 (string.IsNullOrEmpty(param.Tag) || lm.Tag == param.Tag) &&
-                (param.ContentTypes == null || param.ContentTypes.Count == 0 || param.ContentTypes.Contains(lm.ContentType)) &&
+                (!param.ContentType.HasValue || lm.ContentType == param.ContentType) &&
                 (!param.ClassId.HasValue || lm.FolderLessonMaterials.Any(flm => flm.Folder.ClassId == param.ClassId)) &&
                 (!param.FolderId.HasValue || lm.FolderLessonMaterials.Any(flm => flm.FolderId == param.FolderId)) &&
                 (!param.LessonStatus.HasValue || lm.LessonStatus == param.LessonStatus) &&

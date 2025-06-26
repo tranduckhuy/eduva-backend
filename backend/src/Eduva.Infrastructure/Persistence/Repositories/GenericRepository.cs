@@ -105,10 +105,15 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                 query = query.Include(includeExpression);
             }
 
-            // Sorting
+            // Sorting - ensure there's always an OrderBy for consistent pagination
             if (spec.OrderBy != null)
             {
                 query = spec.OrderBy(query);
+            }
+            else
+            {
+                // Simple default ordering to prevent EF Core warning
+                query = query.OrderBy(e => EF.Property<object>(e, "Id"));
             }
 
             // Projection

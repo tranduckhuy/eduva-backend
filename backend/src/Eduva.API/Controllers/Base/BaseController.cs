@@ -73,7 +73,7 @@ namespace Eduva.API.Controllers.Base
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unexpected error in {ControllerName}", typeof(TController).Name);
-                return Respond(CustomCode.SystemError);
+                return Respond(CustomCode.SystemError, null, [ex.Message]);
             }
         }
 
