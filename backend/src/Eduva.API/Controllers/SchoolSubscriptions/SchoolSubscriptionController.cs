@@ -1,9 +1,13 @@
 ﻿using Eduva.API.Attributes;
 using Eduva.API.Controllers.Base;
 using Eduva.API.Models;
+using Eduva.Application.Common.Models;
 using Eduva.Application.Features.Payments.Commands;
 using Eduva.Application.Features.Payments.Queries;
 using Eduva.Application.Features.Payments.Responses;
+using Eduva.Application.Features.SchoolSubscriptions.Queries;
+using Eduva.Application.Features.SchoolSubscriptions.Responses;
+using Eduva.Application.Features.SchoolSubscriptions.Specifications;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
@@ -22,6 +26,18 @@ namespace Eduva.API.Controllers.SchoolSubscriptions
             : base(logger)
         {
             _mediator = mediator;
+        }
+
+        [HttpGet]
+        [Authorize(Roles = nameof(Role.SystemAdmin))]
+        [ProducesResponseType(typeof(ApiResponse<Pagination<SchoolSubscriptionResponse>>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetSchoolSubscriptions([FromQuery] SchoolSubscriptionSpecParam specParam)
+        {
+            return await HandleRequestAsync<Pagination<SchoolSubscriptionResponse>>(async () =>
+            {
+                var result = await _mediator.Send(new GetSchoolSubscriptionQuery(specParam));
+                return (CustomCode.Success, result);
+            });
         }
 
         [HttpPost("payment-link")]
