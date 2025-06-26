@@ -174,7 +174,7 @@ namespace Eduva.API.Test.Controllers.Auth
         }
 
         [Test]
-        public async Task Login_ShouldReturn403_WhenRequiresOtp()
+        public async Task Login_ShouldReturn200_WhenRequiresOtp()
         {
             var request = new LoginRequestDto
             {
@@ -189,7 +189,7 @@ namespace Eduva.API.Test.Controllers.Auth
             var objectResult = result as ObjectResult;
 
             Assert.That(objectResult, Is.Not.Null);
-            Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status200OK));
         }
 
         [Test]

@@ -2,8 +2,8 @@
 {
     public enum OtpPurpose
     {
-        Login,
-        Enable2FA,
-        Disable2FA
+        Login = 0,
+        Enable2FA = 1,
+        Disable2FA = 2
     }
 }
