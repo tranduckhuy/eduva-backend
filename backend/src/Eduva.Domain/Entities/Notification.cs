@@ -2,7 +2,7 @@
 
 namespace Eduva.Domain.Entities
 {
-    public class Notification : BaseEntity<int>
+    public class Notification : BaseEntity<Guid>
     {
         public string Type { get; set; } = default!;
         public string Payload { get; set; } = default!;

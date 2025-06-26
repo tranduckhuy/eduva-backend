@@ -8,20 +8,20 @@ namespace Eduva.Infrastructure.Persistence.Configurations
     {
         public void Configure(EntityTypeBuilder<QuestionComment> builder)
         {
-            builder.Property(qc => qc.QuestionID)
+            builder.Property(qc => qc.QuestionId)
                 .IsRequired();
 
             builder.Property(qc => qc.Content)
                 .HasColumnType("text")
                 .IsRequired();
 
-            builder.Property(qc => qc.CreatedBy)
+            builder.Property(qc => qc.CreatedByUserId)
                 .IsRequired();
 
             // Relationships
             builder.HasOne(qc => qc.Question)
                 .WithMany(lmq => lmq.Comments)
-                .HasForeignKey(qc => qc.QuestionID)
+                .HasForeignKey(qc => qc.QuestionId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Self-referencing relationship for replies
@@ -33,7 +33,7 @@ namespace Eduva.Infrastructure.Persistence.Configurations
 
             builder.HasOne(qc => qc.CreatedByUser)
                 .WithMany(u => u.CreatedQuestionComments)
-                .HasForeignKey(qc => qc.CreatedBy)
+                .HasForeignKey(qc => qc.CreatedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }

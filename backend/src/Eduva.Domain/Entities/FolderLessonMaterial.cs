@@ -4,8 +4,8 @@ namespace Eduva.Domain.Entities
 {
     public class FolderLessonMaterial : BaseEntity<Guid>
     {
-        public int FolderID { get; set; }
-        public Guid LessonMaterialID { get; set; }
+        public Guid FolderId { get; set; }
+        public Guid LessonMaterialId { get; set; }
 
         // Navigation properties
         public virtual Folder Folder { get; set; } = default!;

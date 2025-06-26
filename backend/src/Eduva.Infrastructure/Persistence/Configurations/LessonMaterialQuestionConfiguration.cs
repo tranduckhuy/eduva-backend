@@ -23,17 +23,17 @@ namespace Eduva.Infrastructure.Persistence.Configurations
             builder.HasOne(lmq => lmq.LessonMaterial)
                 .WithMany(lm => lm.LessonMaterialQuestions)
                 .HasForeignKey(lmq => lmq.LessonMaterialId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasOne(lmq => lmq.CreatedByUser)
                 .WithMany(u => u.CreatedLessonMaterialQuestions)
-                .HasForeignKey(lmq => lmq.CreatedBy)
-                .OnDelete(DeleteBehavior.Restrict);
+                .HasForeignKey(lmq => lmq.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasMany(lmq => lmq.Comments)
                 .WithOne(qc => qc.Question)
-                .HasForeignKey(qc => qc.QuestionID)
-                .OnDelete(DeleteBehavior.Restrict);
+                .HasForeignKey(qc => qc.QuestionId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

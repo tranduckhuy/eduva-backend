@@ -2,7 +2,6 @@ using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Common.Mappings;
 using Eduva.Application.Features.Folders.Responses;
 using Eduva.Application.Interfaces;
-using Eduva.Application.Interfaces.Repositories;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
@@ -24,8 +23,8 @@ namespace Eduva.Application.Features.Folders.Commands
 
         public async Task<FolderResponse> Handle(RenameFolderCommand request, CancellationToken cancellationToken)
         {
-            var folderRepository = _unitOfWork.GetRepository<Folder, int>();
-            
+            var folderRepository = _unitOfWork.GetRepository<Folder, Guid>();
+
             // Retrieve folder
             var folder = await folderRepository.GetByIdAsync(request.Id);
             if (folder == null || folder.Status != EntityStatus.Active)
@@ -71,7 +70,7 @@ namespace Eduva.Application.Features.Folders.Commands
                 throw new AppException(CustomCode.FolderUpdateFailed);
             }
         }
-        
+
         private async Task<bool> HasPermissionToUpdateFolder(Folder folder, Guid userId)
         {
             // Personal folder - only the owner can update
@@ -79,34 +78,34 @@ namespace Eduva.Application.Features.Folders.Commands
             {
                 return folder.UserId == userId;
             }
-            
+
             // Class folder - check if user is teacher of the class or admin
             if (folder.OwnerType == OwnerType.Class && folder.ClassId.HasValue)
             {
                 var classRepository = _unitOfWork.GetRepository<Classroom, Guid>();
                 var classroom = await classRepository.GetByIdAsync(folder.ClassId.Value);
-                
+
                 if (classroom == null)
                 {
                     return false;
                 }
-                
+
                 // Teacher of the class
                 if (classroom.TeacherId == userId)
                 {
                     return true;
                 }
-                
+
                 // Check if user is an admin
                 var userRepository = _unitOfWork.GetRepository<ApplicationUser, Guid>();
                 var user = await userRepository.GetByIdAsync(userId);
-                
+
                 if (user != null && user.SchoolId == classroom.SchoolId)
                 {
                     return true; // School admin
                 }
             }
-            
+
             return false;
         }
     }

@@ -16,7 +16,7 @@ namespace Eduva.Domain.Entities
         public bool IsAIContent { get; set; }
         public string SourceUrl { get; set; } = string.Empty;
         public LessonMaterialVisibility Visibility { get; set; }
-        public Guid CreatedBy { get; set; } // User ID of the creator
+        public Guid CreatedByUserId { get; set; } // User ID of the creator
 
         // Navigation Properties
         public virtual ApplicationUser CreatedByUser { get; set; } = default!;

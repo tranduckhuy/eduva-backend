@@ -3,7 +3,7 @@ using Eduva.Domain.Enums;
 
 namespace Eduva.Domain.Entities
 {
-    public class SchoolSubscription : BaseEntity<int>
+    public class SchoolSubscription : BaseEntity<Guid>
     {
         public DateTimeOffset StartDate { get; set; }
         public DateTimeOffset EndDate { get; set; }

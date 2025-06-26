@@ -32,7 +32,7 @@ namespace Eduva.Application.Common.Mappings
             CreateMap<CreateLessonMaterialCommand, LessonMaterial>();
             CreateMap<LessonMaterialRequest, LessonMaterial>();
             CreateMap<LessonMaterial, LessonMaterialResponse>()
-                .ForMember(dest => dest.CreatedById, opt => opt.MapFrom(src => src.CreatedBy))
+                .ForMember(dest => dest.CreatedById, opt => opt.MapFrom(src => src.CreatedByUserId))
                 .ForMember(dest => dest.CreatedByName,
                         opt => opt.MapFrom(src => src.CreatedByUser != null ? src.CreatedByUser.FullName : string.Empty))
                 .ReverseMap();

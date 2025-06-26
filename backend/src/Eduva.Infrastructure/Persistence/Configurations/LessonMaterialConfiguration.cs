@@ -8,7 +8,7 @@ namespace Eduva.Infrastructure.Persistence.Configurations
     {
         public void Configure(EntityTypeBuilder<LessonMaterial> builder)
         {
-            builder.Property(lm => lm.CreatedBy)
+            builder.Property(lm => lm.CreatedByUserId)
                 .IsRequired();
 
             builder.Property(lm => lm.Title)
@@ -45,7 +45,7 @@ namespace Eduva.Infrastructure.Persistence.Configurations
                 .HasConversion<string>()
                 .IsRequired();
 
-            builder.Property(lm => lm.CreatedBy)
+            builder.Property(lm => lm.CreatedByUserId)
                 .IsRequired();
 
             // Relationships
@@ -61,7 +61,7 @@ namespace Eduva.Infrastructure.Persistence.Configurations
 
             builder.HasMany(lm => lm.FolderLessonMaterials)
                 .WithOne(flm => flm.LessonMaterial)
-                .HasForeignKey(flm => flm.LessonMaterialID)
+                .HasForeignKey(flm => flm.LessonMaterialId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasMany(lm => lm.LessonMaterialApprovals)

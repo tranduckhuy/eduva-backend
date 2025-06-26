@@ -86,7 +86,7 @@ public class ConfirmPayOSPaymentReturnCommandHandlerTests
 
         var school = new School { Id = 1, Status = EntityStatus.Inactive };
         var plan = new SubscriptionPlan { Id = 1, PriceMonthly = 100000 };
-        var oldSub = new SchoolSubscription { Id = 123, SubscriptionStatus = SubscriptionStatus.Active };
+        var oldSub = new SchoolSubscription { Id = new Guid("1a1a1a1a-1a1a-1a1a-1a1a-1a1a1a1a1a1a"), SubscriptionStatus = SubscriptionStatus.Active };
 
         _transactionRepoMock.Setup(x => x.GetByTransactionCodeAsync("1", It.IsAny<CancellationToken>())).ReturnsAsync(transaction);
         _schoolRepoMock.Setup(x => x.GetByUserIdAsync(_userId)).ReturnsAsync(school);

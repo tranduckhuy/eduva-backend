@@ -84,7 +84,6 @@ namespace Eduva.Application.Features.Classes.Commands.EnrollByClassCode
                 // Create response
                 var response = new StudentClassResponse
                 {
-                    Id = studentClass.Id,
                     StudentId = studentClass.StudentId,
                     ClassId = classroom.Id,
                     ClassName = classroom.Name,

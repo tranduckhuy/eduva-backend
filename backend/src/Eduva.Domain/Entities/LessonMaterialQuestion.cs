@@ -2,12 +2,12 @@
 
 namespace Eduva.Domain.Entities
 {
-    public class LessonMaterialQuestion : BaseTimestampedEntity<int>
+    public class LessonMaterialQuestion : BaseTimestampedEntity<Guid>
     {
         public Guid LessonMaterialId { get; set; }
         public string Title { get; set; } = default!;
         public string Content { get; set; } = default!;
-        public Guid CreatedBy { get; set; } // User ID of the creator
+        public Guid CreatedByUserId { get; set; } // User ID of the creator
 
         // Navigation properties
         public virtual ApplicationUser CreatedByUser { get; set; } = default!;

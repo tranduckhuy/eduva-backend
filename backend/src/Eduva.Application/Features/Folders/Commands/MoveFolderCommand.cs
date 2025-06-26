@@ -7,16 +7,16 @@ namespace Eduva.Application.Features.Folders.Commands
 {
     public class MoveFolderCommand : IRequest<FolderResponse>
     {
-        public int Id { get; set; }
-        
+        public Guid Id { get; set; }
+
         [JsonIgnore]
         public OwnerType OwnerType { get; set; }
-        
+
         public Guid? ClassId { get; set; }
-        
+
         [JsonIgnore]
         public Guid? UserId { get; set; }
-        
+
         [JsonIgnore]
         public Guid CurrentUserId { get; set; }
     }

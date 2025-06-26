@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Eduva.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250622160819_InitialCreate")]
+    [Migration("20250626144025_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -57,8 +57,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -86,8 +87,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -96,11 +98,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Eduva.Domain.Entities.AIUsageLog", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<string>("AIServiceType")
                         .IsRequired()
@@ -193,8 +193,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("text");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<int>("TotalCredits")
                         .HasColumnType("integer");
@@ -248,8 +249,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.Property<int>("SchoolId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<Guid>("TeacherId")
                         .HasColumnType("uuid");
@@ -265,11 +267,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Eduva.Domain.Entities.Folder", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<Guid?>("ClassId")
                         .HasColumnType("uuid");
@@ -292,8 +292,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<Guid?>("UserId")
                         .HasColumnType("uuid");
@@ -313,17 +314,17 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<int>("FolderID")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("FolderId")
+                        .HasColumnType("uuid");
 
-                    b.Property<Guid>("LessonMaterialID")
+                    b.Property<Guid>("LessonMaterialId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("FolderID");
+                    b.HasIndex("FolderId");
 
-                    b.HasIndex("LessonMaterialID");
+                    b.HasIndex("LessonMaterialId");
 
                     b.ToTable("FolderLessonMaterials");
                 });
@@ -341,7 +342,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("CreatedBy")
+                    b.Property<Guid>("CreatedByUserId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Description")
@@ -390,7 +391,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CreatedBy");
+                    b.HasIndex("CreatedByUserId");
 
                     b.HasIndex("SchoolId");
 
@@ -399,11 +400,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Eduva.Domain.Entities.LessonMaterialApproval", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("ApproverId")
                         .HasColumnType("uuid");
@@ -432,11 +431,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Eduva.Domain.Entities.LessonMaterialQuestion", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Content")
                         .IsRequired()
@@ -445,7 +442,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("CreatedBy")
+                    b.Property<Guid>("CreatedByUserId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset?>("LastModifiedAt")
@@ -464,7 +461,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CreatedBy");
+                    b.HasIndex("CreatedByUserId");
 
                     b.HasIndex("LessonMaterialId");
 
@@ -473,11 +470,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Eduva.Domain.Entities.Notification", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -543,11 +538,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Eduva.Domain.Entities.QuestionComment", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Content")
                         .IsRequired()
@@ -556,28 +549,28 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("CreatedBy")
+                    b.Property<Guid>("CreatedByUserId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset?>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int?>("ParentCommentId")
-                        .HasColumnType("integer");
+                    b.Property<Guid?>("ParentCommentId")
+                        .HasColumnType("uuid");
 
-                    b.Property<int>("QuestionID")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("QuestionId")
+                        .HasColumnType("uuid");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CreatedBy");
+                    b.HasIndex("CreatedByUserId");
 
                     b.HasIndex("ParentCommentId");
 
-                    b.HasIndex("QuestionID");
+                    b.HasIndex("QuestionId");
 
                     b.ToTable("QuestionComments");
                 });
@@ -632,11 +625,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Eduva.Domain.Entities.SchoolSubscription", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<string>("BillingCycle")
                         .IsRequired()
@@ -677,11 +668,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Eduva.Domain.Entities.StudentClass", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("ClassId")
                         .HasColumnType("uuid");
@@ -715,6 +704,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
+                    b.Property<bool>("IsRecommended")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTimeOffset?>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -732,8 +724,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.Property<decimal>("PricePerYear")
                         .HasColumnType("numeric(18,2)");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<decimal>("StorageLimitGB")
                         .HasColumnType("numeric");
@@ -745,11 +738,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Eduva.Domain.Entities.UserCreditTransaction", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<int>("AICreditPackId")
                         .HasColumnType("integer");
@@ -779,26 +770,24 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Eduva.Domain.Entities.UserNotification", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("IsRead")
                         .HasColumnType("boolean");
 
-                    b.Property<int>("NotificationID")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("NotificationId")
+                        .HasColumnType("uuid");
 
-                    b.Property<Guid>("TargetUserID")
+                    b.Property<Guid>("TargetUserId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("NotificationID");
+                    b.HasIndex("NotificationId");
 
-                    b.HasIndex("TargetUserID");
+                    b.HasIndex("TargetUserId");
 
                     b.ToTable("UserNotifications");
                 });
@@ -965,7 +954,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.HasOne("Eduva.Domain.Entities.ApplicationUser", "Teacher")
                         .WithMany("ClassesAsTeacher")
                         .HasForeignKey("TeacherId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("School");
@@ -994,13 +983,13 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 {
                     b.HasOne("Eduva.Domain.Entities.Folder", "Folder")
                         .WithMany("FolderLessonMaterials")
-                        .HasForeignKey("FolderID")
+                        .HasForeignKey("FolderId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Eduva.Domain.Entities.LessonMaterial", "LessonMaterial")
                         .WithMany("FolderLessonMaterials")
-                        .HasForeignKey("LessonMaterialID")
+                        .HasForeignKey("LessonMaterialId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -1013,7 +1002,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 {
                     b.HasOne("Eduva.Domain.Entities.ApplicationUser", "CreatedByUser")
                         .WithMany("CreatedLessonMaterials")
-                        .HasForeignKey("CreatedBy")
+                        .HasForeignKey("CreatedByUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1032,7 +1021,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.HasOne("Eduva.Domain.Entities.ApplicationUser", "Approver")
                         .WithMany("ApprovedLessonMaterials")
                         .HasForeignKey("ApproverId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Eduva.Domain.Entities.LessonMaterial", "LessonMaterial")
@@ -1050,14 +1039,14 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 {
                     b.HasOne("Eduva.Domain.Entities.ApplicationUser", "CreatedByUser")
                         .WithMany("CreatedLessonMaterialQuestions")
-                        .HasForeignKey("CreatedBy")
+                        .HasForeignKey("CreatedByUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Eduva.Domain.Entities.LessonMaterial", "LessonMaterial")
                         .WithMany("LessonMaterialQuestions")
                         .HasForeignKey("LessonMaterialId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("CreatedByUser");
@@ -1080,7 +1069,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 {
                     b.HasOne("Eduva.Domain.Entities.ApplicationUser", "CreatedByUser")
                         .WithMany("CreatedQuestionComments")
-                        .HasForeignKey("CreatedBy")
+                        .HasForeignKey("CreatedByUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1091,7 +1080,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
                     b.HasOne("Eduva.Domain.Entities.LessonMaterialQuestion", "Question")
                         .WithMany("Comments")
-                        .HasForeignKey("QuestionID")
+                        .HasForeignKey("QuestionId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -1179,13 +1168,13 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 {
                     b.HasOne("Eduva.Domain.Entities.Notification", "Notification")
                         .WithMany("UserNotifications")
-                        .HasForeignKey("NotificationID")
+                        .HasForeignKey("NotificationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Eduva.Domain.Entities.ApplicationUser", "TargetUser")
                         .WithMany("ReceivedNotifications")
-                        .HasForeignKey("TargetUserID")
+                        .HasForeignKey("TargetUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

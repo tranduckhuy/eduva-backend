@@ -2,8 +2,7 @@
 {
     public enum AIServiceType
     {
-        GenSlide = 0,
-        GenAudio = 1,
-        GenVideo = 2,
+        GenAudio = 0,
+        GenVideo = 1,
     }
 }

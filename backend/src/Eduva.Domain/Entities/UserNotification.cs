@@ -2,10 +2,10 @@
 
 namespace Eduva.Domain.Entities
 {
-    public class UserNotification : BaseEntity<int>
+    public class UserNotification : BaseEntity<Guid>
     {
-        public Guid TargetUserID { get; set; }
-        public int NotificationID { get; set; } 
+        public Guid TargetUserId { get; set; }
+        public Guid NotificationId { get; set; }
         public bool IsRead { get; set; }
 
         // Navigation properties

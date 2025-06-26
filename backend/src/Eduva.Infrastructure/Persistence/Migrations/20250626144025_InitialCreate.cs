@@ -24,7 +24,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     BonusCredits = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     LastModifiedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    Status = table.Column<int>(type: "integer", nullable: false)
+                    Status = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -41,7 +41,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     PricePerMinuteCredits = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     LastModifiedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    Status = table.Column<int>(type: "integer", nullable: false)
+                    Status = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -66,8 +66,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 name: "Notifications",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Type = table.Column<string>(type: "text", nullable: false),
                     Payload = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
@@ -109,9 +108,10 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     StorageLimitGB = table.Column<decimal>(type: "numeric", nullable: false),
                     PriceMonthly = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
                     PricePerYear = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    IsRecommended = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     LastModifiedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    Status = table.Column<int>(type: "integer", nullable: false)
+                    Status = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -147,7 +147,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     FullName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     AvatarUrl = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     SchoolId = table.Column<int>(type: "integer", nullable: true),
-                    Status = table.Column<int>(type: "integer", nullable: false),
+                    Status = table.Column<string>(type: "text", nullable: false),
                     TotalCredits = table.Column<int>(type: "integer", nullable: false),
                     RefreshToken = table.Column<string>(type: "text", nullable: true),
                     RefreshTokenExpiryTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
@@ -181,8 +181,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 name: "AIUsageLogs",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     AIServiceType = table.Column<string>(type: "text", nullable: false),
                     DurationSeconds = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
@@ -296,7 +295,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     TeacherId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     LastModifiedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    Status = table.Column<int>(type: "integer", nullable: false)
+                    Status = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -306,7 +305,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                         column: x => x.TeacherId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Classes_Schools_SchoolId",
                         column: x => x.SchoolId,
@@ -331,7 +330,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     IsAIContent = table.Column<bool>(type: "boolean", nullable: false),
                     SourceUrl = table.Column<string>(type: "character varying(2048)", maxLength: 2048, nullable: false),
                     Visibility = table.Column<string>(type: "text", nullable: false),
-                    CreatedBy = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedByUserId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     LastModifiedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     Status = table.Column<int>(type: "integer", nullable: false)
@@ -340,8 +339,8 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 {
                     table.PrimaryKey("PK_LessonMaterials", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_LessonMaterials_AspNetUsers_CreatedBy",
-                        column: x => x.CreatedBy,
+                        name: "FK_LessonMaterials_AspNetUsers_CreatedByUserId",
+                        column: x => x.CreatedByUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -383,24 +382,23 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 name: "UserNotifications",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    TargetUserID = table.Column<Guid>(type: "uuid", nullable: false),
-                    NotificationID = table.Column<int>(type: "integer", nullable: false),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    TargetUserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    NotificationId = table.Column<Guid>(type: "uuid", nullable: false),
                     IsRead = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_UserNotifications", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_UserNotifications_AspNetUsers_TargetUserID",
-                        column: x => x.TargetUserID,
+                        name: "FK_UserNotifications_AspNetUsers_TargetUserId",
+                        column: x => x.TargetUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_UserNotifications_Notifications_NotificationID",
-                        column: x => x.NotificationID,
+                        name: "FK_UserNotifications_Notifications_NotificationId",
+                        column: x => x.NotificationId,
                         principalTable: "Notifications",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -410,8 +408,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 name: "Folders",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: true),
                     ClassId = table.Column<Guid>(type: "uuid", nullable: true),
                     OwnerType = table.Column<string>(type: "text", nullable: false),
@@ -419,7 +416,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     Order = table.Column<int>(type: "integer", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     LastModifiedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    Status = table.Column<int>(type: "integer", nullable: false)
+                    Status = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -442,8 +439,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 name: "StudentClasses",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     StudentId = table.Column<Guid>(type: "uuid", nullable: false),
                     ClassId = table.Column<Guid>(type: "uuid", nullable: false),
                     EnrolledAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
@@ -469,8 +465,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 name: "LessonMaterialApprovals",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     LessonMaterialId = table.Column<Guid>(type: "uuid", nullable: false),
                     ApproverId = table.Column<Guid>(type: "uuid", nullable: false),
                     StatusChangeTo = table.Column<string>(type: "text", nullable: false),
@@ -485,7 +480,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                         column: x => x.ApproverId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_LessonMaterialApprovals_LessonMaterials_LessonMaterialId",
                         column: x => x.LessonMaterialId,
@@ -498,12 +493,11 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 name: "LessonMaterialQuestions",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     LessonMaterialId = table.Column<Guid>(type: "uuid", nullable: false),
                     Title = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     Content = table.Column<string>(type: "text", nullable: false),
-                    CreatedBy = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedByUserId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     LastModifiedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     Status = table.Column<int>(type: "integer", nullable: false)
@@ -512,8 +506,8 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 {
                     table.PrimaryKey("PK_LessonMaterialQuestions", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_LessonMaterialQuestions_AspNetUsers_CreatedBy",
-                        column: x => x.CreatedBy,
+                        name: "FK_LessonMaterialQuestions_AspNetUsers_CreatedByUserId",
+                        column: x => x.CreatedByUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -522,15 +516,14 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                         column: x => x.LessonMaterialId,
                         principalTable: "LessonMaterials",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
                 name: "SchoolSubscription",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     StartDate = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     EndDate = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     SubscriptionStatus = table.Column<string>(type: "text", nullable: false),
@@ -567,8 +560,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 name: "UserCreditTransactions",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     AICreditPackId = table.Column<int>(type: "integer", nullable: false),
                     PaymentTransactionId = table.Column<Guid>(type: "uuid", nullable: false),
@@ -603,21 +595,21 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    FolderID = table.Column<int>(type: "integer", nullable: false),
-                    LessonMaterialID = table.Column<Guid>(type: "uuid", nullable: false)
+                    FolderId = table.Column<Guid>(type: "uuid", nullable: false),
+                    LessonMaterialId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_FolderLessonMaterials", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_FolderLessonMaterials_Folders_FolderID",
-                        column: x => x.FolderID,
+                        name: "FK_FolderLessonMaterials_Folders_FolderId",
+                        column: x => x.FolderId,
                         principalTable: "Folders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_FolderLessonMaterials_LessonMaterials_LessonMaterialID",
-                        column: x => x.LessonMaterialID,
+                        name: "FK_FolderLessonMaterials_LessonMaterials_LessonMaterialId",
+                        column: x => x.LessonMaterialId,
                         principalTable: "LessonMaterials",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -627,12 +619,11 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 name: "QuestionComments",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    QuestionID = table.Column<int>(type: "integer", nullable: false),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    QuestionId = table.Column<Guid>(type: "uuid", nullable: false),
                     Content = table.Column<string>(type: "text", nullable: false),
-                    ParentCommentId = table.Column<int>(type: "integer", nullable: true),
-                    CreatedBy = table.Column<Guid>(type: "uuid", nullable: false),
+                    ParentCommentId = table.Column<Guid>(type: "uuid", nullable: true),
+                    CreatedByUserId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     LastModifiedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     Status = table.Column<int>(type: "integer", nullable: false)
@@ -641,14 +632,14 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 {
                     table.PrimaryKey("PK_QuestionComments", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_QuestionComments_AspNetUsers_CreatedBy",
-                        column: x => x.CreatedBy,
+                        name: "FK_QuestionComments_AspNetUsers_CreatedByUserId",
+                        column: x => x.CreatedByUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_QuestionComments_LessonMaterialQuestions_QuestionID",
-                        column: x => x.QuestionID,
+                        name: "FK_QuestionComments_LessonMaterialQuestions_QuestionId",
+                        column: x => x.QuestionId,
                         principalTable: "LessonMaterialQuestions",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -724,14 +715,14 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 column: "TeacherId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_FolderLessonMaterials_FolderID",
+                name: "IX_FolderLessonMaterials_FolderId",
                 table: "FolderLessonMaterials",
-                column: "FolderID");
+                column: "FolderId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_FolderLessonMaterials_LessonMaterialID",
+                name: "IX_FolderLessonMaterials_LessonMaterialId",
                 table: "FolderLessonMaterials",
-                column: "LessonMaterialID");
+                column: "LessonMaterialId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Folders_ClassId",
@@ -754,9 +745,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 column: "LessonMaterialId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_LessonMaterialQuestions_CreatedBy",
+                name: "IX_LessonMaterialQuestions_CreatedByUserId",
                 table: "LessonMaterialQuestions",
-                column: "CreatedBy");
+                column: "CreatedByUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_LessonMaterialQuestions_LessonMaterialId",
@@ -764,9 +755,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 column: "LessonMaterialId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_LessonMaterials_CreatedBy",
+                name: "IX_LessonMaterials_CreatedByUserId",
                 table: "LessonMaterials",
-                column: "CreatedBy");
+                column: "CreatedByUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_LessonMaterials_SchoolId",
@@ -779,9 +770,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_QuestionComments_CreatedBy",
+                name: "IX_QuestionComments_CreatedByUserId",
                 table: "QuestionComments",
-                column: "CreatedBy");
+                column: "CreatedByUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_QuestionComments_ParentCommentId",
@@ -789,9 +780,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 column: "ParentCommentId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_QuestionComments_QuestionID",
+                name: "IX_QuestionComments_QuestionId",
                 table: "QuestionComments",
-                column: "QuestionID");
+                column: "QuestionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Schools_ContactEmail",
@@ -840,14 +831,14 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserNotifications_NotificationID",
+                name: "IX_UserNotifications_NotificationId",
                 table: "UserNotifications",
-                column: "NotificationID");
+                column: "NotificationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserNotifications_TargetUserID",
+                name: "IX_UserNotifications_TargetUserId",
                 table: "UserNotifications",
-                column: "TargetUserID");
+                column: "TargetUserId");
         }
 
         /// <inheritdoc />

@@ -21,15 +21,18 @@ namespace Eduva.Application.Features.LessonMaterials.Commands
                 .When(x => x.SchoolId.HasValue, ApplyConditionTo.CurrentValidator);
 
             RuleFor(x => x.FolderId)
-                .GreaterThan(0).WithMessage("Folder ID must be greater than zero.")
-                .MustAsync(FolderExists).WithMessage("The specified folder does not exist.");            RuleFor(x => x.BlobNames)
+                .NotNull().WithMessage("Folder ID is required.")
+                .MustAsync(FolderExists).WithMessage("The specified folder does not exist.");
+
+            RuleFor(x => x.BlobNames)
                 .NotNull().WithMessage("Blob names list is required.")
                 .NotEmpty().WithMessage("At least one blob name must be provided.")
-                .Must(x => x == null || x.Count <= 10).WithMessage("Cannot upload more than 10 lesson materials at once.");            RuleFor(x => x.LessonMaterials)
+                .Must(x => x == null || x.Count <= 10).WithMessage("Cannot upload more than 10 lesson materials at once.");
+            RuleFor(x => x.LessonMaterials)
                 .NotNull().WithMessage("Lesson materials list is required.")
                 .NotEmpty().WithMessage("At least one lesson material must be provided.")
-                .Must(x => x == null || x.Count <= 10).WithMessage("Cannot upload more than 10 lesson materials at once."); 
-                
+                .Must(x => x == null || x.Count <= 10).WithMessage("Cannot upload more than 10 lesson materials at once.");
+
             RuleForEach(x => x.LessonMaterials)
                 .SetValidator(new LessonMaterialRequestValidator());
         }
@@ -42,10 +45,10 @@ namespace Eduva.Application.Features.LessonMaterials.Commands
         }
 
         // Validate if the folder exists
-        private async Task<bool> FolderExists(int folderId, CancellationToken token)
+        private async Task<bool> FolderExists(Guid folderId, CancellationToken token)
         {
-            if (folderId <= 0) return false;
-            var folderRepository = _unitOfWork.GetRepository<Folder, int>();
+            if (folderId == Guid.Empty) return false;
+            var folderRepository = _unitOfWork.GetRepository<Folder, Guid>();
             return await folderRepository.ExistsAsync(folderId);
         }
 

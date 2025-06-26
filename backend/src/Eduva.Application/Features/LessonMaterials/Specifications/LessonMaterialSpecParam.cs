@@ -6,9 +6,11 @@ namespace Eduva.Application.Features.LessonMaterials.Specifications
     public class LessonMaterialSpecParam : BaseSpecParam
     {
         public int? SchoolId { get; set; }
-        public Guid? CreatedBy { get; set; }
+        public Guid? ClassId { get; set; }
+        public Guid? FolderId { get; set; }
+        public Guid? CreatedByUserId { get; set; }
         public string? Tag { get; set; }
-        public ContentType? ContentType { get; set; }
+        public List<ContentType>? ContentTypes { get; set; }
         public LessonMaterialStatus? LessonStatus { get; set; }
         public LessonMaterialVisibility? Visibility { get; set; }
     }

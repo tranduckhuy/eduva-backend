@@ -151,7 +151,7 @@ namespace Eduva.API.Controllers.Folders
         [HttpPut("{id}/rename")]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
         [ProducesResponseType(typeof(ApiResponse<FolderResponse>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> RenameFolder(int id, [FromBody] RenameFolderCommand command)
+        public async Task<IActionResult> RenameFolder(Guid id, [FromBody] RenameFolderCommand command)
         {
             var validationResult = CheckModelStateValidity();
             if (validationResult != null)
@@ -205,7 +205,7 @@ namespace Eduva.API.Controllers.Folders
         [HttpPut("{id}/move")]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
         [ProducesResponseType(typeof(ApiResponse<FolderResponse>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> MoveFolder(int id, [FromBody] MoveFolderCommand command)
+        public async Task<IActionResult> MoveFolder(Guid id, [FromBody] MoveFolderCommand command)
         {
             var validationResult = CheckModelStateValidity();
             if (validationResult != null)

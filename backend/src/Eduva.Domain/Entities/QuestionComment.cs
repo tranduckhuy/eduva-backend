@@ -2,12 +2,12 @@
 
 namespace Eduva.Domain.Entities
 {
-    public class QuestionComment : BaseTimestampedEntity<int>
+    public class QuestionComment : BaseTimestampedEntity<Guid>
     {
-        public int QuestionID { get; set; }
+        public Guid QuestionId { get; set; }
         public string Content { get; set; } = default!;
-        public int? ParentCommentId { get; set; }
-        public Guid CreatedBy { get; set; } // User ID of the creator
+        public Guid? ParentCommentId { get; set; }
+        public Guid CreatedByUserId { get; set; } // User ID of the creator
 
         // Navigation properties
         public virtual ApplicationUser CreatedByUser { get; set; } = default!;

@@ -22,6 +22,10 @@ namespace Eduva.Infrastructure.Persistence.Configurations
             builder.Property(f => f.Order)
                 .IsRequired();
 
+            builder.Property(f => f.Status)
+                .HasConversion<string>()
+                .IsRequired();
+
             // Relationships
             // UserID is nullable, so IsRequired(false)
             builder.HasOne(f => f.User)
@@ -39,7 +43,7 @@ namespace Eduva.Infrastructure.Persistence.Configurations
 
             builder.HasMany(f => f.FolderLessonMaterials)
                 .WithOne(flm => flm.Folder)
-                .HasForeignKey(flm => flm.FolderID)
+                .HasForeignKey(flm => flm.FolderId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }

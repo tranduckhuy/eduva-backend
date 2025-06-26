@@ -111,6 +111,7 @@ namespace Eduva.Application.Features.Payments.Commands
             var userCreditRepo = _unitOfWork.GetRepository<UserCreditTransaction, Guid>();
             var creditTransaction = new UserCreditTransaction
             {
+                Id = Guid.NewGuid(),
                 UserId = transaction.UserId,
                 AICreditPackId = pack.Id,
                 PaymentTransactionId = transaction.Id,

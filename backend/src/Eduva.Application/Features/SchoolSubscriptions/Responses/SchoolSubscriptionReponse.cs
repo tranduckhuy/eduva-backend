@@ -4,7 +4,7 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Responses
 {
     public class SchoolSubscriptionResponse
     {
-        public int Id { get; set; }
+        public Guid Id { get; set; }
         public DateTimeOffset StartDate { get; set; }
         public DateTimeOffset EndDate { get; set; }
         public SubscriptionStatus SubscriptionStatus { get; set; }
