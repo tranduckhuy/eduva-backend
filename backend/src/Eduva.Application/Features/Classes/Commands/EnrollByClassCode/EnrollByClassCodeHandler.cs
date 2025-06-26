@@ -1,5 +1,5 @@
 using Eduva.Application.Common.Exceptions;
-using Eduva.Application.Features.StudentClasses.Responses;
+using Eduva.Application.Features.Classes.Responses;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Domain.Entities;
@@ -8,7 +8,7 @@ using Eduva.Shared.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 
-namespace Eduva.Application.Features.StudentClasses.Commands
+namespace Eduva.Application.Features.Classes.Commands.EnrollByClassCode
 {
     public class EnrollByClassCodeHandler : IRequestHandler<EnrollByClassCodeCommand, StudentClassResponse>
     {

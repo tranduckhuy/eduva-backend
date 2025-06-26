@@ -1,6 +1,6 @@
 using Eduva.Domain.Enums;
 
-namespace Eduva.Application.Features.StudentClasses.Responses
+namespace Eduva.Application.Features.Classes.Responses
 {
     public class StudentClassResponse
     {
