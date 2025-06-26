@@ -44,36 +44,39 @@ namespace Eduva.Shared.Enums
         PaymentAlreadyConfirmed = 4025,
         DowngradeNotAllowed = 4026,
         SchoolSubscriptionAlreadyExists = 4027,
-        ClassNotFound = 4028,
-        ClassNameAlreadyExists = 4029,
-        ClassCodeDuplicate = 4030,
-        ClassCreateFailed = 4031,
-        ClassUpdateFailed = 4032,
-        ClassArchiveFailed = 4033,
-        ClassCodeResetFailed = 4034,
         SchoolAlreadyArchived = 4035,
         SubscriptionPlanMustBeArchived = 4036,
         PlanInUse = 4037,
         SchoolAlreadyActive = 4038,
         PlanAlreadyActive = 4039,
         PlanAlreadyArchived = 4040,
-        ClassNameAlreadyExistsForTeacher = 4041,
-        NotTeacherOfClass = 4042,
-        NotAdminForClassList = 4043,
-
 
         InvalidRestrictedRole = 4044,
         UserNotPartOfSchool = 4045,
         FileIsRequired = 4046,
         InvalidFileType = 4047,
 
+        // Student Class Errors
+        UserNotStudent = 4048,
+        ClassNotActive = 4049,
+        StudentAlreadyEnrolled = 4050,
+        StudentCannotEnrollDifferentSchool = 4051,
+        EnrollmentFailed = 4052,
 
+        UserAlreadyLocked = 4053,
+        UserNotLocked = 4054,
+        CannotLockSelf = 4055,
+        CannotUnlockSelf = 4056,
+        InvalidTemplateType = 4057,
+        FileDownloadFailed = 4058,
+        IncorrectCurrentPassword = 4059,
+        OtpResendTooSoon = 4060,
+        UserNotFound = 4061,
 
         // File Storage Errors
         InvalidBlobName = 4200,
         InvalidBlobUrl = 4201,
         BlobNotFound = 4202,
-
 
         // Payment Transaction Errors
         PaymentTransactionNotFound = 4300,
@@ -88,5 +91,35 @@ namespace Eduva.Shared.Enums
         // Subscription Errors
         SchoolAndSubscriptionRequired = 4400,
         SubscriptionExpiredWithDataLossRisk = 4401,
+
+        // Forbidden Errors
+        SchoolInactive = 4500,
+        SubscriptionInvalid = 4501,
+        ExceedUserLimit = 4502,
+
+        // Folder Errors
+        FolderNotFound = 4600,
+        FolderNameAlreadyExists = 4601,
+        FolderCreateFailed = 4602,
+        FolderUpdateFailed = 4603,
+        FolderDeleteFailed = 4604,
+
+        // Class Errors - All consolidated in 4700 range
+        ClassNotFound = 4700,
+        ClassNameAlreadyExists = 4701,
+        ClassCodeDuplicate = 4702,
+        ClassCreateFailed = 4703,
+        ClassUpdateFailed = 4704,
+        ClassArchiveFailed = 4705,
+        ClassCodeResetFailed = 4706,
+        ClassAlreadyArchived = 4707,
+        ClassNotArchived = 4708,
+        ClassMustBeArchivedBeforeDelete = 4709,
+        CannotCreateClassForInactiveSchool = 4710,
+        ClassRestoreFailed = 4711,
+        ClassDeleteFailed = 4712,
+        ClassNameAlreadyExistsForTeacher = 4713,
+        NotTeacherOfClass = 4714,
+        NotAdminForClassList = 4715,
     }
 }

@@ -1,4 +1,6 @@
 using Eduva.Application.Interfaces.Services;
+using Eduva.Domain.Entities;
+using Eduva.Infrastructure.Extensions.Providers;
 using Eduva.Infrastructure.Identity;
 using Eduva.Infrastructure.Identity.Interfaces;
 using Eduva.Infrastructure.Persistence.DbContext;
@@ -18,6 +20,7 @@ namespace Eduva.Infrastructure.Extensions
         public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
         {
             // Register JWT services
+            services.AddScoped<SixDigitTokenProvider<ApplicationUser>>();
             services.AddScoped<JwtHandler>();
             services.AddScoped<ITokenBlackListService, TokenBlackListService>();
             services.AddScoped<IAuthService, AuthService>();
@@ -118,14 +121,19 @@ namespace Eduva.Infrastructure.Extensions
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
                 options.Lockout.MaxFailedAccessAttempts = 5;
                 options.Lockout.AllowedForNewUsers = true;
+
+                options.Tokens.ProviderMap["OTP"] = new TokenProviderDescriptor(typeof(SixDigitTokenProvider<TUser>));
             })
             .AddEntityFrameworkStores<AppDbContext>()
-            .AddDefaultTokenProviders();
+            .AddDefaultTokenProviders()
+            .AddTokenProvider<SixDigitTokenProvider<ApplicationUser>>("OTP");
 
-            services.Configure<DataProtectionTokenProviderOptions>(options =>
+            builder.Services.Configure<SixDigitTokenProviderOptions>(opt =>
             {
-                options.TokenLifespan = TimeSpan.FromSeconds(120);
+                opt.TokenLifespan = TimeSpan.FromSeconds(120);
             });
+
+            builder.Services.AddScoped<SixDigitTokenProvider<ApplicationUser>>();
 
             return builder;
         }

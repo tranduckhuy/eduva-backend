@@ -1,5 +1,5 @@
-using Eduva.Application.Features.SchoolSubscriptions.Configurations;
-using Eduva.Application.Features.SchoolSubscriptions.Configurations.PayOSService;
+using Eduva.Application.Features.Payments.Configurations;
+using Eduva.Application.Features.Payments.Configurations.PayOSService;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Application.Interfaces.Services;
@@ -49,7 +49,6 @@ namespace Eduva.Infrastructure.Extensions
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             // Excel Service
-            services.AddScoped<IExcelService, ExcelService>();
             services.Configure<ImportTemplateConfig>(configuration.GetSection("ImportTemplate"));
 
             // Register repositories
@@ -61,6 +60,8 @@ namespace Eduva.Infrastructure.Extensions
             services.AddScoped<ISubscriptionPlanRepository, SubscriptionPlanRepository>();
             services.AddScoped<IClassroomRepository, ClassroomRepository>();
             services.AddScoped<ISchoolRepository, SchoolRepository>();
+            services.AddScoped<IFolderRepository, FolderRepository>();
+            services.AddScoped<IStudentClassRepository, StudentClassRepository>();
             services.AddScoped<IPaymentTransactionRepository, PaymentTransactionRepository>();
             services.AddScoped<IAICreditPackRepository, AICreditPackRepository>();
 
@@ -82,6 +83,7 @@ namespace Eduva.Infrastructure.Extensions
 
 
             services.AddScoped<ISchoolSubscriptionService, SchoolSubscriptionService>();
+            services.AddScoped<ISchoolValidationService, SchoolValidationService>();
 
             return services;
         }

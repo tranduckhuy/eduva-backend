@@ -1,4 +1,6 @@
-﻿using Eduva.API.Controllers.Base;
+﻿using Eduva.API.Attributes;
+using Eduva.API.Controllers.Base;
+using Eduva.API.Models;
 using Eduva.Application.Common.Models;
 using Eduva.Application.Features.SubscriptionPlans.Commands.ActivatePlan;
 using Eduva.Application.Features.SubscriptionPlans.Commands.ArchivePlan;
@@ -30,6 +32,7 @@ namespace Eduva.API.Controllers.SubscriptionPlans
 
         [HttpGet]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
+        [ProducesResponseType(typeof(ApiResponse<Pagination<SubscriptionPlanResponse>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetSubscriptionPlans([FromQuery] SubscriptionPlanSpecParam specParam)
         {
             return await HandleRequestAsync<Pagination<SubscriptionPlanResponse>>(async () =>
@@ -41,6 +44,8 @@ namespace Eduva.API.Controllers.SubscriptionPlans
 
         [HttpGet("{id}")]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
+        [ProducesResponseType(typeof(ApiResponse<SubscriptionPlanResponse>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetSubscriptionPlanById(int id)
         {
             var query = new GetSubscriptionPlanByIdQuery(id);
@@ -54,6 +59,8 @@ namespace Eduva.API.Controllers.SubscriptionPlans
 
         [HttpGet("{id}/details")]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
+        [ProducesResponseType(typeof(ApiResponse<SubscriptionPlanResponse>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetSubscriptionPlanDetail(int id)
         {
             var query = new GetSubscriptionPlanDetailQuery(id);
@@ -66,7 +73,8 @@ namespace Eduva.API.Controllers.SubscriptionPlans
         }
 
         [HttpPost]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)}")]
+        [Authorize(Roles = nameof(Role.SystemAdmin))]
+        [ProducesResponseType(typeof(ApiResponse<SubscriptionPlanResponse>), StatusCodes.Status200OK)]
         public async Task<IActionResult> CreateSubscriptionPlan([FromBody] CreateSubscriptionPlanCommand command)
         {
             return await HandleRequestAsync(async () =>
@@ -76,8 +84,10 @@ namespace Eduva.API.Controllers.SubscriptionPlans
             });
         }
 
+
         [HttpPut("{id}")]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)}")]
+        [Authorize(Roles = nameof(Role.SystemAdmin))]
+        [ProducesResponseType(typeof(ApiResponse<SubscriptionPlanResponse>), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateSubscriptionPlan(int id, [FromBody] UpdateSubscriptionPlanCommand command)
         {
             command.Id = id;
@@ -89,7 +99,8 @@ namespace Eduva.API.Controllers.SubscriptionPlans
         }
 
         [HttpPut("{id}/archive")]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)}")]
+        [Authorize(Roles = nameof(Role.SystemAdmin))]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> ArchiveSubscriptionPlan(int id)
         {
             var command = new ArchiveSubscriptionPlanCommand(id);
@@ -97,7 +108,8 @@ namespace Eduva.API.Controllers.SubscriptionPlans
         }
 
         [HttpPut("{id}/activate")]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)}")]
+        [Authorize(Roles = nameof(Role.SystemAdmin))]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> ActivateSubscriptionPlan(int id)
         {
             var command = new ActivateSubscriptionPlanCommand(id);
@@ -105,7 +117,8 @@ namespace Eduva.API.Controllers.SubscriptionPlans
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)}")]
+        [Authorize(Roles = nameof(Role.SystemAdmin))]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> DeleteSubscriptionPlan(int id)
         {
             var command = new DeleteSubscriptionPlanCommand(id);

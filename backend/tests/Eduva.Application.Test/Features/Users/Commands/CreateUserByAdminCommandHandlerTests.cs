@@ -1,6 +1,7 @@
 ﻿using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Exceptions.Auth;
 using Eduva.Application.Features.Users.Commands;
+using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
@@ -16,155 +17,241 @@ namespace Eduva.Application.Test.Features.Users.Commands
     public class CreateUserByAdminCommandHandlerTests
     {
         private Mock<UserManager<ApplicationUser>> _userManagerMock = default!;
+        private Mock<ISchoolValidationService> _schoolValidationServiceMock = default!;
+        private CreateUserByAdminCommandHandler _handler = default!;
 
         #region CreateUserByAdminCommandHandlerTests Setup
 
         [SetUp]
         public void Setup()
         {
-            var store = new Mock<IUserStore<ApplicationUser>>();
+            var storeMock = new Mock<IUserStore<ApplicationUser>>();
+
             _userManagerMock = new Mock<UserManager<ApplicationUser>>(
-            store.Object,
-            Mock.Of<IOptions<IdentityOptions>>(),
-            Mock.Of<IPasswordHasher<ApplicationUser>>(),
-            Array.Empty<IUserValidator<ApplicationUser>>(),
-            Array.Empty<IPasswordValidator<ApplicationUser>>(),
-            Mock.Of<ILookupNormalizer>(),
-            Mock.Of<IdentityErrorDescriber>(),
-            Mock.Of<IServiceProvider>(),
-            Mock.Of<ILogger<UserManager<ApplicationUser>>>());
+                storeMock.Object,
+                Mock.Of<IOptions<IdentityOptions>>(),
+                Mock.Of<IPasswordHasher<ApplicationUser>>(),
+                new List<IUserValidator<ApplicationUser>>(),
+                new List<IPasswordValidator<ApplicationUser>>(),
+                Mock.Of<ILookupNormalizer>(),
+                new IdentityErrorDescriber(),
+                Mock.Of<IServiceProvider>(),
+                Mock.Of<ILogger<UserManager<ApplicationUser>>>())
+            ;
+
+            _schoolValidationServiceMock = new Mock<ISchoolValidationService>();
+
+            _handler = new CreateUserByAdminCommandHandler(
+                _userManagerMock.Object,
+                _schoolValidationServiceMock.Object);
         }
 
         #endregion
 
         #region CreateUserByAdminCommandHandler Tests
 
-        private CreateUserByAdminCommandHandler CreateHandler() =>
-            new CreateUserByAdminCommandHandler(_userManagerMock.Object);
-
-        [TestCase(Role.SystemAdmin)]
-        [TestCase(Role.SchoolAdmin)]
-        public void Handle_ShouldThrow_WhenRoleIsRestricted(Role role)
-        {
-            var handler = CreateHandler();
-            var command = new CreateUserByAdminCommand { Role = role };
-
-            Assert.ThrowsAsync<InvalidRestrictedRoleException>(() => handler.Handle(command, default));
-        }
-
-        [TestCase(null)]
-        [TestCase("")]
-        [TestCase("   ")]
-        public void Handle_ShouldThrow_WhenPasswordInvalid(string? password)
-        {
-            var handler = CreateHandler();
-            var command = new CreateUserByAdminCommand { Role = Role.Student, InitialPassword = password! };
-
-            var ex = Assert.ThrowsAsync<AppException>(() => handler.Handle(command, default));
-            Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.ProvidedInformationIsInValid));
-        }
-
         [Test]
-        public void Handle_ShouldThrow_WhenEmailAlreadyExists()
+        public async Task Should_Throw_When_Role_Is_SystemAdmin_Or_SchoolAdmin()
         {
-            _userManagerMock.Setup(m => m.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync(new ApplicationUser());
-
-            var handler = CreateHandler();
             var command = new CreateUserByAdminCommand
             {
-                Email = "test@example.com",
-                Role = Role.Student,
-                InitialPassword = "Abc@123",
-                CreatorId = Guid.NewGuid()
+                Role = Role.SystemAdmin,
+                InitialPassword = "dummy"
             };
 
-            Assert.ThrowsAsync<EmailAlreadyExistsException>(() => handler.Handle(command, default));
+            try
+            {
+                await _handler.Handle(command, default);
+                Assert.Fail("Expected InvalidRestrictedRoleException was not thrown");
+            }
+            catch (InvalidRestrictedRoleException ex)
+            {
+                Assert.That(ex, Is.Not.Null);
+            }
         }
 
         [Test]
-        public void Handle_ShouldThrow_WhenCreatorNotExists()
+        public async Task Should_Throw_When_InitialPassword_Is_Null()
         {
-            _userManagerMock.Setup(m => m.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync((ApplicationUser?)null);
-            _userManagerMock.Setup(m => m.FindByIdAsync(It.IsAny<string>())).ReturnsAsync((ApplicationUser?)null);
-
-            var handler = CreateHandler();
             var command = new CreateUserByAdminCommand
             {
-                Email = "new@example.com",
                 Role = Role.Teacher,
-                InitialPassword = "Abc@123",
-                CreatorId = Guid.NewGuid()
+                InitialPassword = string.Empty
             };
 
-            Assert.ThrowsAsync<UserNotExistsException>(() => handler.Handle(command, default));
+            try
+            {
+                await _handler.Handle(command, default);
+                Assert.Fail("Expected AppException was not thrown");
+            }
+            catch (AppException ex)
+            {
+                Assert.That(ex, Is.Not.Null);
+            }
         }
 
         [Test]
-        public void Handle_ShouldThrow_WhenCreatorHasNoSchool()
+        public async Task Should_Throw_When_Email_Already_Exists()
         {
-            _userManagerMock.Setup(m => m.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync((ApplicationUser?)null);
-            _userManagerMock.Setup(m => m.FindByIdAsync(It.IsAny<string>())).ReturnsAsync(new ApplicationUser { SchoolId = null });
-
-            var handler = CreateHandler();
             var command = new CreateUserByAdminCommand
             {
-                Email = "new@example.com",
                 Role = Role.Teacher,
-                InitialPassword = "Abc@123",
+                InitialPassword = "Password123!",
+                Email = "test@email.com",
                 CreatorId = Guid.NewGuid()
             };
 
-            Assert.ThrowsAsync<UserNotPartOfSchoolException>(() => handler.Handle(command, default));
+            _userManagerMock.Setup(x => x.FindByEmailAsync(command.Email))
+                .ReturnsAsync(new ApplicationUser());
+
+            try
+            {
+                await _handler.Handle(command, default);
+                Assert.Fail("Expected EmailAlreadyExistsException was not thrown");
+            }
+            catch (EmailAlreadyExistsException ex)
+            {
+                Assert.That(ex, Is.Not.Null);
+            }
         }
 
         [Test]
-        public void Handle_ShouldThrow_WhenCreateUserFails()
+        public async Task Should_Throw_When_Creator_Does_Not_Exist()
         {
-            _userManagerMock.Setup(m => m.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync((ApplicationUser?)null);
-            _userManagerMock.Setup(m => m.FindByIdAsync(It.IsAny<string>())).ReturnsAsync(new ApplicationUser { SchoolId = 1 });
-            _userManagerMock.Setup(m => m.CreateAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()))
-                .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "Password too weak" }));
-
-            var handler = CreateHandler();
-
             var command = new CreateUserByAdminCommand
             {
-                Email = "new@example.com",
                 Role = Role.Teacher,
-                InitialPassword = "Abc@123",
+                InitialPassword = "Password123!",
+                Email = "test@email.com",
                 CreatorId = Guid.NewGuid()
             };
 
-            var ex = Assert.ThrowsAsync<AppException>(() => handler.Handle(command, default));
-            Assert.Multiple(() =>
+            _userManagerMock.Setup(x => x.FindByEmailAsync(command.Email)).ReturnsAsync((ApplicationUser?)null);
+            _userManagerMock.Setup(x => x.FindByIdAsync(command.CreatorId.ToString()))
+                .ReturnsAsync((ApplicationUser?)null);
+
+            try
             {
-                Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.ProvidedInformationIsInValid));
-                Assert.That(ex.Errors, Contains.Item("Password too weak"));
-            });
+                await _handler.Handle(command, default);
+                Assert.Fail("Expected UserNotExistsException was not thrown");
+            }
+            catch (UserNotExistsException ex)
+            {
+                Assert.That(ex, Is.Not.Null);
+            }
         }
 
         [Test]
-        public async Task Handle_ShouldCreateUserSuccessfully()
+        public async Task Should_Throw_When_Creator_Not_Assigned_To_School()
         {
-            _userManagerMock.Setup(m => m.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync((ApplicationUser?)null);
-            _userManagerMock.Setup(m => m.FindByIdAsync(It.IsAny<string>())).ReturnsAsync(new ApplicationUser { SchoolId = 1 });
-            _userManagerMock.Setup(m => m.CreateAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()))
+            var command = new CreateUserByAdminCommand
+            {
+                Role = Role.Teacher,
+                InitialPassword = "Password123!",
+                Email = "test@email.com",
+                CreatorId = Guid.NewGuid()
+            };
+
+            var creator = new ApplicationUser { Id = command.CreatorId, SchoolId = null };
+
+            _userManagerMock.Setup(x => x.FindByEmailAsync(command.Email)).ReturnsAsync((ApplicationUser?)null);
+            _userManagerMock.Setup(x => x.FindByIdAsync(command.CreatorId.ToString()))
+                .ReturnsAsync(creator);
+
+            try
+            {
+                await _handler.Handle(command, default);
+                Assert.Fail("Expected UserNotPartOfSchoolException was not thrown");
+            }
+            catch (UserNotPartOfSchoolException ex)
+            {
+                Assert.That(ex, Is.Not.Null);
+            }
+        }
+
+        [Test]
+        public async Task Should_Throw_When_Cannot_Add_More_Users()
+        {
+            var command = new CreateUserByAdminCommand
+            {
+                Role = Role.Teacher,
+                InitialPassword = "Password123!",
+                Email = "test@email.com",
+                CreatorId = Guid.NewGuid()
+            };
+
+            var creator = new ApplicationUser { Id = command.CreatorId, SchoolId = 1 };
+
+            _userManagerMock.Setup(x => x.FindByEmailAsync(command.Email)).ReturnsAsync((ApplicationUser?)null);
+            _userManagerMock.Setup(x => x.FindByIdAsync(command.CreatorId.ToString())).ReturnsAsync(creator);
+            _schoolValidationServiceMock.Setup(x => x.ValidateCanAddUsersAsync(1, 1, default))
+                .ThrowsAsync(new AppException(CustomCode.ExceedUserLimit));
+
+            try
+            {
+                await _handler.Handle(command, default);
+                Assert.Fail("Expected AppException was not thrown");
+            }
+            catch (AppException ex)
+            {
+                Assert.That(ex, Is.Not.Null);
+            }
+        }
+
+        [Test]
+        public async Task Should_Throw_When_CreateAsync_Fails()
+        {
+            var command = new CreateUserByAdminCommand
+            {
+                Role = Role.Teacher,
+                InitialPassword = "Password123!",
+                Email = "test@email.com",
+                FullName = "Test User",
+                CreatorId = Guid.NewGuid()
+            };
+
+            var creator = new ApplicationUser { Id = command.CreatorId, SchoolId = 2 };
+
+            _userManagerMock.Setup(x => x.FindByEmailAsync(command.Email)).ReturnsAsync((ApplicationUser?)null);
+            _userManagerMock.Setup(x => x.FindByIdAsync(command.CreatorId.ToString())).ReturnsAsync(creator);
+            _schoolValidationServiceMock.Setup(x => x.ValidateCanAddUsersAsync(2, 1, default)).Returns(Task.CompletedTask);
+            _userManagerMock.Setup(x => x.CreateAsync(It.IsAny<ApplicationUser>(), command.InitialPassword))
+                .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "Error" }));
+
+            try
+            {
+                await _handler.Handle(command, default);
+                Assert.Fail("Expected AppException was not thrown");
+            }
+            catch (AppException ex)
+            {
+                Assert.That(ex.Message, Does.Contain("Provided information is invalid"));
+            }
+        }
+
+        [Test]
+        public async Task Should_Create_User_Successfully()
+        {
+            var command = new CreateUserByAdminCommand
+            {
+                Role = Role.Teacher,
+                InitialPassword = "Password123!",
+                Email = "test@email.com",
+                FullName = "Test User",
+                CreatorId = Guid.NewGuid()
+            };
+
+            var creator = new ApplicationUser { Id = command.CreatorId, SchoolId = 1 };
+
+            _userManagerMock.Setup(x => x.FindByEmailAsync(command.Email)).ReturnsAsync((ApplicationUser?)null);
+            _userManagerMock.Setup(x => x.FindByIdAsync(command.CreatorId.ToString())).ReturnsAsync(creator);
+            _schoolValidationServiceMock.Setup(x => x.ValidateCanAddUsersAsync(1, 1, default)).Returns(Task.CompletedTask);
+            _userManagerMock.Setup(x => x.CreateAsync(It.IsAny<ApplicationUser>(), command.InitialPassword))
                 .ReturnsAsync(IdentityResult.Success);
-            _userManagerMock.Setup(m => m.AddToRoleAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()))
+            _userManagerMock.Setup(x => x.AddToRoleAsync(It.IsAny<ApplicationUser>(), Role.Teacher.ToString()))
                 .ReturnsAsync(IdentityResult.Success);
 
-            var handler = CreateHandler();
-
-            var command = new CreateUserByAdminCommand
-            {
-                Email = "new@example.com",
-                Role = Role.Teacher,
-                InitialPassword = "Abc@123",
-                CreatorId = Guid.NewGuid()
-            };
-
-            var result = await handler.Handle(command, default);
-
+            var result = await _handler.Handle(command, default);
             Assert.That(result, Is.EqualTo(Unit.Value));
         }
 

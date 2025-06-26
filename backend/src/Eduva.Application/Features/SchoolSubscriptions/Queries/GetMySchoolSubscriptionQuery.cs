@@ -1,7 +1,7 @@
-﻿using Eduva.Application.Features.SchoolSubscriptions.Responses;
+﻿using Eduva.Application.Features.Payments.Responses;
 using MediatR;
 
-namespace Eduva.Application.Features.SchoolSubscriptions.Queries
+namespace Eduva.Application.Features.Payments.Queries
 {
     public record GetMySchoolSubscriptionQuery(Guid UserId) : IRequest<MySchoolSubscriptionResponse>;
 

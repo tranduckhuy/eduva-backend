@@ -1,6 +1,9 @@
-﻿using Eduva.API.Controllers.Base;
-using Eduva.Application.Features.SchoolSubscriptions.Commands;
-using Eduva.Application.Features.SchoolSubscriptions.Queries;
+﻿using Eduva.API.Attributes;
+using Eduva.API.Controllers.Base;
+using Eduva.API.Models;
+using Eduva.Application.Features.Payments.Commands;
+using Eduva.Application.Features.Payments.Queries;
+using Eduva.Application.Features.Payments.Responses;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
@@ -22,7 +25,8 @@ namespace Eduva.API.Controllers.SchoolSubscriptions
         }
 
         [HttpPost("payment-link")]
-        [Authorize(Roles = $"{nameof(Role.SchoolAdmin)}")]
+        [Authorize(Roles = nameof(Role.SchoolAdmin))]
+        [ProducesResponseType(typeof(ApiResponse<CreatePaymentLinkResponse>), StatusCodes.Status200OK)]
         public async Task<IActionResult> CreatePaymentLink([FromBody] CreateSchoolSubscriptionCommand command)
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -34,15 +38,10 @@ namespace Eduva.API.Controllers.SchoolSubscriptions
             return await HandleRequestAsync(() => _mediator.Send(command));
         }
 
-        [HttpGet("payos-return")]
-        [AllowAnonymous]
-        public async Task<IActionResult> PayOSReturn([FromQuery] ConfirmPayOSPaymentReturnCommand query)
-        {
-            return await HandleRequestAsync(() => _mediator.Send(query));
-        }
-
         [HttpGet("current")]
-        [Authorize(Roles = $"{nameof(Role.SchoolAdmin)}")]
+        [Authorize(Roles = nameof(Role.SchoolAdmin))]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
+        [ProducesResponseType(typeof(ApiResponse<MySchoolSubscriptionResponse>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetCurrentSubscription()
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);

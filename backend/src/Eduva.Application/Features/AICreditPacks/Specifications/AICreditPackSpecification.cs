@@ -25,12 +25,14 @@ namespace Eduva.Application.Features.AICreditPacks.Specifications
 
         private static Expression<Func<AICreditPack, bool>> BuildCriteria(AICreditPackSpecParam param)
         {
+            var loweredSearchTerm = param.SearchTerm?.ToLower();
+
             return pack =>
                  (param.ActiveOnly == null ||
                   (param.ActiveOnly.Value && pack.Status == EntityStatus.Active) ||
                   (!param.ActiveOnly.Value && pack.Status != EntityStatus.Active)) &&
-                 (string.IsNullOrWhiteSpace(param.SearchTerm) ||
-                  EF.Functions.Like(pack.Name, $"%{param.SearchTerm}%"));
+                 (string.IsNullOrWhiteSpace(loweredSearchTerm) ||
+                  EF.Functions.Like(pack.Name.ToLower(), $"%{loweredSearchTerm}%"));
         }
 
         private static Func<IQueryable<AICreditPack>, IOrderedQueryable<AICreditPack>>? BuildOrderBy(AICreditPackSpecParam param)
@@ -38,16 +40,27 @@ namespace Eduva.Application.Features.AICreditPacks.Specifications
             if (string.IsNullOrWhiteSpace(param.SortBy))
                 return null;
 
-            bool isDescending = param.SortDirection.Equals("desc", StringComparison.OrdinalIgnoreCase);
+            bool isDescending = param.SortDirection?.ToLower() == "desc";
+            string sortBy = param.SortBy.ToLower();
 
-            return param.SortBy.ToLower() switch
+            return sortBy switch
             {
                 "name" => isDescending
                     ? q => q.OrderByDescending(x => x.Name)
                     : q => q.OrderBy(x => x.Name),
+
                 "price" => isDescending
                     ? q => q.OrderByDescending(x => x.Price)
                     : q => q.OrderBy(x => x.Price),
+
+                "credits" => isDescending
+                    ? q => q.OrderByDescending(x => x.Credits)
+                    : q => q.OrderBy(x => x.Credits),
+
+                "bonuscredits" => isDescending
+                    ? q => q.OrderByDescending(x => x.BonusCredits)
+                    : q => q.OrderBy(x => x.BonusCredits),
+
                 _ => isDescending
                     ? q => q.OrderByDescending(x => x.CreatedAt)
                     : q => q.OrderBy(x => x.CreatedAt)

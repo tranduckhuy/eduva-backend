@@ -27,6 +27,84 @@ namespace Eduva.Application.Test.Features.SubscriptionPlans.Specifications
         #region SubscriptionPlanSpecification Tests
 
         [Test]
+        public void Should_Not_Filter_By_ActiveOnly_When_Null()
+        {
+            var param = new SubscriptionPlanSpecParam { ActiveOnly = null };
+            var spec = new SubscriptionPlanSpecification(param);
+            var filtered = _mockData.AsQueryable().Where(spec.Criteria).ToList();
+
+            Assert.That(filtered, Has.Count.EqualTo(3));
+        }
+
+        [Test]
+        public void Should_Not_Filter_By_Empty_SearchTerm()
+        {
+            var param = new SubscriptionPlanSpecParam { SearchTerm = "" };
+            var spec = new SubscriptionPlanSpecification(param);
+            var filtered = _mockData.AsQueryable().Where(spec.Criteria).ToList();
+
+            Assert.That(filtered, Has.Count.EqualTo(3));
+        }
+
+        [Test]
+        public void Should_Sort_By_StorageLimitGB_Desc()
+        {
+            _mockData[0].StorageLimitGB = 10;
+            _mockData[1].StorageLimitGB = 30;
+            _mockData[2].StorageLimitGB = 20;
+
+            var param = new SubscriptionPlanSpecParam { SortBy = "storage", SortDirection = "desc" };
+            var spec = new SubscriptionPlanSpecification(param);
+            var sorted = spec.OrderBy!(_mockData.AsQueryable()).ToList();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(sorted[0].StorageLimitGB, Is.EqualTo(30));
+                Assert.That(sorted[1].StorageLimitGB, Is.EqualTo(20));
+                Assert.That(sorted[2].StorageLimitGB, Is.EqualTo(10));
+            });
+        }
+
+        [Test]
+        public void Should_Sort_By_MaxUsers_Asc()
+        {
+            _mockData[0].MaxUsers = 10;
+            _mockData[1].MaxUsers = 30;
+            _mockData[2].MaxUsers = 20;
+
+            var param = new SubscriptionPlanSpecParam { SortBy = "users", SortDirection = "asc" };
+            var spec = new SubscriptionPlanSpecification(param);
+            var sorted = spec.OrderBy!(_mockData.AsQueryable()).ToList();
+
+            Assert.That(sorted[0].MaxUsers, Is.EqualTo(10));
+        }
+
+        [Test]
+        public void Should_Sort_By_PriceMonthly_Desc()
+        {
+            var param = new SubscriptionPlanSpecParam { SortBy = "monthly", SortDirection = "desc" };
+            var spec = new SubscriptionPlanSpecification(param);
+            var sorted = spec.OrderBy!(_mockData.AsQueryable()).ToList();
+
+            Assert.That(sorted[0].PriceMonthly, Is.EqualTo(300000));
+        }
+
+        [Test]
+        public void Should_Sort_By_PricePerYear_Asc()
+        {
+            _mockData[0].PricePerYear = 1000000;
+            _mockData[1].PricePerYear = 3000000;
+            _mockData[2].PricePerYear = 2000000;
+
+            var param = new SubscriptionPlanSpecParam { SortBy = "yearly", SortDirection = "asc" };
+            var spec = new SubscriptionPlanSpecification(param);
+            var sorted = spec.OrderBy!(_mockData.AsQueryable()).ToList();
+
+            Assert.That(sorted[0].PricePerYear, Is.EqualTo(1000000));
+        }
+
+
+        [Test]
         public void Should_Set_Pagination_Skip_And_Take()
         {
             var param = new SubscriptionPlanSpecParam { PageIndex = 2, PageSize = 10 };
@@ -170,6 +248,73 @@ namespace Eduva.Application.Test.Features.SubscriptionPlans.Specifications
                 Assert.That(projected, Has.Count.EqualTo(3));
                 Assert.That(projected[0].Name, Is.EqualTo(_mockData[0].Name.ToUpper()));
             });
+        }
+
+        [Test]
+        public void Should_Handle_Null_SortDirection()
+        {
+            var param = new SubscriptionPlanSpecParam
+            {
+                SortBy = "name",
+                SortDirection = null!
+            };
+
+            var spec = new SubscriptionPlanSpecification(param);
+            var sorted = spec.OrderBy!(_mockData.AsQueryable()).ToList();
+
+            Assert.That(sorted[0].Name, Is.EqualTo("Basic")); // Ascending mặc định
+        }
+
+        [Test]
+        public void Should_Sort_By_StorageLimitGB_Asc()
+        {
+            _mockData[0].StorageLimitGB = 30;
+            _mockData[1].StorageLimitGB = 10;
+            _mockData[2].StorageLimitGB = 20;
+
+            var param = new SubscriptionPlanSpecParam { SortBy = "storage", SortDirection = "asc" };
+            var spec = new SubscriptionPlanSpecification(param);
+            var sorted = spec.OrderBy!(_mockData.AsQueryable()).ToList();
+
+            Assert.That(sorted[0].StorageLimitGB, Is.EqualTo(10));
+        }
+
+        [Test]
+        public void Should_Sort_By_MaxUsers_Desc()
+        {
+            _mockData[0].MaxUsers = 10;
+            _mockData[1].MaxUsers = 30;
+            _mockData[2].MaxUsers = 20;
+
+            var param = new SubscriptionPlanSpecParam { SortBy = "users", SortDirection = "desc" };
+            var spec = new SubscriptionPlanSpecification(param);
+            var sorted = spec.OrderBy!(_mockData.AsQueryable()).ToList();
+
+            Assert.That(sorted[0].MaxUsers, Is.EqualTo(30));
+        }
+
+        [Test]
+        public void Should_Sort_By_PriceMonthly_Asc()
+        {
+            var param = new SubscriptionPlanSpecParam { SortBy = "monthly", SortDirection = "asc" };
+            var spec = new SubscriptionPlanSpecification(param);
+            var sorted = spec.OrderBy!(_mockData.AsQueryable()).ToList();
+
+            Assert.That(sorted[0].PriceMonthly, Is.EqualTo(100000));
+        }
+
+        [Test]
+        public void Should_Sort_By_PricePerYear_Desc()
+        {
+            _mockData[0].PricePerYear = 1000000;
+            _mockData[1].PricePerYear = 3000000;
+            _mockData[2].PricePerYear = 2000000;
+
+            var param = new SubscriptionPlanSpecParam { SortBy = "yearly", SortDirection = "desc" };
+            var spec = new SubscriptionPlanSpecification(param);
+            var sorted = spec.OrderBy!(_mockData.AsQueryable()).ToList();
+
+            Assert.That(sorted[0].PricePerYear, Is.EqualTo(3000000));
         }
 
         #endregion

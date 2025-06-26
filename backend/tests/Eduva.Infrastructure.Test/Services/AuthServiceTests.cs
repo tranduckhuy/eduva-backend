@@ -5,12 +5,14 @@ using Eduva.Application.Features.Auth.DTOs;
 using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
+using Eduva.Infrastructure.Extensions.Providers;
 using Eduva.Infrastructure.Identity;
 using Eduva.Infrastructure.Identity.Interfaces;
 using Eduva.Shared.Enums;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Moq;
 using System.ComponentModel.DataAnnotations;
@@ -41,6 +43,14 @@ namespace Eduva.Infrastructure.Test.Services
             _logger = new Mock<ILogger<AuthService>>();
             _tokenService = new Mock<ITokenBlackListService>();
 
+            _userManager.Setup(x => x.AddClaimAsync(It.IsAny<ApplicationUser>(), It.IsAny<Claim>()))
+               .ReturnsAsync(IdentityResult.Success);
+            _userManager.Setup(x => x.RemoveClaimAsync(It.IsAny<ApplicationUser>(), It.IsAny<Claim>()))
+                        .ReturnsAsync(IdentityResult.Success);
+
+            _userManager.Setup(x => x.GetClaimsAsync(It.IsAny<ApplicationUser>()))
+                        .ReturnsAsync(new List<Claim>());
+
             var jwtSettings = new Dictionary<string, string?>
             {
                 ["JwtSettings:SecretKey"] = "super_secret_key_1234567890123456",
@@ -55,12 +65,25 @@ namespace Eduva.Infrastructure.Test.Services
 
             var jwtHandler = new JwtHandler(config, new Mock<ILogger<JwtHandler>>().Object);
 
+            var otpLogger = new Mock<ILogger<SixDigitTokenProvider<ApplicationUser>>>();
+            var otpOptions = Options.Create(new SixDigitTokenProviderOptions
+            {
+                TokenLifespan = TimeSpan.FromSeconds(120)
+            });
+            var otpProvider = new SixDigitTokenProvider<ApplicationUser>(otpOptions, otpLogger.Object);
+
+            var serviceProvider = new Mock<IServiceProvider>();
+            serviceProvider
+                .Setup(sp => sp.GetService(typeof(SixDigitTokenProvider<ApplicationUser>)))
+                .Returns(otpProvider);
+
             _authService = new AuthService(
                 _userManager.Object,
                 _emailSender.Object,
                 _logger.Object,
                 jwtHandler,
-                _tokenService.Object);
+                _tokenService.Object,
+                serviceProvider.Object);
 
             CreateEmailTemplate("verify-email.html", "<html>{{verify_link}} {{current_year}}</html>");
             CreateEmailTemplate("otp-verification.html", "<html>Your code: {{otp_code}} {{current_year}}</html>");
@@ -186,19 +209,21 @@ namespace Eduva.Infrastructure.Test.Services
         {
             var user = new ApplicationUser
             {
+                Id = Guid.NewGuid(),
                 Email = "user@example.com",
                 FullName = null,
                 EmailConfirmed = true
             };
 
-            _userManager.Setup(x => x.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync(user);
+            _userManager.Setup(x => x.FindByEmailAsync(user.Email)).ReturnsAsync(user);
             _userManager.Setup(x => x.CheckPasswordAsync(user, It.IsAny<string>())).ReturnsAsync(true);
             _userManager.Setup(x => x.IsLockedOutAsync(user)).ReturnsAsync(false);
             _userManager.Setup(x => x.GetTwoFactorEnabledAsync(user)).ReturnsAsync(true);
-            _userManager.Setup(x => x.GenerateTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider)).ReturnsAsync("123456");
+            _userManager.Setup(x => x.GetClaimsAsync(user)).ReturnsAsync(new List<Claim>());
+
             _emailSender.Setup(x => x.SendEmailAsync(It.IsAny<EmailMessage>())).Returns(Task.CompletedTask);
 
-            var (code, authResult) = await _authService.LoginAsync(new LoginRequestDto
+            var result = await _authService.LoginAsync(new LoginRequestDto
             {
                 Email = "user@example.com",
                 Password = "P@ssword"
@@ -206,9 +231,9 @@ namespace Eduva.Infrastructure.Test.Services
 
             Assert.Multiple(() =>
             {
-                Assert.That(code, Is.EqualTo(CustomCode.RequiresOtpVerification));
-                Assert.That(authResult.Requires2FA, Is.True);
-                Assert.That(authResult.Email, Is.EqualTo("user@example.com"));
+                Assert.That(result.Item1, Is.EqualTo(CustomCode.RequiresOtpVerification));
+                Assert.That(result.Item2.Requires2FA, Is.True);
+                Assert.That(result.Item2.Email, Is.EqualTo("user@example.com"));
             });
 
             _emailSender.Verify(x => x.SendEmailAsync(It.Is<EmailMessage>(m =>
@@ -219,15 +244,27 @@ namespace Eduva.Infrastructure.Test.Services
         [Test]
         public async Task LoginAsync_2FAEnabled_ReturnsOtpRequired()
         {
-            var user = new ApplicationUser { Email = "user@example.com", EmailConfirmed = true, FullName = "User" };
-            _userManager.Setup(m => m.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync(user);
+            var user = new ApplicationUser
+            {
+                Id = Guid.NewGuid(),
+                Email = "user@example.com",
+                EmailConfirmed = true,
+                FullName = "User"
+            };
+
+            _userManager.Setup(m => m.FindByEmailAsync(user.Email)).ReturnsAsync(user);
             _userManager.Setup(m => m.CheckPasswordAsync(user, It.IsAny<string>())).ReturnsAsync(true);
             _userManager.Setup(m => m.IsLockedOutAsync(user)).ReturnsAsync(false);
             _userManager.Setup(m => m.GetTwoFactorEnabledAsync(user)).ReturnsAsync(true);
-            _userManager.Setup(m => m.GenerateTwoFactorTokenAsync(user, It.IsAny<string>())).ReturnsAsync("otp-token");
+            _userManager.Setup(m => m.GetClaimsAsync(user)).ReturnsAsync(new List<Claim>());
 
-            var dto = new LoginRequestDto { Email = user.Email, Password = "password" };
-            var result = await _authService.LoginAsync(dto);
+            _emailSender.Setup(x => x.SendEmailAsync(It.IsAny<EmailMessage>())).Returns(Task.CompletedTask);
+
+            var result = await _authService.LoginAsync(new LoginRequestDto
+            {
+                Email = user.Email,
+                Password = "password"
+            });
 
             Assert.Multiple(() =>
             {
@@ -235,6 +272,10 @@ namespace Eduva.Infrastructure.Test.Services
                 Assert.That(result.Item2.Requires2FA, Is.True);
                 Assert.That(result.Item2.Email, Is.EqualTo(user.Email));
             });
+
+            _emailSender.Verify(x => x.SendEmailAsync(It.Is<EmailMessage>(m =>
+                m.To.First().DisplayName == "User"
+            )), Times.Once);
         }
 
         [Test]
@@ -257,11 +298,11 @@ namespace Eduva.Infrastructure.Test.Services
             _userManager.Setup(x => x.GetTwoFactorEnabledAsync(user)).ReturnsAsync(false);
             _userManager.Setup(x => x.GetRolesAsync(user)).ReturnsAsync(new List<string> { "User" });
             _userManager.Setup(x => x.GetClaimsAsync(user)).ReturnsAsync(new List<Claim>
-    {
-        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-        new Claim(ClaimTypes.Email, user.Email),
-        new Claim("FullName", user.FullName!)
-    });
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim("FullName", user.FullName!)
+            });
 
             var dto = new LoginRequestDto
             {
@@ -328,16 +369,16 @@ namespace Eduva.Infrastructure.Test.Services
 
             _userManager.Setup(x => x.FindByEmailAsync(user.Email)).ReturnsAsync(user);
             _userManager.Setup(x => x.GetTwoFactorEnabledAsync(user)).ReturnsAsync(true);
-            _userManager.Setup(x => x.VerifyTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider, "123456"))
+            _userManager.Setup(x => x.VerifyTwoFactorTokenAsync(user, "OTP", "123456"))
                 .ReturnsAsync(true);
             _userManager.Setup(x => x.GetRolesAsync(user)).ReturnsAsync(new List<string> { "User" });
 
             _userManager.Setup(x => x.GetClaimsAsync(user)).ReturnsAsync(new List<Claim>
-    {
-        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-        new Claim(ClaimTypes.Email, user.Email),
-        new Claim("FullName", user.FullName!)
-    });
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim("FullName", user.FullName!)
+            });
 
             _userManager.Setup(x => x.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
 
@@ -401,134 +442,189 @@ namespace Eduva.Infrastructure.Test.Services
         #region ChangePasswordAsync Tests
 
         [Test]
-        public async Task ChangePasswordAsync_KeepAllSessions_ShouldNotInvalidateAnything()
+        public async Task ChangePasswordAsync_ShouldThrow_WhenUserNotFound()
         {
-            var user = new ApplicationUser();
-            _userManager.Setup(x => x.FindByIdAsync(It.IsAny<string>())).ReturnsAsync(user);
-            _userManager.Setup(x => x.CheckPasswordAsync(user, It.IsAny<string>())).ReturnsAsync(false);
-            _userManager.Setup(x => x.ChangePasswordAsync(user, It.IsAny<string>(), It.IsAny<string>()))
-                .ReturnsAsync(IdentityResult.Success);
-
-            var dto = new ChangePasswordRequestDto
+            var userId = Guid.NewGuid();
+            var request = new ChangePasswordRequestDto
             {
-                UserId = Guid.NewGuid(),
-                CurrentPassword = "oldpass",
-                NewPassword = "newpass123",
+                UserId = userId,
+                CurrentPassword = "old",
+                NewPassword = "new"
+            };
+
+            _userManager.Setup(x => x.FindByIdAsync(userId.ToString()))
+                .ReturnsAsync((ApplicationUser?)null);
+
+            try
+            {
+                await _authService.ChangePasswordAsync(request);
+                Assert.Fail("Expected exception was not thrown");
+            }
+            catch (UserNotExistsException ex)
+            {
+                Assert.That(ex.StatusCode, Is.EqualTo(CustomCode.UserNotExists));
+            }
+        }
+
+        [Test]
+        public async Task ChangePasswordAsync_ShouldThrow_WhenCurrentPasswordIncorrect()
+        {
+            var user = new ApplicationUser { Id = Guid.NewGuid() };
+
+            _userManager.Setup(x => x.FindByIdAsync(user.Id.ToString()))
+                        .ReturnsAsync(user);
+            _userManager.Setup(x => x.CheckPasswordAsync(user, "wrong"))
+                        .ReturnsAsync(false);
+
+            var request = new ChangePasswordRequestDto
+            {
+                UserId = user.Id,
+                CurrentPassword = "wrong",
+                NewPassword = "new"
+            };
+
+            try
+            {
+                await _authService.ChangePasswordAsync(request);
+                Assert.Fail("Expected AppException was not thrown.");
+            }
+            catch (AppException ex)
+            {
+                Assert.That(ex.StatusCode, Is.EqualTo(CustomCode.IncorrectCurrentPassword));
+            }
+        }
+
+        [Test]
+        public async Task ChangePasswordAsync_ShouldThrow_WhenNewPasswordSameAsOld()
+        {
+            var user = new ApplicationUser { Id = Guid.NewGuid() };
+
+            _userManager.Setup(x => x.FindByIdAsync(user.Id.ToString()))
+                        .ReturnsAsync(user);
+            _userManager.Setup(x => x.CheckPasswordAsync(user, "same"))
+                        .ReturnsAsync(true); // Current password
+
+            var request = new ChangePasswordRequestDto
+            {
+                UserId = user.Id,
+                CurrentPassword = "same",
+                NewPassword = "same"
+            };
+
+            try
+            {
+                await _authService.ChangePasswordAsync(request);
+                Assert.Fail("Expected NewPasswordSameAsOldException was not thrown.");
+            }
+            catch (NewPasswordSameAsOldException ex)
+            {
+                Assert.That(ex, Is.Not.Null);
+            }
+        }
+
+        [Test]
+        public async Task ChangePasswordAsync_ShouldThrow_WhenChangePasswordFails()
+        {
+            var user = new ApplicationUser { Id = Guid.NewGuid() };
+
+            _userManager.Setup(x => x.FindByIdAsync(user.Id.ToString()))
+                        .ReturnsAsync(user);
+            _userManager.Setup(x => x.CheckPasswordAsync(user, "old"))
+                        .ReturnsAsync(true);
+            _userManager.Setup(x => x.ChangePasswordAsync(user, "old", "new"))
+                        .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "Something went wrong" }));
+
+            var request = new ChangePasswordRequestDto
+            {
+                UserId = user.Id,
+                CurrentPassword = "old",
+                NewPassword = "new"
+            };
+
+            try
+            {
+                await _authService.ChangePasswordAsync(request);
+                Assert.Fail("Expected AppException was not thrown.");
+            }
+            catch (AppException ex)
+            {
+                Assert.Multiple(() =>
+                {
+                    Assert.That(ex.StatusCode, Is.EqualTo(CustomCode.ProvidedInformationIsInValid));
+                    Assert.That(ex.Errors, Contains.Item("Something went wrong"));
+                });
+            }
+        }
+
+        [Test]
+        public async Task ChangePasswordAsync_ShouldLogoutAllSessions_WhenConfigured()
+        {
+            var user = new ApplicationUser { Id = Guid.NewGuid() };
+
+            _userManager.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
+            _userManager.Setup(x => x.CheckPasswordAsync(user, "old")).ReturnsAsync(true);
+            _userManager.Setup(x => x.ChangePasswordAsync(user, "old", "new")).ReturnsAsync(IdentityResult.Success);
+
+            var request = new ChangePasswordRequestDto
+            {
+                UserId = user.Id,
+                CurrentPassword = "old",
+                NewPassword = "new",
+                LogoutBehavior = LogoutBehavior.LogoutAllIncludingCurrent
+            };
+
+            var result = await _authService.ChangePasswordAsync(request);
+
+            Assert.That(result, Is.EqualTo(CustomCode.Success));
+            _tokenService.Verify(x => x.BlacklistAllUserTokensAsync(user.Id.ToString()), Times.Once);
+        }
+
+        [Test]
+        public async Task ChangePasswordAsync_ShouldLogoutOtherSessionsOnly_WhenConfigured()
+        {
+            var user = new ApplicationUser { Id = Guid.NewGuid() };
+
+            _userManager.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
+            _userManager.Setup(x => x.CheckPasswordAsync(user, "old")).ReturnsAsync(true);
+            _userManager.Setup(x => x.ChangePasswordAsync(user, "old", "new")).ReturnsAsync(IdentityResult.Success);
+
+            var request = new ChangePasswordRequestDto
+            {
+                UserId = user.Id,
+                CurrentPassword = "old",
+                NewPassword = "new",
+                LogoutBehavior = LogoutBehavior.LogoutOthersOnly,
+                CurrentAccessToken = "access-token"
+            };
+
+            var result = await _authService.ChangePasswordAsync(request);
+
+            Assert.That(result, Is.EqualTo(CustomCode.Success));
+            _tokenService.Verify(x => x.BlacklistAllUserTokensExceptAsync(user.Id.ToString(), "access-token"), Times.Once);
+        }
+
+        [Test]
+        public async Task ChangePasswordAsync_ShouldKeepAllSessions_WhenConfigured()
+        {
+            var user = new ApplicationUser { Id = Guid.NewGuid() };
+
+            _userManager.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
+            _userManager.Setup(x => x.CheckPasswordAsync(user, "old")).ReturnsAsync(true);
+            _userManager.Setup(x => x.ChangePasswordAsync(user, "old", "new")).ReturnsAsync(IdentityResult.Success);
+
+            var request = new ChangePasswordRequestDto
+            {
+                UserId = user.Id,
+                CurrentPassword = "old",
+                NewPassword = "new",
                 LogoutBehavior = LogoutBehavior.KeepAllSessions
             };
 
-            var result = await _authService.ChangePasswordAsync(dto);
+            var result = await _authService.ChangePasswordAsync(request);
 
             Assert.That(result, Is.EqualTo(CustomCode.Success));
             _tokenService.Verify(x => x.BlacklistAllUserTokensAsync(It.IsAny<string>()), Times.Never);
             _tokenService.Verify(x => x.BlacklistAllUserTokensExceptAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-        }
-
-        [Test]
-        public async Task ChangePasswordAsync_LogoutOthersOnly_ShouldKeepCurrentToken()
-        {
-            var user = new ApplicationUser();
-            _userManager.Setup(x => x.FindByIdAsync(It.IsAny<string>())).ReturnsAsync(user);
-            _userManager.Setup(x => x.CheckPasswordAsync(user, It.IsAny<string>())).ReturnsAsync(false);
-            _userManager.Setup(x => x.ChangePasswordAsync(user, It.IsAny<string>(), It.IsAny<string>()))
-                .ReturnsAsync(IdentityResult.Success);
-
-            var dto = new ChangePasswordRequestDto
-            {
-                UserId = Guid.NewGuid(),
-                CurrentPassword = "oldpass",
-                NewPassword = "newpass123",
-                LogoutBehavior = LogoutBehavior.LogoutOthersOnly,
-                CurrentAccessToken = "token123"
-            };
-
-            var result = await _authService.ChangePasswordAsync(dto);
-
-            Assert.That(result, Is.EqualTo(CustomCode.Success));
-            _tokenService.Verify(x => x.BlacklistAllUserTokensExceptAsync(dto.UserId.ToString(), dto.CurrentAccessToken), Times.Once);
-        }
-
-        [Test]
-        public async Task ChangePasswordAsync_LogoutAllIncludingCurrent_ShouldInvalidateAll()
-        {
-            var user = new ApplicationUser();
-            _userManager.Setup(x => x.FindByIdAsync(It.IsAny<string>())).ReturnsAsync(user);
-            _userManager.Setup(x => x.CheckPasswordAsync(user, It.IsAny<string>())).ReturnsAsync(false);
-            _userManager.Setup(x => x.ChangePasswordAsync(user, It.IsAny<string>(), It.IsAny<string>()))
-                .ReturnsAsync(IdentityResult.Success);
-
-            var dto = new ChangePasswordRequestDto
-            {
-                UserId = Guid.NewGuid(),
-                CurrentPassword = "oldpass",
-                NewPassword = "newpass123",
-                LogoutBehavior = LogoutBehavior.LogoutAllIncludingCurrent
-            };
-
-            var result = await _authService.ChangePasswordAsync(dto);
-
-            Assert.That(result, Is.EqualTo(CustomCode.Success));
-            _tokenService.Verify(x => x.BlacklistAllUserTokensAsync(dto.UserId.ToString()), Times.Once);
-        }
-
-        [Test]
-        public void ChangePasswordAsync_NewPasswordSameAsOld_ThrowsException()
-        {
-            var user = new ApplicationUser();
-            var userId = Guid.NewGuid();
-            _userManager.Setup(x => x.FindByIdAsync(userId.ToString())).ReturnsAsync(user);
-            _userManager.Setup(x => x.CheckPasswordAsync(user, "newpass")).ReturnsAsync(true);
-
-            var dto = new ChangePasswordRequestDto
-            {
-                UserId = userId,
-                NewPassword = "newpass"
-            };
-
-            Assert.ThrowsAsync<NewPasswordSameAsOldException>(() => _authService.ChangePasswordAsync(dto));
-        }
-
-        [Test]
-        public void ChangePasswordAsync_ChangeFails_ThrowsAppException()
-        {
-            var user = new ApplicationUser();
-            var userId = Guid.NewGuid();
-
-            _userManager.Setup(x => x.FindByIdAsync(userId.ToString())).ReturnsAsync(user);
-            _userManager.Setup(x => x.CheckPasswordAsync(user, It.IsAny<string>())).ReturnsAsync(false);
-            _userManager.Setup(x => x.ChangePasswordAsync(user, It.IsAny<string>(), It.IsAny<string>()))
-                .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "Something went wrong" }));
-
-            var dto = new ChangePasswordRequestDto
-            {
-                UserId = userId,
-                CurrentPassword = "oldpass",
-                NewPassword = "newpass"
-            };
-
-            var ex = Assert.ThrowsAsync<AppException>(() => _authService.ChangePasswordAsync(dto));
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(ex, Is.Not.Null);
-                Assert.That(ex!.Errors, Is.Not.Null.And.Not.Empty);
-                Assert.That(ex.Errors!.FirstOrDefault(), Is.EqualTo("Something went wrong"));
-            });
-        }
-
-        [Test]
-        public void ChangePasswordAsync_UserNotFound_ThrowsException()
-        {
-            _userManager.Setup(x => x.FindByIdAsync(It.IsAny<string>())).ReturnsAsync((ApplicationUser?)null);
-
-            var dto = new ChangePasswordRequestDto
-            {
-                UserId = Guid.NewGuid(),
-                CurrentPassword = "oldpass",
-                NewPassword = "newpass"
-            };
-
-            Assert.ThrowsAsync<UserNotExistsException>(() => _authService.ChangePasswordAsync(dto));
         }
 
         #endregion
@@ -767,20 +863,18 @@ namespace Eduva.Infrastructure.Test.Services
                 RefreshTokenExpiryTime = DateTime.UtcNow.AddMinutes(10)
             };
 
-            // Setup config values
             var jwtSettings = new Dictionary<string, string?>
-        {
-            { "JwtSettings:SecretKey", "supersecretkey1234567890supersecretkey1234567890" },
-            { "JwtSettings:ValidIssuer", "TestIssuer" },
-            { "JwtSettings:ValidAudience", "TestAudience" },
-            { "JwtSettings:ExpiryInSecond", "3600" }
-        };
+            {
+                { "JwtSettings:SecretKey", "supersecretkey1234567890supersecretkey1234567890" },
+                { "JwtSettings:ValidIssuer", "TestIssuer" },
+                { "JwtSettings:ValidAudience", "TestAudience" },
+                { "JwtSettings:ExpiryInSecond", "3600" }
+            };
 
             var config = new ConfigurationBuilder()
                 .AddInMemoryCollection(jwtSettings)
                 .Build();
 
-            // Generate a valid JWT token matching JwtHandler expectation
             var key = Encoding.UTF8.GetBytes(jwtSettings["JwtSettings:SecretKey"]!);
             var signingCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256);
 
@@ -800,6 +894,18 @@ namespace Eduva.Infrastructure.Test.Services
             var token = new JwtSecurityTokenHandler().WriteToken(jwt);
             var jwtHandler = new JwtHandler(config, new Mock<ILogger<JwtHandler>>().Object);
 
+            // Setup provider
+            var otpLogger = new Mock<ILogger<SixDigitTokenProvider<ApplicationUser>>>();
+            var otpOptions = Options.Create(new SixDigitTokenProviderOptions
+            {
+                TokenLifespan = TimeSpan.FromSeconds(120)
+            });
+            var otpProvider = new SixDigitTokenProvider<ApplicationUser>(otpOptions, otpLogger.Object);
+
+            var serviceProvider = new Mock<IServiceProvider>();
+            serviceProvider.Setup(x => x.GetService(typeof(SixDigitTokenProvider<ApplicationUser>)))
+                .Returns(otpProvider);
+
             // Mocks
             _userManager.Setup(x => x.FindByNameAsync(email)).ReturnsAsync(user);
             _userManager.Setup(x => x.IsLockedOutAsync(user)).ReturnsAsync(false);
@@ -808,12 +914,14 @@ namespace Eduva.Infrastructure.Test.Services
             _userManager.Setup(x => x.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
             _tokenService.Setup(x => x.BlacklistTokenAsync(token, It.IsAny<DateTime>())).Returns(Task.CompletedTask);
 
-            var service = new AuthService(
+            var authService = new AuthService(
                 _userManager.Object,
                 _emailSender.Object,
                 _logger.Object,
                 jwtHandler,
-                _tokenService.Object);
+                _tokenService.Object,
+                serviceProvider.Object // ✅ Use this mock with OTPProvider setup
+            );
 
             var dto = new RefreshTokenRequestDto
             {
@@ -822,7 +930,7 @@ namespace Eduva.Infrastructure.Test.Services
             };
 
             // Act
-            var result = await service.RefreshTokenAsync(dto);
+            var result = await authService.RefreshTokenAsync(dto);
 
             // Assert
             Assert.That(result.Item1, Is.EqualTo(CustomCode.Success));
@@ -1396,7 +1504,30 @@ namespace Eduva.Infrastructure.Test.Services
 
         #endregion
 
-        // Tests for Confirm2FaChangeAsync method - user not found, valid OTP, invalid OTP.
+        // Send2FaOtpEmailAsync method tests - valid user, email sending, etc.
+
+        #region Send2FaOtpEmailAsync Tests
+
+        [Test]
+        public async Task Send2FaOtpEmailAsync_ShouldSendWithCorrectSubject()
+        {
+            var user = new ApplicationUser { Email = "user@example.com", FullName = "User" };
+            _userManager.Setup(x => x.GetClaimsAsync(user)).ReturnsAsync(new List<Claim>());
+
+            var method = typeof(AuthService).GetMethod("Send2FaOtpEmailAsync", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+            _emailSender.Setup(x => x.SendEmailAsync(It.Is<EmailMessage>(m =>
+                m.Subject.Contains("Bật xác thực 2 yếu tố")
+            ))).Returns(Task.CompletedTask).Verifiable();
+
+            await (Task)method.Invoke(_authService, [user, "Bật xác thực 2 yếu tố - EDUVA"])!;
+
+            _emailSender.Verify();
+        }
+
+        #endregion
+
+        // Tests for Confirm2FaChangeAsync method - valid OTP, user not found, invalid OTP, etc.
 
         #region Confirm2FaChangeAsync Tests
 
@@ -1422,8 +1553,29 @@ namespace Eduva.Infrastructure.Test.Services
             }
         }
 
+        [Test]
+        public async Task Confirm2FaChangeAsync_ShouldClearOtpClaims_WhenValid()
+        {
+            var user = new ApplicationUser();
+            _userManager.Setup(x => x.VerifyTwoFactorTokenAsync(user, "OTP", "123456")).ReturnsAsync(true);
+            _userManager.Setup(x => x.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
+            _userManager.Setup(x => x.GetClaimsAsync(user)).ReturnsAsync(new List<Claim>
+        {
+            new Claim("LastOtpSentTime", DateTime.UtcNow.ToString("o")),
+            new Claim("LastOtpValue", "123456")
+        });
+
+            var method = typeof(AuthService).GetMethod("Confirm2FaChangeAsync", BindingFlags.Instance | BindingFlags.NonPublic)!;
+            var result = await (Task<CustomCode>)method.Invoke(_authService, [user, "123456", true])!;
+
+            Assert.That(result, Is.EqualTo(CustomCode.Success));
+            _userManager.Verify(x => x.RemoveClaimAsync(user, It.IsAny<Claim>()), Times.Exactly(2));
+        }
+
+
         #endregion
 
+        // Tests for SendOtpEmailMessage method - valid user, template file not found, etc.
 
         #region SendConfirmEmailMessage_TemplateFileNotFound_ThrowsFileNotFoundException
 
@@ -1449,6 +1601,8 @@ namespace Eduva.Infrastructure.Test.Services
 
         #endregion
 
+        // Tests for SendOtpEmailMessage method - user not found, valid user, template file not found.
+
         #region SendOtpEmailMessage_TemplateFileNotFound_ThrowsFileNotFoundException
 
         [Test]
@@ -1467,6 +1621,103 @@ namespace Eduva.Infrastructure.Test.Services
         }
 
         #endregion
+
+        // Tests for ResendOtpAsync method - user not found, valid user, already sent, etc.
+
+        #region ResendOtpAsync Tests
+
+        [Test]
+        public async Task ResendOtpAsync_NoLastOtpSentClaim_AllowsResend()
+        {
+            var user = new ApplicationUser { Email = "test@example.com" };
+
+            _userManager.Setup(x => x.FindByEmailAsync(user.Email)).ReturnsAsync(user);
+            _userManager.Setup(x => x.GetClaimsAsync(user)).ReturnsAsync(new List<Claim>());
+            _emailSender.Setup(x => x.SendEmailAsync(It.IsAny<EmailMessage>())).Returns(Task.CompletedTask);
+
+            var dto = new ResendOtpRequestDto
+            {
+                Email = user.Email,
+                Purpose = OtpPurpose.Login
+            };
+
+            var result = await _authService.ResendOtpAsync(dto);
+
+            Assert.That(result, Is.EqualTo(CustomCode.OtpSentSuccessfully));
+            _emailSender.Verify(x => x.SendEmailAsync(It.IsAny<EmailMessage>()), Times.Once);
+        }
+
+        [Test]
+        public void ResendOtpAsync_ThrottleTooSoon_ThrowsAppException()
+        {
+            var user = new ApplicationUser { Email = "test@example.com" };
+            var now = DateTime.UtcNow;
+
+            _userManager.Setup(x => x.FindByEmailAsync(user.Email)).ReturnsAsync(user);
+            _userManager.Setup(x => x.GetClaimsAsync(user)).ReturnsAsync(new List<Claim>
+        {
+            new Claim("LastOtpSentTime", now.ToString("o"))
+        });
+
+            var dto = new ResendOtpRequestDto
+            {
+                Email = user.Email,
+                Purpose = OtpPurpose.Login
+            };
+
+            Assert.ThrowsAsync<AppException>(() => _authService.ResendOtpAsync(dto));
+        }
+
+        #endregion
+
+        // ForceClearOtpClaimsAsync method - clears OTP claims for a user.
+
+        #region ForceClearOtpClaimsAsync Tests
+
+        [Test]
+        public async Task ForceClearOtpClaimsAsync_NoOtpClaims_ShouldNotThrow()
+        {
+            var user = new ApplicationUser();
+
+            _userManager.Setup(x => x.GetClaimsAsync(user)).ReturnsAsync(new List<Claim>());
+
+            var provider = new SixDigitTokenProvider<ApplicationUser>(
+                Options.Create(new SixDigitTokenProviderOptions { TokenLifespan = TimeSpan.FromSeconds(60) }),
+                new Mock<ILogger<SixDigitTokenProvider<ApplicationUser>>>().Object);
+
+            await provider.ForceClearOtpClaimsAsync(_userManager.Object, user);
+
+            _userManager.Verify(x => x.RemoveClaimAsync(It.IsAny<ApplicationUser>(), It.IsAny<Claim>()), Times.Never);
+        }
+
+        #endregion
+
+        // CheckOtpThrottleAsync method - checks if the user can send an OTP based on throttle settings.
+
+        #region CheckOtpThrottleAsync Tests
+
+        [Test]
+        public async Task CheckOtpThrottleAsync_InvalidFormat_ShouldNotThrow()
+        {
+            var user = new ApplicationUser();
+
+            _userManager.Setup(x => x.GetClaimsAsync(user)).ReturnsAsync(new List<Claim>
+        {
+            new Claim("LastOtpSentTime", "invalid-date-format")
+        });
+
+            var logger = new Mock<ILogger<SixDigitTokenProvider<ApplicationUser>>>();
+            var provider = new SixDigitTokenProvider<ApplicationUser>(
+                Options.Create(new SixDigitTokenProviderOptions { TokenLifespan = TimeSpan.FromSeconds(120) }),
+                logger.Object);
+
+            await provider.CheckOtpThrottleAsync(_userManager.Object, user);
+
+            Assert.Pass("No exception thrown");
+        }
+
+        #endregion
+
 
         #region Helper Methods
 
@@ -1535,7 +1786,6 @@ namespace Eduva.Infrastructure.Test.Services
             var filePath = Path.Combine(dir, fileName);
             File.WriteAllText(filePath, content);
         }
-
 
         #endregion
 

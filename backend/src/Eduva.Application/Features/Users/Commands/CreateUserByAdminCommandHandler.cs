@@ -1,5 +1,6 @@
 ﻿using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Exceptions.Auth;
+using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
@@ -11,10 +12,12 @@ namespace Eduva.Application.Features.Users.Commands
     public class CreateUserByAdminCommandHandler : IRequestHandler<CreateUserByAdminCommand, Unit>
     {
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly ISchoolValidationService _schoolValidationService;
 
-        public CreateUserByAdminCommandHandler(UserManager<ApplicationUser> userManager)
+        public CreateUserByAdminCommandHandler(UserManager<ApplicationUser> userManager, ISchoolValidationService schoolValidationService)
         {
             _userManager = userManager;
+            _schoolValidationService = schoolValidationService;
         }
 
         public async Task<Unit> Handle(CreateUserByAdminCommand request, CancellationToken cancellationToken)
@@ -41,6 +44,8 @@ namespace Eduva.Application.Features.Users.Commands
             {
                 throw new UserNotPartOfSchoolException();
             }
+
+            await _schoolValidationService.ValidateCanAddUsersAsync(creator.SchoolId.Value, 1, cancellationToken);
 
             var newUser = new ApplicationUser
             {
