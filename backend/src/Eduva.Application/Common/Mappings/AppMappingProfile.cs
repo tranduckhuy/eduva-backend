@@ -59,6 +59,16 @@ namespace Eduva.Application.Common.Mappings
                 .ForMember(dest => dest.StorageLimitGB, opt => opt.MapFrom(src => src.Plan.StorageLimitGB))
                 .ForMember(dest => dest.AmountPaid, opt => opt.MapFrom(src => src.PaymentTransaction.Amount));
 
+            // Payment mappings
+            CreateMap<PaymentTransaction, PaymentResponse>()
+            .ForMember(dest => dest.User, opt => opt.MapFrom(src => new UserInfo
+            {
+                Id = src.User.Id,
+                FullName = src.User.FullName ?? string.Empty,
+                Email = src.User.Email ?? string.Empty
+            }));
+            CreateMap<Pagination<PaymentTransaction>, Pagination<PaymentResponse>>();
+
             // Class mappings
             CreateMap<CreateClassCommand, Classroom>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())

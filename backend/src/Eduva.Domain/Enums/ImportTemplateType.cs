@@ -2,6 +2,7 @@
 {
     public enum ImportTemplateType
     {
+        Class = 0,
         User = 1,
     }
 }
