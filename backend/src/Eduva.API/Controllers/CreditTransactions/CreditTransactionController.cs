@@ -38,6 +38,18 @@ namespace Eduva.API.Controllers.CreditTransactions
             });
         }
 
+        [HttpGet("{id}")]
+        [Authorize(Roles = nameof(Role.SystemAdmin))]
+        [ProducesResponseType(typeof(ApiResponse<CreditTransactionResponse>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetCreditTransactionById(Guid id)
+        {
+            return await HandleRequestAsync<CreditTransactionResponse>(async () =>
+            {
+                var result = await _mediator.Send(new GetCreditTransactionByIdQuery(id));
+                return (CustomCode.Success, result);
+            });
+        }
+
         [HttpPost("payment-link")]
         [Authorize(Roles = $"{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}, {nameof(Role.SystemAdmin)}")]
         [ProducesResponseType(typeof(ApiResponse<CreateCreditPackPaymentLinkResponse>), StatusCodes.Status200OK)]
