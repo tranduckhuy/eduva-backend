@@ -11,6 +11,7 @@ namespace Eduva.Application.Features.SubscriptionPlans.Responses
         public decimal StorageLimitGB { get; set; }
         public decimal PriceMonthly { get; set; }
         public decimal PricePerYear { get; set; }
+        public bool IsRecommended { get; set; } = false;
         public EntityStatus Status { get; set; }
 
         public int NumberOfSchoolsUsing { get; set; }

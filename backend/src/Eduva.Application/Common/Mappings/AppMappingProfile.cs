@@ -4,6 +4,7 @@ using Eduva.Application.Features.AICreditPacks.Responses;
 using Eduva.Application.Features.Classes.Commands.CreateClass;
 using Eduva.Application.Features.Classes.Commands.UpdateClass;
 using Eduva.Application.Features.Classes.Responses;
+using Eduva.Application.Features.CreditTransactions.Responses;
 using Eduva.Application.Features.Folders.Responses;
 using Eduva.Application.Features.LessonMaterials;
 using Eduva.Application.Features.LessonMaterials.Commands;
@@ -81,6 +82,25 @@ namespace Eduva.Application.Common.Mappings
                     Price = src.BillingCycle == BillingCycle.Monthly ? src.Plan.PriceMonthly : src.Plan.PricePerYear
                 }));
             CreateMap<Pagination<SchoolSubscription>, Pagination<SchoolSubscriptionResponse>>();
+
+            // UserCreditTransaction mappings
+            CreateMap<UserCreditTransaction, CreditTransactionResponse>()
+            .ForMember(dest => dest.User, opt => opt.MapFrom(src => new UserInfor
+            {
+                Id = src.User.Id,
+                FullName = src.User.FullName ?? string.Empty,
+                Email = src.User.Email ?? string.Empty
+            }))
+            .ForMember(dest => dest.AICreditPack, opt => opt.MapFrom(src => new AICreditPackInfor
+            {
+                Id = src.AICreditPack.Id,
+                Name = src.AICreditPack.Name,
+                Price = src.AICreditPack.Price,
+                Credits = src.AICreditPack.Credits,
+                BonusCredits = src.AICreditPack.BonusCredits
+            }));
+
+            CreateMap<Pagination<UserCreditTransaction>, Pagination<CreditTransactionResponse>>();
 
             // Payment mappings
             CreateMap<PaymentTransaction, PaymentResponse>()
