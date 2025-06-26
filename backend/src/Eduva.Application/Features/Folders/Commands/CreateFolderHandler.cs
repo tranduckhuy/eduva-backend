@@ -80,9 +80,23 @@ namespace Eduva.Application.Features.Folders.Commands
 
             try
             {
+                // Save folder first
                 await folderRepository.AddAsync(folder);
                 await _unitOfWork.CommitAsync();
 
+                // Load navigation properties for correct mapping
+                if (folder.OwnerType == OwnerType.Personal && folder.UserId.HasValue)
+                {
+                    var userRepository = _unitOfWork.GetRepository<ApplicationUser, Guid>();
+                    folder.User = await userRepository.GetByIdAsync(folder.UserId.Value);
+                }
+                else if (folder.OwnerType == OwnerType.Class && folder.ClassId.HasValue)
+                {
+                    var classRepository = _unitOfWork.GetRepository<Classroom, Guid>();
+                    folder.Class = await classRepository.GetByIdAsync(folder.ClassId.Value);
+                }
+
+                // Map to response with loaded navigation properties
                 return AppMapper.Mapper.Map<FolderResponse>(folder);
             }
             catch (Exception)
