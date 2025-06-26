@@ -1,12 +1,12 @@
 using Eduva.Application.Common.Mappings;
 using Eduva.Application.Common.Models;
-using Eduva.Application.Features.StudentClasses.Responses;
-using Eduva.Application.Features.StudentClasses.Specifications;
+using Eduva.Application.Features.Classes.Responses;
+using Eduva.Application.Features.Classes.Specifications;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using MediatR;
 
-namespace Eduva.Application.Features.StudentClasses.Queries
+namespace Eduva.Application.Features.Classes.Queries.GetStudentClasses
 {
     public class GetStudentClassesHandler : IRequestHandler<GetStudentClassesQuery, Pagination<StudentClassResponse>>
     {
