@@ -1,12 +1,11 @@
 ﻿using Eduva.Application.Common.Mappings;
 using Eduva.Application.Common.Models;
-using Eduva.Application.Features.Payments.Queries;
 using Eduva.Application.Features.Payments.Responses;
 using Eduva.Application.Features.Payments.Specifications;
 using Eduva.Application.Interfaces.Repositories;
 using MediatR;
 
-namespace Eduva.Application.Features.Payments.Handlers
+namespace Eduva.Application.Features.Payments.Queries
 {
     public class GetPaymentTransactionsQueryHandler
         : IRequestHandler<GetPaymentTransactionsQuery, Pagination<PaymentResponse>>

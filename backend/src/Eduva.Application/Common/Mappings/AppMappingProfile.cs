@@ -11,6 +11,7 @@ using Eduva.Application.Features.LessonMaterials.Responses;
 using Eduva.Application.Features.Payments.Responses;
 using Eduva.Application.Features.Schools.Commands.CreateSchool;
 using Eduva.Application.Features.Schools.Responses;
+using Eduva.Application.Features.SchoolSubscriptions.Responses;
 using Eduva.Application.Features.StudentClasses.Responses;
 using Eduva.Application.Features.SubscriptionPlans.Responses;
 using Eduva.Application.Features.Users.Responses;
@@ -58,6 +59,29 @@ namespace Eduva.Application.Common.Mappings
                 .ForMember(dest => dest.MaxUsers, opt => opt.MapFrom(src => src.Plan.MaxUsers))
                 .ForMember(dest => dest.StorageLimitGB, opt => opt.MapFrom(src => src.Plan.StorageLimitGB))
                 .ForMember(dest => dest.AmountPaid, opt => opt.MapFrom(src => src.PaymentTransaction.Amount));
+
+            // SchoolSubscription → SchoolSubscriptionResponse
+            CreateMap<SchoolSubscription, SchoolSubscriptionResponse>()
+                .ForMember(dest => dest.AmountPaid, opt => opt.MapFrom(src => src.PaymentTransaction.Amount))
+                .ForMember(dest => dest.School, opt => opt.MapFrom(src => new SchoolInfo
+                {
+                    Id = src.School.Id,
+                    Name = src.School.Name,
+                    Address = src.School.Address,
+                    ContactEmail = src.School.ContactEmail,
+                    ContactPhone = src.School.ContactPhone,
+                    WebsiteUrl = src.School.WebsiteUrl
+                }))
+                .ForMember(dest => dest.Plan, opt => opt.MapFrom(src => new SubscriptionPlanInfo
+                {
+                    Id = src.Plan.Id,
+                    Name = src.Plan.Name,
+                    Description = src.Plan.Description,
+                    MaxUsers = src.Plan.MaxUsers,
+                    StorageLimitGB = src.Plan.StorageLimitGB,
+                    Price = src.BillingCycle == BillingCycle.Monthly ? src.Plan.PriceMonthly : src.Plan.PricePerYear
+                }));
+            CreateMap<Pagination<SchoolSubscription>, Pagination<SchoolSubscriptionResponse>>();
 
             // Payment mappings
             CreateMap<PaymentTransaction, PaymentResponse>()
