@@ -1,7 +1,7 @@
 using Eduva.Application.Common.Specifications;
 using Eduva.Domain.Enums;
 
-namespace Eduva.Application.Features.StudentClasses.Specifications
+namespace Eduva.Application.Features.Classes.Specifications
 {
     public class StudentClassSpecParam : BaseSpecParam
     {

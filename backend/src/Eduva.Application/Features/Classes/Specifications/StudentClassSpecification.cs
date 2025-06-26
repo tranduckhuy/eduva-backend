@@ -2,7 +2,7 @@ using Eduva.Application.Common.Specifications;
 using Eduva.Domain.Entities;
 using System.Linq.Expressions;
 
-namespace Eduva.Application.Features.StudentClasses.Specifications
+namespace Eduva.Application.Features.Classes.Specifications
 {
     public class StudentClassSpecification : ISpecification<StudentClass>
     {
@@ -47,10 +47,10 @@ namespace Eduva.Application.Features.StudentClasses.Specifications
                 var searchTerm = param.SearchTerm.ToLower();
                 Criteria = CombineWithAnd(Criteria, sc =>
                     sc.Class.Name.ToLower().Contains(searchTerm) ||
-                    (sc.Class.ClassCode != null && sc.Class.ClassCode.ToLower().Contains(searchTerm)) ||
-                    (sc.Class.Teacher != null && sc.Class.Teacher.FullName != null &&
-                     sc.Class.Teacher.FullName.ToLower().Contains(searchTerm)) ||
-                    (sc.Class.School != null && sc.Class.School.Name.ToLower().Contains(searchTerm)));
+                    sc.Class.ClassCode != null && sc.Class.ClassCode.ToLower().Contains(searchTerm) ||
+                    sc.Class.Teacher != null && sc.Class.Teacher.FullName != null &&
+                     sc.Class.Teacher.FullName.ToLower().Contains(searchTerm) ||
+                    sc.Class.School != null && sc.Class.School.Name.ToLower().Contains(searchTerm));
             }
         }
         private void ApplyClassNameFilter(StudentClassSpecParam param)
