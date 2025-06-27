@@ -258,6 +258,45 @@ namespace Eduva.API.Test.Middlewares
 
         #endregion
 
+        #region Endpoint Metadata Tests
+
+        [Test]
+        public async Task Invoke_ShouldCallNext_WhenEndpointIsNull()
+        {
+            // Arrange
+            _httpContext.SetEndpoint(null);
+
+            // Act
+            await _middleware.Invoke(_httpContext, _subscriptionServiceMock.Object);
+
+            // Assert
+            _nextMock.Verify(n => n(_httpContext), Times.Once);
+        }
+
+        #endregion
+
+        #region Subscription Access Level Tests
+
+        [Test]
+        public async Task Invoke_ShouldCallNext_WhenEndpointHasNoSubscriptionAccessAttribute()
+        {
+            // Arrange
+            var endpoint = new Endpoint(
+                c => Task.CompletedTask,
+                new EndpointMetadataCollection(),
+                "TestEndpoint"
+            );
+            _httpContext.SetEndpoint(endpoint);
+
+            // Act
+            await _middleware.Invoke(_httpContext, _subscriptionServiceMock.Object);
+
+            // Assert
+            _nextMock.Verify(n => n(_httpContext), Times.Once);
+        }
+
+        #endregion
+
         #region Helper Methods
 
         private void SetupEndpoint(SubscriptionAccessLevel accessLevel)

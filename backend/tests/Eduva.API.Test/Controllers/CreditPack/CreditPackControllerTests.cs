@@ -224,5 +224,39 @@ namespace Eduva.API.Test.Controllers.CreditPack
 
         #endregion
 
+        #region GetAICreditPackById Test
+
+        [Test]
+        public async Task GetAICreditPackById_ShouldReturnOk()
+        {
+            var response = new AICreditPackResponse { Id = 1, Name = "Pack 1" };
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<GetAICreditPackByIdQuery>(), default))
+                .ReturnsAsync(response);
+
+            var result = await _controller.GetAICreditPackById(1);
+
+            var objectResult = result as ObjectResult;
+            objectResult.Should().NotBeNull();
+            objectResult!.StatusCode.Should().Be(StatusCodes.Status200OK);
+        }
+
+        [Test]
+        public async Task GetAICreditPackById_ShouldReturnSystemError_WhenExceptionThrown()
+        {
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<GetAICreditPackByIdQuery>(), default))
+                .ThrowsAsync(new Exception("Unexpected"));
+
+            var result = await _controller.GetAICreditPackById(1);
+
+            var objectResult = result as ObjectResult;
+            objectResult.Should().NotBeNull();
+            objectResult!.StatusCode.Should().Be(StatusCodes.Status500InternalServerError);
+        }
+
+        #endregion
+
     }
 }

@@ -1,7 +1,11 @@
 ﻿using Eduva.API.Controllers.CreditTransactions;
 using Eduva.API.Models;
+using Eduva.Application.Common.Models;
 using Eduva.Application.Features.CreditTransactions.Commands;
+using Eduva.Application.Features.CreditTransactions.Queries;
 using Eduva.Application.Features.CreditTransactions.Responses;
+using Eduva.Application.Features.CreditTransactions.Specifications;
+using Eduva.Application.Features.Payments.Responses;
 using Eduva.Shared.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -10,7 +14,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using System.Security.Claims;
 
-namespace Eduva.API.Test.Controllers.CreditTransactions
+namespace Eduva.API.Test.Controllers.CreditTransaction
 {
     [TestFixture]
     public class CreditTransactionControllerTests
@@ -93,6 +97,104 @@ namespace Eduva.API.Test.Controllers.CreditTransactions
 
             var response = objectResult.Value as ApiResponse<object>;
             Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        #endregion
+
+        #region GetUserCreditTransactions Tests
+
+        [Test]
+        public async Task GetUserCreditTransactions_ShouldReturnOk_WhenRequestIsValid()
+        {
+            // Arrange
+            var specParam = new CreditTransactionSpecParam
+            {
+                PageIndex = 1,
+                PageSize = 10
+            };
+
+            var expectedResponse = new Pagination<CreditTransactionResponse>
+            {
+                PageIndex = 1,
+                PageSize = 10,
+                Count = 1,
+                Data = new List<CreditTransactionResponse>
+        {
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Credits = 100,
+                CreatedAt = DateTimeOffset.UtcNow,
+                User = new UserInfo { Id = Guid.NewGuid(), FullName = "Test User" },
+                AICreditPack = new AICreditPackInfor { Id = 1, Name = "Starter Pack", Price = 50000, Credits = 100, BonusCredits = 10 },
+                PaymentTransactionId = Guid.NewGuid()
+            }
+        }
+            };
+
+            _mediatorMock
+                 .Setup(m => m.Send(It.IsAny<GetCreditTransactionQuery>(), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(expectedResponse);
+
+            // Act
+            var result = await _controller.GetUserCreditTransactions(specParam);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(200));
+
+            var response = objectResult.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+        }
+
+        #endregion
+
+        #region GetCreditTransactionById Tests
+
+        [Test]
+        public async Task GetCreditTransactionById_ShouldReturnOk_WhenTransactionExists()
+        {
+            // Arrange
+            var transactionId = Guid.NewGuid();
+            var expectedResponse = new CreditTransactionResponse
+            {
+                Id = transactionId,
+                Credits = 300,
+                CreatedAt = DateTimeOffset.UtcNow,
+                User = new UserInfo
+                {
+                    Id = Guid.NewGuid(),
+                    FullName = "Jane Doe",
+                    Email = "jane@example.com"
+                },
+                AICreditPack = new AICreditPackInfor
+                {
+                    Id = 2,
+                    Name = "Pro Pack",
+                    Price = 250000,
+                    Credits = 300,
+                    BonusCredits = 50
+                },
+                PaymentTransactionId = Guid.NewGuid()
+            };
+
+            _mediatorMock
+                 .Setup(m => m.Send(It.IsAny<GetCreditTransactionByIdQuery>(), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(expectedResponse);
+
+            // Act
+            var result = await _controller.GetCreditTransactionById(transactionId);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(200));
+
+            var response = objectResult.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
         }
 
         #endregion

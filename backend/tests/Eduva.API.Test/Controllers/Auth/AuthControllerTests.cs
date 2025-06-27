@@ -1268,5 +1268,61 @@ namespace Eduva.API.Test.Controllers.Auth
 
         #endregion
 
+        // Tests for ResendOtp method - 200, 400, 500 responses
+
+        #region ResendOtp Tests
+
+        [Test]
+        public async Task ResendOtp_ShouldReturn200_WhenSuccessful()
+        {
+            var request = new ResendOtpRequestDto
+            {
+                Email = "user@example.com",
+            };
+
+            _authServiceMock.Setup(s => s.ResendOtpAsync(request))
+                .ReturnsAsync(CustomCode.OtpSentSuccessfully);
+
+            var result = await _controller.ResendOtp(request);
+            var objectResult = result as ObjectResult;
+
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status200OK));
+        }
+
+        [Test]
+        public async Task ResendOtp_ShouldReturn400_WhenModelStateInvalid()
+        {
+            var request = new ResendOtpRequestDto(); // missing Email
+
+            _controller.ModelState.AddModelError("Email", "Email is required");
+
+            var result = await _controller.ResendOtp(request);
+            var objectResult = result as ObjectResult;
+
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status400BadRequest));
+        }
+
+        [Test]
+        public async Task ResendOtp_ShouldReturn500_WhenUnhandledExceptionThrown()
+        {
+            var request = new ResendOtpRequestDto
+            {
+                Email = "error@example.com"
+            };
+
+            _authServiceMock.Setup(s => s.ResendOtpAsync(request))
+                .ThrowsAsync(new Exception("Unexpected error"));
+
+            var result = await _controller.ResendOtp(request);
+            var objectResult = result as ObjectResult;
+
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status500InternalServerError));
+        }
+
+        #endregion
+
     }
 }
