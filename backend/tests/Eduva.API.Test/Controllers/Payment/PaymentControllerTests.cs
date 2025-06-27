@@ -145,7 +145,7 @@ namespace Eduva.API.Test.Controllers.Payment
             Assert.Multiple(() =>
             {
                 Assert.That(response.StatusCode, Is.EqualTo((int)CustomCode.Success));
-                Assert.That(data!.Data.Count, Is.EqualTo(1));
+                Assert.That(data!.Data, Has.Count.EqualTo(1));
                 Assert.That(data.Data.First().TransactionCode, Is.EqualTo("TRX001"));
             });
         }
