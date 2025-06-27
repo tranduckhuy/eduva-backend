@@ -1,6 +1,4 @@
 using Eduva.Application.Common.Exceptions;
-using Eduva.Application.Common.Mappings;
-using Eduva.Application.Features.Folders.Responses;
 using Eduva.Application.Interfaces;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
@@ -10,7 +8,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Eduva.Application.Features.Folders.Commands
 {
-    public class UpdateFolderOrderHandler : IRequestHandler<UpdateFolderOrderCommand, FolderResponse>
+    public class UpdateFolderOrderHandler : IRequestHandler<UpdateFolderOrderCommand, Unit>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<UpdateFolderOrderHandler> _logger;
@@ -21,9 +19,9 @@ namespace Eduva.Application.Features.Folders.Commands
             _logger = logger;
         }
 
-        public async Task<FolderResponse> Handle(UpdateFolderOrderCommand request, CancellationToken cancellationToken)
+        public async Task<Unit> Handle(UpdateFolderOrderCommand request, CancellationToken cancellationToken)
         {
-            var folderRepository = _unitOfWork.GetRepository<Folder, int>();
+            var folderRepository = _unitOfWork.GetRepository<Folder, Guid>();
 
             // Retrieve folder
             var folder = await folderRepository.GetByIdAsync(request.Id);
@@ -45,7 +43,7 @@ namespace Eduva.Application.Features.Folders.Commands
             // If order is the same, no need to update
             if (originalOrder == request.Order)
             {
-                return AppMapper.Mapper.Map<FolderResponse>(folder);
+                return Unit.Value;
             }
 
             try
@@ -100,7 +98,7 @@ namespace Eduva.Application.Features.Folders.Commands
                 folderRepository.Update(folder);
                 await _unitOfWork.CommitAsync();
 
-                return AppMapper.Mapper.Map<FolderResponse>(folder);
+                return Unit.Value;
             }
             catch (Exception ex)
             {

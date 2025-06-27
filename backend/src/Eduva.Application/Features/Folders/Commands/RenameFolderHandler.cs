@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Eduva.Application.Features.Folders.Commands
 {
-    public class RenameFolderHandler : IRequestHandler<RenameFolderCommand, FolderResponse>
+    public class RenameFolderHandler : IRequestHandler<RenameFolderCommand, Unit>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<RenameFolderHandler> _logger;
@@ -21,7 +21,7 @@ namespace Eduva.Application.Features.Folders.Commands
             _logger = logger;
         }
 
-        public async Task<FolderResponse> Handle(RenameFolderCommand request, CancellationToken cancellationToken)
+        public async Task<Unit> Handle(RenameFolderCommand request, CancellationToken cancellationToken)
         {
             var folderRepository = _unitOfWork.GetRepository<Folder, Guid>();
 
@@ -61,7 +61,7 @@ namespace Eduva.Application.Features.Folders.Commands
                 folderRepository.Update(folder);
                 await _unitOfWork.CommitAsync();
 
-                return AppMapper.Mapper.Map<FolderResponse>(folder);
+                return Unit.Value;
             }
             catch (Exception ex)
             {
