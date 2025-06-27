@@ -1,4 +1,5 @@
-﻿using Eduva.Domain.Enums;
+﻿using Eduva.Application.Features.Payments.Responses;
+using Eduva.Domain.Enums;
 
 namespace Eduva.Application.Features.SchoolSubscriptions.Responses
 {
@@ -10,10 +11,13 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Responses
         public SubscriptionStatus SubscriptionStatus { get; set; }
         public BillingCycle BillingCycle { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
-        public decimal AmountPaid { get; set; }
 
         public SchoolInfo School { get; set; } = null!;
         public SubscriptionPlanInfo Plan { get; set; } = null!;
+        public PaymentTransactionInfo PaymentTransaction { get; set; } = null!;
+
+        public UserInfo User { get; set; } = null!;
+
     }
 
     public class SchoolInfo
@@ -34,5 +38,18 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Responses
         public int MaxUsers { get; set; }
         public decimal StorageLimitGB { get; set; }
         public decimal Price { get; set; }
+    }
+
+    public class PaymentTransactionInfo
+    {
+        public Guid UserId { get; set; }
+        public PaymentPurpose PaymentPurpose { get; set; }
+        public int PaymentItemId { get; set; }
+        public string? RelatedId { get; set; }
+        public PaymentMethod PaymentMethod { get; set; }
+        public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.Pending;
+        public string TransactionCode { get; set; } = string.Empty;
+        public decimal Amount { get; set; }
+        public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     }
 }

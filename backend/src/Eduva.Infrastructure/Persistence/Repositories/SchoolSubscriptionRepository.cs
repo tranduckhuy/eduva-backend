@@ -41,7 +41,7 @@ namespace Eduva.Infrastructure.Persistence.Repositories
             return await _context.SchoolSubscriptions
                 .Include(s => s.Plan)
                 .Include(s => s.PaymentTransaction)
-                .Where(s => s.SchoolId == schoolId && s.SubscriptionStatus == SubscriptionStatus.Active)
+                .Where(s => s.SchoolId == schoolId)
                 .OrderByDescending(s => s.EndDate)
                 .FirstOrDefaultAsync(cancellationToken);
         }
@@ -65,10 +65,11 @@ namespace Eduva.Infrastructure.Persistence.Repositories
         public async Task<SchoolSubscription?> GetByIdWithDetailsAsync(Guid id, CancellationToken cancellationToken)
         {
             return await _context.SchoolSubscriptions
-                .Include(x => x.School)
-                .Include(x => x.Plan)
-                .Include(x => x.PaymentTransaction)
-                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+             .Include(x => x.School)
+             .Include(x => x.Plan)
+             .Include(x => x.PaymentTransaction)
+             .ThenInclude(pt => pt.User)
+             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
         }
     }
 }

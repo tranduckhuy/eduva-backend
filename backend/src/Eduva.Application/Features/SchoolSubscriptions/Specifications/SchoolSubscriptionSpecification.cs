@@ -24,6 +24,7 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Specifications
             Includes.Add(x => x.School);
             Includes.Add(x => x.Plan);
             Includes.Add(x => x.PaymentTransaction);
+            Includes.Add(x => x.PaymentTransaction.User);
         }
 
         private static Expression<Func<SchoolSubscription, bool>> BuildCriteria(SchoolSubscriptionSpecParam param)
