@@ -1,11 +1,18 @@
 ﻿using Eduva.API.Controllers.Payments;
+using Eduva.API.Models;
+using Eduva.Application.Common.Models;
 using Eduva.Application.Features.Payments.Commands;
+using Eduva.Application.Features.Payments.Queries;
+using Eduva.Application.Features.Payments.Responses;
+using Eduva.Application.Features.Payments.Specifications;
+using Eduva.Domain.Enums;
+using Eduva.Shared.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace Eduva.API.Test.Controllers.Payments
+namespace Eduva.API.Test.Controllers.Payment
 {
     [TestFixture]
     public class PaymentControllerTests
@@ -77,6 +84,70 @@ namespace Eduva.API.Test.Controllers.Payments
             var objectResult = result as ObjectResult;
             Assert.That(objectResult, Is.Not.Null);
             Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
+        }
+
+        #endregion
+
+        #region GetPaymentTransactions Tests
+
+        [Test]
+        public async Task GetPaymentTransactions_ShouldReturnSuccess_WhenRequestIsValid()
+        {
+            // Arrange
+            var specParam = new PaymentSpecParam
+            {
+                PageIndex = 1,
+                PageSize = 10
+            };
+
+            var expected = new Pagination<PaymentResponse>
+            {
+                PageIndex = 1,
+                PageSize = 10,
+                Count = 1,
+                Data = new List<PaymentResponse>
+        {
+            new()
+            {
+                TransactionCode = "TRX001",
+                Amount = 500000,
+                PaymentMethod = PaymentMethod.PayOS,
+                PaymentPurpose = PaymentPurpose.SchoolSubscription,
+                PaymentStatus = PaymentStatus.Paid,
+                CreatedAt = DateTimeOffset.UtcNow,
+                User = new()
+                {
+                    Id = Guid.NewGuid(),
+                    FullName = "Nguyen Van A",
+                    Email = "a@email.com",
+                    PhoneNumber = "0123456789"
+                }
+            }
+        }
+            };
+
+            _mediatorMock
+                .Setup(m => m.Send(It.Is<GetPaymentTransactionsQuery>(q => q.Param == specParam), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(expected);
+
+            // Act
+            var result = await _controller.GetPaymentTransactions(specParam);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+
+            var data = response!.Data as Pagination<PaymentResponse>;
+            Assert.That(data, Is.Not.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(response.StatusCode, Is.EqualTo((int)CustomCode.Success));
+                Assert.That(data!.Data.Count, Is.EqualTo(1));
+                Assert.That(data.Data.First().TransactionCode, Is.EqualTo("TRX001"));
+            });
         }
 
         #endregion

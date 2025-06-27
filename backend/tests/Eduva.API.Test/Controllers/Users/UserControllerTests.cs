@@ -423,6 +423,50 @@ namespace Eduva.API.Test.Controllers.Users
         #region GetUsersAsync Tests
 
         [Test]
+        public async Task GetUsersAsync_ShouldReturnUserNotPartOfSchool_WhenSchoolAdminHasNoSchool()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var user = new ApplicationUser
+            {
+                Id = userId,
+                SchoolId = null
+            };
+
+            var claims = new List<Claim>
+            {
+                new(ClaimTypes.NameIdentifier, userId.ToString()),
+                new(ClaimTypes.Role, nameof(Role.SchoolAdmin))
+            };
+
+            var identity = new ClaimsIdentity(claims, "TestAuth");
+            var principal = new ClaimsPrincipal(identity);
+
+            var controller = new UserController(_loggerMock.Object, _importTemplateOptionsMock.Object, _httpClientFactoryMock.Object, _mediatorMock.Object, _userManagerMock.Object);
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = principal }
+            };
+
+            _userManagerMock
+                .Setup(m => m.FindByIdAsync(userId.ToString()))
+                .ReturnsAsync(user);
+
+            var param = new UserSpecParam();
+
+            // Act
+            var result = await controller.GetUsersAsync(param);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserNotPartOfSchool));
+        }
+
+        [Test]
         public async Task GetUsersAsync_ShouldReturnInternalServerError_WhenMediatorThrows()
         {
             SetupUser(Guid.NewGuid().ToString(), role: nameof(Role.SystemAdmin));
