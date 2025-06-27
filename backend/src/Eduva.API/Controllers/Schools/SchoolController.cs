@@ -61,7 +61,9 @@ namespace Eduva.API.Controllers.Schools
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(userId, out var schoolAdminId))
+            {
                 return Respond(CustomCode.UserIdNotFound);
+            }
 
             return await HandleRequestAsync<SchoolResponse>(async () =>
             {
@@ -77,7 +79,9 @@ namespace Eduva.API.Controllers.Schools
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(userId, out var schoolAdminId))
+            {
                 return Respond(CustomCode.UserIdNotFound);
+            }
 
             command.SchoolAdminId = schoolAdminId;
 

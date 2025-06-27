@@ -1,7 +1,9 @@
 ﻿using Eduva.Application.Exceptions.AICreditPack;
 using Eduva.Application.Exceptions.Auth;
 using Eduva.Application.Exceptions.CreditTransaction;
+using Eduva.Application.Exceptions.PaymentTransaction;
 using Eduva.Application.Exceptions.School;
+using Eduva.Application.Exceptions.SchoolSubscription;
 using Eduva.Application.Exceptions.SubscriptionPlan;
 using Eduva.Application.Features.Payments.Commands;
 using Eduva.Application.Interfaces;
@@ -62,6 +64,99 @@ public class ConfirmPayOSPaymentReturnCommandHandlerTests
     #endregion
 
     #region Tests
+
+    [Test]
+    public async Task Handle_Should_Handle_YearlySubscription()
+    {
+        var request = new ConfirmPayOSPaymentReturnCommand
+        {
+            Code = "00",
+            Status = "PAID",
+            OrderCode = 22,
+            Id = "txn"
+        };
+
+        var transaction = new PaymentTransaction
+        {
+            Id = _transactionId,
+            UserId = _userId,
+            TransactionCode = "22",
+            PaymentStatus = PaymentStatus.Pending,
+            PaymentPurpose = PaymentPurpose.SchoolSubscription,
+            PaymentItemId = 1,
+            Amount = 999999 // not equal to PriceMonthly
+        };
+
+        var school = new School { Id = 1, Status = EntityStatus.Active };
+        var plan = new SubscriptionPlan { Id = 1, PriceMonthly = 100000 };
+        var oldSub = new SchoolSubscription { Id = Guid.NewGuid(), SubscriptionStatus = SubscriptionStatus.Expired };
+
+        _transactionRepoMock.Setup(x => x.GetByTransactionCodeAsync("22", It.IsAny<CancellationToken>())).ReturnsAsync(transaction);
+        _schoolRepoMock.Setup(x => x.GetByUserIdAsync(_userId)).ReturnsAsync(school);
+        _planRepoMock.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(plan);
+        _subRepoMock.Setup(x => x.GetLatestPaidBySchoolIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(oldSub);
+        _subRepoMock.Setup(x => x.AddAsync(It.IsAny<SchoolSubscription>())).Returns(Task.CompletedTask);
+
+        await _handler.Handle(request, CancellationToken.None);
+
+        _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Exactly(2));
+    }
+
+    [Test]
+    public void Handle_ShouldThrow_WhenTransactionNotFound()
+    {
+        var request = new ConfirmPayOSPaymentReturnCommand
+        {
+            Code = "00",
+            Status = "PAID",
+            OrderCode = 1234,
+            Id = "txn"
+        };
+
+        _transactionRepoMock
+            .Setup(x => x.GetByTransactionCodeAsync("1234", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((PaymentTransaction?)null);
+
+        Assert.ThrowsAsync<PaymentTransactionNotFoundException>(() => _handler.Handle(request, CancellationToken.None));
+    }
+
+    [Test]
+    public void Handle_ShouldThrow_WhenPaymentAlreadyConfirmed()
+    {
+        var request = new ConfirmPayOSPaymentReturnCommand
+        {
+            Code = "00",
+            Status = "PAID",
+            OrderCode = 1,
+            Id = "txn"
+        };
+
+        var transaction = new PaymentTransaction
+        {
+            Id = Guid.NewGuid(),
+            PaymentStatus = PaymentStatus.Paid,
+            PaymentPurpose = PaymentPurpose.SchoolSubscription,
+            UserId = _userId
+        };
+
+        _transactionRepoMock.Setup(r => r.GetByTransactionCodeAsync("1", It.IsAny<CancellationToken>())).ReturnsAsync(transaction);
+
+        Assert.ThrowsAsync<PaymentAlreadyConfirmedException>(() => _handler.Handle(request, CancellationToken.None));
+    }
+
+    [Test]
+    public void Handle_ShouldThrow_WhenPaymentFailed()
+    {
+        var request = new ConfirmPayOSPaymentReturnCommand
+        {
+            Code = "99",
+            Status = "FAILED",
+            OrderCode = 1,
+            Id = "txn"
+        };
+
+        Assert.ThrowsAsync<PaymentFailedException>(() => _handler.Handle(request, CancellationToken.None));
+    }
 
     [Test]
     public async Task Handle_Should_Handle_SchoolSubscription()

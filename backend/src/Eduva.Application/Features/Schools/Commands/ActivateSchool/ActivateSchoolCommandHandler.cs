@@ -21,8 +21,7 @@ namespace Eduva.Application.Features.Schools.Commands.ActivateSchool
 
         public async Task<Unit> Handle(ActivateSchoolCommand request, CancellationToken cancellationToken)
         {
-            var school = await _schoolRepository.GetByIdAsync(request.SchoolId)
-                ?? throw new SchoolNotFoundException();
+            var school = await _schoolRepository.GetByIdAsync(request.SchoolId) ?? throw new SchoolNotFoundException();
 
             if (school.Status == EntityStatus.Active)
             {

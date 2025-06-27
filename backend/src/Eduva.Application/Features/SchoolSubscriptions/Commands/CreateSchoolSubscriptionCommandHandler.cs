@@ -95,7 +95,9 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Commands
             var repo = _unitOfWork.GetRepository<SubscriptionPlan, int>();
             var plan = await repo.GetByIdAsync(planId) ?? throw new PlanNotFoundException();
             if (plan.Status != EntityStatus.Active)
+            {
                 throw new PlanNotActiveException();
+            }
             return plan;
         }
 
@@ -109,13 +111,19 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Commands
             var repo = _unitOfWork.GetCustomRepository<ISchoolSubscriptionRepository>();
             var existing = await repo.GetActiveSubscriptionBySchoolIdAsync(schoolId);
             if (existing == null)
+            {
                 return (baseAmount, 0, 0);
+            }
 
             if (existing.PlanId == request.PlanId && existing.BillingCycle == request.BillingCycle)
+            {
                 throw new SchoolSubscriptionAlreadyExistsException();
+            }
 
             if (IsDowngrade(request, plan, existing))
+            {
                 throw new DowngradeNotAllowedException();
+            }
 
             var transactionRepo = _unitOfWork.GetRepository<PaymentTransaction, Guid>();
             var transaction = await transactionRepo.GetByIdAsync(existing.PaymentTransactionId) ?? throw new PaymentTransactionNotFoundException();
@@ -129,7 +137,11 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Commands
             var percent = (double)deducted / (double)newPlanAmount * 100;
 
             var final = baseAmount - deducted;
-            if (final <= 10000) final = 10000;
+
+            if (final <= 10000)
+            {
+                final = 10000;
+            }
 
             return (final, Math.Round(deducted, 2), Math.Round(percent, 2));
         }

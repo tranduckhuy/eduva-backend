@@ -15,7 +15,7 @@ public class GetUserProfileHandlerTests
     private Mock<IUserRepository> _userRepositoryMock = default!;
     private Mock<UserManager<ApplicationUser>> _userManagerMock = default!;
     private Mock<ISchoolSubscriptionService> _schoolSubscriptionServiceMock = default!;
-    private GetUserProfileHandler _handler = default!;
+    private GetUserProfileQueryHandler _handler = default!;
 
     #region GetUserProfileHandlerTests Setup
 
@@ -26,7 +26,7 @@ public class GetUserProfileHandlerTests
         _userManagerMock = MockUserManager<ApplicationUser>();
         _schoolSubscriptionServiceMock = new Mock<ISchoolSubscriptionService>();
 
-        _handler = new GetUserProfileHandler(
+        _handler = new GetUserProfileQueryHandler(
             _userRepositoryMock.Object,
             _userManagerMock.Object,
             _schoolSubscriptionServiceMock.Object

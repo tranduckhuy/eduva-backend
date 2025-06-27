@@ -13,7 +13,7 @@ namespace Eduva.Application.Test.Features.SubscriptionPlans.Queries
     {
         private Mock<IUnitOfWork> _unitOfWorkMock = default!;
         private Mock<IGenericRepository<SubscriptionPlan, int>> _subscriptionRepoMock = default!;
-        private GetSubscriptionPlansHandler _handler = default!;
+        private GetSubscriptionPlansQueryHandler _handler = default!;
 
         #region GetSubscriptionPlansHandler Setup
 
@@ -26,7 +26,7 @@ namespace Eduva.Application.Test.Features.SubscriptionPlans.Queries
             _unitOfWorkMock.Setup(x => x.GetRepository<SubscriptionPlan, int>())
                 .Returns(_subscriptionRepoMock.Object);
 
-            _handler = new GetSubscriptionPlansHandler(_unitOfWorkMock.Object);
+            _handler = new GetSubscriptionPlansQueryHandler(_unitOfWorkMock.Object);
         }
 
         #endregion

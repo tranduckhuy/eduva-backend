@@ -23,8 +23,7 @@ namespace Eduva.Application.Features.AICreditPacks.Queries
 
         public async Task<AICreditPackResponse> Handle(GetAICreditPackByIdQuery request, CancellationToken cancellationToken)
         {
-            var pack = await _creditPackRepository.GetByIdAsync(request.Id)
-                ?? throw new AppException(CustomCode.AICreditPackNotFound);
+            var pack = await _creditPackRepository.GetByIdAsync(request.Id) ?? throw new AppException(CustomCode.AICreditPackNotFound);
 
             return _mapper.Map<AICreditPackResponse>(pack);
         }

@@ -3,7 +3,7 @@
     public enum SubscriptionStatus
     {
         Active = 0,
-        Peding = 1,
+        Pending = 1,
         Expired = 2,
         Canceled = 3
     }

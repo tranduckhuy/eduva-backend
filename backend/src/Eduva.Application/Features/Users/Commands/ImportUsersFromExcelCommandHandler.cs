@@ -93,21 +93,28 @@ public class ImportUsersFromExcelCommandHandler : IRequestHandler<ImportUsersFro
     private async Task<ApplicationUser> ValidateRequestAsync(ImportUsersFromExcelCommand request)
     {
         if (request.File == null || request.File.Length == 0)
+        {
             throw new AppException(CustomCode.FileIsRequired);
+        }
 
         var extension = Path.GetExtension(request.File.FileName);
         if (!string.Equals(extension, ".xlsx", StringComparison.OrdinalIgnoreCase))
+        {
             throw new AppException(CustomCode.InvalidFileType);
+        }
 
         if (!request.File.ContentType.Contains("spreadsheetml", StringComparison.OrdinalIgnoreCase))
+        {
             throw new AppException(CustomCode.InvalidFileType);
+        }
 
         var userRepo = _unitOfWork.GetCustomRepository<IUserRepository>();
-        var user = await userRepo.GetByIdAsync(request.CreatorId)
-                   ?? throw new AppException(CustomCode.UserNotExists);
+        var user = await userRepo.GetByIdAsync(request.CreatorId) ?? throw new AppException(CustomCode.UserNotExists);
 
         if (user.SchoolId == null)
+        {
             throw new SchoolNotFoundException();
+        }
 
         return user;
     }

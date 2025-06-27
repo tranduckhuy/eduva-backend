@@ -21,14 +21,14 @@ namespace Eduva.Application.Features.Schools.Queries
 
         public async Task<SchoolResponse> Handle(GetMySchoolQuery request, CancellationToken cancellationToken)
         {
-            var user = await _userRepo.GetByIdAsync(request.SchoolAdminId)
-                ?? throw new UserNotExistsException();
+            var user = await _userRepo.GetByIdAsync(request.SchoolAdminId) ?? throw new UserNotExistsException();
 
             if (user.SchoolId == null)
+            {
                 throw new UserNotPartOfSchoolException();
+            }
 
-            var school = await _schoolRepo.GetByIdAsync(user.SchoolId.Value)
-                ?? throw new SchoolNotFoundException();
+            var school = await _schoolRepo.GetByIdAsync(user.SchoolId.Value) ?? throw new SchoolNotFoundException();
 
             return AppMapper.Mapper.Map<SchoolResponse>(school);
         }
