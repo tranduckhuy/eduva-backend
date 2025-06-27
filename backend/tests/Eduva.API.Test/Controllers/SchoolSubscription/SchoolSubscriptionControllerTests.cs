@@ -1,8 +1,12 @@
 ﻿using Eduva.API.Controllers.SchoolSubscriptions;
 using Eduva.API.Models;
+using Eduva.Application.Common.Models;
 using Eduva.Application.Features.Payments.Commands;
 using Eduva.Application.Features.Payments.Queries;
 using Eduva.Application.Features.Payments.Responses;
+using Eduva.Application.Features.SchoolSubscriptions.Queries;
+using Eduva.Application.Features.SchoolSubscriptions.Responses;
+using Eduva.Application.Features.SchoolSubscriptions.Specifications;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
@@ -174,6 +178,94 @@ public class SchoolSubscriptionControllerTests
         {
             Assert.That(response.StatusCode, Is.EqualTo((int)CustomCode.Success));
             Assert.That(actualData!.PlanName, Is.EqualTo(expectedResponse.PlanName));
+        });
+    }
+
+    #endregion
+
+    #region GetSchoolSubscriptions
+
+    [Test]
+    public async Task GetSchoolSubscriptions_ShouldReturnSuccess_WhenValidRequest()
+    {
+        var specParam = new SchoolSubscriptionSpecParam
+        {
+            PageIndex = 1,
+            PageSize = 10
+        };
+
+        var expected = new Pagination<SchoolSubscriptionResponse>
+        {
+            PageIndex = 1,
+            PageSize = 10,
+            Count = 1,
+            Data = new List<SchoolSubscriptionResponse>
+            {
+                new()
+                {
+                    Id = Guid.NewGuid(),
+                    SubscriptionStatus = SubscriptionStatus.Active,
+                    BillingCycle = BillingCycle.Monthly,
+                    School = new(),
+                    Plan = new(),
+                    PaymentTransaction = new(),
+                    User = new()
+                }
+            }
+        };
+
+        _mediatorMock
+            .Setup(m => m.Send(It.Is<GetSchoolSubscriptionQuery>(q => q.Param == specParam), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expected);
+
+        var result = await _controller.GetSchoolSubscriptions(specParam);
+
+        var objectResult = result as ObjectResult;
+        var response = objectResult?.Value as ApiResponse<object>;
+        var data = response?.Data as Pagination<SchoolSubscriptionResponse>;
+
+        Assert.That(response, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+            Assert.That(data!.Data, Has.Count.EqualTo(1));
+        });
+    }
+
+    #endregion
+
+    #region GetSchoolSubscriptionById
+
+    [Test]
+    public async Task GetSchoolSubscriptionById_ShouldReturnSuccess_WhenValidId()
+    {
+        var id = Guid.NewGuid();
+        var expected = new SchoolSubscriptionResponse
+        {
+            Id = id,
+            SubscriptionStatus = SubscriptionStatus.Active,
+            BillingCycle = BillingCycle.Monthly,
+            School = new(),
+            Plan = new(),
+            PaymentTransaction = new(),
+            User = new()
+        };
+
+        _mediatorMock
+            .Setup(m => m.Send(It.Is<GetSchoolSubscriptionByIdQuery>(x => x.Id == id), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expected);
+
+        var result = await _controller.GetSchoolSubscriptionById(id);
+
+        var objectResult = result as ObjectResult;
+        var response = objectResult?.Value as ApiResponse<object>;
+        var data = response?.Data as SchoolSubscriptionResponse;
+
+        Assert.That(response, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+            Assert.That(data!.Id, Is.EqualTo(expected.Id));
         });
     }
 
