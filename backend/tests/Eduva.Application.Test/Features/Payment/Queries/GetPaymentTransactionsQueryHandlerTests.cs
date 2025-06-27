@@ -13,12 +13,18 @@ namespace Eduva.Application.Test.Features.Payment.Queries
         private Mock<IPaymentTransactionRepository> _repositoryMock = default!;
         private GetPaymentTransactionsQueryHandler _handler = default!;
 
+        #region GetPaymentTransactionsQueryHandlerTests Setup
+
         [SetUp]
         public void SetUp()
         {
             _repositoryMock = new Mock<IPaymentTransactionRepository>();
             _handler = new GetPaymentTransactionsQueryHandler(_repositoryMock.Object);
         }
+
+        #endregion
+
+        #region GetPaymentTransactionsQueryHandler Tests
 
         [Test]
         public async Task Handle_ShouldReturnMappedPagination_WhenSpecMatches()
@@ -55,11 +61,14 @@ namespace Eduva.Application.Test.Features.Payment.Queries
             {
                 Assert.That(result, Is.Not.Null);
                 Assert.That(result.Count, Is.EqualTo(2));
-                Assert.That(result.Data.Count, Is.EqualTo(2));
+                Assert.That(result.Data, Has.Count.EqualTo(2));
                 Assert.That(result.Data.First().TransactionCode, Is.EqualTo("T001"));
             });
 
             _repositoryMock.Verify(r => r.GetWithSpecAsync(It.IsAny<PaymentSpecification>()), Times.Once);
         }
+
+        #endregion
+
     }
 }

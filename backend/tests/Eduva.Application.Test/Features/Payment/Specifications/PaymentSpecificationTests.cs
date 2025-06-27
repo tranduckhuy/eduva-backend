@@ -83,7 +83,7 @@ namespace Eduva.Application.Test.Features.Payment.Specifications
             ).ToList();
 
             // Assert
-            Assert.That(filtered.Count, Is.EqualTo(1));
+            Assert.That(filtered, Has.Count.EqualTo(1));
             Assert.That(filtered[0].User.FullName, Is.EqualTo("John Doe"));
         }
 
@@ -113,7 +113,7 @@ namespace Eduva.Application.Test.Features.Payment.Specifications
                 (!string.IsNullOrEmpty(t.User.Email) && t.User.Email.ToLower().Contains(param.SearchTerm.ToLower()))
             ).ToList();
 
-            Assert.That(filtered.Count, Is.EqualTo(0));
+            Assert.That(filtered, Is.Empty);
         }
 
         [TestCase("fullName", "desc")]
@@ -160,7 +160,7 @@ namespace Eduva.Application.Test.Features.Payment.Specifications
             var ordered = spec.OrderBy!(data).ToList();
 
             // Assert
-            Assert.That(ordered.Count, Is.EqualTo(2));
+            Assert.That(ordered, Has.Count.EqualTo(2));
         }
 
         #endregion

@@ -28,7 +28,7 @@ namespace Eduva.Application.Test.Features.CreditTransactions.Specifications
             {
                 Assert.That(spec.Skip, Is.EqualTo(10));
                 Assert.That(spec.Take, Is.EqualTo(10));
-                Assert.That(spec.Includes.Count, Is.EqualTo(3));
+                Assert.That(spec.Includes, Has.Count.EqualTo(3));
 
                 Assert.That(spec.Includes.Any(e => GetMemberName(e) == "User"), Is.True);
                 Assert.That(spec.Includes.Any(e => GetMemberName(e) == "AICreditPack"), Is.True);
@@ -122,7 +122,7 @@ namespace Eduva.Application.Test.Features.CreditTransactions.Specifications
             var sorted = orderBy!(data).ToList();
 
             // Assert
-            Assert.That(sorted.Count, Is.EqualTo(3));
+            Assert.That(sorted, Has.Count.EqualTo(3));
         }
 
         #endregion
