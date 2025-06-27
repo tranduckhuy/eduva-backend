@@ -150,15 +150,9 @@ namespace Eduva.API.Controllers.Folders
 
         [HttpPut("{id}/rename")]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
-        [ProducesResponseType(typeof(ApiResponse<FolderResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> RenameFolder(Guid id, [FromBody] RenameFolderCommand command)
         {
-            var validationResult = CheckModelStateValidity();
-            if (validationResult != null)
-            {
-                return validationResult;
-            }
-
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var currentUserId))
             {
@@ -170,22 +164,15 @@ namespace Eduva.API.Controllers.Folders
 
             return await HandleRequestAsync(async () =>
             {
-                var result = await _mediator.Send(command);
-                return (CustomCode.Updated, result);
+                await _mediator.Send(command);
             });
         }
 
         [HttpPut("{id}/order")]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
-        [ProducesResponseType(typeof(ApiResponse<FolderResponse>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> UpdateFolderOrder(int id, [FromBody] UpdateFolderOrderCommand command)
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> UpdateFolderOrder(Guid id, [FromBody] UpdateFolderOrderCommand command)
         {
-            var validationResult = CheckModelStateValidity();
-            if (validationResult != null)
-            {
-                return validationResult;
-            }
-
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var currentUserId))
             {
@@ -197,34 +184,7 @@ namespace Eduva.API.Controllers.Folders
 
             return await HandleRequestAsync(async () =>
             {
-                var result = await _mediator.Send(command);
-                return (CustomCode.Updated, result);
-            });
-        }
-
-        [HttpPut("{id}/move")]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
-        [ProducesResponseType(typeof(ApiResponse<FolderResponse>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> MoveFolder(Guid id, [FromBody] MoveFolderCommand command)
-        {
-            var validationResult = CheckModelStateValidity();
-            if (validationResult != null)
-            {
-                return validationResult;
-            }
-
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var currentUserId))
-            {
-                return Respond(CustomCode.UserIdNotFound);
-            }
-            command.Id = id;
-            command.CurrentUserId = currentUserId;
-
-            return await HandleRequestAsync(async () =>
-            {
-                var result = await _mediator.Send(command);
-                return (CustomCode.Updated, result);
+                await _mediator.Send(command);
             });
         }
     }
