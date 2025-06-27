@@ -45,7 +45,9 @@ namespace Eduva.API.Controllers.Users
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(userId, out var id))
+            {
                 return Respond(CustomCode.UserIdNotFound);
+            }
 
             var query = new GetUserProfileQuery(UserId: id);
 
@@ -82,11 +84,15 @@ namespace Eduva.API.Controllers.Users
             {
                 var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 if (!Guid.TryParse(userIdStr, out var userId))
+                {
                     return Respond(CustomCode.UserIdNotFound);
+                }
 
                 var user = await _userManager.FindByIdAsync(userId.ToString());
                 if (user?.SchoolId == null)
+                {
                     return Respond(CustomCode.UserNotPartOfSchool);
+                }
 
                 param.SchoolId = user.SchoolId;
             }
@@ -106,9 +112,12 @@ namespace Eduva.API.Controllers.Users
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(userId, out var id))
+            {
                 return Respond(CustomCode.UserIdNotFound);
+            }
 
             command.UserId = id;
+
             return await HandleRequestAsync(async () =>
             {
                 var result = await _mediator.Send(command);
@@ -125,7 +134,9 @@ namespace Eduva.API.Controllers.Users
         {
             var creatorIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(creatorIdString, out var creatorId))
+            {
                 return Respond(CustomCode.UserIdNotFound);
+            }
 
             command.CreatorId = creatorId;
             return await HandleRequestAsync(() => _mediator.Send(command));
@@ -140,7 +151,9 @@ namespace Eduva.API.Controllers.Users
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(userId, out var creatorId))
+            {
                 return Respond(CustomCode.UserIdNotFound);
+            }
 
             try
             {
@@ -177,7 +190,9 @@ namespace Eduva.API.Controllers.Users
         {
             var executorIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(executorIdStr, out var executorId))
+            {
                 return Respond(CustomCode.UserIdNotFound);
+            }
 
             var command = new LockAccountCommand(userId, executorId);
             return await HandleRequestAsync(() => _mediator.Send(command));
@@ -191,7 +206,9 @@ namespace Eduva.API.Controllers.Users
         {
             var executorIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(executorIdStr, out var executorId))
+            {
                 return Respond(CustomCode.UserIdNotFound);
+            }
 
             var command = new UnlockAccountCommand(userId, executorId);
             return await HandleRequestAsync(() => _mediator.Send(command));
@@ -209,7 +226,9 @@ namespace Eduva.API.Controllers.Users
                 var url = _importTemplateConfig.GetUrl(type);
 
                 if (string.IsNullOrWhiteSpace(url))
+                {
                     return Respond(CustomCode.InvalidTemplateType);
+                }
 
                 var httpClient = _httpClientFactory.CreateClient("EduvaHttpClient");
                 var fileBytes = await httpClient.GetByteArrayAsync(url);

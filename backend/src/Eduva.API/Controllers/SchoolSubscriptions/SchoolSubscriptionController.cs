@@ -59,7 +59,9 @@ namespace Eduva.API.Controllers.SchoolSubscriptions
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(userIdStr, out var userId))
+            {
                 return Respond(CustomCode.UserIdNotFound);
+            }
 
             command.UserId = userId;
 
@@ -74,7 +76,9 @@ namespace Eduva.API.Controllers.SchoolSubscriptions
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(userIdStr, out var userId))
+            {
                 return Respond(CustomCode.UserIdNotFound);
+            }
 
             var query = new GetMySchoolSubscriptionQuery(userId);
 

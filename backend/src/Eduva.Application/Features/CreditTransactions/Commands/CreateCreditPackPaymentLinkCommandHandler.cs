@@ -34,11 +34,12 @@ namespace Eduva.Application.Features.CreditTransactions.Commands
             CreateCreditPackPaymentLinkCommand request, CancellationToken cancellationToken)
         {
             var creditPackRepo = _unitOfWork.GetRepository<AICreditPack, int>();
-            var creditPack = await creditPackRepo.GetByIdAsync(request.CreditPackId)
-                ?? throw new AICreditPackNotFoundException();
+            var creditPack = await creditPackRepo.GetByIdAsync(request.CreditPackId) ?? throw new AICreditPackNotFoundException();
 
             if (creditPack.Status != EntityStatus.Active)
+            {
                 throw new AICreditPackNotActiveException();
+            }
 
             var now = DateTimeOffset.UtcNow;
             var transactionCode = now.ToUnixTimeSeconds().ToString();

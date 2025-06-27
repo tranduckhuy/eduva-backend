@@ -19,8 +19,7 @@ namespace Eduva.Application.Features.SubscriptionPlans.Queries
         public async Task<SubscriptionPlanResponse> Handle(GetSubscriptionPlanByIdQuery request, CancellationToken cancellationToken)
         {
             var repo = _unitOfWork.GetRepository<SubscriptionPlan, int>();
-            var plan = await repo.GetByIdAsync(request.Id)
-                ?? throw new PlanNotFoundException();
+            var plan = await repo.GetByIdAsync(request.Id) ?? throw new PlanNotFoundException();
 
             return AppMapper.Mapper.Map<SubscriptionPlanResponse>(plan);
         }

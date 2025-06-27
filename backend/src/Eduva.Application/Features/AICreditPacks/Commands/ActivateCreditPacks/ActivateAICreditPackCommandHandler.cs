@@ -18,8 +18,7 @@ namespace Eduva.Application.Features.AICreditPacks.Commands.ActivateCreditPacks
         public async Task<Unit> Handle(ActivateAICreditPackCommand request, CancellationToken cancellationToken)
         {
             var repo = _unitOfWork.GetRepository<AICreditPack, int>();
-            var pack = await repo.GetByIdAsync(request.Id)
-                       ?? throw new AICreditPackNotFoundException();
+            var pack = await repo.GetByIdAsync(request.Id) ?? throw new AICreditPackNotFoundException();
 
             if (pack.Status == EntityStatus.Active)
             {

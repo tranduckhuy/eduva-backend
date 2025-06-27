@@ -9,13 +9,13 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Eduva.Application.Features.Users.Queries
 {
-    public class GetUserProfileHandler : IRequestHandler<GetUserProfileQuery, UserResponse>
+    public class GetUserProfileQueryHandler : IRequestHandler<GetUserProfileQuery, UserResponse>
     {
         private readonly IUserRepository _userRepository;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ISchoolSubscriptionService _schoolSubscriptionService;
 
-        public GetUserProfileHandler(IUserRepository userRepository, UserManager<ApplicationUser> userManager, ISchoolSubscriptionService schoolSubscriptionService)
+        public GetUserProfileQueryHandler(IUserRepository userRepository, UserManager<ApplicationUser> userManager, ISchoolSubscriptionService schoolSubscriptionService)
         {
             _userRepository = userRepository;
             _userManager = userManager;

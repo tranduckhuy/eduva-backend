@@ -57,7 +57,9 @@ namespace Eduva.API.Controllers.CreditTransactions
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(userIdStr, out var userId))
+            {
                 return Respond(CustomCode.UserIdNotFound);
+            }
 
             command.UserId = userId;
 

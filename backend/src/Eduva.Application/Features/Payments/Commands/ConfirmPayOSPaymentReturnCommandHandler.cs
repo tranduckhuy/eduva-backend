@@ -25,14 +25,18 @@ namespace Eduva.Application.Features.Payments.Commands
         public async Task<Unit> Handle(ConfirmPayOSPaymentReturnCommand request, CancellationToken cancellationToken)
         {
             if (request.Code != "00" || request.Status != "PAID")
+            {
                 throw new PaymentFailedException();
+            }
 
             var transactionRepo = _unitOfWork.GetCustomRepository<IPaymentTransactionRepository>();
             var transaction = await transactionRepo.GetByTransactionCodeAsync(request.OrderCode.ToString(), cancellationToken)
                 ?? throw new PaymentTransactionNotFoundException();
 
             if (transaction.PaymentStatus == PaymentStatus.Paid)
+            {
                 throw new PaymentAlreadyConfirmedException();
+            }
 
             switch (transaction.PaymentPurpose)
             {
@@ -56,16 +60,12 @@ namespace Eduva.Application.Features.Payments.Commands
         private async Task HandleSchoolSubscriptionAsync(PaymentTransaction transaction, CancellationToken cancellationToken)
         {
             var schoolRepo = _unitOfWork.GetCustomRepository<ISchoolRepository>();
-            var school = await schoolRepo.GetByUserIdAsync(transaction.UserId)
-                ?? throw new SchoolNotFoundException();
+            var school = await schoolRepo.GetByUserIdAsync(transaction.UserId) ?? throw new SchoolNotFoundException();
 
             var planRepo = _unitOfWork.GetCustomRepository<ISubscriptionPlanRepository>();
-            var plan = await planRepo.GetByIdAsync(transaction.PaymentItemId)
-                ?? throw new PlanNotFoundException();
+            var plan = await planRepo.GetByIdAsync(transaction.PaymentItemId) ?? throw new PlanNotFoundException();
 
-            var cycle = transaction.Amount == plan.PriceMonthly
-                ? BillingCycle.Monthly
-                : BillingCycle.Yearly;
+            var cycle = transaction.Amount == plan.PriceMonthly ? BillingCycle.Monthly : BillingCycle.Yearly;
 
             var duration = cycle == BillingCycle.Monthly ? 30 : 365;
 
@@ -96,14 +96,15 @@ namespace Eduva.Application.Features.Payments.Commands
             transaction.RelatedId = newSub.Id.ToString();
 
             if (school.Status == EntityStatus.Inactive)
+            {
                 school.Status = EntityStatus.Active;
+            }
         }
 
         private async Task HandleCreditPackageAsync(PaymentTransaction transaction)
         {
             var creditPackRepo = _unitOfWork.GetRepository<AICreditPack, int>();
-            var pack = await creditPackRepo.GetByIdAsync(transaction.PaymentItemId)
-                ?? throw new AICreditPackNotFoundException();
+            var pack = await creditPackRepo.GetByIdAsync(transaction.PaymentItemId) ?? throw new AICreditPackNotFoundException();
 
             var totalCredits = pack.Credits + pack.BonusCredits;
 
@@ -124,8 +125,7 @@ namespace Eduva.Application.Features.Payments.Commands
 
 
             var userRepo = _unitOfWork.GetRepository<ApplicationUser, Guid>();
-            var user = await userRepo.GetByIdAsync(transaction.UserId)
-                ?? throw new UserNotExistsException();
+            var user = await userRepo.GetByIdAsync(transaction.UserId) ?? throw new UserNotExistsException();
 
             user.TotalCredits += totalCredits;
 

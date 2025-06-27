@@ -24,16 +24,14 @@ namespace Eduva.Application.Features.Payments.Queries
 
         public async Task<MySchoolSubscriptionResponse> Handle(GetMySchoolSubscriptionQuery request, CancellationToken cancellationToken)
         {
-            var user = await _userRepository.GetByIdAsync(request.UserId)
-                  ?? throw new UserNotExistsException();
+            var user = await _userRepository.GetByIdAsync(request.UserId) ?? throw new UserNotExistsException();
 
             if (user.SchoolId is null)
             {
                 throw new SchoolNotFoundException();
             }
 
-            var sub = await _schoolSubscriptionRepository.GetLatestPaidBySchoolIdAsync(user.SchoolId.Value, cancellationToken)
-                       ?? throw new SchoolSubscriptionNotFoundException();
+            var sub = await _schoolSubscriptionRepository.GetLatestPaidBySchoolIdAsync(user.SchoolId.Value, cancellationToken) ?? throw new SchoolSubscriptionNotFoundException();
 
             return _mapper.Map<MySchoolSubscriptionResponse>(sub);
         }

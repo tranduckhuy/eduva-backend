@@ -23,13 +23,13 @@ namespace Eduva.Application.Features.Users.Commands
         public async Task<Unit> Handle(UnlockAccountCommand request, CancellationToken cancellationToken)
         {
             if (request.UserId == request.ExecutorId)
+            {
                 throw new AppException(CustomCode.CannotUnlockSelf);
+            }
 
-            var targetUser = await _userManager.FindByIdAsync(request.UserId.ToString())
-                ?? throw new UserNotExistsException();
+            var targetUser = await _userManager.FindByIdAsync(request.UserId.ToString()) ?? throw new UserNotExistsException();
 
-            var executorUser = await _userManager.FindByIdAsync(request.ExecutorId.ToString())
-                ?? throw new UserNotExistsException();
+            var executorUser = await _userManager.FindByIdAsync(request.ExecutorId.ToString()) ?? throw new UserNotExistsException();
 
             var targetRoles = await _userManager.GetRolesAsync(targetUser);
             var executorRoles = await _userManager.GetRolesAsync(executorUser);
@@ -38,11 +38,15 @@ namespace Eduva.Application.Features.Users.Commands
             var isExecutorSchoolAdmin = executorRoles.Contains(Role.SchoolAdmin.ToString());
 
             if (isExecutorSchoolAdmin && isTargetSystemAdmin)
+            {
                 throw new AppException(CustomCode.Forbidden);
+            }
 
             var isLocked = targetUser.LockoutEnd.HasValue && targetUser.LockoutEnd > DateTimeOffset.UtcNow;
             if (!isLocked)
+            {
                 throw new AppException(CustomCode.UserNotLocked);
+            }
 
             targetUser.LockoutEnd = null;
             targetUser.LockoutEnabled = false;
@@ -50,7 +54,9 @@ namespace Eduva.Application.Features.Users.Commands
 
             var result = await _userManager.UpdateAsync(targetUser);
             if (!result.Succeeded)
+            {
                 throw new AppException(CustomCode.SystemError);
+            }
 
             await _unitOfWork.CommitAsync();
             return Unit.Value;

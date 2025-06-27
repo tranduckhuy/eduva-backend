@@ -19,8 +19,7 @@ namespace Eduva.Application.Features.AICreditPacks.Commands.ArchiveCreditPacks
         {
             var creditPackRepo = _unitOfWork.GetRepository<AICreditPack, int>();
 
-            var pack = await creditPackRepo.GetByIdAsync(request.Id)
-                       ?? throw new AICreditPackNotFoundException();
+            var pack = await creditPackRepo.GetByIdAsync(request.Id) ?? throw new AICreditPackNotFoundException();
 
             if (pack.Status == EntityStatus.Archived)
             {

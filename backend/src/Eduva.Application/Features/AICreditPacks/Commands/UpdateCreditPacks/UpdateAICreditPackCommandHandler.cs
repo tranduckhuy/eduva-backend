@@ -17,8 +17,7 @@ namespace Eduva.Application.Features.AICreditPacks.Commands.UpdateCreditPacks
         public async Task<Unit> Handle(UpdateAICreditPackCommand request, CancellationToken cancellationToken)
         {
             var repo = _unitOfWork.GetRepository<AICreditPack, int>();
-            var pack = await repo.GetByIdAsync(request.Id)
-                       ?? throw new AICreditPackNotFoundException();
+            var pack = await repo.GetByIdAsync(request.Id) ?? throw new AICreditPackNotFoundException();
 
             pack.Name = request.Name;
             pack.Price = request.Price;

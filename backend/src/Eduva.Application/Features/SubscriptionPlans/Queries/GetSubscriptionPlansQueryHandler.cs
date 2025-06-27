@@ -8,11 +8,11 @@ using MediatR;
 
 namespace Eduva.Application.Features.SubscriptionPlans.Queries
 {
-    public class GetSubscriptionPlansHandler : IRequestHandler<GetSubscriptionPlansQuery, Pagination<SubscriptionPlanResponse>>
+    public class GetSubscriptionPlansQueryHandler : IRequestHandler<GetSubscriptionPlansQuery, Pagination<SubscriptionPlanResponse>>
     {
         private readonly IUnitOfWork _unitOfWork;
 
-        public GetSubscriptionPlansHandler(IUnitOfWork unitOfWork)
+        public GetSubscriptionPlansQueryHandler(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
         }

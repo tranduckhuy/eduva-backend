@@ -21,8 +21,7 @@ namespace Eduva.Application.Features.SubscriptionPlans.Queries
             var planRepo = _unitOfWork.GetRepository<SubscriptionPlan, int>();
             var schoolSubRepo = _unitOfWork.GetCustomRepository<ISchoolSubscriptionRepository>();
 
-            var plan = await planRepo.GetByIdAsync(request.Id)
-                ?? throw new PlanNotFoundException();
+            var plan = await planRepo.GetByIdAsync(request.Id) ?? throw new PlanNotFoundException();
 
             var usageCount = await schoolSubRepo.CountSchoolsUsingPlanAsync(plan.Id, cancellationToken);
 
@@ -36,6 +35,7 @@ namespace Eduva.Application.Features.SubscriptionPlans.Queries
                 PriceMonthly = plan.PriceMonthly,
                 PricePerYear = plan.PricePerYear,
                 Status = plan.Status,
+                IsRecommended = plan.IsRecommended,
                 NumberOfSchoolsUsing = usageCount
             };
         }

@@ -14,10 +14,11 @@ namespace Eduva.Application.Features.Users.Commands
         public UpdateUserProfileHandler(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
-        }        public async Task<UserResponse> Handle(UpdateUserProfileCommand request, CancellationToken cancellationToken)
+        }
+
+        public async Task<UserResponse> Handle(UpdateUserProfileCommand request, CancellationToken cancellationToken)
         {
-            var user = await _unitOfWork.GetCustomRepository<IUserRepository>().GetByIdAsync(request.UserId)
-                ?? throw new UserNotExistsException();
+            var user = await _unitOfWork.GetCustomRepository<IUserRepository>().GetByIdAsync(request.UserId) ?? throw new UserNotExistsException();
 
             // Only update fields that are not null or empty (partial update support)
             if (!string.IsNullOrEmpty(request.FullName))
