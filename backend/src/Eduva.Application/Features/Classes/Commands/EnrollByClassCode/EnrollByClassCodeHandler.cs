@@ -75,7 +75,7 @@ namespace Eduva.Application.Features.Classes.Commands.EnrollByClassCode
                 ClassId = classroom.Id,
                 EnrolledAt = DateTimeOffset.UtcNow
             };            // Use specialized repository to add data
-            await _unitOfWork.GetRepository<StudentClass, int>().AddAsync(studentClass);
+            await _unitOfWork.GetRepository<StudentClass, Guid>().AddAsync(studentClass);
 
             try
             {

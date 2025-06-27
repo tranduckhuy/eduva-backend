@@ -11,5 +11,6 @@ namespace Eduva.Application.Features.Classes.Specifications
         public string? SchoolName { get; set; }
         public string? ClassCode { get; set; }
         public EntityStatus? ClassStatus { get; set; }
+        public int? SchoolId { get; set; }
     }
 }
