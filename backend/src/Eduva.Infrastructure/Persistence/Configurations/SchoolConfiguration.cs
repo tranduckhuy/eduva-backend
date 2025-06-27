@@ -8,6 +8,8 @@ namespace Eduva.Infrastructure.Persistence.Configurations
     {
         public void Configure(EntityTypeBuilder<School> builder)
         {
+            builder.Property(sc => sc.Id).ValueGeneratedOnAdd();
+
             builder.Property(s => s.Name).HasMaxLength(255).IsRequired();
 
             builder.Property(s => s.ContactEmail).HasMaxLength(100).IsRequired();

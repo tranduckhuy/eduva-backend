@@ -8,6 +8,8 @@ namespace Eduva.Infrastructure.Persistence.Configurations
     {
         public void Configure(EntityTypeBuilder<AIServicePricing> builder)
         {
+            builder.Property(sc => sc.Id).ValueGeneratedOnAdd();
+
             builder.Property(asp => asp.ServiceType)
                 .HasConversion<string>()
                 .IsRequired();

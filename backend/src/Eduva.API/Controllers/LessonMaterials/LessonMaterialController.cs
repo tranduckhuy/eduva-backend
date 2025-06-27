@@ -58,6 +58,12 @@ namespace Eduva.API.Controllers.LessonMaterials
                 return Respond(CustomCode.UserIdNotFound);
             }
 
+            var schoolId = User.FindFirstValue("SchoolId");
+            if (schoolId != null)
+            {
+                lessonMaterialSpecParam.SchoolId = int.Parse(schoolId);
+            }
+
             var query = new GetLessonMaterialsQuery(lessonMaterialSpecParam, Guid.Parse(userId));
 
             return await HandleRequestAsync(async () =>

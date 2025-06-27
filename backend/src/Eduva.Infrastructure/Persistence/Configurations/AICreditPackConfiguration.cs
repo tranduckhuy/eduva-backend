@@ -8,6 +8,8 @@ namespace Eduva.Infrastructure.Persistence.Configurations
     {
         public void Configure(EntityTypeBuilder<AICreditPack> builder)
         {
+            builder.Property(sc => sc.Id).ValueGeneratedOnAdd();
+
             builder.Property(x => x.Name)
                 .IsRequired()
                 .HasMaxLength(100);

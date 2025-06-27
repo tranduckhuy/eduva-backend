@@ -8,6 +8,8 @@ namespace Eduva.Infrastructure.Persistence.Configurations
     {
         public void Configure(EntityTypeBuilder<SubscriptionPlan> builder)
         {
+            builder.Property(sc => sc.Id).ValueGeneratedOnAdd();
+
             builder.Property(sp => sp.Name)
                 .HasMaxLength(255)
                 .IsRequired();

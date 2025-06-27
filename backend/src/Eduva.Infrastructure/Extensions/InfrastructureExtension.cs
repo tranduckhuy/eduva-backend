@@ -64,6 +64,7 @@ namespace Eduva.Infrastructure.Extensions
             services.AddScoped<IStudentClassRepository, StudentClassRepository>();
             services.AddScoped<IPaymentTransactionRepository, PaymentTransactionRepository>();
             services.AddScoped<IAICreditPackRepository, AICreditPackRepository>();
+            services.AddScoped<ISystemConfigRepository, SystemConfigRepository>();
             services.AddScoped<ICreditTransactionRepository, CreditTransactionRepository>();
 
             services.AddScoped<PayOS>(provider =>
@@ -85,6 +86,8 @@ namespace Eduva.Infrastructure.Extensions
 
             services.AddScoped<ISchoolSubscriptionService, SchoolSubscriptionService>();
             services.AddScoped<ISchoolValidationService, SchoolValidationService>();
+            services.AddScoped<ISystemConfigService, SystemConfigService>();
+            services.AddScoped<SystemConfigHelper>();
 
             return services;
         }

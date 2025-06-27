@@ -2,7 +2,7 @@
 
 namespace Eduva.Application.Interfaces.Repositories
 {
-    public interface ILessonMaterialRepository : IGenericRepository<LessonMaterial, int>
+    public interface ILessonMaterialRepository : IGenericRepository<LessonMaterial, Guid>
     {
     }
 }
