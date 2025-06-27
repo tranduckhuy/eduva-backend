@@ -1,6 +1,7 @@
 ﻿using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using Eduva.Infrastructure.Persistence.DbContext;
+using Eduva.Shared.Constants;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -61,6 +62,7 @@ namespace Eduva.Infrastructure.Extensions
                     FullName = "Quy Nguyen Xuan",
                     PhoneNumber = "0838683868",
                     TotalCredits = 1000,
+                    SchoolId = 1, // Assuming Quy is a School Admin of FPT University
                 };
 
                 await userManager.CreateAsync(quyAdmin, "Admin11@");
@@ -75,6 +77,7 @@ namespace Eduva.Infrastructure.Extensions
                     FullName = "Sang Tran Ngoc",
                     PhoneNumber = "0838683866",
                     TotalCredits = 1000,
+                    SchoolId = 1, // Assuming Sang is a Content Moderator of FPT University
                 };
 
                 await userManager.CreateAsync(sangAdmin, "Admin11@");
@@ -89,6 +92,7 @@ namespace Eduva.Infrastructure.Extensions
                     FullName = "Huy Dinh Trong",
                     PhoneNumber = "0838683865",
                     TotalCredits = 1000,
+                    SchoolId = 1, // Assuming Huy is a teacher of FPT University
                 };
 
                 await userManager.CreateAsync(huyAdmin2, "Admin11@");
@@ -103,6 +107,7 @@ namespace Eduva.Infrastructure.Extensions
                     FullName = "Dung Nguyen Ngoc",
                     PhoneNumber = "0838683864",
                     TotalCredits = 1000,
+                    SchoolId = 1, // Assuming Dung is a student of FPT University
                 };
 
                 await userManager.CreateAsync(dungAdmin, "Admin11@");
@@ -358,6 +363,37 @@ namespace Eduva.Infrastructure.Extensions
                     CreatedByUserId = new Guid("4a4a4a4a-4a4a-4a4a-4a4a-4a4a4a4a4a4a"), // Huy Dinh Trong
                 };
                 context.QuestionComments.Add(questionComment);
+                await context.SaveChangesAsync();
+            }
+
+            // SystemConfig
+            if (!await context.SystemConfigs.AnyAsync())
+            {
+                var systemConfigs = new List<SystemConfig>
+                {
+                    new SystemConfig
+                    {
+                        Id = 1,
+                        Key = SystemConfigKeys.DEFAULT_AVATAR_URL,
+                        Value = "https://firebasestorage.googleapis.com/v0/b/gdupa-2fa82.appspot.com/o/avatar%2Fdefault_avatar.png?alt=media&token=8654c964-e226-4777-ac66-b60d4182d287",
+                        Description = "Default avatar URL for users."
+                    },
+                    new SystemConfig
+                    {
+                        Id = 2,
+                        Key = SystemConfigKeys.PAYOS_RETURN_URL,
+                        Value = "https://localhost:9001/api/payments/payos-return",
+                        Description = "Return URL for PayOS payment gateway."
+                    },
+                    new SystemConfig
+                    {
+                        Id = 3,
+                        Key = SystemConfigKeys.IMPORT_USERS_TEMPLATE,
+                        Value = "https://firebasestorage.googleapis.com/v0/b/gdupa-2fa82.appspot.com/o/excel-template%2Fuser-import-template.xlsx?alt=media&token=a1863610-2ab1-4d81-893b-bef6f3f6f4e0",
+                        Description = "Template for importing users."
+                    }
+                };
+                context.SystemConfigs.AddRange(systemConfigs);
                 await context.SaveChangesAsync();
             }
         }

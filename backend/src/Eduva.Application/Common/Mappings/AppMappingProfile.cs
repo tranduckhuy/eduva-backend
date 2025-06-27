@@ -13,6 +13,7 @@ using Eduva.Application.Features.Schools.Commands.CreateSchool;
 using Eduva.Application.Features.Schools.Responses;
 using Eduva.Application.Features.SchoolSubscriptions.Responses;
 using Eduva.Application.Features.SubscriptionPlans.Responses;
+using Eduva.Application.Features.SystemConfigs;
 using Eduva.Application.Features.Users.Responses;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
@@ -120,6 +121,11 @@ namespace Eduva.Application.Common.Mappings
             CreateMap<Folder, FolderResponse>()
                 .ForMember(dest => dest.OwnerName, opt => opt.MapFrom(src => GetOwnerName(src)));
             CreateMap<Pagination<Folder>, Pagination<FolderResponse>>();
+
+            // System Configurations
+            CreateMap<CreateSystemConfigDto, SystemConfig>();
+            CreateMap<SystemConfig, SystemConfigDto>();
+            CreateMap<UpdateSystemConfigDto, SystemConfig>();
         }
         private static string GetOwnerName(Folder folder)
         {

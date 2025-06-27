@@ -15,6 +15,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
+// Add memory cache
+builder.Services.AddMemoryCache();
+
 // SuppressModelStateInvalidFilter can be used to disable the automatic 400 response for invalid models.
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
