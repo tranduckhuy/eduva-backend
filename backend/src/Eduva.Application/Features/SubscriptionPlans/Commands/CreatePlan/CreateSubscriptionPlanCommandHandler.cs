@@ -28,6 +28,7 @@ namespace Eduva.Application.Features.SubscriptionPlans.Commands.CreatePlan
                 StorageLimitGB = request.StorageLimitGB,
                 PriceMonthly = request.PriceMonthly,
                 PricePerYear = request.PricePerYear,
+                IsRecommended = request.IsRecommended,
                 Status = EntityStatus.Active
             };
 

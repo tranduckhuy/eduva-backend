@@ -40,6 +40,18 @@ namespace Eduva.API.Controllers.SchoolSubscriptions
             });
         }
 
+        [HttpGet("{id}")]
+        [Authorize(Roles = nameof(Role.SystemAdmin))]
+        [ProducesResponseType(typeof(ApiResponse<SchoolSubscriptionResponse>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetSchoolSubscriptionById(Guid id)
+        {
+            return await HandleRequestAsync<SchoolSubscriptionResponse>(async () =>
+            {
+                var result = await _mediator.Send(new GetSchoolSubscriptionByIdQuery(id));
+                return (CustomCode.Success, result);
+            });
+        }
+
         [HttpPost("payment-link")]
         [Authorize(Roles = nameof(Role.SchoolAdmin))]
         [ProducesResponseType(typeof(ApiResponse<CreatePaymentLinkResponse>), StatusCodes.Status200OK)]

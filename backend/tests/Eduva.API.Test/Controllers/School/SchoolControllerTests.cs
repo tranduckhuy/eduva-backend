@@ -81,22 +81,40 @@ namespace Eduva.API.Test.Controllers.School
 
             var command = new CreateSchoolCommand { Name = "Test School" };
 
+            var mockSchoolResponse = new SchoolResponse
+            {
+                Id = 1,
+                Name = "Test School",
+                ContactEmail = "test@school.edu",
+                ContactPhone = "0123456789",
+                Address = "123 Test Street",
+                WebsiteUrl = "https://school.edu.vn",
+                Status = EntityStatus.Inactive
+            };
+
             _mediatorMock
                 .Setup(m => m.Send(It.IsAny<CreateSchoolCommand>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(Unit.Value);
+                .ReturnsAsync(mockSchoolResponse);
 
             // Act
             var result = await _controller.CreateSchool(command);
 
             // Assert
-            Assert.That(result, Is.Not.Null, "Controller returned null");
+            Assert.That(result, Is.Not.Null);
 
             var objectResult = result as ObjectResult;
-            Assert.That(objectResult, Is.Not.Null, "Result is not an ObjectResult");
+            Assert.That(objectResult, Is.Not.Null);
 
             var response = objectResult!.Value as ApiResponse<object>;
-            Assert.That(response, Is.Not.Null, "Response is null");
-            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success), "StatusCode is not Success");
+            Assert.That(response, Is.Not.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+                Assert.That(response.Data, Is.TypeOf<SchoolResponse>());
+            });
+
+            var school = (SchoolResponse)response.Data!;
+            Assert.That(school.Name, Is.EqualTo("Test School"));
         }
 
         [Test]

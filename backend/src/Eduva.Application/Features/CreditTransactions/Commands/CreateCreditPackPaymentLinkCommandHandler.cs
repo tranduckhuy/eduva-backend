@@ -62,7 +62,7 @@ namespace Eduva.Application.Features.CreditTransactions.Commands
             var paymentData = new PaymentData(
                 orderCode: long.Parse(transactionCode),
                 amount: (int)creditPack.Price,
-                description: $"AI Credit Pack - {creditPack.Name}",
+                description: $"{creditPack.Name}",
                 items: new List<ItemData>
                 {
                     new ItemData(name: creditPack.Name, quantity: 1, price: (int)creditPack.Price)

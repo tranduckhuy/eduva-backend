@@ -1,15 +1,15 @@
-using Eduva.Application.Features.Folders.Responses;
 using MediatR;
 using System.Text.Json.Serialization;
 
 namespace Eduva.Application.Features.Folders.Commands
 {
-    public class UpdateFolderOrderCommand : IRequest<FolderResponse>
+    public class UpdateFolderOrderCommand : IRequest<Unit>
     {
-        public int Id { get; set; }
-        
+        [JsonIgnore]
+        public Guid Id { get; set; }
+
         public int Order { get; set; }
-        
+
         [JsonIgnore]
         public Guid CurrentUserId { get; set; }
     }

@@ -41,6 +41,18 @@ namespace Eduva.API.Controllers.CreditPacks
             });
         }
 
+        [HttpGet("{id}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}")]
+        [ProducesResponseType(typeof(ApiResponse<AICreditPackResponse>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetAICreditPackById(int id)
+        {
+            return await HandleRequestAsync<AICreditPackResponse>(async () =>
+            {
+                var result = await _mediator.Send(new GetAICreditPackByIdQuery(id));
+                return (CustomCode.Success, result);
+            });
+        }
+
         [HttpPost]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)}")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]

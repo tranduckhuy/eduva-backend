@@ -178,6 +178,8 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status400BadRequest, Message = "AI credit pack is not active" } },
             { CustomCode.InvalidPaymentPurpose, new MessageDetail {
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Invalid payment purpose. Please check the payment details and try again." } },
+            { CustomCode.CreditTransactionNotFound, new MessageDetail {
+                HttpCode = StatusCodes.Status404NotFound, Message = "Credit transaction not found" } },
 
             // Subscription Errors
             { CustomCode.SchoolAndSubscriptionRequired, new MessageDetail {

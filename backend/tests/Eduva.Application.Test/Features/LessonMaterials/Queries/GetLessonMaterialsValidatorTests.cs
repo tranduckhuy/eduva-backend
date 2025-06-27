@@ -16,6 +16,10 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
     {
         private Mock<IUnitOfWork> _mockUnitOfWork = default!;
         private Mock<UserManager<ApplicationUser>> _mockUserManager = default!;
+        private Mock<IGenericRepository<School, int>> _mockSchoolRepo = default!;
+        private Mock<IGenericRepository<Classroom, Guid>> _mockClassRepo = default!;
+        private Mock<IGenericRepository<StudentClass, Guid>> _mockStudentClassRepo = default!;
+        private Mock<IGenericRepository<Folder, Guid>> _mockFolderRepo = default!;
         private GetLessonMaterialsValidator _validator = default!;
 
         [SetUp]
@@ -23,6 +27,17 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
         {
             _mockUnitOfWork = new Mock<IUnitOfWork>();
             _mockUserManager = MockUserManager();
+            _mockSchoolRepo = new Mock<IGenericRepository<School, int>>();
+            _mockClassRepo = new Mock<IGenericRepository<Classroom, Guid>>();
+            _mockStudentClassRepo = new Mock<IGenericRepository<StudentClass, Guid>>();
+            _mockFolderRepo = new Mock<IGenericRepository<Folder, Guid>>();
+
+            // Setup repository returns
+            _mockUnitOfWork.Setup(x => x.GetRepository<School, int>()).Returns(_mockSchoolRepo.Object);
+            _mockUnitOfWork.Setup(x => x.GetRepository<Classroom, Guid>()).Returns(_mockClassRepo.Object);
+            _mockUnitOfWork.Setup(x => x.GetRepository<StudentClass, Guid>()).Returns(_mockStudentClassRepo.Object);
+            _mockUnitOfWork.Setup(x => x.GetRepository<Folder, Guid>()).Returns(_mockFolderRepo.Object);
+
             _validator = new GetLessonMaterialsValidator(_mockUnitOfWork.Object, _mockUserManager.Object);
         }
 
@@ -61,6 +76,11 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
             var roles = new List<string> { nameof(Role.SystemAdmin) };
 
             SetupUserManagerMocks(user, roles);
+
+            // Setup existence checks for the specified IDs
+            _mockSchoolRepo.Setup(x => x.ExistsAsync(1)).ReturnsAsync(true);
+            _mockClassRepo.Setup(x => x.ExistsAsync(It.IsAny<Guid>())).ReturnsAsync(true);
+            _mockFolderRepo.Setup(x => x.ExistsAsync(It.IsAny<Guid>())).ReturnsAsync(true);
 
             var query = new GetLessonMaterialsQuery(
                 new LessonMaterialSpecParam 
@@ -104,7 +124,7 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
             var roles = new List<string> { nameof(Role.SchoolAdmin) };
 
             SetupUserManagerMocks(user, roles);
-            SetupSchoolExists(1, true);
+            _mockSchoolRepo.Setup(x => x.ExistsAsync(1)).ReturnsAsync(true);
 
             var query = new GetLessonMaterialsQuery(
                 new LessonMaterialSpecParam { SchoolId = 1 },
@@ -126,9 +146,13 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
             var classroom = new Classroom { Id = classId, SchoolId = 1, TeacherId = Guid.NewGuid() };
 
             SetupUserManagerMocks(user, roles);
-            SetupClassExists(classId, true);
-            SetupGetClassById(classId, classroom);
-            SetupStudentEnrollment(userId, classId, false); // Not enrolled
+            _mockClassRepo.Setup(x => x.ExistsAsync(classId)).ReturnsAsync(true);
+            _mockClassRepo.Setup(x => x.GetByIdAsync(classId)).ReturnsAsync(classroom);
+            _mockStudentClassRepo.Setup(x => x.FirstOrDefaultAsync(
+                It.IsAny<System.Linq.Expressions.Expression<System.Func<StudentClass, bool>>>(),
+                It.IsAny<Func<IQueryable<StudentClass>, IQueryable<StudentClass>>>(),
+                It.IsAny<CancellationToken>()))
+                .ReturnsAsync((StudentClass?)null); // Not enrolled
 
             var query = new GetLessonMaterialsQuery(
                 new LessonMaterialSpecParam { ClassId = classId },
@@ -150,8 +174,8 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
             var classroom = new Classroom { Id = classId, SchoolId = 1, TeacherId = userId };
 
             SetupUserManagerMocks(user, roles);
-            SetupClassExists(classId, true);
-            SetupGetClassById(classId, classroom);
+            _mockClassRepo.Setup(x => x.ExistsAsync(classId)).ReturnsAsync(true);
+            _mockClassRepo.Setup(x => x.GetByIdAsync(classId)).ReturnsAsync(classroom);
 
             var query = new GetLessonMaterialsQuery(
                 new LessonMaterialSpecParam { ClassId = classId },
@@ -173,8 +197,8 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
             var classroom = new Classroom { Id = classId, SchoolId = 1, TeacherId = Guid.NewGuid() }; // Different teacher
 
             SetupUserManagerMocks(user, roles);
-            SetupClassExists(classId, true);
-            SetupGetClassById(classId, classroom);
+            _mockClassRepo.Setup(x => x.ExistsAsync(classId)).ReturnsAsync(true);
+            _mockClassRepo.Setup(x => x.GetByIdAsync(classId)).ReturnsAsync(classroom);
 
             var query = new GetLessonMaterialsQuery(
                 new LessonMaterialSpecParam { ClassId = classId },
@@ -193,48 +217,6 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
                 .ReturnsAsync(user);
             _mockUserManager.Setup(x => x.GetRolesAsync(user))
                 .ReturnsAsync(roles);
-        }
-
-        private void SetupSchoolExists(int schoolId, bool exists)
-        {
-            var mockSchoolRepo = new Mock<IGenericRepository<School, int>>();
-            mockSchoolRepo.Setup(x => x.ExistsAsync(schoolId))
-                .ReturnsAsync(exists);
-            _mockUnitOfWork.Setup(x => x.GetRepository<School, int>())
-                .Returns(mockSchoolRepo.Object);
-        }
-
-        private void SetupClassExists(Guid classId, bool exists)
-        {
-            var mockClassRepo = new Mock<IGenericRepository<Classroom, Guid>>();
-            mockClassRepo.Setup(x => x.ExistsAsync(classId))
-                .ReturnsAsync(exists);
-            _mockUnitOfWork.Setup(x => x.GetRepository<Classroom, Guid>())
-                .Returns(mockClassRepo.Object);
-        }
-
-        private void SetupGetClassById(Guid classId, Classroom classroom)
-        {
-            var mockClassRepo = new Mock<IGenericRepository<Classroom, Guid>>();
-            mockClassRepo.Setup(x => x.GetByIdAsync(classId))
-                .ReturnsAsync(classroom);
-            _mockUnitOfWork.Setup(x => x.GetRepository<Classroom, Guid>())
-                .Returns(mockClassRepo.Object);
-        }
-
-        private void SetupStudentEnrollment(Guid studentId, Guid classId, bool isEnrolled)
-        {
-            var mockStudentClassRepo = new Mock<IGenericRepository<StudentClass, Guid>>();
-            var enrollment = isEnrolled ? new StudentClass { StudentId = studentId, ClassId = classId } : null;
-            
-            mockStudentClassRepo.Setup(x => x.FirstOrDefaultAsync(
-                It.IsAny<System.Linq.Expressions.Expression<System.Func<StudentClass, bool>>>(),
-                It.IsAny<Func<IQueryable<StudentClass>, IQueryable<StudentClass>>>(),
-                It.IsAny<CancellationToken>()))
-                .ReturnsAsync(enrollment);
-            
-            _mockUnitOfWork.Setup(x => x.GetRepository<StudentClass, Guid>())
-                .Returns(mockStudentClassRepo.Object);
         }
 
         private static Mock<UserManager<ApplicationUser>> MockUserManager()

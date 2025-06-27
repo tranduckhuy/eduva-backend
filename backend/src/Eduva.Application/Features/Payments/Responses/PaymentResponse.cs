@@ -8,6 +8,7 @@ namespace Eduva.Application.Features.Payments.Responses
         public string TransactionCode { get; set; } = string.Empty;
         public decimal Amount { get; set; }
         public int PaymentItemId { get; set; }
+        public string? RelatedId { get; set; }
         public PaymentPurpose PaymentPurpose { get; set; }
         public PaymentMethod PaymentMethod { get; set; }
         public PaymentStatus PaymentStatus { get; set; }
