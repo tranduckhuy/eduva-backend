@@ -48,7 +48,7 @@ namespace Eduva.Application.Common.Mappings
             CreateMap<AICreditPack, AICreditPackResponse>();
 
             // School mappings
-            CreateMap<CreateSchoolCommand, School>();
+            CreateMap<CreateSchoolCommand, SchoolResponse>();
             CreateMap<Pagination<School>, Pagination<SchoolResponse>>();
             CreateMap<School, SchoolResponse>();
 
