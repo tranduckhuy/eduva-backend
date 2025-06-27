@@ -62,7 +62,6 @@ namespace Eduva.Infrastructure.Extensions
                     FullName = "Quy Nguyen Xuan",
                     PhoneNumber = "0838683868",
                     TotalCredits = 1000,
-                    SchoolId = 1, // Assuming Quy is a School Admin of FPT University
                 };
 
                 await userManager.CreateAsync(quyAdmin, "Admin11@");
@@ -77,7 +76,6 @@ namespace Eduva.Infrastructure.Extensions
                     FullName = "Sang Tran Ngoc",
                     PhoneNumber = "0838683866",
                     TotalCredits = 1000,
-                    SchoolId = 1, // Assuming Sang is a Content Moderator of FPT University
                 };
 
                 await userManager.CreateAsync(sangAdmin, "Admin11@");
@@ -92,7 +90,6 @@ namespace Eduva.Infrastructure.Extensions
                     FullName = "Huy Dinh Trong",
                     PhoneNumber = "0838683865",
                     TotalCredits = 1000,
-                    SchoolId = 1, // Assuming Huy is a teacher of FPT University
                 };
 
                 await userManager.CreateAsync(huyAdmin2, "Admin11@");
@@ -107,7 +104,6 @@ namespace Eduva.Infrastructure.Extensions
                     FullName = "Dung Nguyen Ngoc",
                     PhoneNumber = "0838683864",
                     TotalCredits = 1000,
-                    SchoolId = 1, // Assuming Dung is a student of FPT University
                 };
 
                 await userManager.CreateAsync(dungAdmin, "Admin11@");

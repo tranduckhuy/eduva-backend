@@ -15,7 +15,7 @@ namespace Eduva.API.Controllers.SystemConfigs
 
         public SystemConfigsController(
             ISystemConfigService systemConfigService,
-            ILogger<BaseController<SystemConfigsController>> logger) : base(logger)
+            ILogger<SystemConfigsController> logger) : base(logger)
         {
             _systemConfigService = systemConfigService;
         }
