@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Eduva.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250627061238_AddSystemConfig")]
+    [Migration("20250627113428_AddSystemConfig")]
     partial class AddSystemConfig
     {
         /// <inheritdoc />
