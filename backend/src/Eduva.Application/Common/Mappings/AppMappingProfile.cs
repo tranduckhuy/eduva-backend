@@ -63,30 +63,47 @@ namespace Eduva.Application.Common.Mappings
 
             // SchoolSubscription → SchoolSubscriptionResponse
             CreateMap<SchoolSubscription, SchoolSubscriptionResponse>()
-                .ForMember(dest => dest.AmountPaid, opt => opt.MapFrom(src => src.PaymentTransaction.Amount))
-                .ForMember(dest => dest.School, opt => opt.MapFrom(src => new SchoolInfo
-                {
-                    Id = src.School.Id,
-                    Name = src.School.Name,
-                    Address = src.School.Address,
-                    ContactEmail = src.School.ContactEmail,
-                    ContactPhone = src.School.ContactPhone,
-                    WebsiteUrl = src.School.WebsiteUrl
-                }))
-                .ForMember(dest => dest.Plan, opt => opt.MapFrom(src => new SubscriptionPlanInfo
-                {
-                    Id = src.Plan.Id,
-                    Name = src.Plan.Name,
-                    Description = src.Plan.Description,
-                    MaxUsers = src.Plan.MaxUsers,
-                    StorageLimitGB = src.Plan.StorageLimitGB,
-                    Price = src.BillingCycle == BillingCycle.Monthly ? src.Plan.PriceMonthly : src.Plan.PricePerYear
-                }));
+            .ForMember(dest => dest.School, opt => opt.MapFrom(src => new SchoolInfo
+            {
+                Id = src.School.Id,
+                Name = src.School.Name,
+                Address = src.School.Address,
+                ContactEmail = src.School.ContactEmail,
+                ContactPhone = src.School.ContactPhone,
+                WebsiteUrl = src.School.WebsiteUrl
+            }))
+            .ForMember(dest => dest.Plan, opt => opt.MapFrom(src => new SubscriptionPlanInfo
+            {
+                Id = src.Plan.Id,
+                Name = src.Plan.Name,
+                Description = src.Plan.Description,
+                MaxUsers = src.Plan.MaxUsers,
+                StorageLimitGB = src.Plan.StorageLimitGB,
+                Price = src.BillingCycle == BillingCycle.Monthly ? src.Plan.PriceMonthly : src.Plan.PricePerYear
+            }))
+            .ForMember(dest => dest.PaymentTransaction, opt => opt.MapFrom(src => new PaymentTransactionInfo
+            {
+                UserId = src.PaymentTransaction.UserId,
+                PaymentPurpose = src.PaymentTransaction.PaymentPurpose,
+                PaymentItemId = src.PaymentTransaction.PaymentItemId,
+                RelatedId = src.PaymentTransaction.RelatedId,
+                PaymentMethod = src.PaymentTransaction.PaymentMethod,
+                PaymentStatus = src.PaymentTransaction.PaymentStatus,
+                TransactionCode = src.PaymentTransaction.TransactionCode,
+                Amount = src.PaymentTransaction.Amount,
+                CreatedAt = src.PaymentTransaction.CreatedAt
+            }))
+            .ForMember(dest => dest.User, opt => opt.MapFrom(src => new UserInfo
+            {
+                Id = src.PaymentTransaction.User.Id,
+                FullName = src.PaymentTransaction.User.FullName ?? string.Empty,
+                Email = src.PaymentTransaction.User.Email ?? string.Empty,
+            }));
             CreateMap<Pagination<SchoolSubscription>, Pagination<SchoolSubscriptionResponse>>();
 
             // UserCreditTransaction mappings
             CreateMap<UserCreditTransaction, CreditTransactionResponse>()
-            .ForMember(dest => dest.User, opt => opt.MapFrom(src => new UserInfor
+            .ForMember(dest => dest.User, opt => opt.MapFrom(src => new UserInfo
             {
                 Id = src.User.Id,
                 FullName = src.User.FullName ?? string.Empty,
