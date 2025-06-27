@@ -8,6 +8,7 @@ using Eduva.Application.Features.Classes.Commands.EnrollByClassCode;
 using Eduva.Application.Features.Classes.Commands.ResetClassCode;
 using Eduva.Application.Features.Classes.Commands.RestoreClass;
 using Eduva.Application.Features.Classes.Commands.UpdateClass;
+using Eduva.Application.Features.Classes.Queries.GetAllStudentsInClass;
 using Eduva.Application.Features.Classes.Queries.GetClasses;
 using Eduva.Application.Features.Classes.Queries.GetStudentClasses;
 using Eduva.Application.Features.Classes.Queries.GetTeacherClasses;
@@ -34,7 +35,7 @@ namespace Eduva.API.Controllers.Classes
 
         [HttpPost]
         [ProducesResponseType(typeof(ApiResponse<ClassResponse>), StatusCodes.Status201Created)]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)}, {nameof(Role.Teacher)}")]
         public async Task<IActionResult> CreateClass([FromBody] CreateClassCommand command)
         {
             var validationResult = CheckModelStateValidity();
@@ -122,6 +123,29 @@ namespace Eduva.API.Controllers.Classes
 
             return await HandleRequestAsync(async () =>
             {
+                var result = await _mediator.Send(query);
+                return (CustomCode.Success, result);
+            });
+        }
+
+        [HttpGet("{id}/students")]
+        [ProducesResponseType(typeof(ApiResponse<Pagination<StudentClassResponse>>), StatusCodes.Status200OK)]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}")]
+        public async Task<IActionResult> GetAllStudentsInClass(Guid id, [FromQuery] StudentClassSpecParam studentClassSpecParam)
+        {
+            var validationResult = CheckModelStateValidity();
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userId, out var requesterId))
+                return Respond(CustomCode.UserIdNotFound);
+
+            return await HandleRequestAsync(async () =>
+            {
+                var query = new GetAllStudentsInClassQuery(id, studentClassSpecParam, requesterId);
                 var result = await _mediator.Send(query);
                 return (CustomCode.Success, result);
             });
