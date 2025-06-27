@@ -81,7 +81,11 @@ namespace Eduva.API.Controllers.Schools
 
             command.SchoolAdminId = schoolAdminId;
 
-            return await HandleRequestAsync(() => _mediator.Send(command));
+            return await HandleRequestAsync(async () =>
+            {
+                var result = await _mediator.Send(command);
+                return (CustomCode.Success, result);
+            });
         }
 
         [HttpPut("{id}")]

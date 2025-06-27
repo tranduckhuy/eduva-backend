@@ -6,7 +6,6 @@ using Eduva.Application.Interfaces.Repositories;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
-using MediatR;
 using Moq;
 
 namespace Eduva.Application.Test.Features.Schools.Commands.CreateSchool
@@ -103,7 +102,13 @@ namespace Eduva.Application.Test.Features.Schools.Commands.CreateSchool
             var result = await _handler.Handle(command, CancellationToken.None);
 
             // Assert
-            Assert.That(result, Is.EqualTo(Unit.Value));
+            Assert.That(result, Is.Not.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Name, Is.EqualTo(command.Name));
+                Assert.That(result.ContactEmail, Is.EqualTo(command.ContactEmail));
+                Assert.That(result.Status, Is.EqualTo(EntityStatus.Inactive));
+            });
 
             _schoolRepoMock.Verify(r => r.AddAsync(It.Is<School>(s =>
                 s.Name == command.Name &&
