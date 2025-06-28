@@ -12,6 +12,8 @@ namespace Eduva.Application.Features.Classes.Responses
         public string SchoolName { get; set; } = string.Empty;
         public string ClassCode { get; set; } = string.Empty;
         public string StudentName { get; set; } = string.Empty;
+        public string? TeacherAvatarUrl { get; set; }
+        public string? StudentAvatarUrl { get; set; }
         public DateTimeOffset EnrolledAt { get; set; }
         public EntityStatus ClassStatus { get; set; }
     }

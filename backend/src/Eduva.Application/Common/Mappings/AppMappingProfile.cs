@@ -146,6 +146,7 @@ namespace Eduva.Application.Common.Mappings
             CreateMap<Classroom, ClassResponse>()
                 .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher != null ? src.Teacher.FullName : string.Empty))
                 .ForMember(dest => dest.SchoolName, opt => opt.MapFrom(src => src.School != null ? src.School.Name : string.Empty))
+                .ForMember(dest => dest.TeacherAvatarUrl, opt => opt.MapFrom(src => src.Teacher != null ? src.Teacher.AvatarUrl : null))
                 .ReverseMap();
             CreateMap<Pagination<Classroom>, Pagination<ClassResponse>>();
 
@@ -155,6 +156,8 @@ namespace Eduva.Application.Common.Mappings
                 .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Class.Teacher != null ? src.Class.Teacher.FullName ?? string.Empty : string.Empty))
                 .ForMember(dest => dest.SchoolName, opt => opt.MapFrom(src => src.Class.School != null ? src.Class.School.Name : string.Empty))
                 .ForMember(dest => dest.ClassCode, opt => opt.MapFrom(src => src.Class.ClassCode ?? string.Empty))
+                .ForMember(dest => dest.TeacherAvatarUrl, opt => opt.MapFrom(src => src.Class.Teacher != null ? src.Class.Teacher.AvatarUrl : null))
+                .ForMember(dest => dest.StudentAvatarUrl, opt => opt.MapFrom(src => src.Student != null ? src.Student.AvatarUrl : null))
                 .ForMember(dest => dest.ClassStatus, opt => opt.MapFrom(src => src.Class.Status));
             CreateMap<Pagination<StudentClass>, Pagination<StudentClassResponse>>();
 

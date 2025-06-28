@@ -11,6 +11,7 @@ namespace Eduva.Application.Features.Classes.Responses
         public Guid TeacherId { get; set; }
         public string TeacherName { get; set; } = string.Empty;
         public string SchoolName { get; set; } = string.Empty;
+        public string? TeacherAvatarUrl { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset? LastModifiedAt { get; set; }
         public EntityStatus Status { get; set; }
