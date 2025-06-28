@@ -1,3 +1,4 @@
+using Eduva.API.Attributes;
 using Eduva.API.Controllers.Base;
 using Eduva.API.Models;
 using Eduva.Application.Common.Exceptions;
@@ -34,6 +35,7 @@ namespace Eduva.API.Controllers.Classes
         }
 
         [HttpPost]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
         [ProducesResponseType(typeof(ApiResponse<ClassResponse>), StatusCodes.Status201Created)]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)}, {nameof(Role.Teacher)}")]
         public async Task<IActionResult> CreateClass([FromBody] CreateClassCommand command)
@@ -58,6 +60,7 @@ namespace Eduva.API.Controllers.Classes
         }
 
         [HttpGet]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         [ProducesResponseType(typeof(ApiResponse<Pagination<ClassResponse>>), StatusCodes.Status200OK)]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
         public async Task<IActionResult> GetClasses([FromQuery] ClassSpecParam classSpecParam)
@@ -81,6 +84,7 @@ namespace Eduva.API.Controllers.Classes
         }
 
         [HttpGet("teaching")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         [ProducesResponseType(typeof(ApiResponse<Pagination<ClassResponse>>), StatusCodes.Status200OK)]
         [Authorize(Roles = $"{nameof(Role.Teacher)}")]
         public async Task<IActionResult> GetTeacherClasses([FromQuery] ClassSpecParam classSpecParam)
@@ -104,6 +108,7 @@ namespace Eduva.API.Controllers.Classes
         }
 
         [HttpGet("enrollment")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         [ProducesResponseType(typeof(ApiResponse<Pagination<StudentClassResponse>>), StatusCodes.Status200OK)]
         [Authorize(Roles = $"{nameof(Role.Student)}")]
         public async Task<IActionResult> GetMyClasses([FromQuery] StudentClassSpecParam specParam)
@@ -129,6 +134,7 @@ namespace Eduva.API.Controllers.Classes
         }
 
         [HttpGet("{id}/students")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         [ProducesResponseType(typeof(ApiResponse<Pagination<StudentClassResponse>>), StatusCodes.Status200OK)]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}")]
         public async Task<IActionResult> GetAllStudentsInClass(Guid id, [FromQuery] StudentClassSpecParam studentClassSpecParam)
@@ -152,6 +158,7 @@ namespace Eduva.API.Controllers.Classes
         }
 
         [HttpPut("{id}")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}")]
         public async Task<IActionResult> UpdateClass(Guid id, [FromBody] UpdateClassCommand command)
@@ -173,6 +180,7 @@ namespace Eduva.API.Controllers.Classes
         }
 
         [HttpPut("{id}/archive")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}")]
         public async Task<IActionResult> ArchiveClass(Guid id)
@@ -207,6 +215,7 @@ namespace Eduva.API.Controllers.Classes
         }
 
         [HttpPut("{id}/restore")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}")]
         public async Task<IActionResult> RestoreClass(Guid id)
@@ -241,6 +250,7 @@ namespace Eduva.API.Controllers.Classes
         }
 
         [HttpPost("{id}/reset-code")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
         [ProducesResponseType(typeof(ApiResponse<ClassResponse>), StatusCodes.Status200OK)]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}")]
         public async Task<IActionResult> ResetClassCode(Guid id)
@@ -269,6 +279,7 @@ namespace Eduva.API.Controllers.Classes
         }
 
         [HttpPost("enroll-by-code")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
         [ProducesResponseType(typeof(ApiResponse<StudentClassResponse>), StatusCodes.Status200OK)]
         [Authorize(Roles = $"{nameof(Role.Student)}")]
         public async Task<IActionResult> EnrollByClassCode([FromBody] EnrollByClassCodeCommand command)
