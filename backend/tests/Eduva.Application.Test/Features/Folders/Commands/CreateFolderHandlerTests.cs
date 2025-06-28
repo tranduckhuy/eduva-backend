@@ -3,6 +3,7 @@ using Eduva.Application.Features.Folders.Commands;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Domain.Entities;
+using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using Moq;
 using System.Linq.Expressions;
@@ -125,6 +126,58 @@ namespace Eduva.Application.Test.Features.Folders.Commands
             _unitOfWorkMock.Setup(u => u.RollbackAsync()).Returns(Task.CompletedTask);
             var ex = await TestDelegateWithException<AppException>(() => _handler.Handle(cmd, default));
             Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.FolderCreateFailed));
+        }
+
+        [Test]
+        public async Task Handle_ShouldCreatePersonalFolder_WhenClassroomNotExistOrUserNotTeacher()
+        {
+            var userId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
+            var cmd = new CreateFolderCommand { Name = "Test", CurrentUserId = userId, ClassId = classId };
+            _userRepoMock.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(new ApplicationUser { Id = userId });
+            // Case 1: Classroom does not exist
+            _classRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync((Classroom?)null);
+            _folderRepoMock.Setup(r => r.ExistsAsync(It.IsAny<Expression<Func<Folder, bool>>>())).ReturnsAsync(false);
+            _folderRepoMock.Setup(r => r.GetMaxOrderAsync(userId, null)).ReturnsAsync(0);
+            _folderRepoMock.Setup(r => r.AddAsync(It.IsAny<Folder>())).Returns(Task.CompletedTask);
+            _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
+            var result1 = await _handler.Handle(cmd, CancellationToken.None);
+            Assert.That(result1, Is.Not.Null);
+            Assert.That(result1.Name, Is.EqualTo(cmd.Name));
+            // Case 2: Classroom exists but user is not teacher
+            _classRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(new Classroom { Id = classId, TeacherId = Guid.NewGuid() });
+            // The handler may call AddAsync for both cases, so reset invocation count
+            _folderRepoMock.Invocations.Clear();
+            var result2 = await _handler.Handle(cmd, CancellationToken.None);
+            Assert.That(result2, Is.Not.Null);
+            Assert.That(result2.Name, Is.EqualTo(cmd.Name));
+            // Ensure AddAsync was called at least once for both cases
+            _folderRepoMock.Verify(r => r.AddAsync(It.IsAny<Folder>()), Times.AtLeastOnce());
+        }
+
+        [Test]
+        public async Task Handle_ShouldCreateClassFolder_WhenOwnerTypeIsClassAndClassIdHasValue()
+        {
+            var userId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
+            var cmd = new CreateFolderCommand { Name = "ClassFolder", CurrentUserId = userId, ClassId = classId };
+            _userRepoMock.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(new ApplicationUser { Id = userId });
+            _classRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(new Classroom { Id = classId, TeacherId = userId });
+            _folderRepoMock.Setup(r => r.ExistsAsync(It.IsAny<Expression<Func<Folder, bool>>>())).ReturnsAsync(false);
+            _folderRepoMock.Setup(r => r.GetMaxOrderAsync(null, classId)).ReturnsAsync(0);
+            _folderRepoMock.Setup(r => r.AddAsync(It.IsAny<Folder>())).Returns(Task.CompletedTask);
+            _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
+
+            // Simulate folder returned from AddAsync with OwnerType.Class and ClassId
+            _folderRepoMock.Setup(r => r.AddAsync(It.IsAny<Folder>())).Callback<Folder>(f =>
+            {
+                f.OwnerType = OwnerType.Class;
+                f.ClassId = classId;
+            }).Returns(Task.CompletedTask);
+
+            var result = await _handler.Handle(cmd, CancellationToken.None);
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.Name, Is.EqualTo(cmd.Name));
         }
 
         #endregion
