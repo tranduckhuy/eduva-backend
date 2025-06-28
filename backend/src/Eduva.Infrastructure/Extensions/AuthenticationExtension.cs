@@ -1,8 +1,8 @@
 using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
-using Eduva.Infrastructure.Extensions.Providers;
 using Eduva.Infrastructure.Identity;
 using Eduva.Infrastructure.Identity.Interfaces;
+using Eduva.Infrastructure.Identity.Providers;
 using Eduva.Infrastructure.Persistence.DbContext;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;

@@ -35,7 +35,7 @@
 </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Extensions\Providers\" />
+    <Folder Include="Identity\Providers\" />
   </ItemGroup>
 
 </Project>
