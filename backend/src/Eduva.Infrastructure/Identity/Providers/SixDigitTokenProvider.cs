@@ -7,11 +7,14 @@ using System.Globalization;
 using System.Security.Claims;
 using System.Security.Cryptography;
 
-namespace Eduva.Infrastructure.Extensions.Providers
+namespace Eduva.Infrastructure.Identity.Providers
 {
     public class SixDigitTokenProvider<TUser> : IUserTwoFactorTokenProvider<TUser>
         where TUser : class
     {
+        private const string LastOtpSentTimeClaimType = "LastOtpSentTime";
+        private const string LastOtpValueClaimType = "LastOtpValue";
+
         private readonly TimeSpan _tokenLifespan;
         private readonly ILogger<SixDigitTokenProvider<TUser>> _logger;
 
@@ -30,7 +33,7 @@ namespace Eduva.Infrastructure.Extensions.Providers
             var claims = await manager.GetClaimsAsync(user);
 
             // Remove old OTP-related claims
-            var oldClaims = claims.Where(c => c.Type is "LastOtpSentTime" or "LastOtpValue").ToList();
+            var oldClaims = claims.Where(c => c.Type is LastOtpSentTimeClaimType or LastOtpValueClaimType).ToList();
             foreach (var old in oldClaims)
             {
                 var result = await manager.RemoveClaimAsync(user, old);
@@ -38,8 +41,8 @@ namespace Eduva.Infrastructure.Extensions.Providers
             }
 
             var now = DateTime.UtcNow;
-            var sentTimeClaim = new Claim("LastOtpSentTime", now.ToString("o"));
-            var otpValueClaim = new Claim("LastOtpValue", otp);
+            var sentTimeClaim = new Claim(LastOtpSentTimeClaimType, now.ToString("o"));
+            var otpValueClaim = new Claim(LastOtpValueClaimType, otp);
 
             var result1 = await manager.AddClaimAsync(user, sentTimeClaim);
             var result2 = await manager.AddClaimAsync(user, otpValueClaim);
@@ -59,7 +62,7 @@ namespace Eduva.Infrastructure.Extensions.Providers
             }
 
             var claims = await manager.GetClaimsAsync(user);
-            var otpClaim = claims.FirstOrDefault(c => c.Type == "LastOtpValue");
+            var otpClaim = claims.FirstOrDefault(c => c.Type == LastOtpValueClaimType);
 
             var isMatch = otpClaim?.Value == token;
             _logger.LogInformation("OTP validation result: {Result}", isMatch);
@@ -69,7 +72,7 @@ namespace Eduva.Infrastructure.Extensions.Providers
         public async Task CheckOtpThrottleAsync(UserManager<TUser> manager, TUser user)
         {
             var claims = await manager.GetClaimsAsync(user);
-            var claim = claims.FirstOrDefault(c => c.Type == "LastOtpSentTime");
+            var claim = claims.FirstOrDefault(c => c.Type == LastOtpSentTimeClaimType);
 
             if (claim is null)
             {
@@ -100,14 +103,13 @@ namespace Eduva.Infrastructure.Extensions.Providers
             catch (FormatException ex)
             {
                 _logger.LogWarning(ex, "Invalid datetime format in LastOtpSentTime: {Value}", claim.Value);
-                return;
             }
         }
 
         private async Task<bool> IsTokenStillValidAsync(UserManager<TUser> manager, TUser user)
         {
             var claims = await manager.GetClaimsAsync(user);
-            var claim = claims.FirstOrDefault(c => c.Type == "LastOtpSentTime");
+            var claim = claims.FirstOrDefault(c => c.Type == LastOtpSentTimeClaimType);
 
             if (claim == null) return false;
 
@@ -139,7 +141,7 @@ namespace Eduva.Infrastructure.Extensions.Providers
         public async Task ForceClearOtpClaimsAsync(UserManager<TUser> manager, TUser user)
         {
             var claims = await manager.GetClaimsAsync(user);
-            var otpClaims = claims.Where(c => c.Type is "LastOtpSentTime" or "LastOtpValue");
+            var otpClaims = claims.Where(c => c.Type is LastOtpSentTimeClaimType or LastOtpValueClaimType);
 
             foreach (var claim in otpClaims)
             {
