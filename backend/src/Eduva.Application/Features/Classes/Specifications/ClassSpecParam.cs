@@ -6,5 +6,6 @@ namespace Eduva.Application.Features.Classes.Specifications
     {
         public int? SchoolId { get; set; }
         public Guid? TeacherId { get; set; }
+        public Guid? ClassId { get; set; }
     }
 }
