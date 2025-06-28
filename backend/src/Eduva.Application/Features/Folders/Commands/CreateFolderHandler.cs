@@ -25,6 +25,13 @@ namespace Eduva.Application.Features.Folders.Commands
             request.OwnerType = OwnerType.Personal;
             request.UserId = request.CurrentUserId;
 
+            var userRepository = _unitOfWork.GetRepository<ApplicationUser, Guid>();
+            var user = await userRepository.GetByIdAsync(request.CurrentUserId);
+            if (user == null)
+            {
+                throw new AppException(CustomCode.UserIdNotFound);
+            }
+
             // If classId is provided and not empty, check if a class folder can be created
             if (request.ClassId.HasValue && request.ClassId.Value != Guid.Empty)
             {
@@ -87,7 +94,6 @@ namespace Eduva.Application.Features.Folders.Commands
                 // Load navigation properties for correct mapping
                 if (folder.OwnerType == OwnerType.Personal && folder.UserId.HasValue)
                 {
-                    var userRepository = _unitOfWork.GetRepository<ApplicationUser, Guid>();
                     folder.User = await userRepository.GetByIdAsync(folder.UserId.Value);
                 }
                 else if (folder.OwnerType == OwnerType.Class && folder.ClassId.HasValue)
