@@ -363,6 +363,59 @@ namespace Eduva.API.Test.Controllers.School
 
         #endregion
 
+        #region GetSchoolUserLimit Tests
+
+        [Test]
+        public async Task GetSchoolUserLimit_ShouldReturnUserIdNotFound_WhenUserIdInvalid()
+        {
+            // Arrange
+            SetupUser("not-a-guid");
+
+            // Act
+            var result = await _controller.GetSchoolUserLimit();
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task GetSchoolUserLimit_ShouldReturnOk_WhenUserIdIsValid()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            SetupUser(userId.ToString());
+
+            var mockResponse = new SchoolUserLimitResponse
+            {
+                CurrentUserCount = 10,
+                MaxUsers = 50
+            };
+
+            _mediatorMock
+                .Setup(m => m.Send(It.Is<GetSchoolUserLimitQuery>(q => q.ExecutorId == userId), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(mockResponse);
+
+            // Act
+            var result = await _controller.GetSchoolUserLimit();
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+                Assert.That(response.Data, Is.TypeOf<SchoolUserLimitResponse>());
+            });
+        }
+
+        #endregion
+
         #region Helper Methods
 
         private void SetupUser(string? userId)
@@ -381,5 +434,6 @@ namespace Eduva.API.Test.Controllers.School
         }
 
         #endregion
+
     }
 }

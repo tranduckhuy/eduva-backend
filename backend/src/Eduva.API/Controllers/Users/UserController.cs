@@ -214,6 +214,23 @@ namespace Eduva.API.Controllers.Users
             return await HandleRequestAsync(() => _mediator.Send(command));
         }
 
+        [HttpDelete("{userId:guid}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> DeleteUser(Guid userId)
+        {
+            var executorIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(executorIdStr, out var executorId))
+            {
+                return Respond(CustomCode.UserIdNotFound);
+            }
+
+            var command = new DeleteUserCommand(userId, executorId);
+
+            return await HandleRequestAsync(() => _mediator.Send(command));
+        }
+
         [HttpGet("import-template/{type}")]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]

@@ -65,7 +65,17 @@ public class ImportUsersFromExcelCommandHandler : IRequestHandler<ImportUsersFro
                 return output.ToArray();
             }
 
-            await _schoolValidationService.ValidateCanAddUsersAsync(creator.SchoolId!.Value, validCommands.Count, cancellationToken);
+            try
+            {
+                await _schoolValidationService.ValidateCanAddUsersAsync(creator.SchoolId!.Value, validCommands.Count, cancellationToken);
+            }
+            catch (AppException ex) when (ex.StatusCode == CustomCode.ExceedUserLimit)
+            {
+                using var output = new MemoryStream();
+                worksheet.Cells[2, 1].AddComment("Vượt quá giới hạn số lượng thành viên của gói", "Hệ thống");
+                await package.SaveAsAsync(output, cancellationToken);
+                return output.ToArray();
+            }
 
             await _unitOfWork.BeginTransactionAsync();
             try
@@ -95,17 +105,6 @@ public class ImportUsersFromExcelCommandHandler : IRequestHandler<ImportUsersFro
         if (request.File == null || request.File.Length == 0)
         {
             throw new AppException(CustomCode.FileIsRequired);
-        }
-
-        var extension = Path.GetExtension(request.File.FileName);
-        if (!string.Equals(extension, ".xlsx", StringComparison.OrdinalIgnoreCase))
-        {
-            throw new AppException(CustomCode.InvalidFileType);
-        }
-
-        if (!request.File.ContentType.Contains("spreadsheetml", StringComparison.OrdinalIgnoreCase))
-        {
-            throw new AppException(CustomCode.InvalidFileType);
         }
 
         var userRepo = _unitOfWork.GetCustomRepository<IUserRepository>();
