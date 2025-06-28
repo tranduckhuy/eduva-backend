@@ -33,6 +33,9 @@ namespace Eduva.Infrastructure.Persistence.Configurations
             builder.Property(ss => ss.PaymentTransactionId)
                 .IsRequired();
 
+            // Indexes
+            builder.HasIndex(builder => builder.SchoolId);
+
             // Relationships (Foreign Keys)
             builder.HasOne(ss => ss.School)
                 .WithMany(s => s.SchoolSubscriptions)

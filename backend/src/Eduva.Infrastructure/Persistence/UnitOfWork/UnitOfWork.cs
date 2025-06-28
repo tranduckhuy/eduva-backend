@@ -1,7 +1,6 @@
-using Eduva.Application.Interfaces;
+﻿using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Infrastructure.Persistence.DbContext;
-using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Eduva.Infrastructure.Persistence.UnitOfWork
 {
@@ -9,7 +8,6 @@ namespace Eduva.Infrastructure.Persistence.UnitOfWork
     {
         private readonly AppDbContext _context;
         private readonly IRepositoryFactory _repositoryFactory;
-        private IDbContextTransaction? _transaction;
         private bool _disposed;
 
         public UnitOfWork(AppDbContext context, IRepositoryFactory repositoryFactory)
@@ -24,47 +22,9 @@ namespace Eduva.Infrastructure.Persistence.UnitOfWork
         public TRepository GetCustomRepository<TRepository>()
             where TRepository : class => _repositoryFactory.GetCustomRepository<TRepository>();
 
-        public async Task<IDbContextTransaction> BeginTransactionAsync()
-        {
-            _transaction = await _context.Database.BeginTransactionAsync();
-            return _transaction;
-        }
-
-        public async Task RollbackAsync()
-        {
-            if (_transaction != null)
-            {
-                await _transaction.RollbackAsync();
-                await DisposeTransactionAsync();
-            }
-        }
-
         public async Task<int> CommitAsync()
         {
-            try
-            {
-                var result = await _context.SaveChangesAsync();
-                if (_transaction != null)
-                {
-                    await _transaction.CommitAsync();
-                    await DisposeTransactionAsync();
-                }
-                return result;
-            }
-            catch
-            {
-                await RollbackAsync();
-                throw;
-            }
-        }
-
-        private async Task DisposeTransactionAsync()
-        {
-            if (_transaction != null)
-            {
-                await _transaction.DisposeAsync();
-                _transaction = null;
-            }
+            return await _context.SaveChangesAsync();
         }
 
         public void Dispose()
@@ -86,7 +46,6 @@ namespace Eduva.Infrastructure.Persistence.UnitOfWork
             {
                 if (disposing)
                 {
-                    _transaction?.Dispose();
                     _context.Dispose();
                 }
                 _disposed = true;
@@ -95,8 +54,6 @@ namespace Eduva.Infrastructure.Persistence.UnitOfWork
 
         protected virtual async ValueTask DisposeAsyncCore()
         {
-            if (_transaction != null)
-                await _transaction.DisposeAsync();
             await _context.DisposeAsync();
         }
     }

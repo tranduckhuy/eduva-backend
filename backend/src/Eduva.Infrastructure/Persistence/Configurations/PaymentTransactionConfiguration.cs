@@ -31,6 +31,9 @@ namespace Eduva.Infrastructure.Persistence.Configurations
                 .IsRequired()
                 .HasColumnType("decimal(18,2)");
 
+            // Indexes
+            builder.HasIndex(p => p.UserId);
+
             // Relationships
             builder.HasOne(x => x.User)
                 .WithMany(u => u.PaymentTransactions)

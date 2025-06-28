@@ -28,6 +28,10 @@ namespace Eduva.Infrastructure.Persistence.Configurations
                 .IsRequired()
                 .HasConversion<string>();
 
+            // Indexes
+            builder.HasIndex(u => u.SchoolId);
+            builder.HasIndex(u => new { u.SchoolId, u.Status });
+
             // Relationships
             builder.HasOne(u => u.School)
                    .WithMany(s => s.Users)

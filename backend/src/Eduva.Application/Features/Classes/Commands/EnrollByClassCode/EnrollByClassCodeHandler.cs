@@ -98,7 +98,6 @@ namespace Eduva.Application.Features.Classes.Commands.EnrollByClassCode
             }
             catch (Exception)
             {
-                await _unitOfWork.RollbackAsync();
                 throw new AppException(CustomCode.EnrollmentFailed);
             }
         }

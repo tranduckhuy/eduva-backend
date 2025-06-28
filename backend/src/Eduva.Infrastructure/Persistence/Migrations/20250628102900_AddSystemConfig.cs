@@ -202,7 +202,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     AIServiceType = table.Column<string>(type: "text", nullable: false),
-                    DurationSeconds = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    DurationMinutes = table.Column<decimal>(type: "numeric(18,2)", nullable: false, defaultValue: 0.0m),
                     CreditsCharged = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
@@ -476,7 +476,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                         column: x => x.ClassId,
                         principalTable: "Classes",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -624,7 +624,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                         column: x => x.FolderId,
                         principalTable: "Folders",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_FolderLessonMaterials_LessonMaterials_LessonMaterialId",
                         column: x => x.LessonMaterialId,
@@ -711,6 +711,11 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 column: "SchoolId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_AspNetUsers_SchoolId_Status",
+                table: "AspNetUsers",
+                columns: new[] { "SchoolId", "Status" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_AspNetUsers_UserName",
                 table: "AspNetUsers",
                 column: "UserName",
@@ -723,9 +728,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Classes_SchoolId",
+                name: "IX_Classes_SchoolId_Status",
                 table: "Classes",
-                column: "SchoolId");
+                columns: new[] { "SchoolId", "Status" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Classes_TeacherId",
@@ -733,9 +738,10 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 column: "TeacherId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_FolderLessonMaterials_FolderId",
+                name: "IX_FolderLessonMaterials_FolderId_LessonMaterialId",
                 table: "FolderLessonMaterials",
-                column: "FolderId");
+                columns: new[] { "FolderId", "LessonMaterialId" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_FolderLessonMaterials_LessonMaterialId",
@@ -778,9 +784,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 column: "CreatedByUserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_LessonMaterials_SchoolId",
+                name: "IX_LessonMaterials_SchoolId_Visibility_LessonStatus",
                 table: "LessonMaterials",
-                column: "SchoolId");
+                columns: new[] { "SchoolId", "Visibility", "LessonStatus" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_PaymentTransactions_UserId",
@@ -829,9 +835,10 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 column: "ClassId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_StudentClasses_StudentId",
+                name: "IX_StudentClasses_StudentId_ClassId",
                 table: "StudentClasses",
-                column: "StudentId");
+                columns: new[] { "StudentId", "ClassId" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserCreditTransactions_AICreditPackId",

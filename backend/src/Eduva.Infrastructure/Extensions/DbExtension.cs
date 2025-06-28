@@ -30,11 +30,47 @@ namespace Eduva.Infrastructure.Extensions
 
             if (!await context.Roles.AnyAsync())
             {
-                await roleManager.CreateAsync(new IdentityRole<Guid>(nameof(Role.SystemAdmin)));
-                await roleManager.CreateAsync(new IdentityRole<Guid>(nameof(Role.SchoolAdmin)));
-                await roleManager.CreateAsync(new IdentityRole<Guid>(nameof(Role.ContentModerator)));
-                await roleManager.CreateAsync(new IdentityRole<Guid>(nameof(Role.Teacher)));
-                await roleManager.CreateAsync(new IdentityRole<Guid>(nameof(Role.Student)));
+                var roles = new List<IdentityRole<Guid>>
+                {
+                    new()
+                    {
+                        Id = new Guid("11111111-1111-1111-1111-111111111111"),
+                        Name = nameof(Role.SystemAdmin),
+                        NormalizedName = nameof(Role.SystemAdmin).ToUpper()
+                    },
+                    new()
+                    {
+                        Id = new Guid("22222222-2222-2222-2222-222222222222"),
+                        Name = nameof(Role.SchoolAdmin),
+                        NormalizedName = nameof(Role.SchoolAdmin).ToUpper()
+                    },
+                    new()
+                    {
+                        Id = new Guid("33333333-3333-3333-3333-333333333333"),
+                        Name = nameof(Role.ContentModerator),
+                        NormalizedName = nameof(Role.ContentModerator).ToUpper()
+                    },
+                    new()
+                    {
+                        Id = new Guid("44444444-4444-4444-4444-444444444444"),
+                        Name = nameof(Role.Teacher),
+                        NormalizedName = nameof(Role.Teacher).ToUpper()
+                    },
+                    new()
+                    {
+                        Id = new Guid("55555555-5555-5555-5555-555555555555"),
+                        Name = nameof(Role.Student),
+                        NormalizedName = nameof(Role.Student).ToUpper()
+                    }
+                };
+
+                foreach (var role in roles)
+                {
+                    if (!await roleManager.RoleExistsAsync(role.Name!))
+                    {
+                        await roleManager.CreateAsync(role);
+                    }
+                }
             }
 
             if (!await context.Users.AnyAsync())

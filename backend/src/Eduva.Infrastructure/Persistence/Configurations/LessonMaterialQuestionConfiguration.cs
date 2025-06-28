@@ -19,6 +19,9 @@ namespace Eduva.Infrastructure.Persistence.Configurations
                 .HasColumnType("text")
                 .IsRequired();
 
+            // Indexes
+            builder.HasIndex(lmq => lmq.LessonMaterialId);
+
             // Relationships
             builder.HasOne(lmq => lmq.LessonMaterial)
                 .WithMany(lm => lm.LessonMaterialQuestions)

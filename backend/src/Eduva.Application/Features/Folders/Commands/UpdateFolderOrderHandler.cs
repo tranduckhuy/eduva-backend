@@ -102,7 +102,6 @@ namespace Eduva.Application.Features.Folders.Commands
             }
             catch (Exception ex)
             {
-                await _unitOfWork.RollbackAsync();
                 _logger.LogError(ex, "Failed to update folder order: {Message}", ex.Message);
                 throw new AppException(CustomCode.FolderUpdateFailed);
             }
