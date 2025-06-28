@@ -83,12 +83,15 @@ namespace Eduva.API.Test.Controllers.Folders
             var objectResult = result as ObjectResult;
             Assert.That(objectResult, Is.Not.Null);
             var response = objectResult!.Value as ApiResponse<object>;
-            Assert.That(response, Is.Not.Null);
-            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
-            Assert.That(response.Data, Is.TypeOf<Pagination<FolderResponse>>());
-            var folders = (Pagination<FolderResponse>)response.Data!;
-            Assert.That(folders.Data.Count, Is.EqualTo(1));
-            Assert.That(folders.Data.First().Name, Is.EqualTo("Test Folder"));
+            Assert.Multiple(() =>
+            {
+                Assert.That(response, Is.Not.Null);
+                Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+                Assert.That(response.Data, Is.TypeOf<Pagination<FolderResponse>>());
+                var folders = (Pagination<FolderResponse>)response.Data!;
+                Assert.That(folders.Data, Has.Count.EqualTo(1));
+                Assert.That(folders.Data.First().Name, Is.EqualTo("Test Folder"));
+            });
         }
 
         [Test]
@@ -211,12 +214,15 @@ namespace Eduva.API.Test.Controllers.Folders
             var objectResult = result as ObjectResult;
             Assert.That(objectResult, Is.Not.Null);
             var response = objectResult!.Value as ApiResponse<object>;
-            Assert.That(response, Is.Not.Null);
-            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
-            Assert.That(response.Data, Is.TypeOf<Pagination<FolderResponse>>());
-            var folders = (Pagination<FolderResponse>)response.Data!;
-            Assert.That(folders.Data.Count, Is.EqualTo(1));
-            Assert.That(folders.Data.First().Name, Is.EqualTo("Test Folder"));
+            Assert.Multiple(() =>
+            {
+                Assert.That(response, Is.Not.Null);
+                Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+                Assert.That(response.Data, Is.TypeOf<Pagination<FolderResponse>>());
+                var folders = (Pagination<FolderResponse>)response.Data!;
+                Assert.That(folders.Data, Has.Count.EqualTo(1));
+                Assert.That(folders.Data.First().Name, Is.EqualTo("Test Folder"));
+            });
         }
 
         [Test]
@@ -275,12 +281,15 @@ namespace Eduva.API.Test.Controllers.Folders
             var objectResult = result as ObjectResult;
             Assert.That(objectResult, Is.Not.Null);
             var response = objectResult!.Value as ApiResponse<object>;
-            Assert.That(response, Is.Not.Null);
-            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
-            Assert.That(response.Data, Is.TypeOf<Pagination<FolderResponse>>());
-            var folders = (Pagination<FolderResponse>)response.Data!;
-            Assert.That(folders.Data.Count, Is.EqualTo(1));
-            Assert.That(folders.Data.First().Name, Is.EqualTo("Test Folder"));
+            Assert.Multiple(() =>
+            {
+                Assert.That(response, Is.Not.Null);
+                Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+                Assert.That(response.Data, Is.TypeOf<Pagination<FolderResponse>>());
+                var folders = (Pagination<FolderResponse>)response.Data!;
+                Assert.That(folders.Data, Has.Count.EqualTo(1));
+                Assert.That(folders.Data.First().Name, Is.EqualTo("Test Folder"));
+            });
         }
 
         [Test]

@@ -51,10 +51,13 @@ namespace Eduva.Application.Test.Features.Folders.Queries
             _mapperMock.Setup(m => m.Map<IReadOnlyCollection<FolderResponse>>(folders))
                 .Returns(folderResponses);
             var result = await _handler.Handle(query, CancellationToken.None);
-            Assert.That(result, Is.Not.Null);
-            Assert.That(result.Data, Is.Not.Null);
-            Assert.That(result.Data.Count, Is.EqualTo(1));
-            Assert.That(result.Data.First().Name, Is.EqualTo("Test Folder"));
+            Assert.Multiple(() =>
+            {
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result.Data, Is.Not.Null);
+                Assert.That(result.Data, Has.Count.EqualTo(1));
+                Assert.That(result.Data.First().Name, Is.EqualTo("Test Folder"));
+            });
         }
 
         [Test]
@@ -73,6 +76,8 @@ namespace Eduva.Application.Test.Features.Folders.Queries
             Assert.That(result.Data, Is.Empty);
         }
 
+        private static readonly string[] ExpectedNames = { "A", "B" };
+
         [Test]
         public async Task Handle_Returns_MultipleFolders_WithPagination()
         {
@@ -86,12 +91,15 @@ namespace Eduva.Application.Test.Features.Folders.Queries
             _mapperMock.Setup(m => m.Map<IReadOnlyCollection<FolderResponse>>(folders))
                 .Returns(folderResponses);
             var result = await _handler.Handle(query, CancellationToken.None);
-            Assert.That(result.Data.Count, Is.EqualTo(2));
-            Assert.That(result.Data.Select(f => f.Name), Is.EquivalentTo(new[] { "A", "B" }));
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Data, Has.Count.EqualTo(2));
+                Assert.That(result.Data.Select(f => f.Name), Is.EquivalentTo(ExpectedNames));
+            });
         }
 
         [Test]
-        public async Task Handle_Throws_When_MapperFails()
+        public void Handle_Throws_When_MapperFails()
         {
             var param = new FolderSpecParam { PageIndex = 1, PageSize = 1 };
             var query = new GetFoldersQuery(param);
@@ -101,17 +109,30 @@ namespace Eduva.Application.Test.Features.Folders.Queries
                 .ReturnsAsync(pagination);
             _mapperMock.Setup(m => m.Map<IReadOnlyCollection<FolderResponse>>(folders))
                 .Throws(new Exception("Mapping failed"));
-            Assert.ThrowsAsync<Exception>(async () => await _handler.Handle(query, CancellationToken.None));
+            Assert.That(async () => await _handler.Handle(query, CancellationToken.None), Throws.TypeOf<Exception>());
         }
 
         [Test]
-        public async Task Handle_Throws_When_RepositoryThrows()
+        public void Handle_Throws_When_RepositoryThrows()
         {
             var param = new FolderSpecParam { PageIndex = 1, PageSize = 1 };
             var query = new GetFoldersQuery(param);
             _folderRepoMock.Setup(r => r.GetWithSpecAsync(It.IsAny<ISpecification<Folder>>()))
                 .ThrowsAsync(new Exception("Repo error"));
-            Assert.ThrowsAsync<Exception>(async () => await _handler.Handle(query, CancellationToken.None));
+            Assert.That(async () => await _handler.Handle(query, CancellationToken.None), Throws.TypeOf<Exception>());
+        }
+
+        [Test]
+        public async Task Handle_Returns_Empty_When_PaginationIsEmpty()
+        {
+            var param = new FolderSpecParam { PageIndex = 1, PageSize = 10 };
+            var query = new GetFoldersQuery(param);
+            var emptyPagination = new Pagination<Folder>(1, 10, 0, new List<Folder>());
+            _folderRepoMock.Setup(r => r.GetWithSpecAsync(It.IsAny<ISpecification<Folder>>()))
+                .ReturnsAsync(emptyPagination);
+            var result = await _handler.Handle(query, CancellationToken.None);
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.Data == null || !result.Data.Any());
         }
 
         [Test]
@@ -120,7 +141,7 @@ namespace Eduva.Application.Test.Features.Folders.Queries
             var param = new FolderSpecParam { PageIndex = 1, PageSize = 10 };
             var query = new GetFoldersQuery(param);
             _folderRepoMock.Setup(r => r.GetWithSpecAsync(It.IsAny<ISpecification<Folder>>()))
-                .ReturnsAsync((Pagination<Folder>?)null);
+                .ReturnsAsync((Pagination<Folder>)null!);
             var result = await _handler.Handle(query, CancellationToken.None);
             Assert.That(result, Is.Not.Null);
             Assert.That(result.Data, Is.Empty);
