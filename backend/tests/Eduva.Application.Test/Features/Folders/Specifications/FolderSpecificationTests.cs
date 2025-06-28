@@ -148,8 +148,11 @@ public class FolderSpecificationTests
     {
         var param = new FolderSpecParam { PageIndex = 1, PageSize = 10 };
         var spec = new FolderSpecification(param);
-        Assert.That(spec.Includes.Any(i => i.Body.ToString()!.Contains("User")), Is.True);
-        Assert.That(spec.Includes.Any(i => i.Body.ToString()!.Contains("Class")), Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(spec.Includes.Any(i => i.Body.ToString()!.Contains("User")), Is.True);
+            Assert.That(spec.Includes.Any(i => i.Body.ToString()!.Contains("Class")), Is.True);
+        });
     }
 
     [Test]

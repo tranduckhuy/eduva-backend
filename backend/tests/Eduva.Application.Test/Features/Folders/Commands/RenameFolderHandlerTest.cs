@@ -147,6 +147,7 @@ namespace Eduva.Application.Test.Features.Folders.Commands
             var ex = Assert.Throws<AppException>(() => _handler.Handle(cmd, CancellationToken.None).GetAwaiter().GetResult());
             Assert.That(ex?.StatusCode, Is.EqualTo(CustomCode.FolderUpdateFailed));
             _unitOfWorkMock.Verify(u => u.RollbackAsync(), Times.Once);
+            #pragma warning disable CS8602 
             _loggerMock.Verify(
                 l => l.Log(
                     LogLevel.Error,
@@ -157,6 +158,7 @@ namespace Eduva.Application.Test.Features.Folders.Commands
                 ),
                 Times.Once
             );
+            #pragma warning restore CS8602
         }
 
         [Test]
