@@ -53,6 +53,25 @@ namespace Eduva.API.Controllers.Schools
             });
         }
 
+        [HttpGet("limit")]
+        [Authorize(Roles = nameof(Role.SchoolAdmin))]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
+        [ProducesResponseType(typeof(ApiResponse<SchoolUserLimitResponse>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetSchoolUserLimit()
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userIdStr, out var userId))
+            {
+                return Respond(CustomCode.UserIdNotFound);
+            }
+
+            return await HandleRequestAsync(async () =>
+            {
+                var result = await _mediator.Send(new GetSchoolUserLimitQuery(userId));
+                return (CustomCode.Success, result);
+            });
+        }
+
         [HttpGet("current")]
         [Authorize(Roles = nameof(Role.SchoolAdmin))]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]

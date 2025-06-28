@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Eduva.Infrastructure.Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class AddSystemConfig : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -311,6 +311,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     Name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     ClassCode = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: true),
                     TeacherId = table.Column<Guid>(type: "uuid", nullable: false),
+                    BackgroundImageUrl = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     LastModifiedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     Status = table.Column<string>(type: "text", nullable: false)
@@ -807,12 +808,6 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 name: "IX_QuestionComments_QuestionId",
                 table: "QuestionComments",
                 column: "QuestionId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Schools_ContactEmail",
-                table: "Schools",
-                column: "ContactEmail",
-                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_SchoolSubscription_PaymentTransactionId",

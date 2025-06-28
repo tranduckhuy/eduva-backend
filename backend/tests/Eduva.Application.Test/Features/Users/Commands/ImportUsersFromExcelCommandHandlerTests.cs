@@ -68,6 +68,60 @@ namespace Eduva.Application.Test.Features.Users.Commands
         #region ImportUsersFromExcelCommandHandler Tests
 
         [Test]
+        public async Task Should_Return_ErrorFile_When_Exceeding_UserQuota()
+        {
+            ExcelPackage.License.SetNonCommercialPersonal("EDUVA");
+
+            // Arrange
+            var fileContent = GenerateValidExcel();
+            var stream = new MemoryStream(fileContent);
+            var fileMock = new Mock<IFormFile>();
+            fileMock.Setup(f => f.FileName).Returns("users.xlsx");
+            fileMock.Setup(f => f.Length).Returns(fileContent.Length);
+            fileMock.Setup(f => f.ContentType).Returns("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            fileMock.Setup(f => f.CopyToAsync(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+                .Returns<Stream, CancellationToken>((target, token) =>
+                {
+                    stream.Position = 0;
+                    return stream.CopyToAsync(target, token);
+                });
+
+            var creatorId = Guid.NewGuid();
+            var user = new ApplicationUser { Id = creatorId, SchoolId = 1 };
+
+            var userRepoMock = new Mock<IUserRepository>();
+            userRepoMock.Setup(r => r.GetByIdAsync(creatorId)).ReturnsAsync(user);
+            _unitOfWorkMock.Setup(u => u.GetCustomRepository<IUserRepository>()).Returns(userRepoMock.Object);
+
+            _userManagerMock.Setup(u => u.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync((ApplicationUser?)null);
+            _validatorMock.Setup(v => v.ValidateAsync(It.IsAny<CreateUserByAdminCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new FluentValidation.Results.ValidationResult());
+
+            _schoolValidationServiceMock
+                .Setup(x => x.ValidateCanAddUsersAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new AppException(CustomCode.ExceedUserLimit));
+
+            var command = new ImportUsersFromExcelCommand
+            {
+                File = fileMock.Object,
+                CreatorId = creatorId
+            };
+
+            // Act
+            var result = await _handler.Handle(command, default);
+
+            // Assert
+            Assert.That(result, Is.Not.Null);
+
+            using var resultStream = new MemoryStream(result!);
+            using var package = new ExcelPackage(resultStream);
+            var sheet = package.Workbook.Worksheets[0];
+            var comment = sheet.Cells[2, 1].Comment?.Text;
+
+            Assert.That(comment, Is.EqualTo("Vượt quá giới hạn số lượng thành viên của gói"));
+        }
+
+        [Test]
         public async Task ValidateDuplicateAndExistingEmail_Should_Add_Errors_When_Email_Duplicated_In_File()
         {
             // Arrange
@@ -287,42 +341,6 @@ namespace Eduva.Application.Test.Features.Users.Commands
         }
 
         [Test]
-        public void Should_Throw_When_File_Has_Invalid_Extension()
-        {
-            var fileMock = new Mock<IFormFile>();
-            fileMock.Setup(f => f.FileName).Returns("users.txt");
-            fileMock.Setup(f => f.Length).Returns(1);
-            fileMock.Setup(f => f.ContentType).Returns("text/plain");
-
-            var command = new ImportUsersFromExcelCommand
-            {
-                File = fileMock.Object,
-                CreatorId = Guid.NewGuid()
-            };
-
-            var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, default));
-            Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.InvalidFileType));
-        }
-
-        [Test]
-        public void Should_Throw_When_File_Has_Invalid_ContentType()
-        {
-            var fileMock = new Mock<IFormFile>();
-            fileMock.Setup(f => f.FileName).Returns("users.xlsx");
-            fileMock.Setup(f => f.Length).Returns(1);
-            fileMock.Setup(f => f.ContentType).Returns("application/octet-stream");
-
-            var command = new ImportUsersFromExcelCommand
-            {
-                File = fileMock.Object,
-                CreatorId = Guid.NewGuid()
-            };
-
-            var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, default));
-            Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.InvalidFileType));
-        }
-
-        [Test]
         public void Should_Throw_When_User_Not_Exists()
         {
             var fileMock = new Mock<IFormFile>();
@@ -517,45 +535,6 @@ namespace Eduva.Application.Test.Features.Users.Commands
             }
 
             Assert.That(ex, Is.Not.Null);
-            Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.InvalidFileType));
-        }
-
-        [Test]
-        public void Should_Throw_When_Exceeding_UserQuota()
-        {
-            var fileContent = GenerateValidExcel();
-            var stream = new MemoryStream(fileContent);
-            var fileMock = new Mock<IFormFile>();
-            fileMock.Setup(f => f.FileName).Returns("users.xlsx");
-            fileMock.Setup(f => f.Length).Returns(fileContent.Length);
-            fileMock.Setup(f => f.ContentType).Returns("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            fileMock.Setup(f => f.CopyToAsync(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
-                .Returns<Stream, CancellationToken>((target, token) =>
-                {
-                    stream.Position = 0;
-                    return stream.CopyToAsync(target, token);
-                });
-
-            var user = new ApplicationUser { SchoolId = 1 };
-            var userRepoMock = new Mock<IUserRepository>();
-            userRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(user);
-            _unitOfWorkMock.Setup(u => u.GetCustomRepository<IUserRepository>()).Returns(userRepoMock.Object);
-
-            _userManagerMock.Setup(u => u.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync((ApplicationUser?)null);
-            _validatorMock.Setup(v => v.ValidateAsync(It.IsAny<CreateUserByAdminCommand>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new FluentValidation.Results.ValidationResult());
-
-            _schoolValidationServiceMock
-                .Setup(x => x.ValidateCanAddUsersAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new AppException(CustomCode.ExceedUserLimit));
-
-            var command = new ImportUsersFromExcelCommand
-            {
-                File = fileMock.Object,
-                CreatorId = Guid.NewGuid()
-            };
-
-            var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, default));
             Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.InvalidFileType));
         }
 

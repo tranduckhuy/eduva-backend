@@ -230,6 +230,11 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("BackgroundImageUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<string>("ClassCode")
                         .HasMaxLength(10)
                         .HasColumnType("character varying(10)");
@@ -616,9 +621,6 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(255)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ContactEmail")
-                        .IsUnique();
 
                     b.ToTable("Schools");
                 });

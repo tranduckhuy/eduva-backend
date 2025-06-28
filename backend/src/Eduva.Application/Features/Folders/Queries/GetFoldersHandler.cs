@@ -5,13 +5,11 @@ using Eduva.Application.Features.Folders.Responses;
 using Eduva.Application.Features.Folders.Specifications;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
-using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
-using System.Security.Claims;
 
 namespace Eduva.Application.Features.Folders.Queries
 {
@@ -23,31 +21,32 @@ namespace Eduva.Application.Features.Folders.Queries
         private readonly UserManager<ApplicationUser> _userManager;
 
         public GetFoldersHandler(
-            IFolderRepository folderRepository, 
-            IMapper mapper, 
-            IUnitOfWork unitOfWork, 
+            IFolderRepository folderRepository,
+            IMapper mapper,
+            IUnitOfWork unitOfWork,
             UserManager<ApplicationUser> userManager)
         {
             _folderRepository = folderRepository;
             _mapper = mapper;
             _unitOfWork = unitOfWork;
             _userManager = userManager;
-        }public async Task<Pagination<FolderResponse>> Handle(GetFoldersQuery request, CancellationToken cancellationToken)
+        }
+        public async Task<Pagination<FolderResponse>> Handle(GetFoldersQuery request, CancellationToken cancellationToken)
         {
             // If viewing class folders, check authorization
-            if (request.FolderSpecParam.OwnerType == OwnerType.Class && 
+            if (request.FolderSpecParam.OwnerType == OwnerType.Class &&
                 request.FolderSpecParam.ClassId.HasValue &&
                 request.UserId.HasValue)
             {
                 await CheckClassFolderAccessAsync(request.UserId.Value, request.FolderSpecParam.ClassId.Value);
             }
-            
+
             var spec = new FolderSpecification(request.FolderSpecParam);
-            
+
             var folderPagination = await _folderRepository.GetWithSpecAsync(spec);
-            
+
             var data = _mapper.Map<IReadOnlyCollection<FolderResponse>>(folderPagination.Data);
-            
+
             return new Pagination<FolderResponse>
             {
                 PageIndex = request.FolderSpecParam.PageIndex,
@@ -55,12 +54,13 @@ namespace Eduva.Application.Features.Folders.Queries
                 Count = folderPagination.Count,
                 Data = data
             };
-        }        private async Task CheckClassFolderAccessAsync(Guid userId, Guid classId)
+        }
+        private async Task CheckClassFolderAccessAsync(Guid userId, Guid classId)
         {
             // Get the user to check role
             var userRepository = _unitOfWork.GetRepository<ApplicationUser, Guid>();
             var user = await userRepository.GetByIdAsync(userId);
-            
+
             if (user == null)
             {
                 throw new AppException(CustomCode.UserNotExists);
@@ -78,7 +78,7 @@ namespace Eduva.Application.Features.Folders.Queries
             // Get the class
             var classRepository = _unitOfWork.GetRepository<Classroom, Guid>();
             var classroom = await classRepository.GetByIdAsync(classId);
-            
+
             if (classroom == null)
             {
                 throw new AppException(CustomCode.ClassNotFound);
@@ -101,7 +101,7 @@ namespace Eduva.Application.Features.Folders.Queries
             {
                 var studentClassRepository = _unitOfWork.GetCustomRepository<IStudentClassRepository>();
                 bool isEnrolled = await studentClassRepository.IsStudentEnrolledInClassAsync(userId, classId);
-                
+
                 if (isEnrolled)
                 {
                     return;

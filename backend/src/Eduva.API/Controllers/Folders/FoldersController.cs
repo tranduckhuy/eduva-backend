@@ -1,3 +1,4 @@
+using Eduva.API.Attributes;
 using Eduva.API.Controllers.Base;
 using Eduva.API.Models;
 using Eduva.Application.Common.Models;
@@ -25,6 +26,7 @@ namespace Eduva.API.Controllers.Folders
         }
 
         [HttpPost]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
         public async Task<IActionResult> CreateFolder([FromBody] CreateFolderCommand command)
         {
@@ -73,6 +75,7 @@ namespace Eduva.API.Controllers.Folders
         }
 
         [HttpGet]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         [ProducesResponseType(typeof(ApiResponse<Pagination<FolderResponse>>), StatusCodes.Status200OK)]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
         public async Task<IActionResult> GetFolders([FromQuery] FolderSpecParam folderSpecParam)
@@ -96,6 +99,7 @@ namespace Eduva.API.Controllers.Folders
         }
 
         [HttpGet("class/{classId}")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         [ProducesResponseType(typeof(ApiResponse<Pagination<FolderResponse>>), StatusCodes.Status200OK)]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}, {nameof(Role.Student)}")]
         public async Task<IActionResult> GetFoldersByClassId(Guid classId, [FromQuery] FolderSpecParam folderSpecParam)
@@ -123,6 +127,7 @@ namespace Eduva.API.Controllers.Folders
         }
 
         [HttpGet("user")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         [ProducesResponseType(typeof(ApiResponse<Pagination<FolderResponse>>), StatusCodes.Status200OK)]
         [Authorize]
         public async Task<IActionResult> GetUserFolders([FromQuery] FolderSpecParam folderSpecParam)
@@ -149,6 +154,7 @@ namespace Eduva.API.Controllers.Folders
         }
 
         [HttpPut("{id}/rename")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> RenameFolder(Guid id, [FromBody] RenameFolderCommand command)
@@ -169,6 +175,7 @@ namespace Eduva.API.Controllers.Folders
         }
 
         [HttpPut("{id}/order")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateFolderOrder(Guid id, [FromBody] UpdateFolderOrderCommand command)

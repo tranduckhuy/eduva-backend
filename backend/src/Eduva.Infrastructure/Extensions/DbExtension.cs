@@ -280,6 +280,7 @@ namespace Eduva.Infrastructure.Extensions
                     SchoolId = 1,
                     TeacherId = new Guid("4a4a4a4a-4a4a-4a4a-4a4a-4a4a4a4a4a4a"), // Huy Dinh Trong
                     ClassCode = "TOAN10A1",
+                    BackgroundImageUrl = "https://gstatic.com/classroom/themes/Honors.jpg",
                 };
                 context.Classes.Add(classroom);
                 await context.SaveChangesAsync();
