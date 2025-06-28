@@ -8,7 +8,7 @@ namespace Eduva.Application.Features.Classes.Commands.CreateClass
     {
         [JsonIgnore]
         public Guid TeacherId { get; set; }
-
+        [JsonIgnore]
         public int SchoolId { get; set; }
         public string Name { get; set; } = string.Empty;
     }

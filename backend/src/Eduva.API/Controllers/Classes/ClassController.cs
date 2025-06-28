@@ -47,10 +47,18 @@ namespace Eduva.API.Controllers.Classes
             }
 
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!Guid.TryParse(userId, out var currentUserId))
+            if (userId == null)
+            {
                 return Respond(CustomCode.UserIdNotFound);
+            }
 
-            command.TeacherId = currentUserId;
+            command.TeacherId = Guid.Parse(userId);
+
+            var schoolId = User.FindFirstValue("SchoolId");
+            if (!string.IsNullOrEmpty(schoolId) && command.SchoolId == 0)
+            {
+                command.SchoolId = int.Parse(schoolId);
+            }
 
             return await HandleRequestAsync(async () =>
             {
