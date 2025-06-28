@@ -36,6 +36,13 @@ namespace Eduva.Application.Test.Features.Payment.Specifications
         }
 
         [Test]
+        public void Selector_ShouldBe_Null()
+        {
+            var spec = new PaymentSpecification(new PaymentSpecParam());
+            Assert.That(spec.Selector, Is.Null);
+        }
+
+        [Test]
         public void Criteria_ShouldReturnTrue_WhenMatchingParams()
         {
             // Arrange
@@ -118,8 +125,10 @@ namespace Eduva.Application.Test.Features.Payment.Specifications
 
         [TestCase("fullName", "desc")]
         [TestCase("email", "asc")]
+        [TestCase("email", "desc")]
         [TestCase("amount", "desc")]
         [TestCase("createdAt", "asc")]
+        [TestCase("createdAt", "desc")]
         [TestCase("unknown", "asc")]
         public void OrderBy_ShouldOrderCorrectly(string sortBy, string sortDirection)
         {
@@ -161,6 +170,30 @@ namespace Eduva.Application.Test.Features.Payment.Specifications
 
             // Assert
             Assert.That(ordered, Has.Count.EqualTo(2));
+        }
+
+        [Test]
+        public void Criteria_ShouldHandle_NullSearchTerm()
+        {
+            var param = new PaymentSpecParam
+            {
+                SearchTerm = null,
+                PaymentPurpose = PaymentPurpose.CreditPackage
+            };
+
+            var spec = new PaymentSpecification(param);
+            var data = new List<PaymentTransaction>
+            {
+                new()
+                {
+                    PaymentPurpose = PaymentPurpose.CreditPackage,
+                    User = new ApplicationUser { FullName = "Test", Email = "test@example.com" }
+                }
+            }.AsQueryable();
+
+            var filtered = data.Where(spec.Criteria).ToList();
+
+            Assert.That(filtered, Has.Count.EqualTo(1));
         }
 
         #endregion

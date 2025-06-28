@@ -38,6 +38,7 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Responses
         public int MaxUsers { get; set; }
         public decimal StorageLimitGB { get; set; }
         public decimal Price { get; set; }
+        public bool IsRecommended { get; set; } = false;
     }
 
     public class PaymentTransactionInfo

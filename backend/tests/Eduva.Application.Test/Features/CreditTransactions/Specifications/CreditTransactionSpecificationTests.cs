@@ -11,6 +11,13 @@ namespace Eduva.Application.Test.Features.CreditTransactions.Specifications
         #region CreditTransactionSpecification Tests
 
         [Test]
+        public void Selector_Should_Be_Null()
+        {
+            var spec = new CreditTransactionSpecification(new CreditTransactionSpecParam());
+            Assert.That(spec.Selector, Is.Null);
+        }
+
+        [Test]
         public void Constructor_ShouldSetIncludesSkipTake()
         {
             // Arrange
@@ -100,6 +107,7 @@ namespace Eduva.Application.Test.Features.CreditTransactions.Specifications
         [TestCase("Credits", "asc")]
         [TestCase("Credits", "desc")]
         [TestCase("InvalidColumn", "asc")]
+        [TestCase("InvalidColumn", "desc")]
         public void OrderBy_ShouldApplyCorrectSorting(string sortBy, string sortDirection)
         {
             // Arrange

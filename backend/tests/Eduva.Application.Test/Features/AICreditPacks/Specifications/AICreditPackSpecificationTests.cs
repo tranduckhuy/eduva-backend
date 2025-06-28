@@ -63,6 +63,7 @@ public class AICreditPackSpecificationTests
     }
 
     [TestCase("name", "desc")]
+    [TestCase("name", "asc")]
     [TestCase("price", "asc")]
     [TestCase("price", "desc")]
     [TestCase("credits", "asc")]
@@ -72,6 +73,7 @@ public class AICreditPackSpecificationTests
     [TestCase(null, "asc")]
     [TestCase("unknown", "asc")]
     [TestCase("unknown", "desc")]
+
     public void OrderBy_ShouldSortProperly(string? sortBy, string direction)
     {
         var param = new AICreditPackSpecParam { SortBy = sortBy, SortDirection = direction, PageIndex = 1, PageSize = 10 };
@@ -88,6 +90,26 @@ public class AICreditPackSpecificationTests
         {
             Assert.That(spec.OrderBy, Is.Null);
         }
+    }
+
+    [Test]
+    public void OrderBy_ShouldHandle_NullSortDirection_WithoutThrowing()
+    {
+        var param = new AICreditPackSpecParam
+        {
+            SortBy = "name",
+            SortDirection = null!,
+            PageIndex = 1,
+            PageSize = 10
+        };
+
+        var spec = new AICreditPackSpecification(param);
+        var result = spec.OrderBy!(_packs.AsQueryable()).ToList();
+
+        var expected = _packs.OrderBy(p => p.Name).Select(p => p.Name).ToList();
+        var actual = result.Select(p => p.Name).ToList();
+
+        Assert.That(actual, Is.EqualTo(expected));
     }
 
     [Test]
