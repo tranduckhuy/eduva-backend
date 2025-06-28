@@ -412,6 +412,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("ApproverId")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Feedback")
                         .HasColumnType("text");
 
@@ -659,7 +662,8 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PaymentTransactionId");
+                    b.HasIndex("PaymentTransactionId")
+                        .IsUnique();
 
                     b.HasIndex("PlanId");
 

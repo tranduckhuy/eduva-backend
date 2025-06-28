@@ -30,6 +30,8 @@ namespace Eduva.Infrastructure.Persistence.Configurations
                 .HasConversion<string>()
                 .IsRequired();
 
+            builder.HasIndex(ss => ss.PaymentTransactionId)
+                .IsUnique();
             builder.Property(ss => ss.PaymentTransactionId)
                 .IsRequired();
 

@@ -489,7 +489,8 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     ApproverId = table.Column<Guid>(type: "uuid", nullable: false),
                     StatusChangeTo = table.Column<string>(type: "text", nullable: false),
                     RequesterNote = table.Column<string>(type: "text", nullable: true),
-                    Feedback = table.Column<string>(type: "text", nullable: true)
+                    Feedback = table.Column<string>(type: "text", nullable: true),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -812,7 +813,8 @@ namespace Eduva.Infrastructure.Persistence.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_SchoolSubscription_PaymentTransactionId",
                 table: "SchoolSubscription",
-                column: "PaymentTransactionId");
+                column: "PaymentTransactionId",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_SchoolSubscription_PlanId",
