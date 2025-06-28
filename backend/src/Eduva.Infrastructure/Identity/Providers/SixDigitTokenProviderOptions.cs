@@ -8,7 +8,10 @@ namespace Eduva.Infrastructure.Identity.Providers
     /// </summary>
     public class SixDigitTokenProviderOptions : DataProtectionTokenProviderOptions
     {
-        // This class is intentionally left empty to support DI-based configuration.
-        // Options like TokenLifespan can be set via appsettings or in ConfigureOptions<T>.
+        public SixDigitTokenProviderOptions()
+        {
+            // Set default token lifespan (can be overridden in ConfigureOptions)
+            TokenLifespan = TimeSpan.FromMinutes(2);
+        }
     }
 }
