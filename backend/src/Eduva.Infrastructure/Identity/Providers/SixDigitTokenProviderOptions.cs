@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 
-namespace Eduva.Infrastructure.Extensions.Providers
+namespace Eduva.Infrastructure.Identity.Providers
 {
     public class SixDigitTokenProviderOptions : DataProtectionTokenProviderOptions { }
 }

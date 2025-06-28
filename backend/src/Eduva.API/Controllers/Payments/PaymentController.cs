@@ -10,6 +10,7 @@ using Eduva.Shared.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Eduva.API.Controllers.Payments
 {
@@ -33,6 +34,26 @@ namespace Eduva.API.Controllers.Payments
             return await HandleRequestAsync<Pagination<PaymentResponse>>(async () =>
             {
                 var result = await _mediator.Send(new GetPaymentTransactionsQuery(specParam));
+                return (CustomCode.Success, result);
+            });
+        }
+
+        [HttpGet("my")]
+        [Authorize(Roles = $"{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}")]
+        [ProducesResponseType(typeof(ApiResponse<Pagination<PaymentResponse>>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetMyPayments([FromQuery] MyPaymentSpecParam specParam)
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userIdStr, out var userId))
+            {
+                return Respond(CustomCode.UserIdNotFound);
+            }
+
+            specParam.UserId = userId;
+
+            return await HandleRequestAsync<Pagination<PaymentResponse>>(async () =>
+            {
+                var result = await _mediator.Send(new GetMyPaymentsQuery(specParam));
                 return (CustomCode.Success, result);
             });
         }

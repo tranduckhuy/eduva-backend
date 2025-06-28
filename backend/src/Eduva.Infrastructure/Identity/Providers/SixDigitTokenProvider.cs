@@ -7,7 +7,7 @@ using System.Globalization;
 using System.Security.Claims;
 using System.Security.Cryptography;
 
-namespace Eduva.Infrastructure.Extensions.Providers
+namespace Eduva.Infrastructure.Identity.Providers
 {
     public class SixDigitTokenProvider<TUser> : IUserTwoFactorTokenProvider<TUser>
         where TUser : class
