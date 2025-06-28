@@ -40,6 +40,13 @@ namespace Eduva.Infrastructure.Test.Services.Providers
         #region SixDigitTokenProvider Tests
 
         [Test]
+        public void CanInstantiate_SixDigitTokenProviderOptions()
+        {
+            var options = new SixDigitTokenProviderOptions();
+            Assert.That(options, Is.Not.Null);
+        }
+
+        [Test]
         public async Task GenerateAsync_ShouldStoreOtpClaims()
         {
             var user = new object();
