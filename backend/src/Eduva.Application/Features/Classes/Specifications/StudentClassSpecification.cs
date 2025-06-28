@@ -61,11 +61,12 @@ namespace Eduva.Application.Features.Classes.Specifications
             {
                 var searchTerm = param.SearchTerm.ToLower();
                 Criteria = CombineWithAnd(Criteria, sc =>
-                    sc.Class.Name.ToLower().Contains(searchTerm) ||
-                    sc.Class.ClassCode != null && sc.Class.ClassCode.ToLower().Contains(searchTerm) ||
-                    sc.Class.Teacher != null && sc.Class.Teacher.FullName != null &&
-                     sc.Class.Teacher.FullName.ToLower().Contains(searchTerm) ||
-                    sc.Class.School != null && sc.Class.School.Name.ToLower().Contains(searchTerm));
+                    (sc.Class.Name != null && sc.Class.Name.ToLower().Contains(searchTerm)) ||
+                    (sc.Class.ClassCode != null && sc.Class.ClassCode.ToLower().Contains(searchTerm)) ||
+                    (sc.Class.Teacher != null && sc.Class.Teacher.FullName != null && sc.Class.Teacher.FullName.ToLower().Contains(searchTerm)) ||
+                    (sc.Class.School != null && sc.Class.School.Name != null && sc.Class.School.Name.ToLower().Contains(searchTerm)) ||
+                    (sc.Student != null && sc.Student.FullName != null && sc.Student.FullName.ToLower().Contains(searchTerm))
+                );
             }
         }
         private void ApplyClassNameFilter(StudentClassSpecParam param)
