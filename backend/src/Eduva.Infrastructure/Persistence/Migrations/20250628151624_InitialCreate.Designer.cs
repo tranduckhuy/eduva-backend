@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Eduva.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250628134018_InitialCreate")]
+    [Migration("20250628151624_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -415,6 +415,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("ApproverId")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Feedback")
                         .HasColumnType("text");
 
@@ -662,7 +665,8 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PaymentTransactionId");
+                    b.HasIndex("PaymentTransactionId")
+                        .IsUnique();
 
                     b.HasIndex("PlanId");
 
