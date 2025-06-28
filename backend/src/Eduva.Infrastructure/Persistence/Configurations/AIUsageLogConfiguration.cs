@@ -15,13 +15,17 @@ namespace Eduva.Infrastructure.Persistence.Configurations
                 .HasConversion<string>()
                 .IsRequired();
 
-            builder.Property(aul => aul.DurationSeconds)
+            builder.Property(aul => aul.DurationMinutes)
                 .IsRequired()
-                .HasDefaultValue(0);
+                .HasColumnType("decimal(18,2)")
+                .HasDefaultValue(0.0m);
 
             builder.Property(aul => aul.CreditsCharged)
                 .IsRequired()
                 .HasDefaultValue(0);
+
+            // Indexes
+            builder.HasIndex(aul => aul.UserId);
 
             // Relationships
             builder.HasOne(aul => aul.User)

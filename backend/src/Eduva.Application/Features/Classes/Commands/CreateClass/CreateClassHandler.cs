@@ -75,7 +75,6 @@ namespace Eduva.Application.Features.Classes.Commands.CreateClass
             }
             catch (Exception)
             {
-                await _unitOfWork.RollbackAsync();
                 throw new AppException(CustomCode.ClassCreateFailed);
             }
         }

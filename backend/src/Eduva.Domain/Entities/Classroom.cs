@@ -8,6 +8,7 @@ namespace Eduva.Domain.Entities
         public string Name { get; set; } = default!;
         public string? ClassCode { get; set; }
         public Guid TeacherId { get; set; }
+        public string BackgroundImageUrl { get; set; } = string.Empty;
 
         // Navigation properties
         public virtual School School { get; set; } = default!;

@@ -13,7 +13,6 @@ namespace Eduva.Infrastructure.Persistence.Configurations
             builder.Property(s => s.Name).HasMaxLength(255).IsRequired();
 
             builder.Property(s => s.ContactEmail).HasMaxLength(100).IsRequired();
-            builder.HasIndex(s => s.ContactEmail).IsUnique();
 
             builder.Property(s => s.ContactPhone).HasMaxLength(100).IsRequired();
 

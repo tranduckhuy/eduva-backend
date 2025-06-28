@@ -26,6 +26,10 @@ namespace Eduva.Infrastructure.Persistence.Configurations
                 .HasConversion<string>()
                 .IsRequired();
 
+            // Indexes
+            builder.HasIndex(f => f.UserId);
+            builder.HasIndex(f => f.ClassId);
+
             // Relationships
             // UserID is nullable, so IsRequired(false)
             builder.HasOne(f => f.User)

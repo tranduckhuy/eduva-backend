@@ -18,9 +18,16 @@ namespace Eduva.Infrastructure.Persistence.Configurations
             builder.Property(c => c.ClassCode)
                 .HasMaxLength(10);
 
+            builder.Property(c => c.BackgroundImageUrl)
+                .HasMaxLength(500)
+                .IsRequired();
+
             builder.Property(c => c.Status)
                 .HasConversion<string>()
                 .IsRequired();
+
+            // Indexes
+            builder.HasIndex(c => new { c.SchoolId, c.Status });
 
             // Relationships
             builder.HasOne(c => c.School)

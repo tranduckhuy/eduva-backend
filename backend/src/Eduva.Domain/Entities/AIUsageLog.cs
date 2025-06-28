@@ -7,7 +7,7 @@ namespace Eduva.Domain.Entities
     {
         public Guid UserId { get; set; }
         public AIServiceType AIServiceType { get; set; }
-        public int DurationSeconds { get; set; }
+        public decimal DurationMinutes { get; set; }
         public int CreditsCharged { get; set; }
         public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 

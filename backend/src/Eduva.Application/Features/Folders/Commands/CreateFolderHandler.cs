@@ -101,7 +101,6 @@ namespace Eduva.Application.Features.Folders.Commands
             }
             catch (Exception)
             {
-                await _unitOfWork.RollbackAsync();
                 throw new AppException(CustomCode.FolderCreateFailed);
             }
         }

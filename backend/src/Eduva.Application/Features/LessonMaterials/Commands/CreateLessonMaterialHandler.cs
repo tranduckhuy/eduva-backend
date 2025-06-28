@@ -31,9 +31,6 @@ namespace Eduva.Application.Features.LessonMaterials.Commands
 
             try
             {
-                // Begin transaction
-                await _unitOfWork.BeginTransactionAsync();
-
                 foreach (var materialRequest in request.LessonMaterials)
                 {
                     // Map to entity
@@ -70,8 +67,6 @@ namespace Eduva.Application.Features.LessonMaterials.Commands
             }
             catch (Exception ex)
             {
-                await _unitOfWork.RollbackAsync();
-
                 _logger.LogError(ex, "Error creating lesson materials.");
 
                 // Remove blobs if any were created

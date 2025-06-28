@@ -460,9 +460,6 @@ namespace Eduva.Application.Test.Features.Users.Commands
                 x.ValidateCanAddUsersAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>())
             ).Returns(Task.CompletedTask);
 
-            _unitOfWorkMock.Setup(x => x.BeginTransactionAsync())
-            .ReturnsAsync(Mock.Of<IDbContextTransaction>());
-
             _unitOfWorkMock.Setup(x => x.CommitAsync()).ReturnsAsync(1);
 
 
@@ -515,8 +512,6 @@ namespace Eduva.Application.Test.Features.Users.Commands
                 .Returns(Task.CompletedTask);
 
             var dbTransactionMock = new Mock<IDbContextTransaction>();
-            _unitOfWorkMock.Setup(x => x.BeginTransactionAsync()).ReturnsAsync(dbTransactionMock.Object);
-            _unitOfWorkMock.Setup(x => x.RollbackAsync()).Returns(Task.CompletedTask);
 
             _mediatorMock
                 .Setup(x => x.Send(It.IsAny<CreateUserByAdminCommand>(), It.IsAny<CancellationToken>()))
@@ -541,7 +536,6 @@ namespace Eduva.Application.Test.Features.Users.Commands
 
             Assert.That(ex, Is.Not.Null);
             Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.InvalidFileType));
-            _unitOfWorkMock.Verify(x => x.RollbackAsync(), Times.Once);
         }
 
         #endregion

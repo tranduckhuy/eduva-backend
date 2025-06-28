@@ -1,5 +1,4 @@
 ﻿using Eduva.Application.Interfaces.Repositories;
-using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Eduva.Application.Interfaces
 {
@@ -9,7 +8,5 @@ namespace Eduva.Application.Interfaces
         TRepository GetCustomRepository<TRepository>() where TRepository : class;
 
         Task<int> CommitAsync();
-        Task RollbackAsync();
-        Task<IDbContextTransaction> BeginTransactionAsync();
     }
 }
