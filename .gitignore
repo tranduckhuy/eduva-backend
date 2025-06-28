@@ -181,3 +181,5 @@ Thumbs.db
 *coverage.opencover.xml
 
 *coverage.json
+
+.history/
