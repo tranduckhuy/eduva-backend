@@ -27,35 +27,34 @@ namespace Eduva.Application.Features.Classes.Queries.GetAllStudentsInClass
 
         public async Task<Pagination<StudentClassResponse>> Handle(GetAllStudentsInClassQuery request, CancellationToken cancellationToken)
         {
-            var classroom = await _unitOfWork.GetRepository<Classroom, Guid>().GetByIdAsync(request.ClassId);
-            if (classroom is null)
+            // Get the classroom
+            var classroom = await _unitOfWork.GetRepository<Classroom, Guid>().GetByIdAsync(request.ClassId)
+                ?? throw new AppException(CustomCode.ClassNotFound);
+
+            // Get the requester
+            var requester = await _userManager.FindByIdAsync(request.RequesterId.ToString())
+                ?? throw new AppException(CustomCode.UserNotFound);
+
+            // Check user roles
+            var userRoles = await _userManager.GetRolesAsync(requester);
+            bool isSystemAdmin = userRoles.Contains(nameof(Role.SystemAdmin));
+            bool isSchoolAdmin = userRoles.Contains(nameof(Role.SchoolAdmin));
+            bool isTeacher = userRoles.Contains(nameof(Role.Teacher));
+
+            if (!isSystemAdmin && !isSchoolAdmin && !isTeacher)
             {
-                throw new AppException(CustomCode.ClassNotFound);
+                throw new AppException(CustomCode.Forbidden);
             }
 
-            var requester = await _userManager.FindByIdAsync(request.RequesterId.ToString());
-            if (requester is null)
-            {
-                throw new AppException(CustomCode.UserNotFound);
-            }
+            var param = request.StudentClassSpecParam;
 
-            var roles = await _userManager.GetRolesAsync(requester);
-
-            StudentClassSpecParam specParamToUse = request.StudentClassSpecParam;
-
-            if (roles.Contains(Role.SystemAdmin.ToString()))
+            if (isSchoolAdmin && !isSystemAdmin)
             {
-                // System Admin can see all students in any class
-            }
-            else if (roles.Contains(Role.SchoolAdmin.ToString()))
-            {
-                var requesterSchoolId = requester.SchoolId;
-                if (requesterSchoolId is null || classroom.SchoolId != requesterSchoolId)
+                if (requester.SchoolId == null || classroom.SchoolId != requester.SchoolId)
                 {
                     throw new AppException(CustomCode.Forbidden);
                 }
-                // Create a copy with SchoolId set
-                specParamToUse = new StudentClassSpecParam
+                param = new StudentClassSpecParam
                 {
                     PageIndex = request.StudentClassSpecParam.PageIndex,
                     PageSize = request.StudentClassSpecParam.PageSize,
@@ -68,32 +67,27 @@ namespace Eduva.Application.Features.Classes.Queries.GetAllStudentsInClass
                     SchoolName = request.StudentClassSpecParam.SchoolName,
                     ClassCode = request.StudentClassSpecParam.ClassCode,
                     ClassStatus = request.StudentClassSpecParam.ClassStatus,
-                    SchoolId = requesterSchoolId.Value
+                    SchoolId = requester.SchoolId.Value
                 };
             }
-            else if (roles.Contains(Role.Teacher.ToString()))
+
+            if (isTeacher && !isSystemAdmin && !isSchoolAdmin)
             {
                 if (classroom.TeacherId != request.RequesterId)
                 {
                     throw new AppException(CustomCode.Forbidden);
                 }
-                // Check if teacher's school matches classroom's school
                 if (requester.SchoolId == null || classroom.SchoolId != requester.SchoolId)
                 {
                     throw new AppException(CustomCode.Forbidden);
                 }
             }
-            else
-            {
-                throw new AppException(CustomCode.Forbidden);
-            }
 
-            var spec = new StudentClassSpecification(specParamToUse, request.ClassId);
+            var spec = new StudentClassSpecification(param, request.ClassId);
             var studentClasses = await _unitOfWork.GetRepository<StudentClass, Guid>().GetWithSpecAsync(spec);
 
             var mappedStudentClasses = _mapper.Map<IReadOnlyList<StudentClassResponse>>(studentClasses.Data);
 
-            // Optimize: Build a dictionary for fast lookup
             var studentDict = studentClasses.Data.ToDictionary(sc => sc.Id, sc => sc.Student);
 
             foreach (var studentClassResponse in mappedStudentClasses)
@@ -104,7 +98,7 @@ namespace Eduva.Application.Features.Classes.Queries.GetAllStudentsInClass
                 }
             }
 
-            return new Pagination<StudentClassResponse>(specParamToUse.PageIndex, specParamToUse.PageSize, (int)studentClasses.Count, mappedStudentClasses);
+            return new Pagination<StudentClassResponse>(param.PageIndex, param.PageSize, (int)studentClasses.Count, mappedStudentClasses);
         }
     }
 }
