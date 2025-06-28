@@ -147,13 +147,16 @@ namespace Eduva.API.Test.Controllers.Folders
             _mediatorMock.Setup(m => m.Send(It.IsAny<CreateFolderCommand>(), It.IsAny<CancellationToken>())).ReturnsAsync(folderResponse);
             var result = await _controller.CreateFolder(command);
             var objectResult = result as ObjectResult;
-            Assert.That(objectResult, Is.Not.Null);
-            var response = objectResult!.Value as ApiResponse<object>;
-            Assert.That(response, Is.Not.Null);
-            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Created).Or.EqualTo((int)CustomCode.Success));
-            Assert.That(response.Data, Is.TypeOf<FolderResponse>());
-            var folder = (FolderResponse)response.Data!;
-            Assert.That(folder.Name, Is.EqualTo("Test Folder"));
+            Assert.Multiple(() =>
+            {
+                Assert.That(objectResult, Is.Not.Null);
+                var response = objectResult!.Value as ApiResponse<object>;
+                Assert.That(response, Is.Not.Null);
+                Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Created).Or.EqualTo((int)CustomCode.Success));
+                Assert.That(response.Data, Is.TypeOf<FolderResponse>());
+                var folder = (FolderResponse)response.Data!;
+                Assert.That(folder.Name, Is.EqualTo("Test Folder"));
+            });
         }
 
         [Test]

@@ -132,7 +132,7 @@ namespace Eduva.Application.Test.Features.Folders.Queries
                 .ReturnsAsync(emptyPagination);
             var result = await _handler.Handle(query, CancellationToken.None);
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.Data == null || !result.Data.Any());
+            Assert.That(result.Data == null || result.Data.Count == 0);
         }
 
         [Test]
