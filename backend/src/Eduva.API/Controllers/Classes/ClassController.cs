@@ -10,6 +10,7 @@ using Eduva.Application.Features.Classes.Commands.ResetClassCode;
 using Eduva.Application.Features.Classes.Commands.RestoreClass;
 using Eduva.Application.Features.Classes.Commands.UpdateClass;
 using Eduva.Application.Features.Classes.Queries.GetAllStudentsInClass;
+using Eduva.Application.Features.Classes.Queries.GetClassById;
 using Eduva.Application.Features.Classes.Queries.GetClasses;
 using Eduva.Application.Features.Classes.Queries.GetStudentClasses;
 using Eduva.Application.Features.Classes.Queries.GetTeacherClasses;
@@ -136,6 +137,29 @@ namespace Eduva.API.Controllers.Classes
 
             return await HandleRequestAsync(async () =>
             {
+                var result = await _mediator.Send(query);
+                return (CustomCode.Success, result);
+            });
+        }
+
+        //Get class by ID
+        [HttpGet("{id}")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
+        [ProducesResponseType(typeof(ApiResponse<ClassResponse>), StatusCodes.Status200OK)]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}")]
+        public async Task<IActionResult> GetClassById(Guid id)
+        {
+            var validationResult = CheckModelStateValidity();
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userId, out var requesterId))
+                return Respond(CustomCode.UserIdNotFound);
+            return await HandleRequestAsync(async () =>
+            {
+                var query = new GetClassByIdQuery(id, requesterId);
                 var result = await _mediator.Send(query);
                 return (CustomCode.Success, result);
             });
