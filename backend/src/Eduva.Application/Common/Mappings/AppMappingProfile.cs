@@ -79,7 +79,8 @@ namespace Eduva.Application.Common.Mappings
                 Description = src.Plan.Description,
                 MaxUsers = src.Plan.MaxUsers,
                 StorageLimitGB = src.Plan.StorageLimitGB,
-                Price = src.BillingCycle == BillingCycle.Monthly ? src.Plan.PriceMonthly : src.Plan.PricePerYear
+                Price = src.BillingCycle == BillingCycle.Monthly ? src.Plan.PriceMonthly : src.Plan.PricePerYear,
+                IsRecommended = src.Plan.IsRecommended
             }))
             .ForMember(dest => dest.PaymentTransaction, opt => opt.MapFrom(src => new PaymentTransactionInfo
             {

@@ -53,6 +53,13 @@ namespace Eduva.Application.Test.Features.SchoolSubscriptions.Specifications
         #region SchoolSubscriptionSpecfication Tests
 
         [Test]
+        public void Should_Have_Null_Selector()
+        {
+            var spec = new SchoolSubscriptionSpecification(new SchoolSubscriptionSpecParam());
+            Assert.That(spec.Selector, Is.Null);
+        }
+
+        [Test]
         public void Should_Filter_By_SubscriptionStatus_And_BillingCycle()
         {
             var param = new SchoolSubscriptionSpecParam
@@ -71,6 +78,7 @@ namespace Eduva.Application.Test.Features.SchoolSubscriptions.Specifications
         [TestCase(DateFilter.Today)]
         [TestCase(DateFilter.Last7Days)]
         [TestCase(DateFilter.Last30Days)]
+
         public void Should_Filter_By_DateFilter(DateFilter filter)
         {
             var param = new SchoolSubscriptionSpecParam
@@ -103,10 +111,14 @@ namespace Eduva.Application.Test.Features.SchoolSubscriptions.Specifications
         }
 
         [TestCase("startDate", "asc")]
+        [TestCase("startDate", "desc")]
+        [TestCase("endDate", "asc")]
         [TestCase("endDate", "desc")]
         [TestCase("createdAt", "asc")]
+        [TestCase("createdAt", "desc")]
+        [TestCase("amount", "asc")]
         [TestCase("amount", "desc")]
-        [TestCase("unknown", "desc")] // fallback to createdAt
+        [TestCase("unknown", "desc")]
         public void Should_Sort_Correctly_By_Field(string sortBy, string direction)
         {
             var param = new SchoolSubscriptionSpecParam

@@ -67,6 +67,139 @@ public class CreateSchoolSubscriptionCommandHandlerTests
 
     #region CreateSchoolSubscriptionCommandHandler Tests 
 
+    [Test]
+    public async Task Should_Calculate_Correct_DeductedAmount_For_Yearly_Billing()
+    {
+        // Arrange
+        var now = DateTimeOffset.UtcNow;
+
+        var oldPlan = new SubscriptionPlan { Id = 1, PriceMonthly = 200000, PricePerYear = 1000000 };
+        var newPlan = new SubscriptionPlan { Id = 2, PriceMonthly = 300000, PricePerYear = 1200000, Status = EntityStatus.Active };
+
+        var school = new School { Id = 999, Name = "Truong ABC", ContactEmail = "truong@edu.vn", ContactPhone = "0123456789" };
+
+        var transaction = new PaymentTransaction
+        {
+            Id = Guid.NewGuid(),
+            Amount = 1000000 // yearly plan paid
+        };
+
+        var currentSubscription = new SchoolSubscription
+        {
+            Plan = oldPlan,
+            PlanId = oldPlan.Id,
+            BillingCycle = BillingCycle.Yearly, // 👈 this is the key
+            StartDate = now.AddDays(-100), // still has time left
+            PaymentTransactionId = transaction.Id,
+            PaymentTransaction = transaction
+        };
+
+        _testUser.SchoolId = school.Id;
+        _userRepo.Setup(r => r.GetByIdAsync(_testUser.Id)).ReturnsAsync(_testUser);
+        _schoolRepo.Setup(r => r.GetByIdAsync(school.Id)).ReturnsAsync(school);
+        _planRepo.Setup(r => r.GetByIdAsync(newPlan.Id)).ReturnsAsync(newPlan);
+        _schoolSubRepo.Setup(r => r.GetActiveSubscriptionBySchoolIdAsync(school.Id, It.IsAny<CancellationToken>()))
+                      .ReturnsAsync(currentSubscription);
+        _paymentRepo.Setup(r => r.GetByIdAsync(transaction.Id)).ReturnsAsync(transaction);
+
+        _payOsServiceMock.Setup(s => s.CreatePaymentLinkAsync(It.IsAny<PaymentData>()))
+            .ReturnsAsync(new CreatePaymentResult(
+                bin: "9704",
+                accountNumber: "123456789",
+                amount: 123456,
+                description: "Eduva Subscription",
+                orderCode: 999999999,
+                currency: "VND",
+                paymentLinkId: "link-999",
+                status: "PENDING",
+                expiredAt: DateTimeOffset.UtcNow.AddMinutes(30).ToUnixTimeMilliseconds(),
+                checkoutUrl: "https://checkout.url",
+                qrCode: "QRCodeHere"
+            ));
+
+        var command = new CreateSchoolSubscriptionCommand
+        {
+            PlanId = newPlan.Id,
+            BillingCycle = BillingCycle.Yearly, // 👈 key path
+            UserId = _testUser.Id
+        };
+
+        // Act
+        var result = await _handler.Handle(command, default);
+
+        Assert.Multiple(() =>
+        {
+            // Assert
+            Assert.That(result.Item2.Amount, Is.GreaterThan(10000));
+            Assert.That(result.Item2.DeductedAmount, Is.GreaterThan(0));
+        });
+    }
+
+    [Test]
+    public async Task Should_Apply_DeductedAmount_Correctly_When_Final_Amount_Is_More_Than_Minimum()
+    {
+        // Arrange
+        var now = DateTimeOffset.UtcNow;
+
+        var oldPlan = new SubscriptionPlan { Id = 1, PriceMonthly = 300000, PricePerYear = 1000000 };
+        var newPlan = new SubscriptionPlan { Id = 2, PriceMonthly = 400000, PricePerYear = 1200000, Status = EntityStatus.Active };
+
+        var school = new School { Id = 123, Name = "Test School", ContactEmail = "school@test.com", ContactPhone = "0123456789" };
+
+        var transaction = new PaymentTransaction { Id = Guid.NewGuid(), Amount = 300000 };
+
+        var currentSubscription = new SchoolSubscription
+        {
+            Plan = oldPlan,
+            PlanId = oldPlan.Id,
+            BillingCycle = BillingCycle.Monthly,
+            StartDate = now.AddDays(-5),
+            PaymentTransactionId = transaction.Id,
+            PaymentTransaction = transaction
+        };
+
+        _testUser.SchoolId = school.Id;
+        _userRepo.Setup(r => r.GetByIdAsync(_testUser.Id)).ReturnsAsync(_testUser);
+        _schoolRepo.Setup(r => r.GetByIdAsync(school.Id)).ReturnsAsync(school);
+        _planRepo.Setup(r => r.GetByIdAsync(newPlan.Id)).ReturnsAsync(newPlan);
+        _schoolSubRepo.Setup(r => r.GetActiveSubscriptionBySchoolIdAsync(school.Id, It.IsAny<CancellationToken>()))
+                      .ReturnsAsync(currentSubscription);
+        _paymentRepo.Setup(r => r.GetByIdAsync(transaction.Id)).ReturnsAsync(transaction);
+
+        _payOsServiceMock.Setup(s => s.CreatePaymentLinkAsync(It.IsAny<PaymentData>()))
+            .ReturnsAsync(new CreatePaymentResult(
+                bin: "9704",
+                accountNumber: "123456789",
+                amount: 390000, // > 10000
+                description: "Eduva Subscription",
+                orderCode: 1234567890,
+                currency: "VND",
+                paymentLinkId: "link456",
+                status: "PENDING",
+                expiredAt: DateTimeOffset.UtcNow.AddMinutes(30).ToUnixTimeMilliseconds(),
+                checkoutUrl: "https://checkout.eduva.vn",
+                qrCode: "QRCodeHere"
+            ));
+
+        var command = new CreateSchoolSubscriptionCommand
+        {
+            PlanId = newPlan.Id,
+            BillingCycle = BillingCycle.Monthly,
+            UserId = _testUser.Id
+        };
+
+        // Act
+        var result = await _handler.Handle(command, default);
+
+        Assert.Multiple(() =>
+        {
+            // Assert
+            Assert.That(result.Item2.Amount, Is.GreaterThan(10000));
+            Assert.That(result.Item2.DeductedAmount, Is.GreaterThan(0));
+            Assert.That(result.Item2.CheckoutUrl, Is.EqualTo("https://checkout.eduva.vn"));
+        });
+    }
+
     [TestCase(BillingCycle.Monthly, 100000, 900000, ExpectedResult = 100000)]
     [TestCase(BillingCycle.Yearly, 100000, 900000, ExpectedResult = 900000)]
     public decimal Should_Calculate_BaseAmount_Correctly(BillingCycle cycle, decimal monthly, decimal yearly)
