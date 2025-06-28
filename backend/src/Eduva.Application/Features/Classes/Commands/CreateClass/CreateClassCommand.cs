@@ -11,5 +11,6 @@ namespace Eduva.Application.Features.Classes.Commands.CreateClass
         [JsonIgnore]
         public int SchoolId { get; set; }
         public string Name { get; set; } = string.Empty;
+        public string? BackgroundImageUrl { get; set; }
     }
 }

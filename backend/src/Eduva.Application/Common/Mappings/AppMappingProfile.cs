@@ -145,6 +145,7 @@ namespace Eduva.Application.Common.Mappings
                 .ForMember(dest => dest.TeacherId, opt => opt.Ignore());
             CreateMap<Classroom, ClassResponse>()
                 .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher != null ? src.Teacher.FullName : string.Empty))
+                .ForMember(dest => dest.BackgroundImageUrl, opt => opt.MapFrom(src => src.BackgroundImageUrl))
                 .ForMember(dest => dest.SchoolName, opt => opt.MapFrom(src => src.School != null ? src.School.Name : string.Empty))
                 .ForMember(dest => dest.TeacherAvatarUrl, opt => opt.MapFrom(src => src.Teacher != null ? src.Teacher.AvatarUrl : null))
                 .ReverseMap();
