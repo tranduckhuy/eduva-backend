@@ -206,6 +206,25 @@ public class UnlockAccountCommandHandlerTests
         Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.SystemError));
     }
 
+    [Test]
+    public void Should_Throw_When_TargetUser_Is_Deleted()
+    {
+        var targetUser = CreateUser(Guid.NewGuid(), EntityStatus.Deleted);
+        var executorUser = CreateUser(Guid.NewGuid());
+
+        var command = new UnlockAccountCommand(targetUser.Id, executorUser.Id);
+
+        _userManagerMock.Setup(x => x.FindByIdAsync(command.UserId.ToString()))
+            .ReturnsAsync(targetUser);
+
+        _userManagerMock.Setup(x => x.FindByIdAsync(command.ExecutorId.ToString()))
+            .ReturnsAsync(executorUser);
+
+        var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, CancellationToken.None));
+
+        Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.CannotUnlockDeletedUser));
+    }
+
     #endregion
 
 }

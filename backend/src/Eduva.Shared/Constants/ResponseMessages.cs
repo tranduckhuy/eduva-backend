@@ -128,6 +128,14 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status429TooManyRequests, Message = "You have requested an OTP too soon. Please wait 120s before requesting a new OTP." } },
             { CustomCode.UserNotFound, new MessageDetail {
                 HttpCode = StatusCodes.Status404NotFound, Message = "User not found. Please check the user ID and try again." } },
+            { CustomCode.UserAlreadyDeleted, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "User account has already been deleted." } },
+            { CustomCode.UserMustBeLockedBeforeDelete, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "User account must be locked before it can be deleted." } },
+            { CustomCode.CannotDeleteYourOwnAccount, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "You cannot delete your own account. Please contact support for assistance." } },
+            { CustomCode.CannotUnlockDeletedUser, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Cannot unlock a deleted user account. Please check the user status." } },
 
             // File Storage Errors
             { CustomCode.InvalidBlobName, new MessageDetail {

@@ -72,6 +72,10 @@ namespace Eduva.Shared.Enums
         IncorrectCurrentPassword = 4059,
         OtpResendTooSoon = 4060,
         UserNotFound = 4061,
+        CannotDeleteYourOwnAccount = 4062,
+        UserAlreadyDeleted = 4063,
+        UserMustBeLockedBeforeDelete = 4064,
+        CannotUnlockDeletedUser = 4065,
 
         // File Storage Errors
         InvalidBlobName = 4200,

@@ -5,6 +5,7 @@ using Eduva.Application.Interfaces.Repositories;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using Eduva.Infrastructure.Services;
+using Eduva.Shared.Enums;
 using Moq;
 using System.Linq.Expressions;
 
@@ -188,6 +189,80 @@ namespace Eduva.Infrastructure.Test.Services
 
             Assert.DoesNotThrowAsync(() => _service.ValidateCanAddUsersAsync(1, 5));
             await _service.ValidateCanAddUsersAsync(1, 5);
+        }
+
+        [Test]
+        public void Should_Throw_AppException_When_MaxUsers_Is_Negative()
+        {
+            var school = new School
+            {
+                Id = 1,
+                Status = EntityStatus.Active,
+                SchoolSubscriptions = new List<SchoolSubscription>
+        {
+            new SchoolSubscription
+            {
+                SubscriptionStatus = SubscriptionStatus.Active,
+                Plan = new SubscriptionPlan { MaxUsers = -5 }
+            }
+        }
+            };
+
+            _schoolRepoMock.Setup(x => x.FirstOrDefaultAsync(
+                It.IsAny<Expression<Func<School, bool>>>(),
+                It.IsAny<Func<IQueryable<School>, IQueryable<School>>>(),
+                It.IsAny<CancellationToken>())).ReturnsAsync(school);
+
+            var ex = Assert.ThrowsAsync<AppException>(() => _service.ValidateCanAddUsersAsync(1));
+            Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.SubscriptionInvalid));
+        }
+
+        [Test]
+        public async Task Should_Validate_Filter_Excludes_Deleted_Status()
+        {
+            var school = new School
+            {
+                Id = 1,
+                Status = EntityStatus.Active,
+                SchoolSubscriptions = new List<SchoolSubscription>
+        {
+            new SchoolSubscription
+            {
+                SubscriptionStatus = SubscriptionStatus.Active,
+                Plan = new SubscriptionPlan { MaxUsers = 10 }
+            }
+        }
+            };
+
+            _schoolRepoMock.Setup(x => x.FirstOrDefaultAsync(
+                It.IsAny<Expression<Func<School, bool>>>(),
+                It.IsAny<Func<IQueryable<School>, IQueryable<School>>>(),
+                It.IsAny<CancellationToken>())).ReturnsAsync(school);
+
+            Expression<Func<ApplicationUser, bool>>? capturedPredicate = null;
+
+            _userRepoMock.Setup(x => x.CountAsync(
+                It.IsAny<Expression<Func<ApplicationUser, bool>>>(),
+                It.IsAny<CancellationToken>()))
+                .Callback<Expression<Func<ApplicationUser, bool>>, CancellationToken>((predicate, _) =>
+                {
+                    capturedPredicate = predicate;
+                })
+                .ReturnsAsync(5);
+
+            await _service.ValidateCanAddUsersAsync(1);
+
+            Assert.That(capturedPredicate, Is.Not.Null);
+
+            var compiled = capturedPredicate!.Compile();
+            var includedUser = new ApplicationUser { SchoolId = 1, Status = EntityStatus.Active };
+            var excludedUser = new ApplicationUser { SchoolId = 1, Status = EntityStatus.Deleted };
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(compiled(includedUser), Is.True);
+                Assert.That(compiled(excludedUser), Is.False);
+            });
         }
 
         #endregion

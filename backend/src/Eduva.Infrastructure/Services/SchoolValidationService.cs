@@ -29,24 +29,34 @@ namespace Eduva.Infrastructure.Services
             ) ?? throw new SchoolNotFoundException();
 
             if (school.Status != EntityStatus.Active)
+            {
                 throw new AppException(CustomCode.SchoolInactive);
+            }
 
-            var activeSubscription = school.SchoolSubscriptions
-                .FirstOrDefault(s => s.SubscriptionStatus == SubscriptionStatus.Active);
+            var activeSubscription = school.SchoolSubscriptions.FirstOrDefault(s => s.SubscriptionStatus == SubscriptionStatus.Active);
 
             if (activeSubscription == null || activeSubscription.Plan == null)
+            {
                 throw new AppException(CustomCode.SubscriptionInvalid);
+            }
 
             var maxUsers = activeSubscription.Plan.MaxUsers;
 
             if (maxUsers <= 0)
+            {
                 throw new AppException(CustomCode.SubscriptionInvalid);
+            }
 
             var userRepo = _unitOfWork.GetCustomRepository<IUserRepository>();
-            var currentUserCount = await userRepo.CountAsync(u => u.SchoolId == schoolId, cancellationToken);
+            var currentUserCount = await userRepo.CountAsync(
+                u => u.SchoolId == schoolId && u.Status != EntityStatus.Deleted,
+                cancellationToken
+            );
 
             if (currentUserCount + additionalUsers > maxUsers)
+            {
                 throw new AppException(CustomCode.ExceedUserLimit);
+            }
         }
     }
 }

@@ -29,6 +29,11 @@ namespace Eduva.Application.Features.Users.Commands
 
             var targetUser = await _userManager.FindByIdAsync(request.UserId.ToString()) ?? throw new UserNotExistsException();
 
+            if (targetUser.Status == EntityStatus.Deleted)
+            {
+                throw new AppException(CustomCode.CannotUnlockDeletedUser);
+            }
+
             var executorUser = await _userManager.FindByIdAsync(request.ExecutorId.ToString()) ?? throw new UserNotExistsException();
 
             var targetRoles = await _userManager.GetRolesAsync(targetUser);
