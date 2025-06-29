@@ -339,6 +339,71 @@ namespace Eduva.Application.Test.Features.Folders.Commands
             _folderRepoMock.Verify(r => r.Update(It.Is<Folder>(f => f.Id == folderId && f.Order == 2)), Times.Once);
         }
 
+        [Test]
+        public async Task Handle_Only_Updates_Folders_With_Different_Id_And_Affected_Order()
+        {
+            var userId = Guid.NewGuid();
+            var folder1 = new Folder { Id = Guid.NewGuid(), Status = EntityStatus.Active, OwnerType = OwnerType.Personal, UserId = userId, Order = 1 };
+            var folder2 = new Folder { Id = Guid.NewGuid(), Status = EntityStatus.Active, OwnerType = OwnerType.Personal, UserId = userId, Order = 2 };
+            var folder3 = new Folder { Id = Guid.NewGuid(), Status = EntityStatus.Active, OwnerType = OwnerType.Personal, UserId = userId, Order = 3 };
+            var cmd = new UpdateFolderOrderCommand { Id = folder1.Id, Order = 3, CurrentUserId = userId };
+            _folderRepoMock.Setup(r => r.GetByIdAsync(folder1.Id)).ReturnsAsync(folder1);
+            _folderRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new[] { folder1, folder2, folder3 });
+            _folderRepoMock.Setup(r => r.Update(It.IsAny<Folder>()));
+            _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
+
+            await _handler.Handle(cmd, CancellationToken.None);
+
+            // folder2 and folder3 should be updated, folder1 is the target
+            _folderRepoMock.Verify(r => r.Update(It.Is<Folder>(f => f.Id == folder2.Id)), Times.Once);
+            _folderRepoMock.Verify(r => r.Update(It.Is<Folder>(f => f.Id == folder3.Id)), Times.Once);
+            _folderRepoMock.Verify(r => r.Update(It.Is<Folder>(f => f.Id == folder1.Id)), Times.Once);
+        }
+
+        [Test]
+        public async Task Handle_Shifts_Folders_Down_Only_Those_In_Range()
+        {
+            var userId = Guid.NewGuid();
+            var folder1 = new Folder { Id = Guid.NewGuid(), Status = EntityStatus.Active, OwnerType = OwnerType.Personal, UserId = userId, Order = 1 };
+            var folder2 = new Folder { Id = Guid.NewGuid(), Status = EntityStatus.Active, OwnerType = OwnerType.Personal, UserId = userId, Order = 2 };
+            var folder3 = new Folder { Id = Guid.NewGuid(), Status = EntityStatus.Active, OwnerType = OwnerType.Personal, UserId = userId, Order = 3 };
+            var folder4 = new Folder { Id = Guid.NewGuid(), Status = EntityStatus.Active, OwnerType = OwnerType.Personal, UserId = userId, Order = 4 };
+            var cmd = new UpdateFolderOrderCommand { Id = folder1.Id, Order = 3, CurrentUserId = userId };
+            _folderRepoMock.Setup(r => r.GetByIdAsync(folder1.Id)).ReturnsAsync(folder1);
+            _folderRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new[] { folder1, folder2, folder3, folder4 });
+            _folderRepoMock.Setup(r => r.Update(It.IsAny<Folder>()));
+            _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
+
+            await _handler.Handle(cmd, CancellationToken.None);
+
+            // Only folder2 and folder3 should be updated (shifted up), folder4 is out of range
+            _folderRepoMock.Verify(r => r.Update(It.Is<Folder>(f => f.Id == folder2.Id && f.Order == 1)), Times.Once);
+            _folderRepoMock.Verify(r => r.Update(It.Is<Folder>(f => f.Id == folder3.Id && f.Order == 2)), Times.Once);
+            _folderRepoMock.Verify(r => r.Update(It.Is<Folder>(f => f.Id == folder4.Id)), Times.Never);
+            _folderRepoMock.Verify(r => r.Update(It.Is<Folder>(f => f.Id == folder1.Id && f.Order == 3)), Times.Once);
+        }
+
+        [Test]
+        public void Handle_Throws_When_ClassFolder_Has_No_ClassId()
+        {
+            var teacherId = Guid.NewGuid();
+            var folderId = Guid.NewGuid();
+            var folder = new Folder
+            {
+                Id = folderId,
+                Status = EntityStatus.Active,
+                OwnerType = OwnerType.Class,
+                UserId = teacherId,
+                Order = 1,
+                ClassId = null // No ClassId
+            };
+            var cmd = new UpdateFolderOrderCommand { Id = folderId, Order = 2, CurrentUserId = teacherId };
+            _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
+
+            Assert.ThrowsAsync<Common.Exceptions.AppException>(() => _handler.Handle(cmd, CancellationToken.None));
+        }
+
+
         #endregion
     }
 }
