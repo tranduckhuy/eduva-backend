@@ -153,6 +153,29 @@ namespace Eduva.API.Controllers.Folders
             });
         }
 
+        //Get Folder by ID
+        [HttpGet("{id}")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
+        [ProducesResponseType(typeof(ApiResponse<FolderResponse>), StatusCodes.Status200OK)]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}, {nameof(Role.Student)}")]
+        public async Task<IActionResult> GetFolderById(Guid id)
+        {
+            var validationResult = CheckModelStateValidity();
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userId, out var userGuid))
+                return Respond(CustomCode.UserIdNotFound);
+            return await HandleRequestAsync(async () =>
+            {
+                var query = new GetFolderByIdQuery(id, userGuid);
+                var result = await _mediator.Send(query);
+                return (CustomCode.Success, result);
+            });
+        }
+
         [HttpPut("{id}/rename")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
