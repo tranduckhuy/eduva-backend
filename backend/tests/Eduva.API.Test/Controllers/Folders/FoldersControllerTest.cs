@@ -108,6 +108,42 @@ namespace Eduva.API.Test.Controllers.Folders
             Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
         }
 
+        [Test]
+        public async Task GetFolders_ShouldReturnValidationResult_WhenModelStateIsInvalid()
+        {
+            var userId = Guid.NewGuid();
+            SetupUser(userId.ToString());
+
+            _controller.ModelState.AddModelError("PageIndex", "Required");
+            var param = new FolderSpecParam();
+
+            var result = await _controller.GetFolders(param);
+            var objectResult = result as ObjectResult;
+
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.ModelInvalid)); // 4000
+        }
+
+        [Test]
+        public async Task GetUserFolders_ShouldReturnValidationResult_WhenModelStateIsInvalid()
+        {
+            var userId = Guid.NewGuid();
+            SetupUser(userId.ToString());
+
+            _controller.ModelState.AddModelError("PageSize", "Invalid value");
+            var param = new FolderSpecParam();
+
+            var result = await _controller.GetUserFolders(param);
+            var objectResult = result as ObjectResult;
+
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.ModelInvalid));
+        }
+
         #endregion
 
         #region CreateFolder Tests
@@ -285,7 +321,6 @@ namespace Eduva.API.Test.Controllers.Folders
             Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Created).Or.EqualTo((int)CustomCode.Success));
         }
 
-
         #endregion
 
         #region GetFoldersByClassId Tests
@@ -380,6 +415,26 @@ namespace Eduva.API.Test.Controllers.Folders
             Assert.That(response, Is.Not.Null);
             Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
         }
+
+        [Test]
+        public async Task GetFoldersByClassId_ShouldReturnValidationResult_WhenModelStateIsInvalid()
+        {
+            var userId = Guid.NewGuid();
+            SetupUser(userId.ToString());
+
+            _controller.ModelState.AddModelError("PageSize", "Required");
+            var param = new FolderSpecParam();
+            var classId = Guid.NewGuid();
+
+            var result = await _controller.GetFoldersByClassId(classId, param);
+            var objectResult = result as ObjectResult;
+
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.ModelInvalid));
+        }
+
 
 
         #endregion
