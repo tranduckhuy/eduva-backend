@@ -423,6 +423,31 @@ namespace Eduva.API.Test.Controllers.Users
         #region GetUsersAsync Tests
 
         [Test]
+        public async Task GetUsersAsync_ShouldCallMediator_WhenUserIsSystemAdmin()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            SetupUser(userId.ToString(), role: nameof(Role.SystemAdmin));
+
+            var param = new UserSpecParam();
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<GetUsersBySpecQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new Pagination<UserResponse>());
+
+            // Act
+            var result = await _controller.GetUsersAsync(param);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+        }
+
+        [Test]
         public async Task GetUsersAsync_ShouldReturnUserNotPartOfSchool_WhenSchoolAdminHasNoSchool()
         {
             // Arrange
@@ -862,6 +887,71 @@ namespace Eduva.API.Test.Controllers.Users
             var objectResult = result as ObjectResult;
             var response = objectResult!.Value as ApiResponse<object>;
             Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.FileDownloadFailed));
+        }
+
+        #endregion
+
+        #region DeleteUser Tests
+
+        [Test]
+        public async Task DeleteUser_ShouldReturnUserIdNotFound_WhenExecutorIdIsNull()
+        {
+            SetupUser(null); // No claim
+
+            var result = await _controller.DeleteUser(Guid.NewGuid());
+
+            var objectResult = result as ObjectResult;
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task DeleteUser_ShouldReturnUserIdNotFound_WhenExecutorIdIsInvalid()
+        {
+            SetupUser("not-a-guid");
+
+            var result = await _controller.DeleteUser(Guid.NewGuid());
+
+            var objectResult = result as ObjectResult;
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task DeleteUser_ShouldCallMediator_WhenValidRequest()
+        {
+            var executorId = Guid.NewGuid();
+            SetupUser(executorId.ToString());
+
+            var userId = Guid.NewGuid();
+            _mediatorMock.Setup(m => m.Send(It.IsAny<DeleteUserCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(Unit.Value);
+
+            var result = await _controller.DeleteUser(userId);
+
+            var objectResult = result as ObjectResult;
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+
+            _mediatorMock.Verify(m => m.Send(
+                It.Is<DeleteUserCommand>(c =>
+                    c.UserId == userId && c.ExecutorId == executorId),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Test]
+        public async Task DeleteUser_ShouldReturnInternalServerError_WhenExceptionThrown()
+        {
+            var executorId = Guid.NewGuid();
+            SetupUser(executorId.ToString());
+
+            _mediatorMock.Setup(m => m.Send(It.IsAny<DeleteUserCommand>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new Exception("Something went wrong"));
+
+            var result = await _controller.DeleteUser(Guid.NewGuid());
+
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
         }
 
         #endregion

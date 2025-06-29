@@ -8,9 +8,11 @@ using Eduva.Application.Features.Payments.Specifications;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Security.Claims;
 
 namespace Eduva.API.Test.Controllers.Payment
 {
@@ -148,6 +150,66 @@ namespace Eduva.API.Test.Controllers.Payment
                 Assert.That(data!.Data, Has.Count.EqualTo(1));
                 Assert.That(data.Data.First().TransactionCode, Is.EqualTo("TRX001"));
             });
+        }
+
+        #endregion
+
+        #region GetMyPayments Tests
+
+        [Test]
+        public async Task GetMyPayments_ShouldReturnUserIdNotFound_WhenUserIdClaimIsMissing()
+        {
+            // Arrange
+            var specParam = new MyPaymentSpecParam();
+            var controller = SetupControllerWithUser(null);
+
+            // Act
+            var result = await controller.GetMyPayments(specParam);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(401));
+            var response = objectResult.Value as ApiResponse<object>;
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task GetMyPayments_ShouldReturnUserIdNotFound_WhenUserIdIsInvalidGuid()
+        {
+            // Arrange
+            var specParam = new MyPaymentSpecParam();
+            var controller = SetupControllerWithUser("invalid-guid");
+
+            // Act
+            var result = await controller.GetMyPayments(specParam);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(401));
+            var response = objectResult.Value as ApiResponse<object>;
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        #endregion
+
+        #region Methods Helpers
+
+        private PaymentController SetupControllerWithUser(string? userId)
+        {
+            var controller = new PaymentController(_mediatorMock.Object, _loggerMock.Object);
+
+            var claims = new List<Claim>();
+            if (userId != null)
+                claims.Add(new Claim(ClaimTypes.NameIdentifier, userId));
+
+            var identity = new ClaimsIdentity(claims, "test");
+            var principal = new ClaimsPrincipal(identity);
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = principal }
+            };
+
+            return controller;
         }
 
         #endregion
