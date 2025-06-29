@@ -9,5 +9,6 @@ namespace Eduva.Application.Interfaces.Repositories
         Task<bool> IsStudentEnrolledInClassAsync(Guid studentId, Guid classId);
 
         Task<StudentClass?> GetStudentClassAsync(Guid studentId, Guid classId);
+        Task<StudentClass?> GetStudentClassByIdAsync(Guid studentClassId);
     }
 }
