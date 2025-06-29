@@ -5,6 +5,7 @@ using Eduva.Application.Features.Folders.Commands;
 using Eduva.Application.Features.Folders.Queries;
 using Eduva.Application.Features.Folders.Responses;
 using Eduva.Application.Features.Folders.Specifications;
+using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -105,6 +106,42 @@ namespace Eduva.API.Test.Controllers.Folders
             var objectResult = result as ObjectResult;
             Assert.That(objectResult, Is.Not.Null);
             Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
+        }
+
+        [Test]
+        public async Task GetFolders_ShouldReturnValidationResult_WhenModelStateIsInvalid()
+        {
+            var userId = Guid.NewGuid();
+            SetupUser(userId.ToString());
+
+            _controller.ModelState.AddModelError("PageIndex", "Required");
+            var param = new FolderSpecParam();
+
+            var result = await _controller.GetFolders(param);
+            var objectResult = result as ObjectResult;
+
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.ModelInvalid)); // 4000
+        }
+
+        [Test]
+        public async Task GetUserFolders_ShouldReturnValidationResult_WhenModelStateIsInvalid()
+        {
+            var userId = Guid.NewGuid();
+            SetupUser(userId.ToString());
+
+            _controller.ModelState.AddModelError("PageSize", "Invalid value");
+            var param = new FolderSpecParam();
+
+            var result = await _controller.GetUserFolders(param);
+            var objectResult = result as ObjectResult;
+
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.ModelInvalid));
         }
 
         #endregion
@@ -258,6 +295,32 @@ namespace Eduva.API.Test.Controllers.Folders
             Assert.That(response!.StatusCode, Is.EqualTo(4000));
         }
 
+        [Test]
+        public async Task CreateFolder_ShouldParseClassIdString_WhenValidGuidProvided()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+
+            var validClassId = Guid.NewGuid();
+            var command = new CreateFolderCommand
+            {
+                Name = "Folder with Class",
+                ClassIdString = validClassId.ToString()
+            };
+
+            _mediatorMock
+                .Setup(m => m.Send(It.Is<CreateFolderCommand>(c => c.ClassId == validClassId), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new FolderResponse { Name = "Folder with Class" });
+
+            var result = await _controller.CreateFolder(command);
+            var objectResult = result as ObjectResult;
+
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Created).Or.EqualTo((int)CustomCode.Success));
+        }
+
         #endregion
 
         #region GetFoldersByClassId Tests
@@ -327,6 +390,52 @@ namespace Eduva.API.Test.Controllers.Folders
             Assert.That(objectResult, Is.Not.Null);
             Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
         }
+
+        [Test]
+        public async Task GetFoldersByClassId_ShouldSetClassIdAndOwnerType()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            var classId = Guid.NewGuid();
+
+            var param = new FolderSpecParam { PageIndex = 1, PageSize = 10 };
+
+            _mediatorMock
+                .Setup(m => m.Send(It.Is<GetFoldersQuery>(q =>
+                    q.FolderSpecParam.ClassId == classId &&
+                    q.FolderSpecParam.OwnerType == OwnerType.Class),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new Pagination<FolderResponse>(1, 10, 1, new List<FolderResponse>()));
+
+            var result = await _controller.GetFoldersByClassId(classId, param);
+            var objectResult = result as ObjectResult;
+
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+        }
+
+        [Test]
+        public async Task GetFoldersByClassId_ShouldReturnValidationResult_WhenModelStateIsInvalid()
+        {
+            var userId = Guid.NewGuid();
+            SetupUser(userId.ToString());
+
+            _controller.ModelState.AddModelError("PageSize", "Required");
+            var param = new FolderSpecParam();
+            var classId = Guid.NewGuid();
+
+            var result = await _controller.GetFoldersByClassId(classId, param);
+            var objectResult = result as ObjectResult;
+
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.ModelInvalid));
+        }
+
+
 
         #endregion
 
@@ -455,6 +564,24 @@ namespace Eduva.API.Test.Controllers.Folders
             Assert.That(objectResult, Is.Not.Null);
             Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
         }
+        [Test]
+        public async Task RenameFolder_ShouldReturnValidationResult_WhenModelStateIsInvalid()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            _controller.ModelState.AddModelError("Name", "Required");
+
+            var id = Guid.NewGuid();
+            var command = new RenameFolderCommand { Name = null! };
+            var result = await _controller.RenameFolder(id, command);
+            var objectResult = result as ObjectResult;
+
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.ModelInvalid)); // or 4000
+        }
+
 
         #endregion
 
@@ -516,6 +643,24 @@ namespace Eduva.API.Test.Controllers.Folders
             var objectResult = result as ObjectResult;
             Assert.That(objectResult, Is.Not.Null);
             Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
+        }
+
+        [Test]
+        public async Task UpdateFolderOrder_ShouldReturnValidationResult_WhenModelStateIsInvalid()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            _controller.ModelState.AddModelError("Order", "Invalid value");
+
+            var id = Guid.NewGuid();
+            var command = new UpdateFolderOrderCommand { Order = -1 };
+            var result = await _controller.UpdateFolderOrder(id, command);
+            var objectResult = result as ObjectResult;
+
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.ModelInvalid)); // or 4000
         }
 
         #endregion

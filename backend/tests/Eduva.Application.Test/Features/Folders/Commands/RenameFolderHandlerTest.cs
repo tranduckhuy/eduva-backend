@@ -417,6 +417,25 @@ namespace Eduva.Application.Test.Features.Folders.Commands
             _userRepoMock.Verify(r => r.GetByIdAsync(userId), Times.Once);
         }
 
+        [Test]
+        public void Handle_Throws_When_ClassFolder_Has_No_ClassId()
+        {
+            var folderId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var cmd = new RenameFolderCommand { Id = folderId, Name = "NoClassId", CurrentUserId = userId };
+            var folder = new Folder
+            {
+                Id = folderId,
+                Name = "OldClassName",
+                Status = EntityStatus.Active,
+                OwnerType = OwnerType.Class,
+                ClassId = null // No ClassId
+            };
+            _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
+
+            Assert.Throws<AppException>(() => _handler.Handle(cmd, CancellationToken.None).GetAwaiter().GetResult());
+        }
+
         #endregion
     }
 }

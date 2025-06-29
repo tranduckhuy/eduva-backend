@@ -183,6 +183,22 @@ namespace Eduva.Application.Test.Features.Folders.Commands
             Assert.That(result.Name, Is.EqualTo(cmd.Name));
         }
 
+        [Test]
+        public async Task Handle_ShouldCreatePersonalFolder_WhenOwnerTypeIsClassAndClassIdIsNull()
+        {
+            var userId = Guid.NewGuid();
+            var cmd = new CreateFolderCommand { Name = "Test", CurrentUserId = userId, ClassId = null };
+            _userRepoMock.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(new ApplicationUser { Id = userId });
+            _folderRepoMock.Setup(r => r.ExistsAsync(It.IsAny<Expression<Func<Folder, bool>>>())).ReturnsAsync(false);
+            _folderRepoMock.Setup(r => r.GetMaxOrderAsync(userId, null)).ReturnsAsync(0);
+            _folderRepoMock.Setup(r => r.AddAsync(It.IsAny<Folder>())).Returns(Task.CompletedTask);
+            _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
+
+            var result = await _handler.Handle(cmd, CancellationToken.None);
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.Name, Is.EqualTo(cmd.Name));
+        }
+
         #endregion
 
         #region Helper Methods
