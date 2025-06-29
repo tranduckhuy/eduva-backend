@@ -21,7 +21,6 @@ namespace Eduva.Application.Features.Folders.Queries
             var folderRepository = _unitOfWork.GetCustomRepository<IFolderRepository>();
             var userRepository = _unitOfWork.GetCustomRepository<IUserRepository>();
             var classRepository = _unitOfWork.GetCustomRepository<IClassroomRepository>();
-            //var schoolRepository = _unitOfWork.GetCustomRepository<ISchoolRepository>();
 
             var folder = await folderRepository.GetByIdAsync(request.Id);
             if (folder == null)
