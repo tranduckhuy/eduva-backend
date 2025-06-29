@@ -125,6 +125,8 @@ namespace Eduva.Shared.Enums
         ClassNameAlreadyExistsForTeacher = 4713,
         NotTeacherOfClass = 4714,
         NotAdminForClassList = 4715,
+        StudentNotEnrolled = 4716,
+        StudentRemovalFailed = 4717,
         KeyConfigNotFound = 5001,
         KeyConfigAlreadyExist = 5002,
     }

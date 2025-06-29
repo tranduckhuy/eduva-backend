@@ -6,6 +6,7 @@ using Eduva.Application.Common.Models;
 using Eduva.Application.Features.Classes.Commands.ArchiveClass;
 using Eduva.Application.Features.Classes.Commands.CreateClass;
 using Eduva.Application.Features.Classes.Commands.EnrollByClassCode;
+using Eduva.Application.Features.Classes.Commands.RemoveStudentFromClass;
 using Eduva.Application.Features.Classes.Commands.ResetClassCode;
 using Eduva.Application.Features.Classes.Commands.RestoreClass;
 using Eduva.Application.Features.Classes.Commands.UpdateClass;
@@ -355,6 +356,52 @@ namespace Eduva.API.Controllers.Classes
             {
                 var result = await _mediator.Send(command);
                 return Respond(CustomCode.Success, result);
+            }
+            catch (AppException ex)
+            {
+                return Respond(ex.StatusCode, null, ex.Errors);
+            }
+            catch (Exception)
+            {
+                return Respond(CustomCode.SystemError);
+            }
+        }
+
+        [HttpDelete("{classId}/students/{studentId}")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}")]
+        public async Task<IActionResult> RemoveStudentFromClass(Guid classId, Guid studentId)
+        {
+            var validationResult = CheckModelStateValidity();
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userId, out var currentUserId))
+                return Respond(CustomCode.UserIdNotFound);
+
+            // Determine user roles
+            bool isTeacher = User.IsInRole(nameof(Role.Teacher));
+            bool isSchoolAdmin = User.IsInRole(nameof(Role.SchoolAdmin));
+            bool isSystemAdmin = User.IsInRole(nameof(Role.SystemAdmin));
+
+            var command = new RemoveStudentFromClassCommand
+            {
+                ClassId = classId,
+                StudentId = studentId,
+                RequestUserId = currentUserId,
+                IsTeacher = isTeacher,
+                IsSchoolAdmin = isSchoolAdmin,
+                IsSystemAdmin = isSystemAdmin
+            };
+
+            try
+            {
+                await _mediator.Send(command);
+                return Respond(CustomCode.Success);
             }
             catch (AppException ex)
             {
