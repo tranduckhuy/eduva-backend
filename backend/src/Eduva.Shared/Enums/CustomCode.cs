@@ -84,7 +84,6 @@ namespace Eduva.Shared.Enums
 
         // Payment Transaction Errors
         PaymentTransactionNotFound = 4300,
-        InvalidRelatedIdFormat = 4301,
         AICreditPackNotFound = 4302,
         AICreditPackAlreadyArchived = 4303,
         AICreditPackAlreadyActive = 4304,
