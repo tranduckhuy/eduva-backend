@@ -45,6 +45,17 @@ namespace Eduva.Application.Features.Folders.Queries
 
             var folderPagination = await _folderRepository.GetWithSpecAsync(spec);
 
+            if (folderPagination == null)
+            {
+                return new Pagination<FolderResponse>
+                {
+                    PageIndex = request.FolderSpecParam.PageIndex,
+                    PageSize = request.FolderSpecParam.PageSize,
+                    Count = 0,
+                    Data = new List<FolderResponse>()
+                };
+            }
+
             var data = _mapper.Map<IReadOnlyCollection<FolderResponse>>(folderPagination.Data);
 
             return new Pagination<FolderResponse>
