@@ -19,6 +19,8 @@ namespace Eduva.Application.Test.Features.Folders.Commands
         private Mock<IGenericRepository<ApplicationUser, Guid>> _userRepoMock = default!;
         private CreateFolderHandler _handler = default!;
 
+        #region CreateFolderHandler Setup
+
         [SetUp]
         public void Setup()
         {
@@ -36,6 +38,8 @@ namespace Eduva.Application.Test.Features.Folders.Commands
 
             _handler = new CreateFolderHandler(_unitOfWorkMock.Object);
         }
+
+        #endregion
 
         #region CreateFolderHandler Tests
 

@@ -261,20 +261,32 @@ namespace Eduva.API.Test.Middlewares
         #region Endpoint Metadata Tests
 
         [Test]
-        public async Task Invoke_ShouldCallNext_WhenEndpointMetadataDoesNotContainAccessAttribute()
+        public async Task Invoke_ShouldCallNext_InAllAccessAttributeNullCases()
         {
-            // Arrange
-            var endpoint = new Endpoint(
-                c => Task.CompletedTask,
-                new EndpointMetadataCollection(new object()),
-                "TestEndpoint"
-            );
-            _httpContext.SetEndpoint(endpoint);
-
-            // Act
+            // Case 1: endpoint == null
+            _httpContext.SetEndpoint(null);
             await _middleware.Invoke(_httpContext, _subscriptionServiceMock.Object);
+            _nextMock.Verify(n => n(_httpContext), Times.Once);
+            _nextMock.Invocations.Clear();
 
-            // Assert
+            // Case 2: endpoint.Metadata == null
+            var endpointWithNullMetadata = new Endpoint(c => Task.CompletedTask, null!, "NullMetadata");
+            _httpContext.SetEndpoint(endpointWithNullMetadata);
+            await _middleware.Invoke(_httpContext, _subscriptionServiceMock.Object);
+            _nextMock.Verify(n => n(_httpContext), Times.Once);
+            _nextMock.Invocations.Clear();
+
+            // Case 3: Metadata exists but no attribute
+            var endpointWithoutAttribute = new Endpoint(c => Task.CompletedTask, new EndpointMetadataCollection(new object()), "NoAttr");
+            _httpContext.SetEndpoint(endpointWithoutAttribute);
+            await _middleware.Invoke(_httpContext, _subscriptionServiceMock.Object);
+            _nextMock.Verify(n => n(_httpContext), Times.Once);
+            _nextMock.Invocations.Clear();
+
+            // Case 4: Has attribute with Level = None
+            var endpointWithAttr = new Endpoint(c => Task.CompletedTask, new EndpointMetadataCollection(new SubscriptionAccessAttribute(SubscriptionAccessLevel.None)), "WithAttr");
+            _httpContext.SetEndpoint(endpointWithAttr);
+            await _middleware.Invoke(_httpContext, _subscriptionServiceMock.Object);
             _nextMock.Verify(n => n(_httpContext), Times.Once);
         }
 

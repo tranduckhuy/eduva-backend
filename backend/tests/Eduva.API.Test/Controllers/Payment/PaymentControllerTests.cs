@@ -190,6 +190,58 @@ namespace Eduva.API.Test.Controllers.Payment
             Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
         }
 
+        [Test]
+        public async Task GetMyPayments_ShouldReturnSuccess_WhenUserIdIsValid()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var specParam = new MyPaymentSpecParam();
+            var controller = SetupControllerWithUser(userId.ToString());
+
+            var expected = new Pagination<PaymentResponse>
+            {
+                PageIndex = 1,
+                PageSize = 10,
+                Count = 1,
+                Data = new List<PaymentResponse>
+        {
+            new PaymentResponse
+            {
+                TransactionCode = "PAY123",
+                Amount = 200000,
+                PaymentMethod = PaymentMethod.PayOS,
+                PaymentPurpose = PaymentPurpose.CreditPackage,
+                PaymentStatus = PaymentStatus.Paid,
+                CreatedAt = DateTimeOffset.UtcNow,
+                User = new()
+                {
+                    Id = userId,
+                    FullName = "User",
+                    Email = "user@example.com",
+                    PhoneNumber = "123456789"
+                }
+            }
+        }
+            };
+
+            _mediatorMock.Setup(m => m.Send(
+                It.Is<GetMyPaymentsQuery>(q => q.SpecParam.UserId == userId),
+                It.IsAny<CancellationToken>()))
+                .ReturnsAsync(expected);
+
+            // Act
+            var result = await controller.GetMyPayments(specParam);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+
+            var data = response.Data as Pagination<PaymentResponse>;
+            Assert.That(data, Is.Not.Null);
+            Assert.That(data!.Data.First().TransactionCode, Is.EqualTo("PAY123"));
+        }
+
         #endregion
 
         #region Methods Helpers

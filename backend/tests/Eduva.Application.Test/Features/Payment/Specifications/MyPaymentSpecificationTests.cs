@@ -52,6 +52,50 @@ public class MyPaymentSpecificationTests
 
     #region MyPaymentSpecficationTests Tests
 
+    [TestCase("unknown", "desc")]
+    [TestCase("UNKNOWN", "asc")]
+    public void Should_Use_Default_Sort_When_Unknown_Field(string sortBy, string sortDirection)
+    {
+        var param = new MyPaymentSpecParam
+        {
+            UserId = _userId,
+            SortBy = sortBy,
+            SortDirection = sortDirection
+        };
+
+        var spec = new MyPaymentSpecification(param);
+        var ordered = spec.OrderBy!(_transactions.AsQueryable().Where(spec.Criteria)).ToList();
+
+        var expected = sortDirection.ToLower() == "desc"
+            ? _transactions.Where(t => t.UserId == _userId).OrderByDescending(t => t.CreatedAt).ToList()
+            : _transactions.Where(t => t.UserId == _userId).OrderBy(t => t.CreatedAt).ToList();
+
+        Assert.That(ordered.Select(x => x.Id), Is.EqualTo(expected.Select(x => x.Id)));
+    }
+
+    [Test]
+    public void Should_Filter_By_Last30Days()
+    {
+        var param = new MyPaymentSpecParam
+        {
+            UserId = _userId,
+            DateFilter = DateFilter.Last30Days
+        };
+
+        var spec = new MyPaymentSpecification(param);
+        var result = _transactions.AsQueryable().Where(spec.Criteria).ToList();
+
+        Assert.That(result.All(t => t.CreatedAt >= DateTimeOffset.UtcNow.AddDays(-30)), Is.True);
+    }
+
+    [Test]
+    public void Selector_Should_Be_Null()
+    {
+        var param = new MyPaymentSpecParam { UserId = _userId };
+        var spec = new MyPaymentSpecification(param);
+        Assert.That(spec.Selector, Is.Null);
+    }
+
     [Test]
     public void Should_Filter_By_UserId_And_PaymentPurpose_And_Status()
     {
