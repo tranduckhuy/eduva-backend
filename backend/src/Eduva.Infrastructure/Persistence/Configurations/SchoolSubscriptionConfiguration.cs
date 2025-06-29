@@ -30,8 +30,13 @@ namespace Eduva.Infrastructure.Persistence.Configurations
                 .HasConversion<string>()
                 .IsRequired();
 
+            builder.HasIndex(ss => ss.PaymentTransactionId)
+                .IsUnique();
             builder.Property(ss => ss.PaymentTransactionId)
                 .IsRequired();
+
+            // Indexes
+            builder.HasIndex(builder => builder.SchoolId);
 
             // Relationships (Foreign Keys)
             builder.HasOne(ss => ss.School)

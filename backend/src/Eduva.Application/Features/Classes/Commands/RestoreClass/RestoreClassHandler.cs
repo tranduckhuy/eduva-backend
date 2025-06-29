@@ -63,7 +63,6 @@ namespace Eduva.Application.Features.Classes.Commands.RestoreClass
             }
             catch (Exception)
             {
-                await _unitOfWork.RollbackAsync();
                 throw new AppException(CustomCode.ClassRestoreFailed);
             }
         }

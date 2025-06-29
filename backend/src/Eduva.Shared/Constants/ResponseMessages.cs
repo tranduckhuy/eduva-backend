@@ -172,8 +172,6 @@ namespace Eduva.Shared.Constants
             // Payment Transaction Errors
             { CustomCode.PaymentTransactionNotFound, new MessageDetail {
                 HttpCode = StatusCodes.Status404NotFound, Message = "Payment transaction not found" } },
-            { CustomCode.InvalidRelatedIdFormat, new MessageDetail {
-                HttpCode = StatusCodes.Status400BadRequest, Message = "Invalid format for RelatedId. It should be a valid GUID." } },
             { CustomCode.AICreditPackNotFound, new MessageDetail {
                 HttpCode = StatusCodes.Status404NotFound, Message = "AI credit pack not found" } },
             { CustomCode.AICreditPackAlreadyArchived, new MessageDetail {

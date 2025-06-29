@@ -83,7 +83,6 @@ namespace Eduva.Application.Features.Classes.Commands.ResetClassCode
             }
             catch (Exception)
             {
-                await _unitOfWork.RollbackAsync();
                 throw new AppException(CustomCode.ClassUpdateFailed);
             }
         }

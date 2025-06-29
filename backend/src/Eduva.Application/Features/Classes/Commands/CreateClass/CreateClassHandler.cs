@@ -45,6 +45,11 @@ namespace Eduva.Application.Features.Classes.Commands.CreateClass
                 throw new AppException(CustomCode.ClassNameAlreadyExistsForTeacher);
             }
 
+            if (string.IsNullOrWhiteSpace(request.BackgroundImageUrl))
+            {
+                throw new AppException(CustomCode.ProvidedInformationIsInValid);
+            }
+
             var classroom = AppMapper.Mapper.Map<Classroom>(request);
 
             // Automatically create classcode 8 characters (with retry for duplicates)
@@ -66,7 +71,24 @@ namespace Eduva.Application.Features.Classes.Commands.CreateClass
 
             classroom.ClassCode = classCode;
 
+            if (classroom.Id == Guid.Empty)
+                classroom.Id = Guid.NewGuid();
+
             await classroomRepository.AddAsync(classroom);
+
+            var folderRepository = _unitOfWork.GetCustomRepository<IFolderRepository>();
+            var folder = new Folder
+            {
+                Name = $"Thư mục lớp {classroom.Name}",
+                ClassId = classroom.Id,
+                OwnerType = OwnerType.Class,
+                UserId = null,
+                Order = 1,
+                Status = EntityStatus.Active,
+                CreatedAt = DateTimeOffset.UtcNow,
+                LastModifiedAt = DateTimeOffset.UtcNow
+            };
+            await folderRepository.AddAsync(folder);
 
             try
             {
@@ -75,7 +97,6 @@ namespace Eduva.Application.Features.Classes.Commands.CreateClass
             }
             catch (Exception)
             {
-                await _unitOfWork.RollbackAsync();
                 throw new AppException(CustomCode.ClassCreateFailed);
             }
         }

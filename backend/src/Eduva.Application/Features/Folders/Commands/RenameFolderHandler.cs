@@ -1,6 +1,4 @@
 using Eduva.Application.Common.Exceptions;
-using Eduva.Application.Common.Mappings;
-using Eduva.Application.Features.Folders.Responses;
 using Eduva.Application.Interfaces;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
@@ -65,7 +63,6 @@ namespace Eduva.Application.Features.Folders.Commands
             }
             catch (Exception ex)
             {
-                await _unitOfWork.RollbackAsync();
                 _logger.LogError(ex, "Failed to rename folder: {Message}", ex.Message);
                 throw new AppException(CustomCode.FolderUpdateFailed);
             }

@@ -77,7 +77,6 @@ public class ImportUsersFromExcelCommandHandler : IRequestHandler<ImportUsersFro
                 return output.ToArray();
             }
 
-            await _unitOfWork.BeginTransactionAsync();
             try
             {
                 foreach (var (_, cmd) in validCommands)
@@ -90,7 +89,6 @@ public class ImportUsersFromExcelCommandHandler : IRequestHandler<ImportUsersFro
             }
             catch
             {
-                await _unitOfWork.RollbackAsync();
                 throw new AppException(CustomCode.SystemError);
             }
         }

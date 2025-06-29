@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Eduva.Infrastructure.Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class AddSystemConfig : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -202,7 +202,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     AIServiceType = table.Column<string>(type: "text", nullable: false),
-                    DurationSeconds = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    DurationMinutes = table.Column<decimal>(type: "numeric(18,2)", nullable: false, defaultValue: 0.0m),
                     CreditsCharged = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
@@ -311,6 +311,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     Name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     ClassCode = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: true),
                     TeacherId = table.Column<Guid>(type: "uuid", nullable: false),
+                    BackgroundImageUrl = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     LastModifiedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     Status = table.Column<string>(type: "text", nullable: false)
@@ -476,7 +477,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                         column: x => x.ClassId,
                         principalTable: "Classes",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -488,7 +489,8 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     ApproverId = table.Column<Guid>(type: "uuid", nullable: false),
                     StatusChangeTo = table.Column<string>(type: "text", nullable: false),
                     RequesterNote = table.Column<string>(type: "text", nullable: true),
-                    Feedback = table.Column<string>(type: "text", nullable: true)
+                    Feedback = table.Column<string>(type: "text", nullable: true),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -624,7 +626,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                         column: x => x.FolderId,
                         principalTable: "Folders",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_FolderLessonMaterials_LessonMaterials_LessonMaterialId",
                         column: x => x.LessonMaterialId,
@@ -711,6 +713,11 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 column: "SchoolId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_AspNetUsers_SchoolId_Status",
+                table: "AspNetUsers",
+                columns: new[] { "SchoolId", "Status" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_AspNetUsers_UserName",
                 table: "AspNetUsers",
                 column: "UserName",
@@ -723,9 +730,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Classes_SchoolId",
+                name: "IX_Classes_SchoolId_Status",
                 table: "Classes",
-                column: "SchoolId");
+                columns: new[] { "SchoolId", "Status" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Classes_TeacherId",
@@ -733,9 +740,10 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 column: "TeacherId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_FolderLessonMaterials_FolderId",
+                name: "IX_FolderLessonMaterials_FolderId_LessonMaterialId",
                 table: "FolderLessonMaterials",
-                column: "FolderId");
+                columns: new[] { "FolderId", "LessonMaterialId" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_FolderLessonMaterials_LessonMaterialId",
@@ -778,9 +786,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 column: "CreatedByUserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_LessonMaterials_SchoolId",
+                name: "IX_LessonMaterials_SchoolId_Visibility_LessonStatus",
                 table: "LessonMaterials",
-                column: "SchoolId");
+                columns: new[] { "SchoolId", "Visibility", "LessonStatus" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_PaymentTransactions_UserId",
@@ -803,15 +811,10 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 column: "QuestionId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Schools_ContactEmail",
-                table: "Schools",
-                column: "ContactEmail",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
                 name: "IX_SchoolSubscription_PaymentTransactionId",
                 table: "SchoolSubscription",
-                column: "PaymentTransactionId");
+                column: "PaymentTransactionId",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_SchoolSubscription_PlanId",
@@ -829,9 +832,10 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 column: "ClassId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_StudentClasses_StudentId",
+                name: "IX_StudentClasses_StudentId_ClassId",
                 table: "StudentClasses",
-                column: "StudentId");
+                columns: new[] { "StudentId", "ClassId" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserCreditTransactions_AICreditPackId",

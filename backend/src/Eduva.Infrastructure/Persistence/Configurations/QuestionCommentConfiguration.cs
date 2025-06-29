@@ -18,6 +18,9 @@ namespace Eduva.Infrastructure.Persistence.Configurations
             builder.Property(qc => qc.CreatedByUserId)
                 .IsRequired();
 
+            // Indexes
+            builder.HasIndex(qc => qc.QuestionId);
+
             // Relationships
             builder.HasOne(qc => qc.Question)
                 .WithMany(lmq => lmq.Comments)

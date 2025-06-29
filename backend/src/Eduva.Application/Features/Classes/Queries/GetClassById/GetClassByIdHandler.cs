@@ -21,14 +21,18 @@ namespace Eduva.Application.Features.Classes.Queries.GetClassById
         public async Task<ClassResponse> Handle(GetClassByIdQuery request, CancellationToken cancellationToken)
         {
             var classroomRepository = _unitOfWork.GetCustomRepository<IClassroomRepository>();
-            var classroom = await classroomRepository.GetByIdAsync(request.Id);
+            var userRepository = _unitOfWork.GetCustomRepository<IUserRepository>();
+            var schoolRepository = _unitOfWork.GetCustomRepository<ISchoolRepository>();
 
+            var classroom = await classroomRepository.GetByIdAsync(request.Id);
             if (classroom == null)
             {
                 throw new AppException(CustomCode.ClassNotFound);
             }
 
-            // Check if the user has access to this class (teacher, school admin, or student enrolled)
+            var teacher = await userRepository.GetByIdAsync(classroom.TeacherId);
+            var school = await schoolRepository.GetByIdAsync(classroom.SchoolId);
+
             bool hasAccess = await HasAccessToClass(classroom, request.UserId);
             if (!hasAccess)
             {
@@ -36,8 +40,9 @@ namespace Eduva.Application.Features.Classes.Queries.GetClassById
             }
 
             var response = AppMapper.Mapper.Map<ClassResponse>(classroom);
-            response.TeacherName = classroom.Teacher?.FullName ?? string.Empty;
-            response.SchoolName = classroom.School?.Name ?? string.Empty;
+            response.TeacherName = teacher?.FullName ?? string.Empty;
+            response.SchoolName = school?.Name ?? string.Empty;
+            response.TeacherAvatarUrl = teacher?.AvatarUrl ?? string.Empty;
 
             return response;
         }

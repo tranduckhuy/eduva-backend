@@ -39,7 +39,8 @@ namespace Eduva.Infrastructure.Persistence.Configurations
                 .IsRequired();
 
             builder.Property(lm => lm.SourceUrl)
-                .HasMaxLength(2048);
+                .HasMaxLength(2048)
+                .IsRequired();
 
             builder.Property(lm => lm.Visibility)
                 .HasConversion<string>()
@@ -47,6 +48,9 @@ namespace Eduva.Infrastructure.Persistence.Configurations
 
             builder.Property(lm => lm.CreatedByUserId)
                 .IsRequired();
+
+            // Indexes
+            builder.HasIndex(lm => new { lm.SchoolId, lm.Visibility, lm.LessonStatus });
 
             // Relationships
             builder.HasOne(lm => lm.CreatedByUser)

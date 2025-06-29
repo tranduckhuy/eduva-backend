@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Eduva.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250627113428_AddSystemConfig")]
-    partial class AddSystemConfig
+    [Migration("20250628151624_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -114,10 +114,10 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
 
-                    b.Property<int>("DurationSeconds")
+                    b.Property<decimal>("DurationMinutes")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
+                        .HasColumnType("decimal(18,2)")
+                        .HasDefaultValue(0.0m);
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
@@ -222,6 +222,8 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.HasIndex("UserName")
                         .IsUnique();
 
+                    b.HasIndex("SchoolId", "Status");
+
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
@@ -230,6 +232,11 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<string>("BackgroundImageUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<string>("ClassCode")
                         .HasMaxLength(10)
@@ -258,9 +265,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SchoolId");
-
                     b.HasIndex("TeacherId");
+
+                    b.HasIndex("SchoolId", "Status");
 
                     b.ToTable("Classes");
                 });
@@ -322,9 +329,10 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("FolderId");
-
                     b.HasIndex("LessonMaterialId");
+
+                    b.HasIndex("FolderId", "LessonMaterialId")
+                        .IsUnique();
 
                     b.ToTable("FolderLessonMaterials");
                 });
@@ -393,7 +401,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("CreatedByUserId");
 
-                    b.HasIndex("SchoolId");
+                    b.HasIndex("SchoolId", "Visibility", "LessonStatus");
 
                     b.ToTable("LessonMaterials");
                 });
@@ -406,6 +414,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
                     b.Property<Guid>("ApproverId")
                         .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Feedback")
                         .HasColumnType("text");
@@ -617,9 +628,6 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ContactEmail")
-                        .IsUnique();
-
                     b.ToTable("Schools");
                 });
 
@@ -657,7 +665,8 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PaymentTransactionId");
+                    b.HasIndex("PaymentTransactionId")
+                        .IsUnique();
 
                     b.HasIndex("PlanId");
 
@@ -685,7 +694,8 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("ClassId");
 
-                    b.HasIndex("StudentId");
+                    b.HasIndex("StudentId", "ClassId")
+                        .IsUnique();
 
                     b.ToTable("StudentClasses");
                 });
@@ -1020,7 +1030,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.HasOne("Eduva.Domain.Entities.Folder", "Folder")
                         .WithMany("FolderLessonMaterials")
                         .HasForeignKey("FolderId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Eduva.Domain.Entities.LessonMaterial", "LessonMaterial")
@@ -1159,7 +1169,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.HasOne("Eduva.Domain.Entities.Classroom", "Class")
                         .WithMany("StudentClasses")
                         .HasForeignKey("ClassId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Eduva.Domain.Entities.ApplicationUser", "Student")

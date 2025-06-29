@@ -6,7 +6,6 @@ using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using MediatR;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -20,7 +19,6 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
         private Mock<IGenericRepository<FolderLessonMaterial, int>> _mockFolderLessonMaterialRepository;
         private Mock<ILogger<CreateLessonMaterialHandler>> _mockLogger;
         private Mock<IStorageService> _mockStorageService;
-        private Mock<IDbContextTransaction> _mockTransaction;
         private CreateLessonMaterialHandler _handler;
 
         [SetUp]
@@ -31,14 +29,11 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
             _mockFolderLessonMaterialRepository = new Mock<IGenericRepository<FolderLessonMaterial, int>>();
             _mockLogger = new Mock<ILogger<CreateLessonMaterialHandler>>();
             _mockStorageService = new Mock<IStorageService>();
-            _mockTransaction = new Mock<IDbContextTransaction>();
 
             _mockUnitOfWork.Setup(x => x.GetCustomRepository<ILessonMaterialRepository>())
                 .Returns(_mockLessonMaterialRepository.Object);
             _mockUnitOfWork.Setup(x => x.GetRepository<FolderLessonMaterial, int>())
                 .Returns(_mockFolderLessonMaterialRepository.Object);
-            _mockUnitOfWork.Setup(x => x.BeginTransactionAsync())
-                .ReturnsAsync(_mockTransaction.Object);
 
             _handler = new CreateLessonMaterialHandler(
                 _mockUnitOfWork.Object,
@@ -85,7 +80,6 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
 
             // Assert
             Assert.That(result, Is.EqualTo(Unit.Value));
-            _mockUnitOfWork.Verify(x => x.BeginTransactionAsync(), Times.Once);
             _mockUnitOfWork.Verify(x => x.CommitAsync(), Times.Once);
             _mockLessonMaterialRepository.Verify(x => x.AddAsync(It.IsAny<LessonMaterial>()), Times.Once);
             _mockFolderLessonMaterialRepository.Verify(x => x.AddAsync(It.IsAny<FolderLessonMaterial>()), Times.Once);
@@ -253,7 +247,6 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
             var expectedException = new Exception("Database error");
             _mockLessonMaterialRepository.Setup(x => x.AddAsync(It.IsAny<LessonMaterial>()))
                 .ThrowsAsync(expectedException);
-            _mockUnitOfWork.Setup(x => x.RollbackAsync()).Returns(Task.CompletedTask);
             _mockStorageService.Setup(x => x.DeleteRangeFileAsync(It.IsAny<List<string>>()))
                 .Returns(Task.CompletedTask);
 
@@ -262,7 +255,6 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
                 async () => await _handler.Handle(request, CancellationToken.None));
 
             Assert.That(exception, Is.Not.Null);
-            _mockUnitOfWork.Verify(x => x.RollbackAsync(), Times.Once);
             _mockStorageService.Verify(x => x.DeleteRangeFileAsync(request.BlobNames), Times.Once);
         }
         [Test]
@@ -292,7 +284,6 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
                 .Returns(Task.CompletedTask);
             _mockFolderLessonMaterialRepository.Setup(x => x.AddAsync(It.IsAny<FolderLessonMaterial>()))
                 .ThrowsAsync(expectedException);
-            _mockUnitOfWork.Setup(x => x.RollbackAsync()).Returns(Task.CompletedTask);
             _mockStorageService.Setup(x => x.DeleteRangeFileAsync(It.IsAny<List<string>>()))
                 .Returns(Task.CompletedTask);
 
@@ -301,7 +292,6 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
                 async () => await _handler.Handle(request, CancellationToken.None));
 
             Assert.That(exception, Is.Not.Null);
-            _mockUnitOfWork.Verify(x => x.RollbackAsync(), Times.Once);
             _mockStorageService.Verify(x => x.DeleteRangeFileAsync(request.BlobNames), Times.Once);
         }
         [Test]
@@ -332,7 +322,6 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
             _mockFolderLessonMaterialRepository.Setup(x => x.AddAsync(It.IsAny<FolderLessonMaterial>()))
                 .Returns(Task.CompletedTask);
             _mockUnitOfWork.Setup(x => x.CommitAsync()).ThrowsAsync(expectedException);
-            _mockUnitOfWork.Setup(x => x.RollbackAsync()).Returns(Task.CompletedTask);
             _mockStorageService.Setup(x => x.DeleteRangeFileAsync(It.IsAny<List<string>>()))
                 .Returns(Task.CompletedTask);
 
@@ -341,7 +330,6 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
                 async () => await _handler.Handle(request, CancellationToken.None));
 
             Assert.That(exception, Is.Not.Null);
-            _mockUnitOfWork.Verify(x => x.RollbackAsync(), Times.Once);
             _mockStorageService.Verify(x => x.DeleteRangeFileAsync(request.BlobNames), Times.Once);
         }
 
@@ -370,13 +358,13 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
             var expectedException = new Exception("Test exception");
             _mockLessonMaterialRepository.Setup(x => x.AddAsync(It.IsAny<LessonMaterial>()))
                 .ThrowsAsync(expectedException);
-            _mockUnitOfWork.Setup(x => x.RollbackAsync()).Returns(Task.CompletedTask);
             _mockStorageService.Setup(x => x.DeleteRangeFileAsync(It.IsAny<List<string>>()))
                 .Returns(Task.CompletedTask);
 
             // Act & Assert
             Assert.ThrowsAsync<Exception>(
-                async () => await _handler.Handle(request, CancellationToken.None));            // Verify that error was logged
+                async () => await _handler.Handle(request, CancellationToken.None));
+            // Verify that error was logged
             _mockLogger.Verify(
                 x => x.Log(
                     LogLevel.Error,
@@ -507,8 +495,8 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
                 }
             };
 
-            var expectedException = new Exception("Transaction begin error");
-            _mockUnitOfWork.Setup(x => x.BeginTransactionAsync())
+            var expectedException = new Exception("Repository setup error");
+            _mockLessonMaterialRepository.Setup(x => x.AddAsync(It.IsAny<LessonMaterial>()))
                 .ThrowsAsync(expectedException);
             _mockStorageService.Setup(x => x.DeleteRangeFileAsync(It.IsAny<List<string>>()))
                 .Returns(Task.CompletedTask);
@@ -518,7 +506,6 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
                 async () => await _handler.Handle(request, CancellationToken.None));
 
             Assert.That(exception, Is.Not.Null);
-            _mockUnitOfWork.Verify(x => x.RollbackAsync(), Times.Once); // Actually gets called in catch block
             _mockStorageService.Verify(x => x.DeleteRangeFileAsync(request.BlobNames), Times.Once);
         }
 

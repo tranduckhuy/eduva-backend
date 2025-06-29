@@ -261,6 +261,24 @@ namespace Eduva.API.Test.Middlewares
         #region Endpoint Metadata Tests
 
         [Test]
+        public async Task Invoke_ShouldCallNext_WhenEndpointMetadataDoesNotContainAccessAttribute()
+        {
+            // Arrange
+            var endpoint = new Endpoint(
+                c => Task.CompletedTask,
+                new EndpointMetadataCollection(new object()),
+                "TestEndpoint"
+            );
+            _httpContext.SetEndpoint(endpoint);
+
+            // Act
+            await _middleware.Invoke(_httpContext, _subscriptionServiceMock.Object);
+
+            // Assert
+            _nextMock.Verify(n => n(_httpContext), Times.Once);
+        }
+
+        [Test]
         public async Task Invoke_ShouldCallNext_WhenEndpointIsNull()
         {
             // Arrange

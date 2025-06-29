@@ -10,6 +10,7 @@ namespace Eduva.Domain.Entities
         public LessonMaterialStatus StatusChangeTo { get; set; }
         public string? RequesterNote { get; set; }
         public string? Feedback { get; set; }
+        public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
         // Navigation properties
         public virtual ApplicationUser Approver { get; set; } = default!;
