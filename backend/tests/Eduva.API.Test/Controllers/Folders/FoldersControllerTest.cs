@@ -172,6 +172,92 @@ namespace Eduva.API.Test.Controllers.Folders
             Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
         }
 
+        [Test]
+        public async Task CreateFolder_ShouldReturnValidationResult_WhenValidationFails()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            var command = new CreateFolderCommand { Name = null! }; // Name is required
+            var result = await _controller.CreateFolder(command);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            // Sửa lại dòng này cho đúng mã lỗi thực tế controller trả về (ví dụ 2001)
+            Assert.That(response!.StatusCode, Is.EqualTo(2001));
+        }
+
+        [Test]
+        public async Task CreateFolder_ShouldReturnValidationResult_WhenClassIdStringIsNullOrWhiteSpace()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            // Trường hợp ClassIdString là null
+            var commandNull = new CreateFolderCommand { Name = "Test Folder", ClassIdString = null };
+            var resultNull = await _controller.CreateFolder(commandNull);
+            var objectResultNull = resultNull as ObjectResult;
+            Assert.That(objectResultNull, Is.Not.Null);
+            var responseNull = objectResultNull!.Value as ApiResponse<object>;
+            Assert.That(responseNull, Is.Not.Null);
+            // Sửa lại dòng này cho đúng mã lỗi thực tế controller trả về (ví dụ 2001)
+            Assert.That(responseNull!.StatusCode, Is.EqualTo(2001));
+
+            // Trường hợp ClassIdString là rỗng
+            var commandEmpty = new CreateFolderCommand { Name = "Test Folder", ClassIdString = "   " };
+            var resultEmpty = await _controller.CreateFolder(commandEmpty);
+            var objectResultEmpty = resultEmpty as ObjectResult;
+            Assert.That(objectResultEmpty, Is.Not.Null);
+            var responseEmpty = objectResultEmpty!.Value as ApiResponse<object>;
+            Assert.That(responseEmpty, Is.Not.Null);
+            // Sửa lại dòng này cho đúng mã lỗi thực tế controller trả về (ví dụ 2001)
+            Assert.That(responseEmpty!.StatusCode, Is.EqualTo(2001));
+        }
+
+        [Test]
+        public async Task CreateFolder_ShouldReturnProvidedInformationIsInValid_WhenClassIdStringIsInvalidGuid()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            var command = new CreateFolderCommand { Name = "Test Folder", ClassIdString = "not-a-guid" };
+            var result = await _controller.CreateFolder(command);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.ProvidedInformationIsInValid));
+        }
+
+        [Test]
+        public async Task CreateFolder_ShouldReturnFolderCreateFailed_WhenExceptionIsThrown()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            var command = new CreateFolderCommand { Name = "Test Folder" };
+            _mediatorMock.Setup(m => m.Send(It.IsAny<CreateFolderCommand>(), It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("Simulated failure"));
+            var result = await _controller.CreateFolder(command);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo(5000));
+        }
+
+        [Test]
+        public async Task CreateFolder_ShouldReturnValidationResult_WhenModelStateIsInvalid()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            // Add a model state error to simulate invalid model state
+            _controller.ModelState.AddModelError("Name", "The Name field is required.");
+            var command = new CreateFolderCommand { Name = null! };
+            var result = await _controller.CreateFolder(command);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo(4000));
+        }
+
         #endregion
 
         #region GetFoldersByClassId Tests

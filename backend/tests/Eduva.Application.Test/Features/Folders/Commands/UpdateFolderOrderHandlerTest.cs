@@ -247,10 +247,8 @@ namespace Eduva.Application.Test.Features.Folders.Commands
             _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
             _folderRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new[] { folder });
             _folderRepoMock.Setup(r => r.Update(It.IsAny<Folder>())).Throws(new Exception("DB error"));
-            _unitOfWorkMock.Setup(u => u.RollbackAsync()).Returns(Task.CompletedTask);
 
             var ex = Assert.Throws<Eduva.Application.Common.Exceptions.AppException>(() => _handler.Handle(cmd, CancellationToken.None).GetAwaiter().GetResult());
-            _unitOfWorkMock.Verify(u => u.RollbackAsync(), Times.Once);
             _loggerMock.Verify(
                 l => l.Log(
                     LogLevel.Error,

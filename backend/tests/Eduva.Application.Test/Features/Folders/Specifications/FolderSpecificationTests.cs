@@ -1,10 +1,6 @@
 using Eduva.Application.Features.Folders.Specifications;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
-using NUnit.Framework;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Eduva.Application.Test.Features.Folders.Specifications;
 
@@ -164,6 +160,34 @@ public class FolderSpecificationTests
         var spec = new FolderSpecification(param);
         var result = _folders.AsQueryable().Where(spec.Criteria).ToList();
         Assert.That(result.All(f => f.Name.ToLower().Contains(searchTerm) && f.Name.ToLower().Contains(name.ToLower())));
+    }
+
+    [TestCase("asc", false, TestName = "OrderBy_ShouldSortByLastModifiedAt_Ascending")]
+    [TestCase("desc", true, TestName = "OrderBy_ShouldSortByLastModifiedAt_Descending")]
+    public void OrderBy_ShouldSortBy_LastModifiedAt(string sortDirection, bool expectDescending)
+    {
+        // Add LastModifiedAt values for testing
+        _folders[0].LastModifiedAt = DateTime.UtcNow.AddDays(-2);
+        _folders[1].LastModifiedAt = DateTime.UtcNow.AddDays(-1);
+        _folders[2].LastModifiedAt = DateTime.UtcNow;
+        var spec = new FolderSpecification(new FolderSpecParam
+        {
+            SortBy = "lastmodifiedat",
+            SortDirection = sortDirection,
+            PageIndex = 1,
+            PageSize = 10
+        });
+        var query = _folders.AsQueryable();
+        var result = spec.OrderBy?.Invoke(query).ToList();
+        Assert.That(result, Is.Not.Null);
+        if (expectDescending)
+        {
+            Assert.That(result, Is.Ordered.Descending.By("LastModifiedAt"));
+        }
+        else
+        {
+            Assert.That(result, Is.Ordered.Ascending.By("LastModifiedAt"));
+        }
     }
 
     #endregion
