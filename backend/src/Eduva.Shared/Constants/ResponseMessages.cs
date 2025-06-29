@@ -234,6 +234,10 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status403Forbidden, Message = "You do not have permission to modify this class as you are not the teacher of this class" } },
             { CustomCode.NotAdminForClassList, new MessageDetail {
                 HttpCode = StatusCodes.Status403Forbidden, Message = "Only system administrators and school administrators can view all classes" } },
+            { CustomCode.StudentNotEnrolled, new MessageDetail {
+                HttpCode = StatusCodes.Status404NotFound, Message = "Student is not enrolled in this class" } },
+            { CustomCode.StudentRemovalFailed, new MessageDetail {
+                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to remove student from class" } },
 
             #endregion
         };
