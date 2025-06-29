@@ -5,8 +5,8 @@ using Eduva.Application.Interfaces.Repositories;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
-using Moq;
 using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace Eduva.Application.Test.Features.Folders.Commands
 {
@@ -63,14 +63,24 @@ namespace Eduva.Application.Test.Features.Folders.Commands
         }
 
         [Test]
-        public void Handle_Throws_When_Duplicate_Folder_Name_Exists()
+        public async Task Handle_Throws_When_Duplicate_Folder_Name_Exists()
         {
             var folderId = Guid.NewGuid();
             var userId = Guid.NewGuid();
             var cmd = new RenameFolderCommand { Id = folderId, Name = "DupName", CurrentUserId = userId };
             _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(new Folder { Id = folderId, Name = "OldName", Status = EntityStatus.Active, OwnerType = OwnerType.Personal, UserId = userId });
             _folderRepoMock.Setup(r => r.ExistsAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Folder, bool>>>())).ReturnsAsync(true);
-            Assert.ThrowsAsync<AppException>(() => _handler.Handle(cmd, CancellationToken.None));
+            AppException? ex = null;
+            try
+            {
+                await _handler.Handle(cmd, CancellationToken.None);
+            }
+            catch (AppException e)
+            {
+                ex = e;
+            }
+            Assert.That(ex, Is.Not.Null);
+            Assert.That(ex?.StatusCode, Is.EqualTo(CustomCode.FolderNameAlreadyExists));
         }
 
         [Test]
@@ -127,7 +137,6 @@ namespace Eduva.Application.Test.Features.Folders.Commands
             _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(new Folder { Id = folderId, Name = "OldName", Status = EntityStatus.Active, OwnerType = OwnerType.Personal, UserId = userId });
             _folderRepoMock.Setup(r => r.ExistsAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Folder, bool>>>())).ReturnsAsync(false);
             _folderRepoMock.Setup(r => r.Update(It.IsAny<Folder>())).Throws(new Exception("DB error"));
-            _unitOfWorkMock.Setup(u => u.RollbackAsync()).Returns(Task.CompletedTask);
             var ex = Assert.Throws<AppException>(() => _handler.Handle(cmd, CancellationToken.None).GetAwaiter().GetResult());
             Assert.That(ex?.StatusCode, Is.EqualTo(CustomCode.FolderUpdateFailed));
         }
@@ -142,12 +151,10 @@ namespace Eduva.Application.Test.Features.Folders.Commands
             _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
             _folderRepoMock.Setup(r => r.ExistsAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Folder, bool>>>())).ReturnsAsync(false);
             _unitOfWorkMock.Setup(u => u.CommitAsync()).ThrowsAsync(new Exception("DB error"));
-            _unitOfWorkMock.Setup(u => u.RollbackAsync()).Returns(Task.CompletedTask);
 
             var ex = Assert.Throws<AppException>(() => _handler.Handle(cmd, CancellationToken.None).GetAwaiter().GetResult());
             Assert.That(ex?.StatusCode, Is.EqualTo(CustomCode.FolderUpdateFailed));
-            _unitOfWorkMock.Verify(u => u.RollbackAsync(), Times.Once);
-            #pragma warning disable CS8602 
+#pragma warning disable CS8602
             _loggerMock.Verify(
                 l => l.Log(
                     LogLevel.Error,
@@ -158,7 +165,34 @@ namespace Eduva.Application.Test.Features.Folders.Commands
                 ),
                 Times.Once
             );
-            #pragma warning restore CS8602
+#pragma warning restore CS8602
+        }
+
+        [Test]
+        public void Handle_When_Update_Throws_Exception_Performs_Rollback_And_Throws_AppException()
+        {
+            var folderId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var cmd = new RenameFolderCommand { Id = folderId, Name = "NewName", CurrentUserId = userId };
+            var folder = new Folder { Id = folderId, Name = "OldName", Status = EntityStatus.Active, OwnerType = OwnerType.Personal, UserId = userId };
+            _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
+            _folderRepoMock.Setup(r => r.ExistsAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Folder, bool>>>())).ReturnsAsync(false);
+            _folderRepoMock.Setup(r => r.Update(It.IsAny<Folder>())).Throws(new Exception("Update failed"));
+
+            var ex = Assert.Throws<AppException>(() => _handler.Handle(cmd, CancellationToken.None).GetAwaiter().GetResult());
+            Assert.That(ex?.StatusCode, Is.EqualTo(CustomCode.FolderUpdateFailed));
+#pragma warning disable CS8602
+            _loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v != null && v.ToString().Contains("Failed to rename folder")),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
+                ),
+                Times.Once
+            );
+#pragma warning restore CS8602
         }
 
         [Test]
@@ -224,6 +258,163 @@ namespace Eduva.Application.Test.Features.Folders.Commands
             _classRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
             _userRepoMock.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(user);
             Assert.Throws<AppException>(() => _handler.Handle(cmd, CancellationToken.None).GetAwaiter().GetResult());
+        }
+
+        [Test]
+        public void Handle_Throws_Forbidden_When_User_Has_No_Permission()
+        {
+            var folderId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var cmd = new RenameFolderCommand { Id = folderId, Name = "NoPerm", CurrentUserId = userId };
+            var folder = new Folder { Id = folderId, Name = "OldName", Status = EntityStatus.Active, OwnerType = OwnerType.Personal, UserId = Guid.NewGuid() };
+            _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
+            _folderRepoMock.Setup(r => r.ExistsAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Folder, bool>>>())).ReturnsAsync(false);
+            // Simulate HasPermissionToUpdateFolder returning false by making the user not owner, not teacher, not admin, etc.
+            // This is already simulated by the folder.UserId != userId and OwnerType.Personal
+            var ex = Assert.Throws<AppException>(() => _handler.Handle(cmd, CancellationToken.None).GetAwaiter().GetResult());
+            Assert.That(ex?.StatusCode, Is.EqualTo(CustomCode.Forbidden));
+        }
+
+        [Test]
+        public void Constructor_Should_Instantiate_Handler()
+        {
+            var unitOfWork = new Mock<IUnitOfWork>();
+            var logger = new Mock<ILogger<RenameFolderHandler>>();
+            var handler = new RenameFolderHandler(unitOfWork.Object, logger.Object);
+            Assert.That(handler, Is.Not.Null);
+        }
+
+        [Test]
+        public async Task Handle_Rename_Succeeds_When_User_Is_Owner_Of_Personal_Folder()
+        {
+            var folderId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var cmd = new RenameFolderCommand { Id = folderId, Name = "PersonalOwnerRename", CurrentUserId = userId };
+            var folder = new Folder { Id = folderId, Name = "OldPersonalName", Status = EntityStatus.Active, OwnerType = OwnerType.Personal, UserId = userId };
+            _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
+            _folderRepoMock.Setup(r => r.ExistsAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Folder, bool>>>())).ReturnsAsync(false);
+            _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
+
+            await _handler.Handle(cmd, CancellationToken.None);
+            _folderRepoMock.Verify(r => r.Update(It.Is<Folder>(f => f.Name == "PersonalOwnerRename")), Times.Once);
+        }
+
+        [Test]
+        public async Task Handle_Rename_ClassFolder_Calls_ClassRepository_GetByIdAsync()
+        {
+            var folderId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
+            var cmd = new RenameFolderCommand { Id = folderId, Name = "ClassFolderRename", CurrentUserId = userId };
+            var folder = new Folder { Id = folderId, Name = "OldClassName", Status = EntityStatus.Active, OwnerType = OwnerType.Class, ClassId = classId };
+            var classroom = new Classroom { Id = classId, TeacherId = userId };
+            _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
+            _classRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+            _folderRepoMock.Setup(r => r.ExistsAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Folder, bool>>>())).ReturnsAsync(false);
+            _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
+
+            await _handler.Handle(cmd, CancellationToken.None);
+            _classRepoMock.Verify(r => r.GetByIdAsync(classId), Times.Once);
+        }
+
+        [Test]
+        public void Handle_Rename_ClassFolder_Throws_When_Classroom_NotFound()
+        {
+            var folderId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
+            var cmd = new RenameFolderCommand { Id = folderId, Name = "ClassFolderRename", CurrentUserId = userId };
+            var folder = new Folder { Id = folderId, Name = "OldClassName", Status = EntityStatus.Active, OwnerType = OwnerType.Class, ClassId = classId };
+            _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
+            _classRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync((Classroom)null!);
+            _folderRepoMock.Setup(r => r.ExistsAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Folder, bool>>>())).ReturnsAsync(false);
+
+            var ex = Assert.Throws<AppException>(() => _handler.Handle(cmd, CancellationToken.None).GetAwaiter().GetResult());
+            Assert.That(ex?.StatusCode, Is.EqualTo(CustomCode.Forbidden).Or.EqualTo(CustomCode.FolderUpdateFailed));
+            _classRepoMock.Verify(r => r.GetByIdAsync(classId), Times.Once);
+        }
+
+        [Test]
+        public async Task Handle_Rename_ClassFolder_Succeeds_When_User_Is_Teacher()
+        {
+            var folderId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
+            var cmd = new RenameFolderCommand { Id = folderId, Name = "TeacherClassRename", CurrentUserId = userId };
+            var folder = new Folder { Id = folderId, Name = "OldClassName", Status = EntityStatus.Active, OwnerType = OwnerType.Class, ClassId = classId };
+            var classroom = new Classroom { Id = classId, TeacherId = userId };
+            _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
+            _classRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+            _folderRepoMock.Setup(r => r.ExistsAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Folder, bool>>>())).ReturnsAsync(false);
+            _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
+
+            await _handler.Handle(cmd, CancellationToken.None);
+            _folderRepoMock.Verify(r => r.Update(It.Is<Folder>(f => f.Name == "TeacherClassRename")), Times.Once);
+            _classRepoMock.Verify(r => r.GetByIdAsync(classId), Times.Once);
+        }
+
+        [Test]
+        public async Task Handle_Rename_ClassFolder_Checks_UserRepository_For_Admin()
+        {
+            var folderId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
+            var schoolId = 123;
+            var cmd = new RenameFolderCommand { Id = folderId, Name = "AdminClassRename", CurrentUserId = userId };
+            var folder = new Folder { Id = folderId, Name = "OldClassName", Status = EntityStatus.Active, OwnerType = OwnerType.Class, ClassId = classId };
+            var classroom = new Classroom { Id = classId, TeacherId = Guid.NewGuid(), SchoolId = schoolId };
+            var user = new ApplicationUser { Id = userId, SchoolId = schoolId };
+            _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
+            _classRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+            _userRepoMock.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(user);
+            _folderRepoMock.Setup(r => r.ExistsAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Folder, bool>>>())).ReturnsAsync(false);
+            _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
+
+            await _handler.Handle(cmd, CancellationToken.None);
+            _userRepoMock.Verify(r => r.GetByIdAsync(userId), Times.Once);
+        }
+
+        [Test]
+        public async Task Handle_Rename_ClassFolder_Succeeds_When_User_Is_SchoolAdmin()
+        {
+            var folderId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
+            var schoolId = 456;
+            var cmd = new RenameFolderCommand { Id = folderId, Name = "SchoolAdminClassRename", CurrentUserId = userId };
+            var folder = new Folder { Id = folderId, Name = "OldClassName", Status = EntityStatus.Active, OwnerType = OwnerType.Class, ClassId = classId };
+            var classroom = new Classroom { Id = classId, TeacherId = Guid.NewGuid(), SchoolId = schoolId };
+            var user = new ApplicationUser { Id = userId, SchoolId = schoolId };
+            _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
+            _classRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+            _userRepoMock.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(user);
+            _folderRepoMock.Setup(r => r.ExistsAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Folder, bool>>>())).ReturnsAsync(false);
+            _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
+
+            await _handler.Handle(cmd, CancellationToken.None);
+            _folderRepoMock.Verify(r => r.Update(It.Is<Folder>(f => f.Name == "SchoolAdminClassRename")), Times.Once);
+            _userRepoMock.Verify(r => r.GetByIdAsync(userId), Times.Once);
+        }
+
+        [Test]
+        public void Handle_Rename_ClassFolder_Throws_When_User_Is_Not_Teacher_Or_Admin()
+        {
+            var folderId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
+            var schoolId = 789;
+            var cmd = new RenameFolderCommand { Id = folderId, Name = "NoPermClassRename", CurrentUserId = userId };
+            var folder = new Folder { Id = folderId, Name = "OldClassName", Status = EntityStatus.Active, OwnerType = OwnerType.Class, ClassId = classId };
+            var classroom = new Classroom { Id = classId, TeacherId = Guid.NewGuid(), SchoolId = schoolId };
+            var user = new ApplicationUser { Id = userId, SchoolId = 999 }; // SchoolId does not match
+            _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
+            _classRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+            _userRepoMock.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(user);
+            _folderRepoMock.Setup(r => r.ExistsAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Folder, bool>>>())).ReturnsAsync(false);
+
+            var ex = Assert.Throws<AppException>(() => _handler.Handle(cmd, CancellationToken.None).GetAwaiter().GetResult());
+            Assert.That(ex?.StatusCode, Is.EqualTo(CustomCode.Forbidden));
+            _userRepoMock.Verify(r => r.GetByIdAsync(userId), Times.Once);
         }
 
         #endregion

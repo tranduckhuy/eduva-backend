@@ -123,7 +123,6 @@ namespace Eduva.Application.Test.Features.Folders.Commands
             _folderRepoMock.Setup(r => r.ExistsAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Folder, bool>>>())).ReturnsAsync(false);
             _folderRepoMock.Setup(r => r.GetMaxOrderAsync(userId, null)).ReturnsAsync(0);
             _folderRepoMock.Setup(r => r.AddAsync(It.IsAny<Folder>())).Throws(new Exception());
-            _unitOfWorkMock.Setup(u => u.RollbackAsync()).Returns(Task.CompletedTask);
             var ex = await TestDelegateWithException<AppException>(() => _handler.Handle(cmd, default));
             Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.FolderCreateFailed));
         }
