@@ -423,28 +423,29 @@ namespace Eduva.API.Test.Controllers.Users
         #region GetUsersAsync Tests
 
         [Test]
-        public async Task GetUsersAsync_ShouldCallMediator_WhenUserIsSystemAdmin()
+        public async Task GetUsersAsync_ShouldSetSchoolId_WhenSchoolAdminHasSchool()
         {
             // Arrange
             var userId = Guid.NewGuid();
-            SetupUser(userId.ToString(), role: nameof(Role.SystemAdmin));
+            var schoolId = 100;
+
+            SetupUser(userId.ToString(), role: nameof(Role.SchoolAdmin));
+
+            _userManagerMock.Setup(u => u.FindByIdAsync(userId.ToString()))
+                .ReturnsAsync(new ApplicationUser { Id = userId, SchoolId = schoolId });
 
             var param = new UserSpecParam();
 
-            _mediatorMock
-                .Setup(m => m.Send(It.IsAny<GetUsersBySpecQuery>(), It.IsAny<CancellationToken>()))
+            _mediatorMock.Setup(m => m.Send(It.IsAny<GetUsersBySpecQuery>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new Pagination<UserResponse>());
 
             // Act
             var result = await _controller.GetUsersAsync(param);
 
             // Assert
-            var objectResult = result as ObjectResult;
-            Assert.That(objectResult, Is.Not.Null);
-
-            var response = objectResult!.Value as ApiResponse<object>;
-            Assert.That(response, Is.Not.Null);
-            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+            _mediatorMock.Verify(m => m.Send(
+                It.Is<GetUsersBySpecQuery>(q => ((UserSpecParam)q.Param).SchoolId == schoolId),
+                It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]
