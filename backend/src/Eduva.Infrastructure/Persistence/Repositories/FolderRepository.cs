@@ -34,5 +34,13 @@ namespace Eduva.Infrastructure.Persistence.Repositories
 
             return 0;
         }
+
+        public async Task<Folder?> GetFolderWithMaterialsAsync(Guid folderId)
+        {
+            return await _context.Folders
+                .Include(f => f.FolderLessonMaterials)
+                    .ThenInclude(flm => flm.LessonMaterial)
+                .FirstOrDefaultAsync(f => f.Id == folderId);
+        }
     }
 }

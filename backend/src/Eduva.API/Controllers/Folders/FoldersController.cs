@@ -1,6 +1,7 @@
 using Eduva.API.Attributes;
 using Eduva.API.Controllers.Base;
 using Eduva.API.Models;
+using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Common.Models;
 using Eduva.Application.Features.Folders.Commands;
 using Eduva.Application.Features.Folders.Queries;
@@ -216,6 +217,106 @@ namespace Eduva.API.Controllers.Folders
             {
                 await _mediator.Send(command);
             });
+        }
+        [HttpPut("{id}/archive")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> ArchiveFolder(Guid id)
+        {
+            var validationResult = CheckModelStateValidity();
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var currentUserId))
+            {
+                return Respond(CustomCode.UserIdNotFound);
+            }
+
+            var command = new ArchiveFolderCommand
+            {
+                Id = id,
+                CurrentUserId = currentUserId
+            };
+
+            return await HandleRequestAsync(async () =>
+            {
+                await _mediator.Send(command);
+            });
+        }
+        [HttpPut("{id}/restore")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> RestoreFolder(Guid id)
+        {
+            var validationResult = CheckModelStateValidity();
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var currentUserId))
+            {
+                return Respond(CustomCode.UserIdNotFound);
+            }
+
+            var command = new RestoreFolderCommand
+            {
+                Id = id,
+                CurrentUserId = currentUserId
+            };
+
+            return await HandleRequestAsync(async () =>
+            {
+                await _mediator.Send(command);
+            });
+        }
+
+        [HttpDelete("{id}")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
+        [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> DeleteFolder(Guid id)
+        {
+            var validationResult = CheckModelStateValidity();
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var currentUserId))
+            {
+                return Respond(CustomCode.UserIdNotFound);
+            }
+            var command = new DeleteFolderCommand
+            {
+                Id = id,
+                CurrentUserId = currentUserId
+            };
+
+            try
+            {
+                var result = await _mediator.Send(command);
+                if (result)
+                {
+                    return Respond(CustomCode.Deleted);
+                }
+                return Respond(CustomCode.FolderDeleteFailed);
+            }
+            catch (AppException ex)
+            {
+                return Respond(ex.StatusCode, ex.Errors);
+            }
+            catch (Exception)
+            {
+                return Respond(CustomCode.FolderDeleteFailed);
+            }
         }
     }
 }
