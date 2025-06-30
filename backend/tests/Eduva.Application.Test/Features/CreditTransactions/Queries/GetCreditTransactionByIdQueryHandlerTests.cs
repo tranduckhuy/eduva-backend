@@ -145,8 +145,11 @@ namespace Eduva.Application.Test.Features.CreditTransactions.Queries
 
             // Assert
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.Id, Is.EqualTo(id));
-            Assert.That(result.Credits, Is.EqualTo(300));
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Id, Is.EqualTo(id));
+                Assert.That(result.Credits, Is.EqualTo(300));
+            });
         }
 
         [Test]
