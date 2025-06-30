@@ -11,7 +11,7 @@ using Eduva.Shared.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 
-namespace Eduva.Application.Features.Users.Queries
+namespace Eduva.Application.Features.Schools.Queries
 {
     public class GetUserByIdForSchoolAdminQueryHandler : IRequestHandler<GetUserByIdForSchoolAdminQuery, UserResponse>
     {

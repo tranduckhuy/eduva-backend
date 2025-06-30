@@ -1,7 +1,7 @@
 ﻿using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Common.Mappings;
 using Eduva.Application.Exceptions.Auth;
-using Eduva.Application.Features.Users.Queries;
+using Eduva.Application.Features.Schools.Queries;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Application.Interfaces.Services;
@@ -11,7 +11,7 @@ using Eduva.Shared.Enums;
 using Microsoft.AspNetCore.Identity;
 using Moq;
 
-namespace Eduva.Application.Test.Features.Users.Queries
+namespace Eduva.Application.Test.Features.Schools.Queries
 {
     [TestFixture]
     public class GetUserByIdForSchoolAdminQueryHandlerTests
