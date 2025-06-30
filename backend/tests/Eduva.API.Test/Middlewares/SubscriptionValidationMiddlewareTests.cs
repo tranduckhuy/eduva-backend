@@ -44,6 +44,23 @@ namespace Eduva.API.Test.Middlewares
             _nextMock.Verify(n => n(_httpContext), Times.Once);
         }
 
+        [Test]
+        public async Task Invoke_ShouldCallNext_WhenEndpointHasMetadataButNoSubscriptionAccessAttribute()
+        {
+            var endpoint = new Endpoint(
+                c => Task.CompletedTask,
+                new EndpointMetadataCollection(new object(), "some other metadata"),
+                "TestEndpoint"
+            );
+            _httpContext.SetEndpoint(endpoint);
+
+            // Act
+            await _middleware.Invoke(_httpContext, _subscriptionServiceMock.Object);
+
+            // Assert
+            _nextMock.Verify(n => n(_httpContext), Times.Once);
+        }
+
         #endregion
 
         #region Authentication Tests

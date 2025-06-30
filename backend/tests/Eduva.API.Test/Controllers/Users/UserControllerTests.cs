@@ -423,6 +423,32 @@ namespace Eduva.API.Test.Controllers.Users
         #region GetUsersAsync Tests
 
         [Test]
+        public async Task GetUsersAsync_ShouldReturnUserNotPartOfSchool_WhenUserManagerReturnsNull()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            SetupUser(userId.ToString(), role: nameof(Role.SchoolAdmin));
+
+            // UserManager returns null instead of user
+            _userManagerMock
+                .Setup(m => m.FindByIdAsync(userId.ToString()))
+                .ReturnsAsync((ApplicationUser?)null);
+
+            var param = new UserSpecParam();
+
+            // Act
+            var result = await _controller.GetUsersAsync(param);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserNotPartOfSchool));
+        }
+
+        [Test]
         public async Task GetUsersAsync_ShouldSetSchoolId_WhenSchoolAdminHasSchool()
         {
             // Arrange
@@ -952,6 +978,116 @@ namespace Eduva.API.Test.Controllers.Users
             var result = await _controller.DeleteUser(Guid.NewGuid());
 
             var objectResult = result as ObjectResult;
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
+        }
+
+        #endregion
+
+        #region GetSchoolUserByIdAsync Tests
+
+        [Test]
+        public async Task GetSchoolUserByIdAsync_ShouldReturnUserIdNotFound_WhenCurrentUserIdIsInvalid()
+        {
+            SetupUser("invalid-guid", role: nameof(Role.SchoolAdmin));
+
+            var result = await _controller.GetSchoolUserByIdAsync(Guid.NewGuid());
+
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task GetSchoolUserByIdAsync_ShouldReturnUserIdNotFound_WhenCurrentUserIdIsNull()
+        {
+            SetupUser(null, role: nameof(Role.SchoolAdmin));
+
+            var result = await _controller.GetSchoolUserByIdAsync(Guid.NewGuid());
+
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task GetSchoolUserByIdAsync_ShouldReturnOk_WhenRequestIsValid()
+        {
+            // Arrange
+            var currentUserId = Guid.NewGuid();
+            var targetUserId = Guid.NewGuid();
+            SetupUser(currentUserId.ToString(), role: nameof(Role.SchoolAdmin));
+
+            var expectedUserResponse = new UserResponse
+            {
+                Id = targetUserId,
+                FullName = "Target User",
+                Email = "target@example.com",
+                PhoneNumber = "1234567890",
+                AvatarUrl = "https://example.com/avatar.jpg",
+                School = new SchoolResponse
+                {
+                    Id = 1,
+                    Name = "Test School",
+                    ContactEmail = "contact@test.edu.vn",
+                    ContactPhone = "123456789",
+                    WebsiteUrl = "https://test.edu.vn"
+                },
+                Roles = new List<string> { "Student" },
+                CreditBalance = 100
+            };
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<GetUserByIdForSchoolAdminQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(expectedUserResponse);
+
+            // Act
+            var result = await _controller.GetSchoolUserByIdAsync(targetUserId);
+
+            // Assert
+            Assert.That(result, Is.Not.Null);
+
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+                Assert.That(response.Data, Is.Not.Null);
+            });
+
+            var userData = response.Data as UserResponse;
+            Assert.That(userData, Is.Not.Null);
+            Assert.That(userData!.Id, Is.EqualTo(expectedUserResponse.Id));
+
+            _mediatorMock.Verify(m => m.Send(
+                It.Is<GetUserByIdForSchoolAdminQuery>(q =>
+                    q.RequesterId == currentUserId && q.TargetUserId == targetUserId),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Test]
+        public async Task GetSchoolUserByIdAsync_ShouldReturnInternalServerError_WhenExceptionThrown()
+        {
+            var currentUserId = Guid.NewGuid();
+            var targetUserId = Guid.NewGuid();
+            SetupUser(currentUserId.ToString(), role: nameof(Role.SchoolAdmin));
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<GetUserByIdForSchoolAdminQuery>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new Exception("Database error"));
+
+            var result = await _controller.GetSchoolUserByIdAsync(targetUserId);
+
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
             Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
         }
 
