@@ -8,6 +8,7 @@ using Eduva.Application.Features.Schools.Commands.UpdateSchool;
 using Eduva.Application.Features.Schools.Queries;
 using Eduva.Application.Features.Schools.Responses;
 using Eduva.Application.Features.Schools.Specifications;
+using Eduva.Application.Features.Users.Responses;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
@@ -416,13 +417,131 @@ namespace Eduva.API.Test.Controllers.School
 
         #endregion
 
+        #region GetSchoolUserByIdAsync Tests
+
+        [Test]
+        public async Task GetSchoolUserByIdAsync_ShouldReturnUserIdNotFound_WhenCurrentUserIdIsInvalid()
+        {
+            SetupUser("invalid-guid", role: nameof(Role.SchoolAdmin));
+
+            var result = await _controller.GetSchoolUserByIdAsync(Guid.NewGuid());
+
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task GetSchoolUserByIdAsync_ShouldReturnUserIdNotFound_WhenCurrentUserIdIsNull()
+        {
+            SetupUser(null, role: nameof(Role.SchoolAdmin));
+
+            var result = await _controller.GetSchoolUserByIdAsync(Guid.NewGuid());
+
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task GetSchoolUserByIdAsync_ShouldReturnOk_WhenRequestIsValid()
+        {
+            // Arrange
+            var currentUserId = Guid.NewGuid();
+            var targetUserId = Guid.NewGuid();
+            SetupUser(currentUserId.ToString(), role: nameof(Role.SchoolAdmin));
+
+            var expectedUserResponse = new UserResponse
+            {
+                Id = targetUserId,
+                FullName = "Target User",
+                Email = "target@example.com",
+                PhoneNumber = "1234567890",
+                AvatarUrl = "https://example.com/avatar.jpg",
+                School = new SchoolResponse
+                {
+                    Id = 1,
+                    Name = "Test School",
+                    ContactEmail = "contact@test.edu.vn",
+                    ContactPhone = "123456789",
+                    WebsiteUrl = "https://test.edu.vn"
+                },
+                Roles = new List<string> { "Student" },
+                CreditBalance = 100
+            };
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<GetUserByIdForSchoolAdminQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(expectedUserResponse);
+
+            // Act
+            var result = await _controller.GetSchoolUserByIdAsync(targetUserId);
+
+            // Assert
+            Assert.That(result, Is.Not.Null);
+
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+                Assert.That(response.Data, Is.Not.Null);
+            });
+
+            var userData = response.Data as UserResponse;
+            Assert.That(userData, Is.Not.Null);
+            Assert.That(userData!.Id, Is.EqualTo(expectedUserResponse.Id));
+
+            _mediatorMock.Verify(m => m.Send(
+                It.Is<GetUserByIdForSchoolAdminQuery>(q =>
+                    q.RequesterId == currentUserId && q.TargetUserId == targetUserId),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Test]
+        public async Task GetSchoolUserByIdAsync_ShouldReturnInternalServerError_WhenExceptionThrown()
+        {
+            var currentUserId = Guid.NewGuid();
+            var targetUserId = Guid.NewGuid();
+            SetupUser(currentUserId.ToString(), role: nameof(Role.SchoolAdmin));
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<GetUserByIdForSchoolAdminQuery>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new Exception("Database error"));
+
+            var result = await _controller.GetSchoolUserByIdAsync(targetUserId);
+
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
+        }
+
+        #endregion
+
         #region Helper Methods
 
         private void SetupUser(string? userId)
         {
+            SetupUser(userId, null);
+        }
+
+        private void SetupUser(string? userId, string? role)
+        {
             var claims = new List<Claim>();
             if (userId != null)
                 claims.Add(new Claim(ClaimTypes.NameIdentifier, userId));
+
+            if (role != null)
+                claims.Add(new Claim(ClaimTypes.Role, role));
 
             var identity = new ClaimsIdentity(claims);
             var user = new ClaimsPrincipal(identity);
