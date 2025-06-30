@@ -139,5 +139,13 @@ namespace Eduva.Shared.Enums
         CannotCreateQuestionForPendingLesson = 4805,
         StudentNotEnrolledInAnyClass = 4806,
         CannotCreateQuestionForLessonNotAccessible = 4807,
+        QuestionNotFound = 4808,
+        QuestionNotActive = 4809,
+        InsufficientPermissionToUpdateQuestion = 4810,
+        CannotDeleteQuestionWithComments = 4811,
+        InsufficientPermissionToDeleteQuestion = 4812,
+        TeacherHasNoActiveClasses = 4813,
+        StudentNotInTeacherClasses = 4814,
+        QuestionNotInTeacherClassScope = 4815,
     }
 }

@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Eduva.Application.Features.Questions.Commands.CreateQuestion
 {
-    public class CreateQuestionHandler : IRequestHandler<CreateQuestionCommand, CreateQuestionResponse>
+    public class CreateQuestionHandler : IRequestHandler<CreateQuestionCommand, QuestionResponse>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<ApplicationUser> _userManager;
@@ -27,7 +27,7 @@ namespace Eduva.Application.Features.Questions.Commands.CreateQuestion
             _notificationService = notificationService;
         }
 
-        public async Task<CreateQuestionResponse> Handle(CreateQuestionCommand request, CancellationToken cancellationToken)
+        public async Task<QuestionResponse> Handle(CreateQuestionCommand request, CancellationToken cancellationToken)
         {
             var userRepo = _unitOfWork.GetRepository<ApplicationUser, Guid>();
             var user = await userRepo.GetByIdAsync(request.CreatedByUserId) ?? throw new AppException(CustomCode.UserNotFound);
@@ -64,7 +64,7 @@ namespace Eduva.Application.Features.Questions.Commands.CreateQuestion
             await questionRepo.AddAsync(question);
             await _unitOfWork.CommitAsync();
 
-            var response = new CreateQuestionResponse
+            var response = new QuestionResponse
             {
                 Id = question.Id,
                 LessonMaterialId = question.LessonMaterialId,

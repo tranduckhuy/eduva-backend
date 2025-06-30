@@ -257,6 +257,22 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status403Forbidden, Message = "You must be enrolled in a class to create questions for lesson materials." } },
             { CustomCode.CannotCreateQuestionForLessonNotAccessible, new MessageDetail {
                 HttpCode = StatusCodes.Status403Forbidden, Message = "You cannot create a question for a lesson material that is not accessible to you." } },
+            { CustomCode.QuestionNotFound, new MessageDetail {
+                HttpCode = StatusCodes.Status404NotFound, Message = "Question not found. Please check the question ID and try again." } },
+            { CustomCode.QuestionNotActive, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Question is not active. You can only update active questions." } },
+            { CustomCode.InsufficientPermissionToUpdateQuestion, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You do not have sufficient permissions to update this question." } },
+            { CustomCode.InsufficientPermissionToDeleteQuestion, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You do not have sufficient permissions to delete this question." } },
+            { CustomCode.CannotDeleteQuestionWithComments, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Cannot delete question that has comments. Please remove all comments first." } },
+            { CustomCode.TeacherHasNoActiveClasses, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "Teacher has no active classes to manage questions." } },
+            { CustomCode.StudentNotInTeacherClasses, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "Student is not enrolled in any of your classes." } },
+            { CustomCode.QuestionNotInTeacherClassScope, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "This question is not within the scope of your classes." } },
 
             #endregion
         };

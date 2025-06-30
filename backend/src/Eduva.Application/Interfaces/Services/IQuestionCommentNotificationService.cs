@@ -4,6 +4,8 @@ namespace Eduva.Application.Interfaces.Services
 {
     public interface IQuestionCommentNotificationService
     {
-        Task NotifyQuestionCreatedAsync(CreateQuestionResponse question, Guid lessonMaterialId);
+        Task NotifyQuestionCreatedAsync(QuestionResponse question, Guid lessonMaterialId);
+        Task NotifyQuestionUpdatedAsync(QuestionResponse question, Guid lessonMaterialId);
+        Task NotifyQuestionDeletedAsync(Guid questionId, Guid lessonMaterialId);
     }
 }

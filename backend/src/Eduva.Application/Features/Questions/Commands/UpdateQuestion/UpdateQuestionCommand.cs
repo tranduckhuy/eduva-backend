@@ -2,15 +2,16 @@
 using MediatR;
 using System.Text.Json.Serialization;
 
-namespace Eduva.Application.Features.Questions.Commands.CreateQuestion
+namespace Eduva.Application.Features.Questions.Commands.UpdateQuestion
 {
-    public class CreateQuestionCommand : IRequest<QuestionResponse>
+    public class UpdateQuestionCommand : IRequest<QuestionResponse>
     {
-        public Guid LessonMaterialId { get; set; }
+        [JsonIgnore]
+        public Guid Id { get; set; }
         public string Title { get; set; } = default!;
         public string Content { get; set; } = default!;
 
         [JsonIgnore]
-        public Guid CreatedByUserId { get; set; }
+        public Guid UpdatedByUserId { get; set; }
     }
 }
