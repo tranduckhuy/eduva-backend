@@ -39,7 +39,7 @@ namespace Eduva.Application.Features.Folders.Commands
             // Check if folder is deleted
             if (folder.Status == EntityStatus.Deleted)
             {
-                throw new AppException(CustomCode.FolderDeleteFailed, new[] { "Cannot restore a permanently deleted folder" });
+                throw new AppException(CustomCode.FolderDeleteFailed);
             }
 
             // Verify ownership and permissions

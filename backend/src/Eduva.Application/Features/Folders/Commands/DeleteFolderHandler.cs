@@ -62,7 +62,8 @@ namespace Eduva.Application.Features.Folders.Commands
                             var lessonMaterialId = link.LessonMaterial.Id;
 
                             var isOnlyUsedHere = await folderLessonMaterialRepository
-                                .CountAsync(flm => flm.LessonMaterialId == lessonMaterialId && flm.FolderId != folder.Id) == 0;
+                                .CountAsync(flm => flm.LessonMaterialId == lessonMaterialId && flm.FolderId != folder.Id, cancellationToken) == 0;
+                            
 
                             if (isOnlyUsedHere)
                             {
