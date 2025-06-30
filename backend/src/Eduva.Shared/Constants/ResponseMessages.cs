@@ -145,18 +145,6 @@ namespace Eduva.Shared.Constants
             { CustomCode.BlobNotFound, new MessageDetail {
                 HttpCode = StatusCodes.Status404NotFound, Message = "The specified blob was not found. Ensure the blob name is correct and try again." } },
                 
-            // Folder Errors
-            { CustomCode.FolderNotFound, new MessageDetail {
-                HttpCode = StatusCodes.Status404NotFound, Message = "Folder not found" } },
-            { CustomCode.FolderNameAlreadyExists, new MessageDetail {
-                HttpCode = StatusCodes.Status400BadRequest, Message = "A folder with this name already exists" } },
-            { CustomCode.FolderCreateFailed, new MessageDetail {
-                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to create folder" } },
-            { CustomCode.FolderUpdateFailed, new MessageDetail {
-                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to update folder" } },
-            { CustomCode.FolderDeleteFailed, new MessageDetail {
-                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to delete folder" } },
-
             // Student Class Errors
             { CustomCode.UserNotStudent, new MessageDetail {
                 HttpCode = StatusCodes.Status403Forbidden, Message = "User is not a student. Only students can enroll in classes." } },
@@ -238,6 +226,28 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status404NotFound, Message = "Student is not enrolled in this class" } },
             { CustomCode.StudentRemovalFailed, new MessageDetail {
                 HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to remove student from class" } },
+
+            // Folder Errors
+            { CustomCode.FolderNotFound, new MessageDetail {
+                HttpCode = StatusCodes.Status404NotFound, Message = "Folder not found" } },
+            { CustomCode.FolderNameAlreadyExists, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Folder name already exists" } },
+            { CustomCode.FolderCreateFailed, new MessageDetail {
+                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to create folder" } },
+            { CustomCode.FolderUpdateFailed, new MessageDetail {
+                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to update folder" } },
+            { CustomCode.FolderDeleteFailed, new MessageDetail {
+                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to delete folder" } },
+            { CustomCode.FolderArchiveFailed, new MessageDetail {
+                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to archive folder" } },
+            { CustomCode.FolderRestoreFailed, new MessageDetail {
+                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to restore folder" } },
+            { CustomCode.FolderAlreadyArchived, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Folder is already archived" } },
+            { CustomCode.FolderAlreadyActive, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Folder is already active" } },
+            { CustomCode.FolderShouldBeArchivedBeforeDelete, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Folder must be archived before it can be permanently deleted" } },
 
             #endregion
         };
