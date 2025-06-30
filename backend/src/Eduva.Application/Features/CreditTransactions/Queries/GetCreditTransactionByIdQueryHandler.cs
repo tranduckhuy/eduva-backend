@@ -19,11 +19,14 @@ namespace Eduva.Application.Features.CreditTransactions.Queries
 
         public async Task<CreditTransactionResponse> Handle(GetCreditTransactionByIdQuery request, CancellationToken cancellationToken)
         {
-            var creditTransaction = await _repository.GetByIdWithDetailsAsync(request.Id, cancellationToken);
+            var creditTransaction = await _repository.GetByIdWithDetailsAsync(request.Id, cancellationToken) ?? throw new AppException(CustomCode.CreditTransactionNotFound);
 
-            return creditTransaction is null
-                ? throw new AppException(CustomCode.CreditTransactionNotFound)
-                : AppMapper.Mapper.Map<CreditTransactionResponse>(creditTransaction);
+            if (!request.IsSystemAdmin && creditTransaction.UserId != request.UserId)
+            {
+                throw new AppException(CustomCode.CreditTransactionNotFound);
+            }
+
+            return AppMapper.Mapper.Map<CreditTransactionResponse>(creditTransaction);
         }
     }
 }

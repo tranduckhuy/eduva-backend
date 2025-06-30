@@ -39,13 +39,19 @@ namespace Eduva.API.Controllers.CreditTransactions
         }
 
         [HttpGet("{id}")]
-        [Authorize(Roles = nameof(Role.SystemAdmin))]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)}, {nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}, {nameof(Role.Student)}")]
         [ProducesResponseType(typeof(ApiResponse<CreditTransactionResponse>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetCreditTransactionById(Guid id)
         {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userIdStr, out var userId))
+            {
+                return Respond(CustomCode.UserIdNotFound);
+            }
+
             return await HandleRequestAsync<CreditTransactionResponse>(async () =>
             {
-                var result = await _mediator.Send(new GetCreditTransactionByIdQuery(id));
+                var result = await _mediator.Send(new GetCreditTransactionByIdQuery(id, userId, User.IsInRole(nameof(Role.SystemAdmin))));
                 return (CustomCode.Success, result);
             });
         }

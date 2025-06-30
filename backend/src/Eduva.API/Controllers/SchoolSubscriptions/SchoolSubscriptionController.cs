@@ -41,13 +41,19 @@ namespace Eduva.API.Controllers.SchoolSubscriptions
         }
 
         [HttpGet("{id}")]
-        [Authorize(Roles = nameof(Role.SystemAdmin))]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)}, {nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}, {nameof(Role.Student)}")]
         [ProducesResponseType(typeof(ApiResponse<SchoolSubscriptionResponse>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetSchoolSubscriptionById(Guid id)
         {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userIdStr, out var userId))
+            {
+                return Respond(CustomCode.UserIdNotFound);
+            }
+
             return await HandleRequestAsync<SchoolSubscriptionResponse>(async () =>
             {
-                var result = await _mediator.Send(new GetSchoolSubscriptionByIdQuery(id));
+                var result = await _mediator.Send(new GetSchoolSubscriptionByIdQuery(id, userId, User.IsInRole(nameof(Role.SystemAdmin))));
                 return (CustomCode.Success, result);
             });
         }

@@ -423,6 +423,32 @@ namespace Eduva.API.Test.Controllers.Users
         #region GetUsersAsync Tests
 
         [Test]
+        public async Task GetUsersAsync_ShouldReturnUserNotPartOfSchool_WhenUserManagerReturnsNull()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            SetupUser(userId.ToString(), role: nameof(Role.SchoolAdmin));
+
+            // UserManager returns null instead of user
+            _userManagerMock
+                .Setup(m => m.FindByIdAsync(userId.ToString()))
+                .ReturnsAsync((ApplicationUser?)null);
+
+            var param = new UserSpecParam();
+
+            // Act
+            var result = await _controller.GetUsersAsync(param);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserNotPartOfSchool));
+        }
+
+        [Test]
         public async Task GetUsersAsync_ShouldSetSchoolId_WhenSchoolAdminHasSchool()
         {
             // Arrange

@@ -9,6 +9,7 @@ using Eduva.Application.Features.Schools.Commands.UpdateSchool;
 using Eduva.Application.Features.Schools.Queries;
 using Eduva.Application.Features.Schools.Responses;
 using Eduva.Application.Features.Schools.Specifications;
+using Eduva.Application.Features.Users.Responses;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
@@ -49,6 +50,27 @@ namespace Eduva.API.Controllers.Schools
             return await HandleRequestAsync<SchoolDetailResponse>(async () =>
             {
                 var result = await _mediator.Send(new GetSchoolByIdQuery(id));
+                return (CustomCode.Success, result);
+            });
+        }
+
+        // Get school user information by ID (SchoolAdmin only)
+        [HttpGet("users/{userId:guid}")]
+        [ProducesResponseType(typeof(ApiResponse<UserResponse>), StatusCodes.Status200OK)]
+        [Authorize(Roles = nameof(Role.SchoolAdmin))]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
+        public async Task<IActionResult> GetSchoolUserByIdAsync(Guid userId)
+        {
+            var currentUserIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+            {
+                return Respond(CustomCode.UserIdNotFound);
+            }
+
+            var query = new GetUserByIdForSchoolAdminQuery(currentUserId, userId);
+            return await HandleRequestAsync(async () =>
+            {
+                var result = await _mediator.Send(query);
                 return (CustomCode.Success, result);
             });
         }
