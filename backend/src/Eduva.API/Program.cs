@@ -2,6 +2,7 @@ using Eduva.API.Middlewares;
 using Eduva.Application.Extentions;
 using Eduva.Domain.Entities;
 using Eduva.Infrastructure.Extensions;
+using Eduva.Infrastructure.Hubs;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -55,12 +56,12 @@ builder.Services.AddSwaggerGen(setup =>
 
 builder.Services.AddCors(o => o.AddPolicy("AllowAll", builder =>
 {
-    builder.AllowAnyOrigin()
+    builder.SetIsOriginAllowed(_ => true) // AllowAnyOrigin():
            .AllowAnyMethod()
            .AllowAnyHeader()
-           .WithExposedHeaders("Content-Disposition");
+           .WithExposedHeaders("Content-Disposition")
+           .AllowCredentials();
 }));
-
 
 builder.Services.AddApplicationIdentity<ApplicationUser>();
 builder.Services.AddJwtAuthentication(builder.Configuration);
@@ -96,6 +97,9 @@ app.UseAuthorization();
 
 // Custom middleware to validate subscription access
 app.UseMiddleware<SubscriptionValidationMiddleware>();
+
+// Add SignalR Hub mapping
+app.MapHub<QuestionCommentHub>("/hubs/question-comment");
 
 app.MapControllers();
 

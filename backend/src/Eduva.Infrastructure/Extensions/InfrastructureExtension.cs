@@ -89,6 +89,12 @@ namespace Eduva.Infrastructure.Extensions
             services.AddScoped<ISystemConfigService, SystemConfigService>();
             services.AddScoped<SystemConfigHelper>();
 
+            // Add SignalR
+            services.AddSignalR();
+
+            // Add SignalR Notification Service
+            services.AddScoped<IQuestionCommentNotificationService, QuestionCommentNotificationService>();
+
             return services;
         }
     }

@@ -239,6 +239,25 @@ namespace Eduva.Shared.Constants
             { CustomCode.StudentRemovalFailed, new MessageDetail {
                 HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to remove student from class" } },
 
+
+              // Question Error
+            { CustomCode.InsufficientPermissionToCreateQuestion, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You do not have sufficient permissions to create a question for this lesson material." } },
+            { CustomCode.LessonMaterialNotFound, new MessageDetail {
+                HttpCode = StatusCodes.Status404NotFound, Message = "Lesson material not found. Please check the lesson material ID and try again." } },
+            { CustomCode.LessonMaterialNotActive, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Lesson material is not active. You can only create questions for active lesson materials." } },
+            { CustomCode.InsufficientPermission, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You do not have sufficient permissions to perform this action." } },
+            { CustomCode.CannotCreateQuestionForLessonNotInYourSchool, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You cannot create a question for a lesson material that is not in your school." } },
+            { CustomCode.CannotCreateQuestionForPendingLesson, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You cannot create a question for a lesson material that is pending approval." } },
+            { CustomCode.StudentNotEnrolledInAnyClass, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You must be enrolled in a class to create questions for lesson materials." } },
+            { CustomCode.CannotCreateQuestionForLessonNotAccessible, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You cannot create a question for a lesson material that is not accessible to you." } },
+
             #endregion
         };
 

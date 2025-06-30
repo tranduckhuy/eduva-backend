@@ -129,5 +129,15 @@ namespace Eduva.Shared.Enums
         StudentRemovalFailed = 4717,
         KeyConfigNotFound = 5001,
         KeyConfigAlreadyExist = 5002,
+
+        // Question Errors
+        InsufficientPermissionToCreateQuestion = 4800,
+        LessonMaterialNotFound = 4801,
+        LessonMaterialNotActive = 4802,
+        InsufficientPermission = 4803,
+        CannotCreateQuestionForLessonNotInYourSchool = 4804,
+        CannotCreateQuestionForPendingLesson = 4805,
+        StudentNotEnrolledInAnyClass = 4806,
+        CannotCreateQuestionForLessonNotAccessible = 4807,
     }
 }
