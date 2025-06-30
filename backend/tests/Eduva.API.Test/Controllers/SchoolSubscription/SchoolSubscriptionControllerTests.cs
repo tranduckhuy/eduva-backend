@@ -35,13 +35,13 @@ public class SchoolSubscriptionControllerTests
         _controller = new SchoolSubscriptionController(_mediatorMock.Object, _loggerMock.Object);
     }
 
-    private void SetupUser(string? userId)
+    private void SetupUser(string? userId, string role = "SchoolAdmin")
     {
         var claims = new List<Claim>();
         if (userId != null)
             claims.Add(new Claim(ClaimTypes.NameIdentifier, userId));
 
-        claims.Add(new Claim(ClaimTypes.Role, nameof(Role.SchoolAdmin)));
+        claims.Add(new Claim(ClaimTypes.Role, $"{nameof(Role)}.{role}"));
 
         var identity = new ClaimsIdentity(claims, "TestAuth");
         var user = new ClaimsPrincipal(identity);
@@ -234,39 +234,96 @@ public class SchoolSubscriptionControllerTests
 
     #endregion
 
-    #region GetSchoolSubscriptionById
+    #region GetSchoolSubscriptionById Tests
 
     [Test]
     public async Task GetSchoolSubscriptionById_ShouldReturnSuccess_WhenValidId()
     {
-        var id = Guid.NewGuid();
-        var expected = new SchoolSubscriptionResponse
-        {
-            Id = id,
-            SubscriptionStatus = SubscriptionStatus.Active,
-            BillingCycle = BillingCycle.Monthly,
-            School = new(),
-            Plan = new(),
-            PaymentTransaction = new(),
-            User = new()
-        };
+        // Arrange
+        var subscriptionId = Guid.NewGuid();
+        SetupUser(Guid.NewGuid().ToString());
+
+        var expectedResponse = new SchoolSubscriptionResponse { Id = subscriptionId };
 
         _mediatorMock
-            .Setup(m => m.Send(It.Is<GetSchoolSubscriptionByIdQuery>(x => x.Id == id), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(expected);
+            .Setup(m => m.Send(It.IsAny<GetSchoolSubscriptionByIdQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedResponse);
 
-        var result = await _controller.GetSchoolSubscriptionById(id);
+        // Act
+        var result = await _controller.GetSchoolSubscriptionById(subscriptionId);
 
+        // Assert
         var objectResult = result as ObjectResult;
-        var response = objectResult?.Value as ApiResponse<object>;
-        var data = response?.Data as SchoolSubscriptionResponse;
+        Assert.That(objectResult, Is.Not.Null);
+        Assert.That(objectResult!.StatusCode, Is.EqualTo(200));
 
+        var response = objectResult.Value as ApiResponse<object>;
         Assert.That(response, Is.Not.Null);
-        Assert.Multiple(() =>
+        Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+    }
+
+    [Test]
+    public async Task GetSchoolSubscriptionById_ShouldReturnUserIdNotFound_WhenUserIsNotAuthenticated()
+    {
+        // Arrange
+        _controller.ControllerContext = new ControllerContext
         {
-            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
-            Assert.That(data!.Id, Is.EqualTo(expected.Id));
-        });
+            HttpContext = new DefaultHttpContext() // no user
+        };
+
+        var subscriptionId = Guid.NewGuid();
+
+        // Act
+        var result = await _controller.GetSchoolSubscriptionById(subscriptionId);
+
+        // Assert
+        var objectResult = result as ObjectResult;
+        Assert.That(objectResult, Is.Not.Null);
+        Assert.That(objectResult!.StatusCode, Is.EqualTo(401));
+
+        var response = objectResult.Value as ApiResponse<object>;
+        Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+    }
+
+    [Test]
+    public async Task GetSchoolSubscriptionById_ShouldPassSystemAdminFlag_WhenUserIsSystemAdmin()
+    {
+        // Arrange
+        var userId = Guid.NewGuid().ToString();
+        var claims = new List<Claim>
+            {
+                new(ClaimTypes.NameIdentifier, userId),
+                new(ClaimTypes.Role, nameof(Role.SystemAdmin))
+            };
+        var identity = new ClaimsIdentity(claims);
+        var principal = new ClaimsPrincipal(identity);
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = principal }
+        };
+
+        var subscriptionId = Guid.NewGuid();
+        var expectedResponse = new SchoolSubscriptionResponse { Id = subscriptionId };
+
+        _mediatorMock
+             .Setup(m => m.Send(It.IsAny<GetSchoolSubscriptionByIdQuery>(), It.IsAny<CancellationToken>()))
+             .ReturnsAsync(expectedResponse);
+
+        // Act
+        var result = await _controller.GetSchoolSubscriptionById(subscriptionId);
+
+        // Assert
+        var objectResult = result as ObjectResult;
+        Assert.That(objectResult, Is.Not.Null);
+        Assert.That(objectResult!.StatusCode, Is.EqualTo(200));
+
+        // Verify that the query was called with SystemAdmin = true
+        _mediatorMock.Verify(m => m.Send(
+            It.Is<GetSchoolSubscriptionByIdQuery>(q =>
+                q.Id == subscriptionId &&
+                q.IsSystemAdmin == true &&
+                q.UserId == Guid.Parse(userId)),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     #endregion
