@@ -35,7 +35,69 @@ namespace Eduva.Application.Test.Features.CreditTransactions.Queries
         #region GetCreditTransactionByIdQueryHandler Tests
 
         [Test]
-        public async Task Handle_ShouldReturnMappedResponse_WhenTransactionExists()
+        public async Task Handle_ShouldReturnMappedResponse_WhenSystemAdminAndTransactionExists()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var ownerUserId = Guid.NewGuid(); // Different from userId to test admin access
+            var paymentId = Guid.NewGuid();
+
+            var transaction = new UserCreditTransaction
+            {
+                Id = id,
+                UserId = ownerUserId, // Different from requester
+                Credits = 300,
+                CreatedAt = DateTimeOffset.UtcNow,
+                PaymentTransactionId = paymentId,
+                AICreditPackId = 1,
+                User = new ApplicationUser
+                {
+                    Id = ownerUserId,
+                    FullName = "Alice Smith",
+                    Email = "alice@eduva.vn",
+                    PhoneNumber = "0123456789"
+                },
+                AICreditPack = new AICreditPack
+                {
+                    Id = 1,
+                    Name = "Premium Pack",
+                    Credits = 300,
+                    BonusCredits = 50,
+                    Price = 99.9m
+                },
+                PaymentTransaction = new PaymentTransaction
+                {
+                    Id = paymentId,
+                    PaymentStatus = PaymentStatus.Paid,
+                    PaymentMethod = PaymentMethod.PayOS
+                }
+            };
+
+            _repoMock.Setup(r => r.GetByIdWithDetailsAsync(id, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(transaction);
+
+            var query = new GetCreditTransactionByIdQuery(id, userId, isSystemAdmin: true);
+
+            // Act
+            var result = await _handler.Handle(query, CancellationToken.None);
+
+            // Assert
+            Assert.Multiple(() =>
+            {
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result.Id, Is.EqualTo(id));
+                Assert.That(result.Credits, Is.EqualTo(300));
+                Assert.That(result.User, Is.Not.Null);
+                Assert.That(result.User.Email, Is.EqualTo("alice@eduva.vn"));
+                Assert.That(result.AICreditPack, Is.Not.Null);
+                Assert.That(result.AICreditPack.Name, Is.EqualTo("Premium Pack"));
+                Assert.That(result.PaymentTransactionId, Is.EqualTo(paymentId));
+            });
+        }
+
+        [Test]
+        public async Task Handle_ShouldReturnMappedResponse_WhenNonAdminAndOwnsTransaction()
         {
             // Arrange
             var id = Guid.NewGuid();
@@ -45,7 +107,7 @@ namespace Eduva.Application.Test.Features.CreditTransactions.Queries
             var transaction = new UserCreditTransaction
             {
                 Id = id,
-                UserId = userId,
+                UserId = userId, // Same as requester
                 Credits = 300,
                 CreatedAt = DateTimeOffset.UtcNow,
                 PaymentTransactionId = paymentId,
@@ -76,23 +138,15 @@ namespace Eduva.Application.Test.Features.CreditTransactions.Queries
             _repoMock.Setup(r => r.GetByIdWithDetailsAsync(id, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(transaction);
 
-            var query = new GetCreditTransactionByIdQuery(id);
+            var query = new GetCreditTransactionByIdQuery(id, userId, isSystemAdmin: false);
 
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
 
             // Assert
-            Assert.Multiple(() =>
-            {
-                Assert.That(result, Is.Not.Null);
-                Assert.That(result.Id, Is.EqualTo(id));
-                Assert.That(result.Credits, Is.EqualTo(300));
-                Assert.That(result.User, Is.Not.Null);
-                Assert.That(result.User.Email, Is.EqualTo("alice@eduva.vn"));
-                Assert.That(result.AICreditPack, Is.Not.Null);
-                Assert.That(result.AICreditPack.Name, Is.EqualTo("Premium Pack"));
-                Assert.That(result.PaymentTransactionId, Is.EqualTo(paymentId));
-            });
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.Id, Is.EqualTo(id));
+            Assert.That(result.Credits, Is.EqualTo(300));
         }
 
         [Test]
@@ -100,10 +154,38 @@ namespace Eduva.Application.Test.Features.CreditTransactions.Queries
         {
             // Arrange
             var id = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+
             _repoMock.Setup(r => r.GetByIdWithDetailsAsync(id, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((UserCreditTransaction?)null);
 
-            var query = new GetCreditTransactionByIdQuery(id);
+            var query = new GetCreditTransactionByIdQuery(id, userId, isSystemAdmin: false);
+
+            // Act & Assert
+            var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(query, CancellationToken.None));
+            Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.CreditTransactionNotFound));
+        }
+
+        [Test]
+        public void Handle_ShouldThrowAppException_WhenNonAdminTriesToAccessOthersTransaction()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var ownerUserId = Guid.NewGuid(); // Different user
+
+            var transaction = new UserCreditTransaction
+            {
+                Id = id,
+                UserId = ownerUserId, // Different from requester
+                Credits = 300,
+                CreatedAt = DateTimeOffset.UtcNow
+            };
+
+            _repoMock.Setup(r => r.GetByIdWithDetailsAsync(id, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(transaction);
+
+            var query = new GetCreditTransactionByIdQuery(id, userId, isSystemAdmin: false);
 
             // Act & Assert
             var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(query, CancellationToken.None));
@@ -111,6 +193,5 @@ namespace Eduva.Application.Test.Features.CreditTransactions.Queries
         }
 
         #endregion
-
     }
 }

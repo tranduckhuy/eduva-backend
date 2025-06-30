@@ -6,6 +6,7 @@ using Eduva.Application.Features.CreditTransactions.Queries;
 using Eduva.Application.Features.CreditTransactions.Responses;
 using Eduva.Application.Features.CreditTransactions.Specifications;
 using Eduva.Application.Features.Payments.Responses;
+using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -195,9 +196,79 @@ namespace Eduva.API.Test.Controllers.CreditTransaction
             var response = objectResult.Value as ApiResponse<object>;
             Assert.That(response, Is.Not.Null);
             Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+
+            // Verify that the query was called with correct parameters
+            _mediatorMock.Verify(m => m.Send(
+                It.Is<GetCreditTransactionByIdQuery>(q =>
+                    q.Id == transactionId &&
+                    q.IsSystemAdmin == false), // Default user is not admin
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Test]
+        public async Task GetCreditTransactionById_ShouldReturnUserIdNotFound_WhenUserIsNotAuthenticated()
+        {
+            // Arrange
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext() // no user
+            };
+
+            var transactionId = Guid.NewGuid();
+
+            // Act
+            var result = await _controller.GetCreditTransactionById(transactionId);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(401));
+
+            var response = objectResult.Value as ApiResponse<object>;
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task GetCreditTransactionById_ShouldPassSystemAdminFlag_WhenUserIsSystemAdmin()
+        {
+            // Arrange
+            var userId = Guid.NewGuid().ToString();
+            var claims = new List<Claim>
+            {
+                new(ClaimTypes.NameIdentifier, userId),
+                new(ClaimTypes.Role, nameof(Role.SystemAdmin))
+            };
+            var identity = new ClaimsIdentity(claims);
+            var principal = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = principal }
+            };
+
+            var transactionId = Guid.NewGuid();
+            var expectedResponse = new CreditTransactionResponse { Id = transactionId };
+
+            _mediatorMock
+                 .Setup(m => m.Send(It.IsAny<GetCreditTransactionByIdQuery>(), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(expectedResponse);
+
+            // Act
+            var result = await _controller.GetCreditTransactionById(transactionId);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(200));
+
+            // Verify that the query was called with SystemAdmin = true
+            _mediatorMock.Verify(m => m.Send(
+                It.Is<GetCreditTransactionByIdQuery>(q =>
+                    q.Id == transactionId &&
+                    q.IsSystemAdmin == true &&
+                    q.UserId == Guid.Parse(userId)),
+                It.IsAny<CancellationToken>()), Times.Once);
         }
 
         #endregion
-
     }
 }
