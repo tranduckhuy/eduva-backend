@@ -25,11 +25,6 @@ namespace Eduva.Infrastructure.Services
             {
                 var groupName = $"Lesson_{lessonMaterialId}";
 
-                _logger.LogInformation("[SignalR] Starting notification for new question. " +
-                    "QuestionId: {QuestionId}, LessonId: {LessonId}, GroupName: {GroupName}, " +
-                    "Title: {Title}, CreatedBy: {CreatedBy}",
-                    question.Id, lessonMaterialId, groupName, question.Title, question.CreatedByName);
-
                 // Prepare notification data
                 var notificationData = new
                 {
@@ -45,7 +40,10 @@ namespace Eduva.Infrastructure.Services
                     commentCount = question.CommentCount
                 };
 
-                _logger.LogInformation("[SignalR] Notification data prepared: {@NotificationData}", notificationData);
+                _logger.LogInformation("[SignalR] Starting notification for new question. " +
+                    "QuestionId: {QuestionId}, LessonId: {LessonId}, GroupName: {GroupName}, " +
+                    "Title: {Title}, CreatedBy: {CreatedBy}, Data: {@NotificationData}",
+                    question.Id, lessonMaterialId, groupName, question.Title, question.CreatedByName, notificationData);
 
                 // Send to all users in the lesson group
                 await _hubContext.Clients.Group(groupName)
