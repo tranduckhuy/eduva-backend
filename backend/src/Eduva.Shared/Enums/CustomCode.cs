@@ -107,6 +107,11 @@ namespace Eduva.Shared.Enums
         FolderCreateFailed = 4602,
         FolderUpdateFailed = 4603,
         FolderDeleteFailed = 4604,
+        FolderArchiveFailed = 4605,
+        FolderRestoreFailed = 4606,
+        FolderAlreadyArchived = 4607,
+        FolderAlreadyActive = 4608,
+        FolderShouldBeArchivedBeforeDelete = 4609,
 
         // Class Errors - All consolidated in 4700 range
         ClassNotFound = 4700,
