@@ -1,8 +1,10 @@
+using Eduva.API.Adapters;
+using Eduva.API.Hubs;
 using Eduva.API.Middlewares;
+using Eduva.Application.Contracts.Hubs;
 using Eduva.Application.Extentions;
 using Eduva.Domain.Entities;
 using Eduva.Infrastructure.Extensions;
-using Eduva.Infrastructure.Hubs;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -76,6 +78,8 @@ builder.Services.Configure<DataProtectionTokenProviderOptions>(opt =>
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddApplicationServices();
 
+// Register SignalR Hub services
+builder.Services.AddScoped<INotificationHub, SignalRNotificationHub>();
 
 var app = builder.Build();
 

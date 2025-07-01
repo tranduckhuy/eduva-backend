@@ -15,16 +15,13 @@ namespace Eduva.Application.Features.Questions.Commands.CreateQuestion
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IQuestionCommentNotificationService _notificationService;
+        private readonly IHubNotificationService _hubNotificationService;
 
-        public CreateQuestionHandler(
-            IUnitOfWork unitOfWork,
-            UserManager<ApplicationUser> userManager,
-            IQuestionCommentNotificationService notificationService)
+        public CreateQuestionHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager, IHubNotificationService hubNotificationService)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
-            _notificationService = notificationService;
+            _hubNotificationService = hubNotificationService;
         }
 
         public async Task<QuestionResponse> Handle(CreateQuestionCommand request, CancellationToken cancellationToken)
@@ -68,6 +65,7 @@ namespace Eduva.Application.Features.Questions.Commands.CreateQuestion
             {
                 Id = question.Id,
                 LessonMaterialId = question.LessonMaterialId,
+                LessonMaterialTitle = lessonMaterial.Title,
                 Title = question.Title,
                 Content = question.Content,
                 CreatedAt = question.CreatedAt,
@@ -78,10 +76,12 @@ namespace Eduva.Application.Features.Questions.Commands.CreateQuestion
                 CommentCount = 0
             };
 
-            await _notificationService.NotifyQuestionCreatedAsync(response, request.LessonMaterialId);
+            await _hubNotificationService.NotifyQuestionCreatedAsync(response, request.LessonMaterialId);
 
             return response;
         }
+
+        #region Role Priority Logic
 
         private static string GetHighestPriorityRole(IList<string> roles)
         {
@@ -113,12 +113,20 @@ namespace Eduva.Application.Features.Questions.Commands.CreateQuestion
             return "Unknown";
         }
 
+        #endregion
+
+        #region Role Permission Checks
+
         private static bool IsAllowedToCreateQuestion(string primaryRole)
         {
             return primaryRole == nameof(Role.Teacher) ||
                    primaryRole == nameof(Role.ContentModerator) ||
                    primaryRole == nameof(Role.Student);
         }
+
+        #endregion
+
+        #region Role-Based Permission Validation
 
         private async Task ValidateRoleBasedPermissions(ApplicationUser user, string primaryRole, LessonMaterial lessonMaterial)
         {
@@ -138,6 +146,10 @@ namespace Eduva.Application.Features.Questions.Commands.CreateQuestion
             }
         }
 
+        #endregion
+
+        #region Teacher and Content Moderator Access Validation
+
         private static void ValidateTeacherContentModeratorAccess(ApplicationUser user, LessonMaterial lessonMaterial)
         {
             if (user.SchoolId == null)
@@ -155,6 +167,10 @@ namespace Eduva.Application.Features.Questions.Commands.CreateQuestion
                 throw new AppException(CustomCode.CannotCreateQuestionForPendingLesson);
             }
         }
+
+        #endregion
+
+        #region Student Access Validation
 
         private async Task ValidateStudentAccess(Guid studentId, Guid lessonMaterialId)
         {
@@ -180,5 +196,7 @@ namespace Eduva.Application.Features.Questions.Commands.CreateQuestion
                 throw new AppException(CustomCode.CannotCreateQuestionForLessonNotAccessible);
             }
         }
+
+        #endregion
     }
 }

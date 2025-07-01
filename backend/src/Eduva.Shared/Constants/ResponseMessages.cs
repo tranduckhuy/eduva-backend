@@ -271,8 +271,20 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status403Forbidden, Message = "Teacher has no active classes to manage questions." } },
             { CustomCode.StudentNotInTeacherClasses, new MessageDetail {
                 HttpCode = StatusCodes.Status403Forbidden, Message = "Student is not enrolled in any of your classes." } },
-            { CustomCode.QuestionNotInTeacherClassScope, new MessageDetail {
-                HttpCode = StatusCodes.Status403Forbidden, Message = "This question is not within the scope of your classes." } },
+            { CustomCode.StudentNotEnrolledInAnyClassForQuestions, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You must be enrolled in at least one class to view questions." } },
+            { CustomCode.StudentNotInSchoolClass, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You are not enrolled in any class within your school." } },
+            { CustomCode.MaterialNotAccessibleToStudent, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You do not have access to this lesson material. Please check your class enrollment." } },
+            { CustomCode.StudentNotEnrolledInClassWithMaterial, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You are not enrolled in any class that contains this lesson material." } },
+            { CustomCode.TeacherMustHaveActiveClass, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "Teachers must have at least one active class to view questions." } },
+            { CustomCode.TeacherNotHaveAccessToMaterial, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You do not have access to this lesson material through your classes." } },
+            { CustomCode.TeacherClassNotInOwnSchool, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "Teacher classes must belong to your own school." } },
 
             #endregion
         };

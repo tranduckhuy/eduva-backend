@@ -14,58 +14,52 @@ namespace Eduva.Application.Features.Questions.Commands.DeleteQuestion
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IQuestionCommentNotificationService _notificationService;
+        private readonly IHubNotificationService _hubNotificationService;
 
-        public DeleteQuestionHandler(
-            IUnitOfWork unitOfWork,
-            UserManager<ApplicationUser> userManager,
-            IQuestionCommentNotificationService notificationService)
+        public DeleteQuestionHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager, IHubNotificationService hubNotificationService)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
-            _notificationService = notificationService;
+            _hubNotificationService = hubNotificationService;
         }
 
         public async Task<bool> Handle(DeleteQuestionCommand request, CancellationToken cancellationToken)
         {
             var questionRepo = _unitOfWork.GetRepository<LessonMaterialQuestion, Guid>();
-            var question = await questionRepo.GetByIdAsync(request.Id)
-                ?? throw new AppException(CustomCode.QuestionNotFound);
+            var question = await questionRepo.GetByIdAsync(request.Id) ?? throw new AppException(CustomCode.QuestionNotFound);
 
             if (question.Status != EntityStatus.Active)
             {
                 throw new AppException(CustomCode.QuestionNotActive);
             }
 
-            var commentRepo = _unitOfWork.GetRepository<QuestionComment, Guid>();
-            var commentCount = await commentRepo.CountAsync(c => c.QuestionId == question.Id, cancellationToken);
-
-            if (commentCount > 0)
-            {
-                throw new AppException(CustomCode.CannotDeleteQuestionWithComments);
-            }
-
             var userRepo = _unitOfWork.GetRepository<ApplicationUser, Guid>();
-            var user = await userRepo.GetByIdAsync(request.DeletedByUserId)
-                ?? throw new AppException(CustomCode.UserNotFound);
+            var user = await userRepo.GetByIdAsync(request.DeletedByUserId) ?? throw new AppException(CustomCode.UserNotFound);
 
             var roles = await _userManager.GetRolesAsync(user);
             var userRole = GetHighestPriorityRole(roles);
 
             await ValidateDeletePermissions(user, userRole, question);
 
+            var commentRepo = _unitOfWork.GetRepository<QuestionComment, Guid>();
+            var commentCount = await commentRepo.CountAsync(c => c.QuestionId == question.Id, cancellationToken);
+
+            if (commentCount > 0 && userRole == nameof(Role.Student))
+            {
+                throw new AppException(CustomCode.CannotDeleteQuestionWithComments);
+            }
+
             var lessonMaterialId = question.LessonMaterialId;
 
-            question.Status = EntityStatus.Deleted;
-            question.LastModifiedAt = DateTimeOffset.UtcNow;
-
-            questionRepo.Update(question);
+            questionRepo.Remove(question);
             await _unitOfWork.CommitAsync();
 
-            await _notificationService.NotifyQuestionDeletedAsync(request.Id, lessonMaterialId);
+            await _hubNotificationService.NotifyQuestionDeletedAsync(request.Id, lessonMaterialId);
 
             return true;
         }
+
+        #region Role Priority Logic
 
         private static string GetHighestPriorityRole(IList<string> roles)
         {
@@ -97,47 +91,57 @@ namespace Eduva.Application.Features.Questions.Commands.DeleteQuestion
             return "Unknown";
         }
 
+        #endregion
+
+        #region Delete Permissions Validation
+
         private async Task ValidateDeletePermissions(ApplicationUser user, string userRole, LessonMaterialQuestion question)
         {
+            // SystemAdmin can delete all questions
             if (userRole == nameof(Role.SystemAdmin))
             {
                 return;
             }
 
+            // User can delete their own questions
             if (question.CreatedByUserId == user.Id)
             {
                 return;
             }
 
+            // Get original creator for additional checks
             var originalCreator = await _unitOfWork.GetRepository<ApplicationUser, Guid>()
                 .GetByIdAsync(question.CreatedByUserId) ?? throw new AppException(CustomCode.UserNotFound);
 
             var originalCreatorRoles = await _userManager.GetRolesAsync(originalCreator);
             var originalCreatorRole = GetHighestPriorityRole(originalCreatorRoles);
 
-            if (question.CreatedByUserId != user.Id)
+            // SchoolAdmin can delete questions in same school (no additional checks)
+            if (userRole == nameof(Role.SchoolAdmin)
+                && user.SchoolId.HasValue
+                && originalCreator.SchoolId == user.SchoolId)
             {
-                if ((userRole == nameof(Role.SchoolAdmin) || userRole == nameof(Role.ContentModerator))
-                    && user.SchoolId.HasValue
-                    && originalCreator.SchoolId == user.SchoolId)
-                {
-                    return;
-                }
-
-                if (userRole == nameof(Role.Teacher)
-                    && originalCreatorRole == nameof(Role.Student)
-                    && user.SchoolId.HasValue
-                    && originalCreator.SchoolId == user.SchoolId)
-                {
-                    await ValidateTeacherStudentRelationship(user.Id, originalCreator.Id, question.LessonMaterialId);
-                    return;
-                }
-
-                throw new AppException(CustomCode.InsufficientPermissionToDeleteQuestion);
+                return;
             }
+
+            // Teacher/ContentModerator can delete Student questions in their class (with teacher-student check)
+            if ((userRole == nameof(Role.Teacher) || userRole == nameof(Role.ContentModerator))
+                && originalCreatorRole == nameof(Role.Student)
+                && user.SchoolId.HasValue
+                && originalCreator.SchoolId == user.SchoolId)
+            {
+                await ValidateTeacherStudentRelationship(user.Id, originalCreator.Id);
+                return;
+            }
+
+            throw new AppException(CustomCode.InsufficientPermissionToDeleteQuestion);
         }
 
-        private async Task ValidateTeacherStudentRelationship(Guid teacherId, Guid studentId, Guid lessonMaterialId)
+        #endregion
+
+        #region Teacher-Student Relationship Validation
+
+        private async Task ValidateTeacherStudentRelationship(Guid teacherId, Guid studentId)
         {
             var classRepo = _unitOfWork.GetRepository<Classroom, Guid>();
             var teacherClasses = await classRepo.GetAllAsync();
@@ -160,18 +164,9 @@ namespace Eduva.Application.Features.Questions.Commands.DeleteQuestion
             {
                 throw new AppException(CustomCode.StudentNotInTeacherClasses);
             }
-
-            var folderLessonRepo = _unitOfWork.GetRepository<FolderLessonMaterial, Guid>();
-            var hasAccessToLesson = await folderLessonRepo.ExistsAsync(flm =>
-                flm.LessonMaterialId == lessonMaterialId &&
-                flm.Folder.ClassId.HasValue &&
-                commonClassIds.Contains(flm.Folder.ClassId.Value) &&
-                flm.Folder.Status == EntityStatus.Active);
-
-            if (!hasAccessToLesson)
-            {
-                throw new AppException(CustomCode.QuestionNotInTeacherClassScope);
-            }
         }
+
+        #endregion
+
     }
 }

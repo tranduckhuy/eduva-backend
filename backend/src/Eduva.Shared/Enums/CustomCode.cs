@@ -146,6 +146,12 @@ namespace Eduva.Shared.Enums
         InsufficientPermissionToDeleteQuestion = 4812,
         TeacherHasNoActiveClasses = 4813,
         StudentNotInTeacherClasses = 4814,
-        QuestionNotInTeacherClassScope = 4815,
+        StudentNotEnrolledInAnyClassForQuestions = 4815,
+        StudentNotInSchoolClass = 4816,
+        MaterialNotAccessibleToStudent = 4817,
+        StudentNotEnrolledInClassWithMaterial = 4818,
+        TeacherMustHaveActiveClass = 4819,
+        TeacherNotHaveAccessToMaterial = 4820,
+        TeacherClassNotInOwnSchool = 4821,
     }
 }

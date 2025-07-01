@@ -2,7 +2,7 @@
 
 namespace Eduva.Application.Interfaces.Services
 {
-    public interface IQuestionCommentNotificationService
+    public interface IHubNotificationService
     {
         Task NotifyQuestionCreatedAsync(QuestionResponse question, Guid lessonMaterialId);
         Task NotifyQuestionUpdatedAsync(QuestionResponse question, Guid lessonMaterialId);

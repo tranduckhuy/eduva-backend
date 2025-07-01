@@ -14,16 +14,13 @@ namespace Eduva.Application.Features.Questions.Commands.UpdateQuestion
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IQuestionCommentNotificationService _notificationService;
+        private readonly IHubNotificationService _hubNotificationService;
 
-        public UpdateQuestionHandler(
-            IUnitOfWork unitOfWork,
-            UserManager<ApplicationUser> userManager,
-            IQuestionCommentNotificationService notificationService)
+        public UpdateQuestionHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager, IHubNotificationService hubNotificationService)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
-            _notificationService = notificationService;
+            _hubNotificationService = hubNotificationService;
         }
 
         public async Task<QuestionResponse> Handle(UpdateQuestionCommand request, CancellationToken cancellationToken)
@@ -44,6 +41,14 @@ namespace Eduva.Application.Features.Questions.Commands.UpdateQuestion
 
             ValidateUpdatePermissions(user, userRole, question);
 
+            var lessonRepo = _unitOfWork.GetRepository<LessonMaterial, Guid>();
+            var lessonMaterial = await lessonRepo.GetByIdAsync(question.LessonMaterialId) ?? throw new AppException(CustomCode.LessonMaterialNotFound);
+
+            if (lessonMaterial.Status != EntityStatus.Active)
+            {
+                throw new AppException(CustomCode.LessonMaterialNotActive);
+            }
+
             question.Title = request.Title;
             question.Content = request.Content;
             question.LastModifiedAt = DateTimeOffset.UtcNow;
@@ -63,10 +68,11 @@ namespace Eduva.Application.Features.Questions.Commands.UpdateQuestion
             {
                 Id = question.Id,
                 LessonMaterialId = question.LessonMaterialId,
+                LessonMaterialTitle = lessonMaterial.Title,
                 Title = question.Title,
                 Content = question.Content,
                 CreatedAt = question.CreatedAt,
-                UpdatedAt = question.LastModifiedAt,
+                LastModifiedAt = question.LastModifiedAt,
                 CreatedByUserId = question.CreatedByUserId,
                 CreatedByName = creator?.FullName,
                 CreatedByAvatar = creator?.AvatarUrl,
@@ -74,10 +80,12 @@ namespace Eduva.Application.Features.Questions.Commands.UpdateQuestion
                 CommentCount = commentCount
             };
 
-            await _notificationService.NotifyQuestionUpdatedAsync(response, question.LessonMaterialId);
+            await _hubNotificationService.NotifyQuestionUpdatedAsync(response, question.LessonMaterialId);
 
             return response;
         }
+
+        #region Role Priority Logic
 
         private static string GetHighestPriorityRole(IList<string> roles)
         {
@@ -109,6 +117,10 @@ namespace Eduva.Application.Features.Questions.Commands.UpdateQuestion
             return "Unknown";
         }
 
+        #endregion
+
+        #region Validation Logic
+
         private static void ValidateUpdatePermissions(ApplicationUser user, string userRole, LessonMaterialQuestion question)
         {
             if (userRole == nameof(Role.SystemAdmin))
@@ -121,5 +133,7 @@ namespace Eduva.Application.Features.Questions.Commands.UpdateQuestion
                 throw new AppException(CustomCode.InsufficientPermissionToUpdateQuestion);
             }
         }
+
+        #endregion
     }
 }

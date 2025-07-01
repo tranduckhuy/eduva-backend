@@ -1,9 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Logging;
 using System.Security.Claims;
 
-namespace Eduva.Infrastructure.Hubs
+namespace Eduva.API.Hubs
 {
     [Authorize]
     public class QuestionCommentHub : Hub

@@ -56,6 +56,7 @@ namespace Eduva.Infrastructure.Extensions
             services.AddScoped<IRepositoryFactory, RepositoryFactory>();
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<ILessonMaterialRepository, LessonMaterialRepository>();
+            services.AddScoped<ILessonMaterialQuestionRepository, LessonMaterialQuestionRepository>();
             services.AddScoped<ISchoolSubscriptionRepository, SchoolSubscriptionRepository>();
             services.AddScoped<ISubscriptionPlanRepository, SubscriptionPlanRepository>();
             services.AddScoped<IClassroomRepository, ClassroomRepository>();
@@ -93,7 +94,7 @@ namespace Eduva.Infrastructure.Extensions
             services.AddSignalR();
 
             // Add SignalR Notification Service
-            services.AddScoped<IQuestionCommentNotificationService, QuestionCommentNotificationService>();
+            services.AddScoped<IHubNotificationService, HubNotificationService>();
 
             return services;
         }
