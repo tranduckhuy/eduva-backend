@@ -13,6 +13,8 @@ namespace Eduva.Application.Features.Questions.Queries
 {
     public class GetQuestionDetailQueryHandler : IRequestHandler<GetQuestionDetailQuery, QuestionDetailResponse>
     {
+        private const string UnknownRole = "Unknown";
+
         private readonly ILessonMaterialQuestionRepository _questionRepository;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IUnitOfWork _unitOfWork;
@@ -183,7 +185,7 @@ namespace Eduva.Application.Features.Questions.Queries
 
         private static bool CanUserUpdateQuestion(LessonMaterialQuestion question, ApplicationUser currentUser, string userRole)
         {
-            if (userRole == "SystemAdmin")
+            if (userRole == nameof(Role.SystemAdmin))
             {
                 return true;
             }
@@ -193,13 +195,13 @@ namespace Eduva.Application.Features.Questions.Queries
 
         private async Task<bool> CanUserDeleteQuestion(LessonMaterialQuestion question, ApplicationUser currentUser, string userRole)
         {
-            if (userRole == "SystemAdmin")
+            if (userRole == nameof(Role.SystemAdmin))
             {
                 return true;
             }
 
             var commentCount = question.Comments?.Count ?? 0;
-            if (commentCount > 0 && userRole == "Student")
+            if (commentCount > 0 && userRole == nameof(Role.Student))
             {
                 return false;
             }
@@ -219,15 +221,15 @@ namespace Eduva.Application.Features.Questions.Queries
             var originalCreatorRoles = await _userManager.GetRolesAsync(originalCreator);
             var originalCreatorRole = GetHighestPriorityRole(originalCreatorRoles);
 
-            if (userRole == "SchoolAdmin" &&
+            if (userRole == nameof(Role.SchoolAdmin) &&
                 currentUser.SchoolId.HasValue &&
                 originalCreator.SchoolId == currentUser.SchoolId)
             {
                 return true;
             }
 
-            if ((userRole == "Teacher" || userRole == "ContentModerator") &&
-                originalCreatorRole == "Student" &&
+            if ((userRole == nameof(Role.Teacher) || userRole == nameof(Role.ContentModerator)) &&
+                originalCreatorRole == nameof(Role.Student) &&
                 currentUser.SchoolId.HasValue &&
                 originalCreator.SchoolId == currentUser.SchoolId)
             {
@@ -239,7 +241,7 @@ namespace Eduva.Application.Features.Questions.Queries
 
         private static bool CanUserUpdateComment(QuestionComment comment, ApplicationUser currentUser, string userRole)
         {
-            if (userRole == "SystemAdmin")
+            if (userRole == nameof(Role.SystemAdmin))
             {
                 return true;
             }
@@ -249,13 +251,13 @@ namespace Eduva.Application.Features.Questions.Queries
 
         private async Task<bool> CanUserDeleteComment(QuestionComment comment, ApplicationUser currentUser, string userRole)
         {
-            if (userRole == "SystemAdmin")
+            if (userRole == nameof(Role.SystemAdmin))
             {
                 return true;
             }
 
             var replyCount = comment.Replies?.Count ?? 0;
-            if (replyCount > 0 && userRole == "Student")
+            if (replyCount > 0 && userRole == nameof(Role.Student))
             {
                 return false;
             }
@@ -275,15 +277,15 @@ namespace Eduva.Application.Features.Questions.Queries
             var commentCreatorRoles = await _userManager.GetRolesAsync(commentCreator);
             var commentCreatorRole = GetHighestPriorityRole(commentCreatorRoles);
 
-            if (userRole == "SchoolAdmin" &&
+            if (userRole == nameof(Role.SchoolAdmin) &&
                 currentUser.SchoolId.HasValue &&
                 commentCreator.SchoolId == currentUser.SchoolId)
             {
                 return true;
             }
 
-            if ((userRole == "Teacher" || userRole == "ContentModerator") &&
-                commentCreatorRole == "Student" &&
+            if ((userRole == nameof(Role.Teacher) || userRole == nameof(Role.ContentModerator)) &&
+                commentCreatorRole == nameof(Role.Student) &&
                 currentUser.SchoolId.HasValue &&
                 commentCreator.SchoolId == currentUser.SchoolId)
             {
@@ -322,7 +324,7 @@ namespace Eduva.Application.Features.Questions.Queries
         {
             if (user == null)
             {
-                return "Unknown";
+                return UnknownRole;
             }
 
             try
@@ -332,13 +334,13 @@ namespace Eduva.Application.Features.Questions.Queries
             }
             catch
             {
-                return "Unknown";
+                return UnknownRole;
             }
         }
 
         private static int CalculateTotalCommentCount(ICollection<QuestionComment>? comments)
         {
-            if (comments == null || !comments.Any())
+            if (comments == null || comments.Count == 0)
             {
                 return 0;
             }
@@ -353,35 +355,35 @@ namespace Eduva.Application.Features.Questions.Queries
         {
             if (roles == null || !roles.Any())
             {
-                return "Unknown";
+                return UnknownRole;
             }
 
-            if (roles.Contains("SystemAdmin"))
+            if (roles.Contains(nameof(Role.SystemAdmin)))
             {
-                return "SystemAdmin";
+                return nameof(Role.SystemAdmin);
             }
 
-            if (roles.Contains("SchoolAdmin"))
+            if (roles.Contains(nameof(Role.SchoolAdmin)))
             {
-                return "SchoolAdmin";
+                return nameof(Role.SchoolAdmin);
             }
 
-            if (roles.Contains("ContentModerator"))
+            if (roles.Contains(nameof(Role.ContentModerator)))
             {
-                return "ContentModerator";
+                return nameof(Role.ContentModerator);
             }
 
-            if (roles.Contains("Teacher"))
+            if (roles.Contains(nameof(Role.Teacher)))
             {
-                return "Teacher";
+                return nameof(Role.Teacher);
             }
 
-            if (roles.Contains("Student"))
+            if (roles.Contains(nameof(Role.Student)))
             {
-                return "Student";
+                return nameof(Role.Student);
             }
 
-            return "Unknown";
+            return UnknownRole;
         }
 
         #endregion
