@@ -161,12 +161,14 @@ namespace Eduva.Application.Common.Mappings
                 .ForMember(dest => dest.TeacherAvatarUrl, opt => opt.MapFrom(src => src.Class.Teacher != null ? src.Class.Teacher.AvatarUrl : null))
                 .ForMember(dest => dest.StudentAvatarUrl, opt => opt.MapFrom(src => src.Student != null ? src.Student.AvatarUrl : null))
                 .ForMember(dest => dest.ClassStatus, opt => opt.MapFrom(src => src.Class.Status))
-                .ForMember(dest => dest.BackgroundImageUrl, opt => opt.MapFrom(src => src.Class != null ? src.Class.BackgroundImageUrl : string.Empty));
+                .ForMember(dest => dest.BackgroundImageUrl, opt => opt.MapFrom(src => src.Class != null ? src.Class.BackgroundImageUrl : string.Empty))
+                .ForMember(dest => dest.CountLessonMaterial, opt => opt.Ignore());
             CreateMap<Pagination<StudentClass>, Pagination<StudentClassResponse>>();
 
             // Folder mappings
             CreateMap<Folder, FolderResponse>()
-                .ForMember(dest => dest.OwnerName, opt => opt.MapFrom(src => GetOwnerName(src)));
+                .ForMember(dest => dest.OwnerName, opt => opt.MapFrom(src => GetOwnerName(src)))
+                .ForMember(dest => dest.CountLessonMaterial, opt => opt.Ignore());
             CreateMap<Pagination<Folder>, Pagination<FolderResponse>>();
 
             // System Configurations

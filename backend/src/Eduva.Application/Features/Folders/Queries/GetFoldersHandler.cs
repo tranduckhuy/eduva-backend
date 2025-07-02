@@ -58,6 +58,22 @@ namespace Eduva.Application.Features.Folders.Queries
 
             var data = _mapper.Map<IReadOnlyCollection<FolderResponse>>(folderPagination.Data);
 
+            var folderIds = data.Select(f => f.Id).ToList();
+
+            if (folderIds.Any())
+            {
+                var folderLessonMaterialRepo = _unitOfWork.GetRepository<FolderLessonMaterial, int>();
+
+                foreach (var folderResponse in data)
+                {
+                    int count = await folderLessonMaterialRepo.CountAsync(
+                        flm => flm.FolderId == folderResponse.Id,
+                        cancellationToken);
+
+                    folderResponse.CountLessonMaterial = count;
+                }
+            }
+
             return new Pagination<FolderResponse>
             {
                 PageIndex = request.FolderSpecParam.PageIndex,

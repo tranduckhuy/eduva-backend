@@ -4,6 +4,7 @@ using Eduva.Application.Features.Classes.Responses;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Domain.Entities;
+using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
 
@@ -43,6 +44,33 @@ namespace Eduva.Application.Features.Classes.Queries.GetClassById
             response.TeacherName = teacher?.FullName ?? string.Empty;
             response.SchoolName = school?.Name ?? string.Empty;
             response.TeacherAvatarUrl = teacher?.AvatarUrl ?? string.Empty;
+
+            var folderRepository = _unitOfWork.GetRepository<Folder, Guid>();
+            var allFolders = await folderRepository.GetAllAsync();
+
+            var folders = allFolders.Where(f =>
+                f.OwnerType == OwnerType.Class &&
+                f.ClassId.HasValue &&
+                f.ClassId.Value == request.Id
+            ).ToList();
+
+            if (folders.Any())
+            {
+                var folderIds = folders.Select(f => f.Id).ToList();
+
+                var folderLessonMaterialRepo = _unitOfWork.GetRepository<FolderLessonMaterial, int>();
+                var allFolderLessonMaterials = await folderLessonMaterialRepo.GetAllAsync();
+
+                var folderLessonMaterials = allFolderLessonMaterials
+                    .Where(flm => folderIds.Contains(flm.FolderId))
+                    .ToList();
+
+                response.CountLessonMaterial = folderLessonMaterials.Count;
+            }
+            else
+            {
+                response.CountLessonMaterial = 0;
+            }
 
             return response;
         }
