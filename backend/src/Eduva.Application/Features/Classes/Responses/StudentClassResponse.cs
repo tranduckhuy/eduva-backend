@@ -14,6 +14,8 @@ namespace Eduva.Application.Features.Classes.Responses
         public string StudentName { get; set; } = string.Empty;
         public string? TeacherAvatarUrl { get; set; }
         public string? StudentAvatarUrl { get; set; }
+
+        public string BackgroundImageUrl { get; set; } = string.Empty;
         public DateTimeOffset EnrolledAt { get; set; }
         public EntityStatus ClassStatus { get; set; }
     }
