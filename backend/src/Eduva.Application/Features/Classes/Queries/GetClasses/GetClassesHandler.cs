@@ -58,7 +58,7 @@ namespace Eduva.Application.Features.Classes.Queries.GetClasses
 
             var classrooms = AppMapper.Mapper.Map<Pagination<ClassResponse>>(result);
 
-            if (classrooms.Data.Any())
+            if (classrooms.Data.Count > 0)
             {
                 var classIds = classrooms.Data.Select(c => c.Id).ToList();
 

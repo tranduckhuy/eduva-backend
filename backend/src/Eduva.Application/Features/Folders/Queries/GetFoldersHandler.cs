@@ -58,11 +58,11 @@ namespace Eduva.Application.Features.Folders.Queries
 
             var data = _mapper.Map<IReadOnlyCollection<FolderResponse>>(folderPagination.Data);
 
-            if (data != null && data.Any())
+            if (data != null && data.Count > 0)
             {
                 var folderIds = data.Select(f => f.Id).ToList();
 
-                if (folderIds.Any())
+                if (folderIds.Count > 0)
                 {
                     var folderLessonMaterialRepo = _unitOfWork.GetRepository<FolderLessonMaterial, int>();
 

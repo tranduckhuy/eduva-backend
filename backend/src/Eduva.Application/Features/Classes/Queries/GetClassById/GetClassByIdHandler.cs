@@ -54,7 +54,7 @@ namespace Eduva.Application.Features.Classes.Queries.GetClassById
                 f.ClassId.Value == request.Id
             ).ToList();
 
-            if (folders.Any())
+            if (folders.Count > 0)
             {
                 var folderIds = folders.Select(f => f.Id).ToList();
 

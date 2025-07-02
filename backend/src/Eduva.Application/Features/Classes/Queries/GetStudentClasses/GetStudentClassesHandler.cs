@@ -34,7 +34,7 @@ namespace Eduva.Application.Features.Classes.Queries.GetStudentClasses
             // Map to response model
             var studentClasses = AppMapper.Mapper.Map<Pagination<StudentClassResponse>>(result);
 
-            if (studentClasses.Data.Any())
+            if (studentClasses.Data.Count > 0)
             {
                 var classIds = studentClasses.Data.Select(sc => sc.ClassId).ToList();
 
