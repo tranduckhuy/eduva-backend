@@ -25,7 +25,7 @@ namespace Eduva.Application.Features.LessonMaterials.Queries
         {
             var repository = _unitOfWork.GetCustomRepository<ILessonMaterialRepository>();
 
-            var lessonMaterial = await repository.GetByIdWithDetailsAsync(request.Id)
+            var lessonMaterial = await repository.GetByIdWithDetailsAsync(request.Id, cancellationToken)
                 ?? throw new LessonMaterialNotFountException(request.Id);
 
             // Check if the user has access to the lesson material
@@ -44,7 +44,7 @@ namespace Eduva.Application.Features.LessonMaterials.Queries
             return response;
         }
 
-        private bool HasAccessToLessonMaterial(int? userSchoolId, int? lessonMaterialSchoolId)
+        private static bool HasAccessToLessonMaterial(int? userSchoolId, int? lessonMaterialSchoolId)
         {
             if (lessonMaterialSchoolId == null || userSchoolId == null)
             {
