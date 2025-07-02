@@ -249,6 +249,73 @@ namespace Eduva.Shared.Constants
             { CustomCode.FolderShouldBeArchivedBeforeDelete, new MessageDetail {
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Folder must be archived before it can be permanently deleted" } },
 
+              // Question Error
+            { CustomCode.InsufficientPermissionToCreateQuestion, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You do not have sufficient permissions to create a question for this lesson material." } },
+            { CustomCode.LessonMaterialNotFound, new MessageDetail {
+                HttpCode = StatusCodes.Status404NotFound, Message = "Lesson material not found. Please check the lesson material ID and try again." } },
+            { CustomCode.LessonMaterialNotActive, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Lesson material is not active. You can only create questions for active lesson materials." } },
+            { CustomCode.InsufficientPermission, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You do not have sufficient permissions to perform this action." } },
+            { CustomCode.CannotCreateQuestionForLessonNotInYourSchool, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You cannot create a question for a lesson material that is not in your school." } },
+            { CustomCode.CannotCreateQuestionForPendingLesson, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You cannot create a question for a lesson material that is pending approval." } },
+            { CustomCode.StudentNotEnrolledInAnyClass, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You must be enrolled in a class to create questions for lesson materials." } },
+            { CustomCode.CannotCreateQuestionForLessonNotAccessible, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You cannot create a question for a lesson material that is not accessible to you." } },
+            { CustomCode.QuestionNotFound, new MessageDetail {
+                HttpCode = StatusCodes.Status404NotFound, Message = "Question not found. Please check the question ID and try again." } },
+            { CustomCode.QuestionNotActive, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Question is not active. You can only update active questions." } },
+            { CustomCode.InsufficientPermissionToUpdateQuestion, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You do not have sufficient permissions to update this question." } },
+            { CustomCode.InsufficientPermissionToDeleteQuestion, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You do not have sufficient permissions to delete this question." } },
+            { CustomCode.CannotDeleteQuestionWithComments, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Cannot delete question that has comments. Please remove all comments first." } },
+            { CustomCode.TeacherHasNoActiveClasses, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "Teacher has no active classes to manage questions." } },
+            { CustomCode.StudentNotInTeacherClasses, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "Student is not enrolled in any of your classes." } },
+            { CustomCode.StudentNotEnrolledInAnyClassForQuestions, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You must be enrolled in at least one class to view questions." } },
+            { CustomCode.StudentNotInSchoolClass, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You are not enrolled in any class within your school." } },
+            { CustomCode.MaterialNotAccessibleToStudent, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You do not have access to this lesson material. Please check your class enrollment." } },
+            { CustomCode.StudentNotEnrolledInClassWithMaterial, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You are not enrolled in any class that contains this lesson material." } },
+            { CustomCode.TeacherMustHaveActiveClass, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "Teachers must have at least one active class to view questions." } },
+            { CustomCode.TeacherNotHaveAccessToMaterial, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You do not have access to this lesson material through your classes." } },
+            { CustomCode.TeacherClassNotInOwnSchool, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "Teacher classes must belong to your own school." } },
+
+             // Comment Errors
+            { CustomCode.CommentNotFound, new MessageDetail {
+                HttpCode = StatusCodes.Status404NotFound, Message = "Comment not found" } },
+            { CustomCode.CommentNotActive, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Comment is not active" } },
+            { CustomCode.InsufficientPermissionToCreateComment, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You don't have permission to create comments on this question" } },
+            { CustomCode.InsufficientPermissionToUpdateComment, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You don't have permission to update this comment" } },
+            { CustomCode.InsufficientPermissionToDeleteComment, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You don't have permission to delete this comment" } },
+            { CustomCode.CannotDeleteCommentWithReplies, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Cannot delete comment that has replies" } },
+            { CustomCode.CannotReplyToReply, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Cannot reply to a reply. Only top-level comments can have replies" } },
+            { CustomCode.ParentCommentNotFound, new MessageDetail {
+                HttpCode = StatusCodes.Status404NotFound, Message = "Parent comment not found or is not a top-level comment" } },
+            { CustomCode.CommentContentRequired, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Comment content is required" } },
+
+
             #endregion
         };
 

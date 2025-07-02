@@ -1,4 +1,7 @@
+using Eduva.API.Adapters;
+using Eduva.API.Hubs;
 using Eduva.API.Middlewares;
+using Eduva.Application.Contracts.Hubs;
 using Eduva.Application.Extentions;
 using Eduva.Domain.Entities;
 using Eduva.Infrastructure.Extensions;
@@ -55,12 +58,12 @@ builder.Services.AddSwaggerGen(setup =>
 
 builder.Services.AddCors(o => o.AddPolicy("AllowAll", builder =>
 {
-    builder.AllowAnyOrigin()
+    builder.SetIsOriginAllowed(_ => true) // AllowAnyOrigin():
            .AllowAnyMethod()
            .AllowAnyHeader()
-           .WithExposedHeaders("Content-Disposition");
+           .WithExposedHeaders("Content-Disposition")
+           .AllowCredentials();
 }));
-
 
 builder.Services.AddApplicationIdentity<ApplicationUser>();
 builder.Services.AddJwtAuthentication(builder.Configuration);
@@ -75,6 +78,8 @@ builder.Services.Configure<DataProtectionTokenProviderOptions>(opt =>
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddApplicationServices();
 
+// Register SignalR Hub services
+builder.Services.AddScoped<INotificationHub, SignalRNotificationHub>();
 
 var app = builder.Build();
 
@@ -96,6 +101,9 @@ app.UseAuthorization();
 
 // Custom middleware to validate subscription access
 app.UseMiddleware<SubscriptionValidationMiddleware>();
+
+// Add SignalR Hub mapping
+app.MapHub<QuestionCommentHub>("/hubs/question-comment");
 
 app.MapControllers();
 

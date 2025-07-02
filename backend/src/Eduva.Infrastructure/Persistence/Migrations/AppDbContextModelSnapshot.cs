@@ -1119,12 +1119,12 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.HasOne("Eduva.Domain.Entities.QuestionComment", "ParentComment")
                         .WithMany("Replies")
                         .HasForeignKey("ParentCommentId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("Eduva.Domain.Entities.LessonMaterialQuestion", "Question")
                         .WithMany("Comments")
                         .HasForeignKey("QuestionId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("CreatedByUser");

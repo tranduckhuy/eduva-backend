@@ -236,6 +236,8 @@ namespace Eduva.Infrastructure.Test.Services
                 Assert.That(result.Item2.Email, Is.EqualTo("user@example.com"));
             });
 
+            await Task.Delay(100);
+
             _emailSender.Verify(x => x.SendEmailAsync(It.Is<EmailMessage>(m =>
                 m.To.First().DisplayName == "user@example.com"
             )), Times.Once);

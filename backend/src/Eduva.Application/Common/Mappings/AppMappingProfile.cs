@@ -10,6 +10,8 @@ using Eduva.Application.Features.LessonMaterials;
 using Eduva.Application.Features.LessonMaterials.Commands;
 using Eduva.Application.Features.LessonMaterials.Responses;
 using Eduva.Application.Features.Payments.Responses;
+using Eduva.Application.Features.Questions.Commands.CreateQuestionComment;
+using Eduva.Application.Features.Questions.Responses;
 using Eduva.Application.Features.Schools.Commands.CreateSchool;
 using Eduva.Application.Features.Schools.Responses;
 using Eduva.Application.Features.SchoolSubscriptions.Responses;
@@ -151,15 +153,70 @@ namespace Eduva.Application.Common.Mappings
                 .ReverseMap();
             CreateMap<Pagination<Classroom>, Pagination<ClassResponse>>();
 
+            // Question mappings
+            CreateMap<LessonMaterialQuestion, QuestionResponse>()
+                .ForMember(dest => dest.CreatedByName, opt => opt.MapFrom(src => src.CreatedByUser != null ? src.CreatedByUser.FullName : string.Empty))
+                .ForMember(dest => dest.CreatedByAvatar, opt => opt.MapFrom(src => src.CreatedByUser != null ? src.CreatedByUser.AvatarUrl : null))
+                .ForMember(dest => dest.LessonMaterialTitle, opt => opt.MapFrom(src => src.LessonMaterial != null ? src.LessonMaterial.Title : string.Empty))
+                .ForMember(dest => dest.CommentCount, opt => opt.MapFrom(src => src.Comments.Count));
+            CreateMap<Pagination<LessonMaterialQuestion>, Pagination<QuestionResponse>>();
+
+            // Question Detail mappings
+            CreateMap<LessonMaterialQuestion, QuestionDetailResponse>()
+                .ForMember(dest => dest.CreatedByName, opt => opt.MapFrom(src => src.CreatedByUser != null ? src.CreatedByUser.FullName : string.Empty))
+                .ForMember(dest => dest.CreatedByAvatar, opt => opt.MapFrom(src => src.CreatedByUser != null ? src.CreatedByUser.AvatarUrl : null))
+                .ForMember(dest => dest.LessonMaterialTitle, opt => opt.MapFrom(src => src.LessonMaterial != null ? src.LessonMaterial.Title : string.Empty))
+                .ForMember(dest => dest.CreatedByRole, opt => opt.Ignore())
+                .ForMember(dest => dest.CommentCount, opt => opt.Ignore())
+                .ForMember(dest => dest.CanUpdate, opt => opt.Ignore())
+                .ForMember(dest => dest.CanDelete, opt => opt.Ignore())
+                .ForMember(dest => dest.CanComment, opt => opt.Ignore())
+                .ForMember(dest => dest.Comments, opt => opt.Ignore());
+
+            CreateMap<CreateQuestionCommentCommand, QuestionComment>();
+
+            // Question Comment mappings
+            CreateMap<QuestionComment, QuestionCommentResponse>()
+               .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+               .ForMember(dest => dest.QuestionId, opt => opt.MapFrom(src => src.QuestionId))
+               .ForMember(dest => dest.Content, opt => opt.MapFrom(src => src.Content))
+               .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
+               .ForMember(dest => dest.LastModifiedAt, opt => opt.MapFrom(src => src.LastModifiedAt))
+               .ForMember(dest => dest.CreatedByUserId, opt => opt.MapFrom(src => src.CreatedByUserId))
+               .ForMember(dest => dest.ParentCommentId, opt => opt.MapFrom(src => src.ParentCommentId))
+               .ForMember(dest => dest.CreatedByName, opt => opt.MapFrom(src => src.CreatedByUser != null ? src.CreatedByUser.FullName : string.Empty))
+               .ForMember(dest => dest.CreatedByAvatar, opt => opt.MapFrom(src => src.CreatedByUser != null ? src.CreatedByUser.AvatarUrl : null))
+               .ForMember(dest => dest.CreatedByRole, opt => opt.Ignore())
+               .ForMember(dest => dest.CanUpdate, opt => opt.Ignore())
+               .ForMember(dest => dest.CanDelete, opt => opt.Ignore())
+               .ForMember(dest => dest.Replies, opt => opt.Ignore())
+               .ForMember(dest => dest.ReplyCount, opt => opt.Ignore());
+
+            // Question Reply mappings  
+            CreateMap<QuestionComment, QuestionReplyResponse>()
+                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.Content, opt => opt.MapFrom(src => src.Content))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
+                .ForMember(dest => dest.LastModifiedAt, opt => opt.MapFrom(src => src.LastModifiedAt))
+                .ForMember(dest => dest.CreatedByUserId, opt => opt.MapFrom(src => src.CreatedByUserId))
+                .ForMember(dest => dest.ParentCommentId, opt => opt.MapFrom(src => src.ParentCommentId!.Value))
+                .ForMember(dest => dest.CreatedByName, opt => opt.MapFrom(src => src.CreatedByUser != null ? src.CreatedByUser.FullName : string.Empty))
+                .ForMember(dest => dest.CreatedByAvatar, opt => opt.MapFrom(src => src.CreatedByUser != null ? src.CreatedByUser.AvatarUrl : null))
+                .ForMember(dest => dest.CreatedByRole, opt => opt.Ignore())
+                .ForMember(dest => dest.CanUpdate, opt => opt.Ignore())
+                .ForMember(dest => dest.CanDelete, opt => opt.Ignore());
+
             // StudentClass mappings
             CreateMap<StudentClass, StudentClassResponse>()
                 .ForMember(dest => dest.ClassName, opt => opt.MapFrom(src => src.Class.Name))
                 .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Class.Teacher != null ? src.Class.Teacher.FullName ?? string.Empty : string.Empty))
                 .ForMember(dest => dest.SchoolName, opt => opt.MapFrom(src => src.Class.School != null ? src.Class.School.Name : string.Empty))
                 .ForMember(dest => dest.ClassCode, opt => opt.MapFrom(src => src.Class.ClassCode ?? string.Empty))
+                .ForMember(dest => dest.StudentName, opt => opt.MapFrom(src => src.Student != null ? src.Student.FullName : string.Empty))
                 .ForMember(dest => dest.TeacherAvatarUrl, opt => opt.MapFrom(src => src.Class.Teacher != null ? src.Class.Teacher.AvatarUrl : null))
                 .ForMember(dest => dest.StudentAvatarUrl, opt => opt.MapFrom(src => src.Student != null ? src.Student.AvatarUrl : null))
-                .ForMember(dest => dest.ClassStatus, opt => opt.MapFrom(src => src.Class.Status));
+                .ForMember(dest => dest.ClassStatus, opt => opt.MapFrom(src => src.Class.Status))
+                .ForMember(dest => dest.BackgroundImageUrl, opt => opt.MapFrom(src => src.Class != null ? src.Class.BackgroundImageUrl : string.Empty));
             CreateMap<Pagination<StudentClass>, Pagination<StudentClassResponse>>();
 
             // Folder mappings

@@ -135,7 +135,39 @@ namespace Eduva.Shared.Enums
         KeyConfigNotFound = 5001,
         KeyConfigAlreadyExist = 5002,
 
-        // Lesson Material Errors
-        LessonMaterialNotFound = 5100,
+        // Question Errors
+        InsufficientPermissionToCreateQuestion = 4800,
+        LessonMaterialNotFound = 4801,
+        LessonMaterialNotActive = 4802,
+        InsufficientPermission = 4803,
+        CannotCreateQuestionForLessonNotInYourSchool = 4804,
+        CannotCreateQuestionForPendingLesson = 4805,
+        StudentNotEnrolledInAnyClass = 4806,
+        CannotCreateQuestionForLessonNotAccessible = 4807,
+        QuestionNotFound = 4808,
+        QuestionNotActive = 4809,
+        InsufficientPermissionToUpdateQuestion = 4810,
+        CannotDeleteQuestionWithComments = 4811,
+        InsufficientPermissionToDeleteQuestion = 4812,
+        TeacherHasNoActiveClasses = 4813,
+        StudentNotInTeacherClasses = 4814,
+        StudentNotEnrolledInAnyClassForQuestions = 4815,
+        StudentNotInSchoolClass = 4816,
+        MaterialNotAccessibleToStudent = 4817,
+        StudentNotEnrolledInClassWithMaterial = 4818,
+        TeacherMustHaveActiveClass = 4819,
+        TeacherNotHaveAccessToMaterial = 4820,
+        TeacherClassNotInOwnSchool = 4821,
+
+        // Comment Errors
+        CommentNotFound = 4822,
+        CommentNotActive = 4823,
+        InsufficientPermissionToCreateComment = 4824,
+        InsufficientPermissionToUpdateComment = 4825,
+        InsufficientPermissionToDeleteComment = 4826,
+        CannotDeleteCommentWithReplies = 4827,
+        CannotReplyToReply = 4828,
+        ParentCommentNotFound = 4829,
+        CommentContentRequired = 4830,
     }
 }
