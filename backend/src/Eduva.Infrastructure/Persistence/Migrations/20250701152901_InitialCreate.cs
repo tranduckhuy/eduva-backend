@@ -662,13 +662,13 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                         column: x => x.QuestionId,
                         principalTable: "LessonMaterialQuestions",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_QuestionComments_QuestionComments_ParentCommentId",
                         column: x => x.ParentCommentId,
                         principalTable: "QuestionComments",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(

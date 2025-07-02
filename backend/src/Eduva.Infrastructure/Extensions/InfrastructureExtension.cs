@@ -56,6 +56,7 @@ namespace Eduva.Infrastructure.Extensions
             services.AddScoped<IRepositoryFactory, RepositoryFactory>();
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<ILessonMaterialRepository, LessonMaterialRepository>();
+            services.AddScoped<ILessonMaterialQuestionRepository, LessonMaterialQuestionRepository>();
             services.AddScoped<ISchoolSubscriptionRepository, SchoolSubscriptionRepository>();
             services.AddScoped<ISubscriptionPlanRepository, SubscriptionPlanRepository>();
             services.AddScoped<IClassroomRepository, ClassroomRepository>();
@@ -66,6 +67,7 @@ namespace Eduva.Infrastructure.Extensions
             services.AddScoped<IAICreditPackRepository, AICreditPackRepository>();
             services.AddScoped<ISystemConfigRepository, SystemConfigRepository>();
             services.AddScoped<ICreditTransactionRepository, CreditTransactionRepository>();
+            services.AddScoped<IQuestionPermissionService, QuestionPermissionService>();
 
             services.AddScoped<PayOS>(provider =>
             {
@@ -88,6 +90,12 @@ namespace Eduva.Infrastructure.Extensions
             services.AddScoped<ISchoolValidationService, SchoolValidationService>();
             services.AddScoped<ISystemConfigService, SystemConfigService>();
             services.AddScoped<SystemConfigHelper>();
+
+            // Add SignalR
+            services.AddSignalR();
+
+            // Add SignalR Notification Service
+            services.AddScoped<IHubNotificationService, HubNotificationService>();
 
             return services;
         }
