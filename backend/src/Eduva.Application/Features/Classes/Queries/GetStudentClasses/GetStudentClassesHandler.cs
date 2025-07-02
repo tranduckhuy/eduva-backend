@@ -46,7 +46,7 @@ namespace Eduva.Application.Features.Classes.Queries.GetStudentClasses
                     classIds.Contains(f.ClassId.Value)
                 ).ToList();
 
-                if (classFolders.Any())
+                if (classFolders.Count > 0)
                 {
                     var foldersByClass = classFolders
                         .GroupBy(f => f.ClassId!.Value)
@@ -54,7 +54,7 @@ namespace Eduva.Application.Features.Classes.Queries.GetStudentClasses
 
                     var allFolderIds = classFolders.Select(f => f.Id).ToList();
 
-                    if (allFolderIds.Any())
+                    if (allFolderIds.Count > 0)
                     {
                         var folderLessonMaterialRepo = _unitOfWork.GetRepository<FolderLessonMaterial, int>();
                         var allFolderLessonMaterials = await folderLessonMaterialRepo.GetAllAsync();

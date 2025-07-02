@@ -70,14 +70,14 @@ namespace Eduva.Application.Features.Classes.Queries.GetClasses
                     classIds.Contains(f.ClassId.Value)
                 ).ToList();
 
-                if (folders.Any())
+                if (folders.Count > 0)
                 {
                     var foldersByClass = folders.GroupBy(f => f.ClassId!.Value)
                         .ToDictionary(g => g.Key, g => g.Select(f => f.Id).ToList());
 
                     var allFolderIds = folders.Select(f => f.Id).ToList();
 
-                    if (allFolderIds.Any())
+                    if (allFolderIds.Count > 0)
                     {
                         var folderLessonMaterialRepo = _unitOfWork.GetRepository<FolderLessonMaterial, int>();
                         var allFolderLessonMaterials = await folderLessonMaterialRepo.GetAllAsync();
