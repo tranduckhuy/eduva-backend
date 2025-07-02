@@ -374,7 +374,7 @@ namespace Eduva.API.Test.Controllers.Folders
                 Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
                 Assert.That(response.Data, Is.TypeOf<List<FolderResponse>>());
                 var returnedFolders = (List<FolderResponse>)response.Data!;
-                Assert.That(returnedFolders.Count, Is.EqualTo(1));
+                Assert.That(returnedFolders, Has.Count.EqualTo(1));
                 Assert.That(returnedFolders[0].Name, Is.EqualTo("Test Folder"));
             });
         }
