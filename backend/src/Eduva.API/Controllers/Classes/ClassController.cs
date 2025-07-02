@@ -414,7 +414,7 @@ namespace Eduva.API.Controllers.Classes
             }
         }
 
-        [HttpPost("{classId}/folders/{folderId}/lessonmaterials")]
+        [HttpPost("{classId}/folders/{folderId}/lesson-materials")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
         [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}")]
