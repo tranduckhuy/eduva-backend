@@ -137,7 +137,7 @@ namespace Eduva.Infrastructure.Identity
             {
                 var otp = await GetOtpProvider().GenerateAsync("OTP", _userManager, user);
 
-                await SendOtpEmailMessage(user, otp);
+                _ = SendOtpEmailMessage(user, otp);
 
                 return (CustomCode.RequiresOtpVerification, new AuthResultDto
                 {
@@ -255,7 +255,7 @@ namespace Eduva.Infrastructure.Identity
                 throw new InvalidCredentialsException();
             }
 
-            await Send2FaOtpEmailAsync(user, "Bật xác thực 2 yếu tố - EDUVA");
+            _ = Send2FaOtpEmailAsync(user, "Bật xác thực 2 yếu tố - EDUVA");
 
             return CustomCode.OtpSentSuccessfully;
         }
@@ -534,7 +534,7 @@ namespace Eduva.Infrastructure.Identity
 
             var message = await MailMessageHelper.CreateMessageAsync(user, otp, subject);
 
-            await _emailSender.SendEmailAsync(message);
+            _ = _emailSender.SendEmailAsync(message);
 
             return CustomCode.OtpSentSuccessfully;
         }
