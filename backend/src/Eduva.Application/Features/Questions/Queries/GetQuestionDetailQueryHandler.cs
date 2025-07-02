@@ -8,21 +8,18 @@ using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 
 namespace Eduva.Application.Features.Questions.Queries
 {
     public class GetQuestionDetailQueryHandler : IRequestHandler<GetQuestionDetailQuery, QuestionDetailResponse>
     {
         private readonly ILessonMaterialQuestionRepository _questionRepository;
-        private readonly UserManager<ApplicationUser> _userManager;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IQuestionPermissionService _permissionService;
 
-        public GetQuestionDetailQueryHandler(ILessonMaterialQuestionRepository questionRepository, UserManager<ApplicationUser> userManager, IUnitOfWork unitOfWork, IQuestionPermissionService permissionService)
+        public GetQuestionDetailQueryHandler(ILessonMaterialQuestionRepository questionRepository, IUnitOfWork unitOfWork, IQuestionPermissionService permissionService)
         {
             _questionRepository = questionRepository;
-            _userManager = userManager;
             _unitOfWork = unitOfWork;
             _permissionService = permissionService;
         }

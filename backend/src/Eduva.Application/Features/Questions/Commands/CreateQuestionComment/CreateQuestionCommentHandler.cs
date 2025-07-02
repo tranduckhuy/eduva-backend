@@ -45,10 +45,9 @@ namespace Eduva.Application.Features.Questions.Commands.CreateQuestionComment
 
             await ValidateQuestionAccessPermissions(user, userRole, question);
 
-            QuestionComment? parentComment = null;
             if (request.ParentCommentId.HasValue)
             {
-                parentComment = await ValidateParentComment(request.ParentCommentId.Value, request.QuestionId);
+                await ValidateParentComment(request.ParentCommentId.Value, request.QuestionId);
             }
 
             var comment = new QuestionComment
