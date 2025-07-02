@@ -3,6 +3,7 @@ using Eduva.Application.Common.Mappings;
 using Eduva.Application.Features.Questions.Responses;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
+using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
@@ -13,23 +14,23 @@ namespace Eduva.Application.Features.Questions.Queries
 {
     public class GetQuestionDetailQueryHandler : IRequestHandler<GetQuestionDetailQuery, QuestionDetailResponse>
     {
-        private const string UnknownRole = "Unknown";
-
         private readonly ILessonMaterialQuestionRepository _questionRepository;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IQuestionPermissionService _permissionService;
 
-        public GetQuestionDetailQueryHandler(ILessonMaterialQuestionRepository questionRepository, UserManager<ApplicationUser> userManager, IUnitOfWork unitOfWork)
+        public GetQuestionDetailQueryHandler(ILessonMaterialQuestionRepository questionRepository, UserManager<ApplicationUser> userManager, IUnitOfWork unitOfWork, IQuestionPermissionService permissionService)
         {
             _questionRepository = questionRepository;
             _userManager = userManager;
             _unitOfWork = unitOfWork;
+            _permissionService = permissionService;
         }
 
         public async Task<QuestionDetailResponse> Handle(GetQuestionDetailQuery request, CancellationToken cancellationToken)
         {
             var currentUser = await GetAndValidateCurrentUser(request.CurrentUserId);
-            var userRole = await GetUserRole(currentUser);
+            var userRole = await _permissionService.GetUserRoleSafelyAsync(currentUser);
 
             await ValidateQuestionAccess(request.QuestionId, request.CurrentUserId, userRole);
 
@@ -50,12 +51,6 @@ namespace Eduva.Application.Features.Questions.Queries
             var user = await userRepo.GetByIdAsync(userId);
 
             return user ?? throw new AppException(CustomCode.UserNotFound);
-        }
-
-        private async Task<string> GetUserRole(ApplicationUser user)
-        {
-            var roles = await _userManager.GetRolesAsync(user);
-            return GetHighestPriorityRole(roles);
         }
 
         private async Task ValidateQuestionAccess(Guid questionId, Guid userId, string userRole)
@@ -101,11 +96,11 @@ namespace Eduva.Application.Features.Questions.Queries
         {
             var response = AppMapper.Mapper.Map<QuestionDetailResponse>(question);
 
-            response.CreatedByRole = await GetUserRoleSafely(question.CreatedByUser);
-            response.CommentCount = CalculateTotalCommentCount(question.Comments);
+            response.CreatedByRole = await _permissionService.GetUserRoleSafelyAsync(question.CreatedByUser);
+            response.CommentCount = _permissionService.CalculateTotalCommentCount(question.Comments);
 
-            response.CanUpdate = CanUserUpdateQuestion(question, currentUser, userRole);
-            response.CanDelete = await CanUserDeleteQuestion(question, currentUser, userRole);
+            response.CanUpdate = _permissionService.CanUserUpdateQuestion(question, currentUser, userRole);
+            response.CanDelete = await _permissionService.CanUserDeleteQuestionAsync(question, currentUser, userRole);
             response.CanComment = true;
 
             response.Comments = await BuildCommentStructureWithMapping(question.Comments, currentUser, userRole);
@@ -140,9 +135,9 @@ namespace Eduva.Application.Features.Questions.Queries
         {
             var response = AppMapper.Mapper.Map<QuestionCommentResponse>(comment);
 
-            response.CreatedByRole = await GetUserRoleSafely(comment.CreatedByUser);
-            response.CanUpdate = CanUserUpdateComment(comment, currentUser, userRole);
-            response.CanDelete = await CanUserDeleteComment(comment, currentUser, userRole);
+            response.CreatedByRole = await _permissionService.GetUserRoleSafelyAsync(comment.CreatedByUser);
+            response.CanUpdate = _permissionService.CanUserUpdateComment(comment, currentUser, userRole);
+            response.CanDelete = await _permissionService.CanUserDeleteCommentAsync(comment, currentUser, userRole);
 
             response.Replies = await BuildRepliesWithMapping(comment.Replies, currentUser, userRole);
             response.ReplyCount = response.Replies.Count;
@@ -172,220 +167,14 @@ namespace Eduva.Application.Features.Questions.Queries
         {
             var response = AppMapper.Mapper.Map<QuestionReplyResponse>(reply);
 
-            response.CreatedByRole = await GetUserRoleSafely(reply.CreatedByUser);
-            response.CanUpdate = CanUserUpdateComment(reply, currentUser, userRole);
-            response.CanDelete = await CanUserDeleteComment(reply, currentUser, userRole);
+            response.CreatedByRole = await _permissionService.GetUserRoleSafelyAsync(reply.CreatedByUser);
+            response.CanUpdate = _permissionService.CanUserUpdateComment(reply, currentUser, userRole);
+            response.CanDelete = await _permissionService.CanUserDeleteCommentAsync(reply, currentUser, userRole);
 
             return response;
         }
 
         #endregion
 
-        #region Permission Helpers - MATCHES Command Logic
-
-        private static bool CanUserUpdateQuestion(LessonMaterialQuestion question, ApplicationUser currentUser, string userRole)
-        {
-            if (userRole == nameof(Role.SystemAdmin))
-            {
-                return true;
-            }
-
-            return question.CreatedByUserId == currentUser.Id;
-        }
-
-        private async Task<bool> CanUserDeleteQuestion(LessonMaterialQuestion question, ApplicationUser currentUser, string userRole)
-        {
-            if (userRole == nameof(Role.SystemAdmin))
-            {
-                return true;
-            }
-
-            var commentCount = question.Comments?.Count ?? 0;
-            if (commentCount > 0 && userRole == nameof(Role.Student))
-            {
-                return false;
-            }
-
-            if (question.CreatedByUserId == currentUser.Id)
-            {
-                return true;
-            }
-
-            var originalCreator = await _unitOfWork.GetRepository<ApplicationUser, Guid>().GetByIdAsync(question.CreatedByUserId);
-
-            if (originalCreator == null)
-            {
-                return false;
-            }
-
-            var originalCreatorRoles = await _userManager.GetRolesAsync(originalCreator);
-            var originalCreatorRole = GetHighestPriorityRole(originalCreatorRoles);
-
-            if (userRole == nameof(Role.SchoolAdmin) &&
-                currentUser.SchoolId.HasValue &&
-                originalCreator.SchoolId == currentUser.SchoolId)
-            {
-                return true;
-            }
-
-            if ((userRole == nameof(Role.Teacher) || userRole == nameof(Role.ContentModerator)) &&
-                originalCreatorRole == nameof(Role.Student) &&
-                currentUser.SchoolId.HasValue &&
-                originalCreator.SchoolId == currentUser.SchoolId)
-            {
-                return await ValidateTeacherStudentRelationship(currentUser.Id, originalCreator.Id);
-            }
-
-            return false;
-        }
-
-        private static bool CanUserUpdateComment(QuestionComment comment, ApplicationUser currentUser, string userRole)
-        {
-            if (userRole == nameof(Role.SystemAdmin))
-            {
-                return true;
-            }
-
-            return comment.CreatedByUserId == currentUser.Id;
-        }
-
-        private async Task<bool> CanUserDeleteComment(QuestionComment comment, ApplicationUser currentUser, string userRole)
-        {
-            if (userRole == nameof(Role.SystemAdmin))
-            {
-                return true;
-            }
-
-            var replyCount = comment.Replies?.Count ?? 0;
-            if (replyCount > 0 && userRole == nameof(Role.Student))
-            {
-                return false;
-            }
-
-            if (comment.CreatedByUserId == currentUser.Id)
-            {
-                return true;
-            }
-
-            var commentCreator = await _unitOfWork.GetRepository<ApplicationUser, Guid>().GetByIdAsync(comment.CreatedByUserId);
-
-            if (commentCreator == null)
-            {
-                return false;
-            }
-
-            var commentCreatorRoles = await _userManager.GetRolesAsync(commentCreator);
-            var commentCreatorRole = GetHighestPriorityRole(commentCreatorRoles);
-
-            if (userRole == nameof(Role.SchoolAdmin) &&
-                currentUser.SchoolId.HasValue &&
-                commentCreator.SchoolId == currentUser.SchoolId)
-            {
-                return true;
-            }
-
-            if ((userRole == nameof(Role.Teacher) || userRole == nameof(Role.ContentModerator)) &&
-                commentCreatorRole == nameof(Role.Student) &&
-                currentUser.SchoolId.HasValue &&
-                commentCreator.SchoolId == currentUser.SchoolId)
-            {
-                return await ValidateTeacherStudentRelationship(currentUser.Id, commentCreator.Id);
-            }
-
-            return false;
-        }
-
-        private async Task<bool> ValidateTeacherStudentRelationship(Guid teacherId, Guid studentId)
-        {
-            var classRepo = _unitOfWork.GetRepository<Classroom, Guid>();
-            var allClasses = await classRepo.GetAllAsync();
-            var teacherClassIds = allClasses
-                .Where(c => c.TeacherId == teacherId && c.Status == EntityStatus.Active)
-                .Select(c => c.Id)
-                .ToList();
-
-            if (teacherClassIds.Count == 0)
-            {
-                return false;
-            }
-
-            var studentClassRepo = _unitOfWork.GetCustomRepository<IStudentClassRepository>();
-            var studentClasses = await studentClassRepo.GetClassesForStudentAsync(studentId);
-            var studentClassIds = studentClasses.Select(sc => sc.Id).ToList();
-
-            return teacherClassIds.Intersect(studentClassIds).Any();
-        }
-
-        #endregion
-
-        #region Helper Methods
-
-        private async Task<string> GetUserRoleSafely(ApplicationUser? user)
-        {
-            if (user == null)
-            {
-                return UnknownRole;
-            }
-
-            try
-            {
-                var roles = await _userManager.GetRolesAsync(user);
-                return GetHighestPriorityRole(roles);
-            }
-            catch
-            {
-                return UnknownRole;
-            }
-        }
-
-        private static int CalculateTotalCommentCount(ICollection<QuestionComment>? comments)
-        {
-            if (comments == null || comments.Count == 0)
-            {
-                return 0;
-            }
-
-            var topLevelCount = comments.Count(c => c.ParentCommentId == null);
-            var repliesCount = comments.Count(c => c.ParentCommentId != null);
-
-            return topLevelCount + repliesCount;
-        }
-
-        private static string GetHighestPriorityRole(IList<string> roles)
-        {
-            if (roles == null || !roles.Any())
-            {
-                return UnknownRole;
-            }
-
-            if (roles.Contains(nameof(Role.SystemAdmin)))
-            {
-                return nameof(Role.SystemAdmin);
-            }
-
-            if (roles.Contains(nameof(Role.SchoolAdmin)))
-            {
-                return nameof(Role.SchoolAdmin);
-            }
-
-            if (roles.Contains(nameof(Role.ContentModerator)))
-            {
-                return nameof(Role.ContentModerator);
-            }
-
-            if (roles.Contains(nameof(Role.Teacher)))
-            {
-                return nameof(Role.Teacher);
-            }
-
-            if (roles.Contains(nameof(Role.Student)))
-            {
-                return nameof(Role.Student);
-            }
-
-            return UnknownRole;
-        }
-
-        #endregion
     }
 }

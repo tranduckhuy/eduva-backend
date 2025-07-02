@@ -1,6 +1,5 @@
 ﻿using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Interfaces;
-using Eduva.Application.Interfaces.Repositories;
 using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
@@ -15,12 +14,14 @@ namespace Eduva.Application.Features.Questions.Commands.DeleteQuestion
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IHubNotificationService _hubNotificationService;
+        private readonly IQuestionPermissionService _permissionService;
 
-        public DeleteQuestionHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager, IHubNotificationService hubNotificationService)
+        public DeleteQuestionHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager, IHubNotificationService hubNotificationService, IQuestionPermissionService permissionService)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
             _hubNotificationService = hubNotificationService;
+            _permissionService = permissionService;
         }
 
         public async Task<bool> Handle(DeleteQuestionCommand request, CancellationToken cancellationToken)
@@ -37,7 +38,7 @@ namespace Eduva.Application.Features.Questions.Commands.DeleteQuestion
             var user = await userRepo.GetByIdAsync(request.DeletedByUserId) ?? throw new AppException(CustomCode.UserNotFound);
 
             var roles = await _userManager.GetRolesAsync(user);
-            var userRole = GetHighestPriorityRole(roles);
+            var userRole = _permissionService.GetHighestPriorityRole(roles);
 
             await ValidateDeletePermissions(user, userRole, question);
 
@@ -59,64 +60,26 @@ namespace Eduva.Application.Features.Questions.Commands.DeleteQuestion
             return true;
         }
 
-        #region Role Priority Logic
-
-        private static string GetHighestPriorityRole(IList<string> roles)
-        {
-            if (roles.Contains(nameof(Role.SystemAdmin)))
-            {
-                return nameof(Role.SystemAdmin);
-            }
-
-            if (roles.Contains(nameof(Role.SchoolAdmin)))
-            {
-                return nameof(Role.SchoolAdmin);
-            }
-
-            if (roles.Contains(nameof(Role.ContentModerator)))
-            {
-                return nameof(Role.ContentModerator);
-            }
-
-            if (roles.Contains(nameof(Role.Teacher)))
-            {
-                return nameof(Role.Teacher);
-            }
-
-            if (roles.Contains(nameof(Role.Student)))
-            {
-                return nameof(Role.Student);
-            }
-
-            return "Unknown";
-        }
-
-        #endregion
-
         #region Delete Permissions Validation
 
         private async Task ValidateDeletePermissions(ApplicationUser user, string userRole, LessonMaterialQuestion question)
         {
-            // SystemAdmin can delete all questions
             if (userRole == nameof(Role.SystemAdmin))
             {
                 return;
             }
 
-            // User can delete their own questions
             if (question.CreatedByUserId == user.Id)
             {
                 return;
             }
 
-            // Get original creator for additional checks
             var originalCreator = await _unitOfWork.GetRepository<ApplicationUser, Guid>()
                 .GetByIdAsync(question.CreatedByUserId) ?? throw new AppException(CustomCode.UserNotFound);
 
             var originalCreatorRoles = await _userManager.GetRolesAsync(originalCreator);
-            var originalCreatorRole = GetHighestPriorityRole(originalCreatorRoles);
+            var originalCreatorRole = _permissionService.GetHighestPriorityRole(originalCreatorRoles);
 
-            // SchoolAdmin can delete questions in same school (no additional checks)
             if (userRole == nameof(Role.SchoolAdmin)
                 && user.SchoolId.HasValue
                 && originalCreator.SchoolId == user.SchoolId)
@@ -124,46 +87,19 @@ namespace Eduva.Application.Features.Questions.Commands.DeleteQuestion
                 return;
             }
 
-            // Teacher/ContentModerator can delete Student questions in their class (with teacher-student check)
             if ((userRole == nameof(Role.Teacher) || userRole == nameof(Role.ContentModerator))
                 && originalCreatorRole == nameof(Role.Student)
                 && user.SchoolId.HasValue
                 && originalCreator.SchoolId == user.SchoolId)
             {
-                await ValidateTeacherStudentRelationship(user.Id, originalCreator.Id);
-                return;
+                var hasRelationship = await _permissionService.ValidateTeacherStudentRelationshipAsync(user.Id, originalCreator.Id);
+                if (hasRelationship)
+                {
+                    return;
+                }
             }
 
             throw new AppException(CustomCode.InsufficientPermissionToDeleteQuestion);
-        }
-
-        #endregion
-
-        #region Teacher-Student Relationship Validation
-
-        private async Task ValidateTeacherStudentRelationship(Guid teacherId, Guid studentId)
-        {
-            var classRepo = _unitOfWork.GetRepository<Classroom, Guid>();
-            var teacherClasses = await classRepo.GetAllAsync();
-            var teacherClassIds = teacherClasses
-                .Where(c => c.TeacherId == teacherId && c.Status == EntityStatus.Active)
-                .Select(c => c.Id)
-                .ToList();
-
-            if (teacherClassIds.Count == 0)
-            {
-                throw new AppException(CustomCode.TeacherHasNoActiveClasses);
-            }
-
-            var studentClassRepo = _unitOfWork.GetCustomRepository<IStudentClassRepository>();
-            var studentClasses = await studentClassRepo.GetClassesForStudentAsync(studentId);
-            var studentClassIds = studentClasses.Select(sc => sc.Id).ToList();
-
-            var commonClassIds = teacherClassIds.Intersect(studentClassIds).ToList();
-            if (commonClassIds.Count == 0)
-            {
-                throw new AppException(CustomCode.StudentNotInTeacherClasses);
-            }
         }
 
         #endregion

@@ -16,12 +16,14 @@ namespace Eduva.Application.Features.Questions.Commands.CreateQuestion
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IHubNotificationService _hubNotificationService;
+        private readonly IQuestionPermissionService _permissionService;
 
-        public CreateQuestionHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager, IHubNotificationService hubNotificationService)
+        public CreateQuestionHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager, IHubNotificationService hubNotificationService, IQuestionPermissionService permissionService)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
             _hubNotificationService = hubNotificationService;
+            _permissionService = permissionService;
         }
 
         public async Task<QuestionResponse> Handle(CreateQuestionCommand request, CancellationToken cancellationToken)
@@ -30,7 +32,7 @@ namespace Eduva.Application.Features.Questions.Commands.CreateQuestion
             var user = await userRepo.GetByIdAsync(request.CreatedByUserId) ?? throw new AppException(CustomCode.UserNotFound);
 
             var roles = await _userManager.GetRolesAsync(user);
-            var userRole = GetHighestPriorityRole(roles);
+            var userRole = _permissionService.GetHighestPriorityRole(roles);
 
             if (!IsAllowedToCreateQuestion(userRole))
             {
@@ -80,40 +82,6 @@ namespace Eduva.Application.Features.Questions.Commands.CreateQuestion
 
             return response;
         }
-
-        #region Role Priority Logic
-
-        private static string GetHighestPriorityRole(IList<string> roles)
-        {
-            if (roles.Contains(nameof(Role.SystemAdmin)))
-            {
-                return nameof(Role.SystemAdmin);
-            }
-
-            if (roles.Contains(nameof(Role.SchoolAdmin)))
-            {
-                return nameof(Role.SchoolAdmin);
-            }
-
-            if (roles.Contains(nameof(Role.ContentModerator)))
-            {
-                return nameof(Role.ContentModerator);
-            }
-
-            if (roles.Contains(nameof(Role.Teacher)))
-            {
-                return nameof(Role.Teacher);
-            }
-
-            if (roles.Contains(nameof(Role.Student)))
-            {
-                return nameof(Role.Student);
-            }
-
-            return "Unknown";
-        }
-
-        #endregion
 
         #region Role Permission Checks
 

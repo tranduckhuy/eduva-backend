@@ -15,12 +15,14 @@ namespace Eduva.Application.Features.Questions.Commands.UpdateQuestion
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IHubNotificationService _hubNotificationService;
+        private readonly IQuestionPermissionService _permissionService;
 
-        public UpdateQuestionHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager, IHubNotificationService hubNotificationService)
+        public UpdateQuestionHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager, IHubNotificationService hubNotificationService, IQuestionPermissionService permissionService)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
             _hubNotificationService = hubNotificationService;
+            _permissionService = permissionService;
         }
 
         public async Task<QuestionResponse> Handle(UpdateQuestionCommand request, CancellationToken cancellationToken)
@@ -37,7 +39,7 @@ namespace Eduva.Application.Features.Questions.Commands.UpdateQuestion
             var user = await userRepo.GetByIdAsync(request.UpdatedByUserId) ?? throw new AppException(CustomCode.UserNotFound);
 
             var roles = await _userManager.GetRolesAsync(user);
-            var userRole = GetHighestPriorityRole(roles);
+            var userRole = _permissionService.GetHighestPriorityRole(roles);
 
             ValidateUpdatePermissions(user, userRole, question);
 
@@ -62,7 +64,7 @@ namespace Eduva.Application.Features.Questions.Commands.UpdateQuestion
             var creatorRepo = _unitOfWork.GetRepository<ApplicationUser, Guid>();
             var creator = await creatorRepo.GetByIdAsync(question.CreatedByUserId);
             var creatorRoles = creator != null ? await _userManager.GetRolesAsync(creator) : new List<string>();
-            var creatorRole = GetHighestPriorityRole(creatorRoles);
+            var creatorRole = _permissionService.GetHighestPriorityRole(creatorRoles);
 
             var response = new QuestionResponse
             {
@@ -84,40 +86,6 @@ namespace Eduva.Application.Features.Questions.Commands.UpdateQuestion
 
             return response;
         }
-
-        #region Role Priority Logic
-
-        private static string GetHighestPriorityRole(IList<string> roles)
-        {
-            if (roles.Contains(nameof(Role.SystemAdmin)))
-            {
-                return nameof(Role.SystemAdmin);
-            }
-
-            if (roles.Contains(nameof(Role.SchoolAdmin)))
-            {
-                return nameof(Role.SchoolAdmin);
-            }
-
-            if (roles.Contains(nameof(Role.ContentModerator)))
-            {
-                return nameof(Role.ContentModerator);
-            }
-
-            if (roles.Contains(nameof(Role.Teacher)))
-            {
-                return nameof(Role.Teacher);
-            }
-
-            if (roles.Contains(nameof(Role.Student)))
-            {
-                return nameof(Role.Student);
-            }
-
-            return "Unknown";
-        }
-
-        #endregion
 
         #region Validation Logic
 

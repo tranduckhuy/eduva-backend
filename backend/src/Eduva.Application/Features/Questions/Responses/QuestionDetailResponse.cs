@@ -27,6 +27,7 @@
     public class QuestionCommentResponse
     {
         public Guid Id { get; set; }
+        public Guid QuestionId { get; set; }
         public string Content { get; set; } = default!;
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset? LastModifiedAt { get; set; }

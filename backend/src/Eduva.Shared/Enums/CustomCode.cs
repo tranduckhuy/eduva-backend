@@ -158,5 +158,16 @@ namespace Eduva.Shared.Enums
         TeacherMustHaveActiveClass = 4819,
         TeacherNotHaveAccessToMaterial = 4820,
         TeacherClassNotInOwnSchool = 4821,
+
+        // Comment Errors
+        CommentNotFound = 4822,
+        CommentNotActive = 4823,
+        InsufficientPermissionToCreateComment = 4824,
+        InsufficientPermissionToUpdateComment = 4825,
+        InsufficientPermissionToDeleteComment = 4826,
+        CannotDeleteCommentWithReplies = 4827,
+        CannotReplyToReply = 4828,
+        ParentCommentNotFound = 4829,
+        CommentContentRequired = 4830,
     }
 }

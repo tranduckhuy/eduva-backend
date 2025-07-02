@@ -295,6 +295,26 @@ namespace Eduva.Shared.Constants
             { CustomCode.TeacherClassNotInOwnSchool, new MessageDetail {
                 HttpCode = StatusCodes.Status403Forbidden, Message = "Teacher classes must belong to your own school." } },
 
+             // Comment Errors
+            { CustomCode.CommentNotFound, new MessageDetail {
+                HttpCode = StatusCodes.Status404NotFound, Message = "Comment not found" } },
+            { CustomCode.CommentNotActive, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Comment is not active" } },
+            { CustomCode.InsufficientPermissionToCreateComment, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You don't have permission to create comments on this question" } },
+            { CustomCode.InsufficientPermissionToUpdateComment, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You don't have permission to update this comment" } },
+            { CustomCode.InsufficientPermissionToDeleteComment, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You don't have permission to delete this comment" } },
+            { CustomCode.CannotDeleteCommentWithReplies, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Cannot delete comment that has replies" } },
+            { CustomCode.CannotReplyToReply, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Cannot reply to a reply. Only top-level comments can have replies" } },
+            { CustomCode.ParentCommentNotFound, new MessageDetail {
+                HttpCode = StatusCodes.Status404NotFound, Message = "Parent comment not found or is not a top-level comment" } },
+            { CustomCode.CommentContentRequired, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Comment content is required" } },
+
 
             #endregion
         };

@@ -3,8 +3,11 @@ using Eduva.API.Controllers.Base;
 using Eduva.API.Models;
 using Eduva.Application.Common.Models;
 using Eduva.Application.Features.Questions.Commands.CreateQuestion;
+using Eduva.Application.Features.Questions.Commands.CreateQuestionComment;
 using Eduva.Application.Features.Questions.Commands.DeleteQuestion;
+using Eduva.Application.Features.Questions.Commands.DeleteQuestionComment;
 using Eduva.Application.Features.Questions.Commands.UpdateQuestion;
+using Eduva.Application.Features.Questions.Commands.UpdateQuestionComment;
 using Eduva.Application.Features.Questions.Queries;
 using Eduva.Application.Features.Questions.Responses;
 using Eduva.Application.Features.Questions.Specifications;
@@ -130,6 +133,67 @@ namespace Eduva.API.Controllers.Questions
             var command = new DeleteQuestionCommand
             {
                 Id = id,
+                DeletedByUserId = userGuid
+            };
+
+            return await HandleRequestAsync(async () =>
+            {
+                await _mediator.Send(command);
+            }, CustomCode.Success);
+        }
+
+        [HttpPost("comments")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
+        [ProducesResponseType(typeof(ApiResponse<QuestionCommentResponse>), StatusCodes.Status201Created)]
+        [Authorize(Roles = $"{nameof(Role.Student)}, {nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}, {nameof(Role.SchoolAdmin)}, {nameof(Role.SystemAdmin)}")]
+        public async Task<IActionResult> CreateQuestionComment([FromBody] CreateQuestionCommentCommand command)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userId, out var userGuid))
+                return Respond(CustomCode.UserIdNotFound);
+
+            command.CreatedByUserId = userGuid;
+
+            return await HandleRequestAsync(async () =>
+            {
+                var result = await _mediator.Send(command);
+                return (CustomCode.Created, result);
+            });
+        }
+
+        [HttpPut("comments/{commentId:guid}")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
+        [ProducesResponseType(typeof(ApiResponse<QuestionCommentResponse>), StatusCodes.Status200OK)]
+        [Authorize(Roles = $"{nameof(Role.Student)}, {nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}, {nameof(Role.SchoolAdmin)}, {nameof(Role.SystemAdmin)}")]
+        public async Task<IActionResult> UpdateQuestionComment(Guid commentId, [FromBody] UpdateQuestionCommentCommand command)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userId, out var userGuid))
+                return Respond(CustomCode.UserIdNotFound);
+
+            command.Id = commentId;
+            command.UpdatedByUserId = userGuid;
+
+            return await HandleRequestAsync(async () =>
+            {
+                var result = await _mediator.Send(command);
+                return (CustomCode.Success, result);
+            });
+        }
+
+        [HttpDelete("comments/{commentId:guid}")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [Authorize(Roles = $"{nameof(Role.Student)}, {nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}, {nameof(Role.SchoolAdmin)}, {nameof(Role.SystemAdmin)}")]
+        public async Task<IActionResult> DeleteQuestionComment(Guid commentId)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userId, out var userGuid))
+                return Respond(CustomCode.UserIdNotFound);
+
+            var command = new DeleteQuestionCommentCommand
+            {
+                Id = commentId,
                 DeletedByUserId = userGuid
             };
 

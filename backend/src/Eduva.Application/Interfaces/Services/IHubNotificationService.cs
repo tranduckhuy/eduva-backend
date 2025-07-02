@@ -7,5 +7,10 @@ namespace Eduva.Application.Interfaces.Services
         Task NotifyQuestionCreatedAsync(QuestionResponse question, Guid lessonMaterialId);
         Task NotifyQuestionUpdatedAsync(QuestionResponse question, Guid lessonMaterialId);
         Task NotifyQuestionDeletedAsync(Guid questionId, Guid lessonMaterialId);
+
+        Task NotifyQuestionCommentedAsync(QuestionCommentResponse comment, Guid lessonMaterialId);
+        Task NotifyQuestionCommentUpdatedAsync(QuestionCommentResponse comment, Guid lessonMaterialId);
+        Task NotifyQuestionCommentDeletedAsync(Guid commentId, Guid questionId, Guid lessonMaterialId, int deletedRepliesCount = 0);
+
     }
 }

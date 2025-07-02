@@ -5,6 +5,7 @@ using Eduva.Application.Features.Questions.Responses;
 using Eduva.Application.Features.Questions.Specifications;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
+using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
@@ -19,12 +20,15 @@ namespace Eduva.Application.Features.Questions.Queries
         private readonly ILessonMaterialQuestionRepository _repository;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IQuestionPermissionService _permissionService;
 
-        public GetMyQuestionsQueryHandler(ILessonMaterialQuestionRepository repository, UserManager<ApplicationUser> userManager, IUnitOfWork unitOfWork)
+
+        public GetMyQuestionsQueryHandler(ILessonMaterialQuestionRepository repository, UserManager<ApplicationUser> userManager, IUnitOfWork unitOfWork, IQuestionPermissionService permissionService)
         {
             _repository = repository;
             _userManager = userManager;
             _unitOfWork = unitOfWork;
+            _permissionService = permissionService;
         }
 
         public async Task<Pagination<QuestionResponse>> Handle(GetMyQuestionsQuery request, CancellationToken cancellationToken)
@@ -38,7 +42,7 @@ namespace Eduva.Application.Features.Questions.Queries
             }
 
             var userRoles = await _userManager.GetRolesAsync(user);
-            var userRole = GetHighestPriorityRole(userRoles);
+            var userRole = _permissionService.GetHighestPriorityRole(userRoles);
 
             await ValidateUserEligibility(request.UserId, user.SchoolId.Value, userRole);
 
@@ -119,40 +123,5 @@ namespace Eduva.Application.Features.Questions.Queries
         }
 
         #endregion
-
-        #region Role Priority Logic
-
-        private static string GetHighestPriorityRole(IList<string> roles)
-        {
-            if (roles.Contains(nameof(Role.SystemAdmin)))
-            {
-                return nameof(Role.SystemAdmin);
-            }
-
-            if (roles.Contains(nameof(Role.SchoolAdmin)))
-            {
-                return nameof(Role.SchoolAdmin);
-            }
-
-            if (roles.Contains(nameof(Role.ContentModerator)))
-            {
-                return nameof(Role.ContentModerator);
-            }
-
-            if (roles.Contains(nameof(Role.Teacher)))
-            {
-                return nameof(Role.Teacher);
-            }
-
-            if (roles.Contains(nameof(Role.Student)))
-            {
-                return nameof(Role.Student);
-            }
-
-            return "Unknown";
-        }
-
-        #endregion
-
     }
 }
