@@ -1,0 +1,56 @@
+name: Deploy Eduva
+
+on:
+  workflow_run:
+    workflows: ["Publish Eduva API Image"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+  name: Deploy Eduva
+  run-on: Linux
+
+  permissions:
+  contents: read
+  packages: write
+
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Docker Compose environment
+      run: |
+        echo "Setting up Docker Compose environment..."
+        echo "CONNECTION_STRING=${{ secrets.CONNECTION_STRING }}" >> .env
+        echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" >> .env
+        echo "JWT_VALID_ISSUER=${{ secrets.JWT_VALID_ISSUER }}" >> .env
+        echo "JWT_VALID_AUDIENCE=${{ secrets.JWT_VALID_AUDIENCE }}" >> .env
+        echo "JWT_EXPIRY_IN_SECONDS=${{ secrets.JWT_EXPIRY_IN_SECONDS }}" >> .env
+        echo "EMAIL_API_KEY=${{ secrets.EMAIL_API_KEY }}" >> .env
+        echo "EMAIL_FROM=${{ secrets.EMAIL_FROM }}" >> .env
+        echo "EMAIL_SMTP_SERVER=${{ secrets.EMAIL_SMTP_SERVER }}" >> .env
+        echo "EMAIL_SMTP_PORT=${{ secrets.EMAIL_SMTP_PORT }}" >> .env
+        echo "EMAIL_USERNAME=${{ secrets.EMAIL_USERNAME }}" >> .env
+        echo "EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}" >> .env
+        echo "REDIS_CONNECTION_STRING=${{ secrets.REDIS_CONNECTION_STRING }}" >> .env
+        echo "REDIS_INSTANCE_NAME=${{ secrets.REDIS_INSTANCE_NAME }}" >> .env
+        echo "AZURE_BLOB_STORAGE_CONNECTION_STRING=${{ secrets.AZURE_BLOB_STORAGE_CONNECTION_STRING }}" >> .env
+        echo "AZURE_BLOB_STORAGE_CONTAINER_NAME=${{ secrets.AZURE_BLOB_STORAGE_CONTAINER_NAME }}" >> .env
+        echo "AZURE_BLOB_STORAGE_TEMP_CONTAINER_NAME=${{ secrets.AZURE_BLOB_STORAGE_TEMP_CONTAINER_NAME }}" >> .env
+        echo "AZURE_BLOB_STORAGE_ACCOUNT_NAME=${{ secrets.AZURE_BLOB_STORAGE_ACCOUNT_NAME }}" >> .env
+        echo "AZURE_BLOB_STORAGE_ACCOUNT_KEY=${{ secrets.AZURE_BLOB_STORAGE_ACCOUNT_KEY }}" >> .env
+        echo "PAYOS_CLIENT_ID=${{ secrets.PAYOS_CLIENT_ID }}" >> .env
+        echo "PAYOS_API_KEY=${{ secrets.PAYOS_API_KEY }}" >> .env
+        echo "PAYOS_CHECKSUM_KEY=${{ secrets.PAYOS_CHECKSUM_KEY }}" >> .env
+        echo "PAYOS_RETURN_URL=${{ secrets.PAYOS_RETURN_URL }}" >> .env
+        echo "PAYOS_CANCEL_URL=${{ secrets.PAYOS_CANCEL_URL }}" >> .env
+        echo "IMPORT_TEMPLATE_URL=${{ secrets.IMPORT_TEMPLATE_URL }}" >> .env
+        echo "RABBITMQ_DEFAULT_USER=${{ secrets.RABBITMQ_DEFAULT_USER }}" >> .env
+        echo "RABBITMQ_DEFAULT_PASS=${{ secrets.RABBITMQ_DEFAULT_PASS }}" >> .env
+
+    - name: Deploy with Docker Compose
+      run: |
+        docker-compose pull
+        docker-compose -f docker-compose.yml -f docker-compose.override.yml up --force-recreate --build -d
+        docker image prune -f
