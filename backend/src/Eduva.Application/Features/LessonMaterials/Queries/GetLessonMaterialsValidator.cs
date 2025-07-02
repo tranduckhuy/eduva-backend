@@ -1,10 +1,8 @@
 ﻿using Eduva.Application.Features.LessonMaterials.Queries.Extensions;
 using Eduva.Application.Interfaces;
 using Eduva.Domain.Entities;
-using Eduva.Domain.Enums;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eduva.Application.Features.LessonMaterials.Queries
 {
@@ -85,7 +83,7 @@ namespace Eduva.Application.Features.LessonMaterials.Queries
             {
                 // Must have classId for students
                 if (!param.ClassId.HasValue) return false;
-                
+
                 return await IsStudentEnrolledInClass(query.UserId, param.ClassId.Value);
             }
 

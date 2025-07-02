@@ -134,5 +134,8 @@ namespace Eduva.Shared.Enums
         StudentRemovalFailed = 4717,
         KeyConfigNotFound = 5001,
         KeyConfigAlreadyExist = 5002,
+
+        // Lesson Material Errors
+        LessonMaterialNotFound = 5100,
     }
 }
