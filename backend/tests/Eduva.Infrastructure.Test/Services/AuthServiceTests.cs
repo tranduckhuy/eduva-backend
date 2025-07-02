@@ -91,14 +91,30 @@ namespace Eduva.Infrastructure.Test.Services
         }
 
         [TearDown]
-        public void TearDown()
+        public async Task TearDown()
         {
+            await Task.Delay(50);
+
             var dir = Path.Combine(AppContext.BaseDirectory, "email-templates");
             if (Directory.Exists(dir))
             {
                 foreach (var file in Directory.GetFiles(dir))
                 {
-                    File.Delete(file);
+                    try
+                    {
+                        File.Delete(file);
+                    }
+                    catch (IOException)
+                    {
+                        await Task.Delay(100);
+                        try
+                        {
+                            File.Delete(file);
+                        }
+                        catch
+                        {
+                        }
+                    }
                 }
             }
         }
@@ -1237,10 +1253,23 @@ namespace Eduva.Infrastructure.Test.Services
         [Test]
         public async Task RequestEnable2FaOtpAsync_Success_ReturnsOtpSent()
         {
-            var user = new ApplicationUser { TwoFactorEnabled = false };
+            var user = new ApplicationUser
+            {
+                TwoFactorEnabled = false,
+                Email = "user@example.com",
+                FullName = "Test User"
+            };
 
             _userManager.Setup(x => x.FindByIdAsync(It.IsAny<string>())).ReturnsAsync(user);
             _userManager.Setup(x => x.CheckPasswordAsync(user, It.IsAny<string>())).ReturnsAsync(true);
+
+            // Mock OTP Provider dependencies
+            _userManager.Setup(x => x.GetClaimsAsync(user)).ReturnsAsync(new List<Claim>());
+            _userManager.Setup(x => x.RemoveClaimAsync(user, It.IsAny<Claim>())).ReturnsAsync(IdentityResult.Success);
+            _userManager.Setup(x => x.AddClaimAsync(user, It.IsAny<Claim>())).ReturnsAsync(IdentityResult.Success);
+
+            // Mock Email Sender
+            _emailSender.Setup(x => x.SendEmailAsync(It.IsAny<EmailMessage>())).Returns(Task.CompletedTask);
 
             var dto = new Request2FaDto { UserId = Guid.NewGuid(), CurrentPassword = "correct" };
             var result = await _authService.RequestEnable2FaOtpAsync(dto);

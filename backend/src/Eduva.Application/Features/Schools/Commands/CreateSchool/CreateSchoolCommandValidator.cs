@@ -1,5 +1,5 @@
-﻿using Eduva.Application.Interfaces;
-using Eduva.Domain.Entities;
+﻿using Eduva.Application.Common.Validations;
+using Eduva.Application.Interfaces;
 using FluentValidation;
 
 namespace Eduva.Application.Features.Schools.Commands.CreateSchool
@@ -12,32 +12,20 @@ namespace Eduva.Application.Features.Schools.Commands.CreateSchool
         {
             _unitOfWork = unitOfWork;
 
-            RuleFor(x => x.Name)
-                .NotEmpty().WithMessage("School name is required.")
-                .MaximumLength(255);
+            RuleFor(x => x.Name).SchoolNameValidation();
 
             RuleFor(x => x.ContactEmail)
-                .NotEmpty().WithMessage("Contact email is required.")
-                .EmailAddress().WithMessage("Invalid email format.")
+                .ContactEmailFormatValidation()
                 .MustAsync(EmailIsUnique).WithMessage("Email already exists.");
 
-            RuleFor(x => x.ContactPhone)
-                .NotEmpty().WithMessage("Phone number is required")
-                .Matches(@"^((03|05|07|08|09)\d{8}|02\d{9})$").WithMessage("Invalid phone number format");
-
-            RuleFor(x => x.Address)
-                .MaximumLength(255);
-
-            RuleFor(x => x.WebsiteUrl)
-                .MaximumLength(255)
-                .Must(url => string.IsNullOrWhiteSpace(url) || Uri.IsWellFormedUriString(url, UriKind.Absolute))
-                .WithMessage("Website URL must be a valid absolute URL.");
+            RuleFor(x => x.ContactPhone).ContactPhoneValidation();
+            RuleFor(x => x.Address).AddressValidation();
+            RuleFor(x => x.WebsiteUrl).WebsiteUrlValidation();
         }
 
         private async Task<bool> EmailIsUnique(string email, CancellationToken token)
         {
-            var repo = _unitOfWork.GetRepository<School, int>();
-            return !await repo.ExistsAsync(s => s.ContactEmail == email);
+            return await SchoolValidationRules.IsEmailUniqueForCreate(_unitOfWork, email);
         }
     }
 }
