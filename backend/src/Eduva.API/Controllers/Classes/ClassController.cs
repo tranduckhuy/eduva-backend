@@ -148,7 +148,7 @@ namespace Eduva.API.Controllers.Classes
         [HttpGet("{id}")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         [ProducesResponseType(typeof(ApiResponse<ClassResponse>), StatusCodes.Status200OK)]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}, {nameof(Role.Student)}")]
         public async Task<IActionResult> GetClassById(Guid id)
         {
             var validationResult = CheckModelStateValidity();
