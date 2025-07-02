@@ -33,6 +33,13 @@ namespace Eduva.Application.Test.Features.Folders.Queries
                 null!, null!, null!, null!, null!, null!, null!, null!
             );
             _unitOfWorkMock.Setup(u => u.GetCustomRepository<IFolderRepository>()).Returns(_folderRepoMock.Object);
+
+            var folderLessonMaterialRepoMock = new Mock<IGenericRepository<FolderLessonMaterial, int>>();
+            folderLessonMaterialRepoMock.Setup(r => r.GetAllAsync())
+                .ReturnsAsync(new List<FolderLessonMaterial>());
+            _unitOfWorkMock.Setup(u => u.GetRepository<FolderLessonMaterial, int>())
+                .Returns(folderLessonMaterialRepoMock.Object);
+
             _handler = new GetFoldersHandler(_folderRepoMock.Object, _mapperMock.Object, _unitOfWorkMock.Object, _userManagerMock.Object);
         }
         #endregion
