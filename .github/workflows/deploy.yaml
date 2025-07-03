@@ -19,6 +19,10 @@ jobs:
       contents: read
       packages: write
 
+    defaults:
+      run:
+        shell: bash
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -29,33 +33,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      # Check if SSL certificate exists and is valid
-      - name: Check SSL Certificate Status
-        id: ssl_check
-        run: |
-          if [ -f "./certbot/conf/live/eduva.tech/fullchain.pem" ]; then
-            # Check if certificate expires in less than 30 days
-            if openssl x509 -checkend 2592000 -noout -in ./certbot/conf/live/eduva.tech/fullchain.pem; then
-              echo "ssl_valid=true" >> $GITHUB_OUTPUT
-              echo "SSL certificate is valid for more than 30 days"
-            else
-              echo "ssl_valid=false" >> $GITHUB_OUTPUT
-              echo "SSL certificate expires soon or is invalid"
-            fi
-          else
-            echo "ssl_valid=false" >> $GITHUB_OUTPUT
-            echo "SSL certificate not found"
-          fi
-
-      # Setup SSL Certificate (First time or renewal needed)
-      # This step will only run if the SSL certificate is not valid or does not exist
-      - name: Setup SSL Certificate (First time or renewal needed)
-        if: steps.ssl_check.outputs.ssl_valid != 'true'
-        run: |
-          echo "Setting up SSL certificate..."
-          chmod +x ./scripts/init-letsencrypt.sh
-          ./scripts/init-letsencrypt.sh
 
       - name: Setup Docker Compose environment
         run: |
@@ -89,12 +66,10 @@ jobs:
 
       - name: Deploy with Docker Compose
         run: |
-          echo "Pulling latest images..."
+          echo "Pulling latest images and deploying..."
           docker compose pull
-          echo "Stopping existing containers..."
-          docker compose down
-          echo "Starting updated containers..."
-          docker compose up -d --force-recreate
-          echo "Cleaning up unused images..."
+          echo "Recreating containers with latest images..."
+          docker compose -f docker-compose.yaml -f docker-compose.override.yaml up --force-recreate --build -d
+          echo "Cleaning up unused Docker images..."
           docker image prune -f
-          echo "Deployment completed successfully!"
+          echo "Deployment completed successfully."
