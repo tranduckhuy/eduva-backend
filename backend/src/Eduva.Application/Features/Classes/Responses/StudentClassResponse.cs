@@ -18,5 +18,6 @@ namespace Eduva.Application.Features.Classes.Responses
         public string BackgroundImageUrl { get; set; } = string.Empty;
         public DateTimeOffset EnrolledAt { get; set; }
         public EntityStatus ClassStatus { get; set; }
+        public int CountLessonMaterial { get; set; } = 0;
     }
 }

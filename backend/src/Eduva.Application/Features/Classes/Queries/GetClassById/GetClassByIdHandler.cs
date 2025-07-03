@@ -4,18 +4,22 @@ using Eduva.Application.Features.Classes.Responses;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Domain.Entities;
+using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
+using Microsoft.AspNetCore.Identity;
 
 namespace Eduva.Application.Features.Classes.Queries.GetClassById
 {
     public class GetClassByIdHandler : IRequestHandler<GetClassByIdQuery, ClassResponse>
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public GetClassByIdHandler(IUnitOfWork unitOfWork)
+        public GetClassByIdHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
         {
             _unitOfWork = unitOfWork;
+            _userManager = userManager;
         }
 
         public async Task<ClassResponse> Handle(GetClassByIdQuery request, CancellationToken cancellationToken)
@@ -44,27 +48,69 @@ namespace Eduva.Application.Features.Classes.Queries.GetClassById
             response.SchoolName = school?.Name ?? string.Empty;
             response.TeacherAvatarUrl = teacher?.AvatarUrl ?? string.Empty;
 
+            var folderRepository = _unitOfWork.GetRepository<Folder, Guid>();
+            var allFolders = await folderRepository.GetAllAsync();
+
+            var folders = allFolders.Where(f =>
+                f.OwnerType == OwnerType.Class &&
+                f.ClassId.HasValue &&
+                f.ClassId.Value == request.Id
+            ).ToList();
+
+            if (folders.Count > 0)
+            {
+                var folderIds = folders.Select(f => f.Id).ToList();
+
+                var folderLessonMaterialRepo = _unitOfWork.GetRepository<FolderLessonMaterial, int>();
+                var allFolderLessonMaterials = await folderLessonMaterialRepo.GetAllAsync();
+
+                var folderLessonMaterials = allFolderLessonMaterials
+                    .Where(flm => folderIds.Contains(flm.FolderId))
+                    .ToList();
+
+                response.CountLessonMaterial = folderLessonMaterials.Count;
+            }
+            else
+            {
+                response.CountLessonMaterial = 0;
+            }
+
             return response;
         }
 
         private async Task<bool> HasAccessToClass(Classroom classroom, Guid userId)
         {
-            // Teacher of the class
             if (classroom.TeacherId == userId)
                 return true;
-            // Check if user is a student in this class
-            var studentClassRepository = _unitOfWork.GetRepository<StudentClass, Guid>();
-            bool isStudentInClass = await studentClassRepository.ExistsAsync(sc =>
-                sc.ClassId == classroom.Id && sc.StudentId == userId);
 
-            if (isStudentInClass)
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user == null)
+                return false;
+
+            var roles = await _userManager.GetRolesAsync(user);
+
+            bool isStudent = roles.Contains(nameof(Role.Student));
+            if (isStudent)
+            {
+                var studentClassRepository = _unitOfWork.GetRepository<StudentClass, Guid>();
+                bool isStudentInClass = await studentClassRepository.ExistsAsync(sc =>
+                    sc.ClassId == classroom.Id && sc.StudentId == userId);
+
+                return isStudentInClass;
+            }
+
+            bool isTeacher = roles.Contains(nameof(Role.Teacher));
+            if (isTeacher)
+            {
+                return false;
+            }
+
+            bool isSchoolAdmin = roles.Contains(nameof(Role.SchoolAdmin));
+            if (isSchoolAdmin && user.SchoolId == classroom.SchoolId)
                 return true;
-            // Check if user is school admin
-            var userRepository = _unitOfWork.GetRepository<ApplicationUser, Guid>();
-            var user = await userRepository.GetByIdAsync(userId);
 
-            // If user is from the same school as the class, they have access
-            if (user != null && user.SchoolId == classroom.SchoolId)
+            bool isSystemAdmin = roles.Contains(nameof(Role.SystemAdmin));
+            if (isSystemAdmin)
                 return true;
 
             return false;

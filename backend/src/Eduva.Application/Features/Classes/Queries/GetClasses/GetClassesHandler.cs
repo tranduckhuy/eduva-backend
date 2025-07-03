@@ -58,6 +58,58 @@ namespace Eduva.Application.Features.Classes.Queries.GetClasses
 
             var classrooms = AppMapper.Mapper.Map<Pagination<ClassResponse>>(result);
 
+            if (classrooms.Data.Count > 0)
+            {
+                var classIds = classrooms.Data.Select(c => c.Id).ToList();
+
+                var folderRepository = _unitOfWork.GetRepository<Folder, Guid>();
+                var allFolders = await folderRepository.GetAllAsync();
+                var folders = allFolders.Where(f =>
+                    f.OwnerType == OwnerType.Class &&
+                    f.ClassId.HasValue &&
+                    classIds.Contains(f.ClassId.Value)
+                ).ToList();
+
+                if (folders.Count > 0)
+                {
+                    var foldersByClass = folders.GroupBy(f => f.ClassId!.Value)
+                        .ToDictionary(g => g.Key, g => g.Select(f => f.Id).ToList());
+
+                    var allFolderIds = folders.Select(f => f.Id).ToList();
+
+                    if (allFolderIds.Count > 0)
+                    {
+                        var folderLessonMaterialRepo = _unitOfWork.GetRepository<FolderLessonMaterial, int>();
+                        var allFolderLessonMaterials = await folderLessonMaterialRepo.GetAllAsync();
+                        var folderLessonMaterials = allFolderLessonMaterials
+                            .Where(flm => allFolderIds.Contains(flm.FolderId))
+                            .ToList();
+
+                        var countsByFolder = folderLessonMaterials
+                            .GroupBy(flm => flm.FolderId)
+                            .ToDictionary(g => g.Key, g => g.Count());
+
+                        foreach (var classResponse in classrooms.Data)
+                        {
+                            int totalCount = 0;
+
+                            if (foldersByClass.TryGetValue(classResponse.Id, out var classFolderIds))
+                            {
+                                foreach (var folderId in classFolderIds)
+                                {
+                                    if (countsByFolder.TryGetValue(folderId, out var count))
+                                    {
+                                        totalCount += count;
+                                    }
+                                }
+                            }
+
+                            classResponse.CountLessonMaterial = totalCount;
+                        }
+                    }
+                }
+            }
+
             return classrooms;
         }
     }

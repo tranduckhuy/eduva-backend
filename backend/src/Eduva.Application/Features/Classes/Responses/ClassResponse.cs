@@ -16,5 +16,6 @@ namespace Eduva.Application.Features.Classes.Responses
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset? LastModifiedAt { get; set; }
         public EntityStatus Status { get; set; }
+        public int CountLessonMaterial { get; set; } = 0;
     }
 }

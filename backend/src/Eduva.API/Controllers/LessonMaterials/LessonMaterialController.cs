@@ -14,6 +14,7 @@ using System.Security.Claims;
 namespace Eduva.API.Controllers.LessonMaterials
 {
     [Route("api/lesson-materials")]
+    [Authorize]
     public class LessonMaterialController : BaseController<LessonMaterialController>
     {
         private readonly IMediator _mediator;
@@ -49,7 +50,6 @@ namespace Eduva.API.Controllers.LessonMaterials
         }
 
         [HttpGet]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)},{nameof(Role.Student)}")]
         public async Task<IActionResult> GetLessonMaterials([FromQuery] LessonMaterialSpecParam lessonMaterialSpecParam)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -71,7 +71,33 @@ namespace Eduva.API.Controllers.LessonMaterials
                 var response = await _mediator.Send(query);
                 return (CustomCode.Success, response);
             });
+        }
 
+        // get lesson material by id
+        [HttpGet("{id:guid}")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetLessonMaterialById(Guid id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+            {
+                return Respond(CustomCode.UserIdNotFound);
+            }
+
+            int? schoolId = int.TryParse(User.FindFirstValue("SchoolId"), out var parsedSchoolId) ? parsedSchoolId : null;
+
+            var query = new GetLessonMaterialByIdQuery
+            {
+                Id = id,
+                UserId = Guid.Parse(userId),
+                SchoolId = schoolId
+            };
+            return await HandleRequestAsync(async () =>
+            {
+                var response = await _mediator.Send(query);
+                return (CustomCode.Success, response);
+            });
         }
     }
 }

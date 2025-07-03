@@ -11,6 +11,7 @@ namespace Eduva.Application.Features.Folders.Responses
         public OwnerType OwnerType { get; set; }
         public string Name { get; set; } = string.Empty;
         public int Order { get; set; }
+        public int CountLessonMaterial { get; set; } = 0;
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset LastModifiedAt { get; set; }
     }

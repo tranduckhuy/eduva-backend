@@ -1,0 +1,19 @@
+services:
+  eduva-api:
+    container_name: eduva-api-dev
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:9001
+    ports:
+      - "9001:9001"
+    volumes:
+      - ./backend/src/Eduva.API:/app
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  rabbitmq:
+    ports:
+      - "5672:5672"
+      - "15672:15672"
