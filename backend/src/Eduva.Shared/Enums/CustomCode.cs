@@ -132,8 +132,10 @@ namespace Eduva.Shared.Enums
         NotAdminForClassList = 4715,
         StudentNotEnrolled = 4716,
         StudentRemovalFailed = 4717,
+        StudentNotFoundInClass = 4718,
         KeyConfigNotFound = 5001,
         KeyConfigAlreadyExist = 5002,
+
 
         // Question Errors
         InsufficientPermissionToCreateQuestion = 4800,
