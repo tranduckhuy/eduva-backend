@@ -330,8 +330,7 @@ namespace Eduva.API.Test.Controllers.Folders
         {
             SetupUser(null);
             var classId = Guid.NewGuid();
-            var param = new FolderSpecParam { PageIndex = 1, PageSize = 10 };
-            var result = await _controller.GetFoldersByClassId(classId, param);
+            var result = await _controller.GetFoldersByClassId(classId);
             var objectResult = result as ObjectResult;
             Assert.That(objectResult, Is.Not.Null);
             var response = objectResult!.Value as ApiResponse<object>;
@@ -344,8 +343,7 @@ namespace Eduva.API.Test.Controllers.Folders
         {
             SetupUser("invalid-guid");
             var classId = Guid.NewGuid();
-            var param = new FolderSpecParam { PageIndex = 1, PageSize = 10 };
-            var result = await _controller.GetFoldersByClassId(classId, param);
+            var result = await _controller.GetFoldersByClassId(classId);
             var objectResult = result as ObjectResult;
             Assert.That(objectResult, Is.Not.Null);
             var response = objectResult!.Value as ApiResponse<object>;
@@ -359,23 +357,28 @@ namespace Eduva.API.Test.Controllers.Folders
             var validUserId = Guid.NewGuid();
             SetupUser(validUserId.ToString());
             var classId = Guid.NewGuid();
-            var param = new FolderSpecParam { PageIndex = 1, PageSize = 10 };
-            var pagination = new Pagination<FolderResponse>(1, 10, 1, new List<FolderResponse> { new FolderResponse { Name = "Test Folder" } });
-            _mediatorMock.Setup(m => m.Send(It.IsAny<GetFoldersQuery>(), It.IsAny<CancellationToken>())).ReturnsAsync(pagination);
-            var result = await _controller.GetFoldersByClassId(classId, param);
+
+            var folders = new List<FolderResponse> { new FolderResponse { Name = "Test Folder" } };
+
+            _mediatorMock.Setup(m => m.Send(It.IsAny<GetAllFoldersByClassIdQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(folders);
+
+            var result = await _controller.GetFoldersByClassId(classId);
             var objectResult = result as ObjectResult;
             Assert.That(objectResult, Is.Not.Null);
+
             var response = objectResult!.Value as ApiResponse<object>;
             Assert.Multiple(() =>
             {
                 Assert.That(response, Is.Not.Null);
                 Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
-                Assert.That(response.Data, Is.TypeOf<Pagination<FolderResponse>>());
-                var folders = (Pagination<FolderResponse>)response.Data!;
-                Assert.That(folders.Data, Has.Count.EqualTo(1));
-                Assert.That(folders.Data.First().Name, Is.EqualTo("Test Folder"));
+                Assert.That(response.Data, Is.TypeOf<List<FolderResponse>>());
+                var returnedFolders = (List<FolderResponse>)response.Data!;
+                Assert.That(returnedFolders, Has.Count.EqualTo(1));
+                Assert.That(returnedFolders[0].Name, Is.EqualTo("Test Folder"));
             });
         }
+
 
         [Test]
         public async Task GetFoldersByClassId_ShouldReturnInternalServerError_WhenExceptionThrown()
@@ -383,13 +386,16 @@ namespace Eduva.API.Test.Controllers.Folders
             var validUserId = Guid.NewGuid();
             SetupUser(validUserId.ToString());
             var classId = Guid.NewGuid();
-            var param = new FolderSpecParam { PageIndex = 1, PageSize = 10 };
-            _mediatorMock.Setup(m => m.Send(It.IsAny<GetFoldersQuery>(), It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("Unhandled exception"));
-            var result = await _controller.GetFoldersByClassId(classId, param);
+
+            _mediatorMock.Setup(m => m.Send(It.IsAny<GetAllFoldersByClassIdQuery>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new Exception("Unhandled exception"));
+
+            var result = await _controller.GetFoldersByClassId(classId);
             var objectResult = result as ObjectResult;
             Assert.That(objectResult, Is.Not.Null);
             Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
         }
+
 
         [Test]
         public async Task GetFoldersByClassId_ShouldSetClassIdAndOwnerType()
@@ -397,9 +403,6 @@ namespace Eduva.API.Test.Controllers.Folders
             var validUserId = Guid.NewGuid();
             SetupUser(validUserId.ToString());
             var classId = Guid.NewGuid();
-
-            var param = new FolderSpecParam { PageIndex = 1, PageSize = 10 };
-
             _mediatorMock
                 .Setup(m => m.Send(It.Is<GetFoldersQuery>(q =>
                     q.FolderSpecParam.ClassId == classId &&
@@ -407,7 +410,7 @@ namespace Eduva.API.Test.Controllers.Folders
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new Pagination<FolderResponse>(1, 10, 1, new List<FolderResponse>()));
 
-            var result = await _controller.GetFoldersByClassId(classId, param);
+            var result = await _controller.GetFoldersByClassId(classId);
             var objectResult = result as ObjectResult;
 
             Assert.That(objectResult, Is.Not.Null);
@@ -423,10 +426,9 @@ namespace Eduva.API.Test.Controllers.Folders
             SetupUser(userId.ToString());
 
             _controller.ModelState.AddModelError("PageSize", "Required");
-            var param = new FolderSpecParam();
             var classId = Guid.NewGuid();
 
-            var result = await _controller.GetFoldersByClassId(classId, param);
+            var result = await _controller.GetFoldersByClassId(classId);
             var objectResult = result as ObjectResult;
 
             Assert.That(objectResult, Is.Not.Null);

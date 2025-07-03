@@ -3,6 +3,7 @@ using Eduva.API.Controllers.Base;
 using Eduva.API.Models;
 using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Common.Models;
+using Eduva.Application.Features.Classes.Commands.AddMaterialsToFolder;
 using Eduva.Application.Features.Classes.Commands.ArchiveClass;
 using Eduva.Application.Features.Classes.Commands.CreateClass;
 using Eduva.Application.Features.Classes.Commands.EnrollByClassCode;
@@ -412,5 +413,37 @@ namespace Eduva.API.Controllers.Classes
                 return Respond(CustomCode.SystemError);
             }
         }
+
+        [HttpPost("{classId}/folders/{folderId}/lesson-materials")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
+        [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}")]
+        public async Task<IActionResult> AddMaterialsToFolder(Guid classId, Guid folderId, [FromBody] List<Guid> materialIds)
+        {
+            var validationResult = CheckModelStateValidity();
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userId, out var currentUserId))
+                return Respond(CustomCode.UserIdNotFound);
+
+            var command = new AddMaterialsToFolderCommand
+            {
+                ClassId = classId,
+                FolderId = folderId,
+                MaterialIds = materialIds,
+                CurrentUserId = currentUserId
+            };
+
+            return await HandleRequestAsync<object>(async () =>
+            {
+                var result = await _mediator.Send(command);
+                return (CustomCode.Success, result);
+            });
+        }
+
     }
 }

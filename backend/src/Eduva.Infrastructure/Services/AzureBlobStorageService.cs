@@ -32,7 +32,14 @@ namespace Eduva.Infrastructure.Services
 
             sasBuilder.SetPermissions(BlobSasPermissions.Write | BlobSasPermissions.Create);
 
-            return blobClient.GenerateSasUri(sasBuilder).ToString();
+            var sasUri = blobClient.GenerateSasUri(sasBuilder);
+
+            var encodedBlobName = Uri.EscapeDataString(blobName);
+
+            var baseUri = $"{sasUri.Scheme}://{sasUri.Host}";
+            var finalUri = $"{baseUri}/{_options.ContainerName}/{encodedBlobName}{sasUri.Query}";
+
+            return finalUri;
         }
 
         public async Task<ICollection<string>> GenerateUploadSasTokens(List<string> blobNames)
@@ -50,7 +57,8 @@ namespace Eduva.Infrastructure.Services
         public string GetReadableUrl(string blobUrl)
         {
             var blobName = GetBlobNameFromUrl(blobUrl);
-            return $"{blobUrl}?{GenerateReadSasToken(blobName, DateTimeOffset.UtcNow.AddHours(1))}";
+            var sasToken = GenerateReadSasToken(blobName, DateTimeOffset.UtcNow.AddHours(1));
+            return $"{blobUrl}{sasToken}";
         }
 
         private string GenerateReadSasToken(string blobName, DateTimeOffset expiresOn)
@@ -96,7 +104,8 @@ namespace Eduva.Infrastructure.Services
         private static string GetBlobNameFromUrl(string blobUrl)
         {
             var uri = new Uri(blobUrl);
-            return uri.Segments[^1];
+            var encodedBlobName = uri.Segments[^1];
+            return Uri.UnescapeDataString(encodedBlobName);
         }
     }
 }

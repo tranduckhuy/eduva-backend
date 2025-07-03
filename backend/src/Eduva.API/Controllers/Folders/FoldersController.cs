@@ -101,9 +101,9 @@ namespace Eduva.API.Controllers.Folders
 
         [HttpGet("class/{classId}")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
-        [ProducesResponseType(typeof(ApiResponse<Pagination<FolderResponse>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<FolderResponse>>), StatusCodes.Status200OK)]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}, {nameof(Role.Student)}")]
-        public async Task<IActionResult> GetFoldersByClassId(Guid classId, [FromQuery] FolderSpecParam folderSpecParam)
+        public async Task<IActionResult> GetFoldersByClassId(Guid classId)
         {
             var validationResult = CheckModelStateValidity();
             if (validationResult != null)
@@ -115,15 +115,11 @@ namespace Eduva.API.Controllers.Folders
             if (!Guid.TryParse(userId, out var userGuid))
                 return Respond(CustomCode.UserIdNotFound);
 
-            folderSpecParam.ClassId = classId;
-            folderSpecParam.OwnerType = OwnerType.Class;
-
             return await HandleRequestAsync(async () =>
             {
-                // Access control: Only SchoolAdmin, Teacher of the class, or Students enrolled in the class can view folders
-                var query = new GetFoldersQuery(folderSpecParam, userGuid);
-                var result = await _mediator.Send(query);
-                return (CustomCode.Success, result);
+                var query = new GetAllFoldersByClassIdQuery(classId, userGuid);
+                var folders = await _mediator.Send(query);
+                return (CustomCode.Success, folders);
             });
         }
 

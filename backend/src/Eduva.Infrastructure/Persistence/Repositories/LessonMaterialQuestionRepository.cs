@@ -1,6 +1,5 @@
 ﻿using Eduva.Application.Interfaces.Repositories;
 using Eduva.Domain.Entities;
-using Eduva.Domain.Enums;
 using Eduva.Infrastructure.Persistence.DbContext;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,8 +7,11 @@ namespace Eduva.Infrastructure.Persistence.Repositories
 {
     public class LessonMaterialQuestionRepository : GenericRepository<LessonMaterialQuestion, Guid>, ILessonMaterialQuestionRepository
     {
-        public LessonMaterialQuestionRepository(AppDbContext context) : base(context)
+        private readonly IStudentClassRepository _studentClassRepository;
+
+        public LessonMaterialQuestionRepository(AppDbContext context, IStudentClassRepository studentClassRepository) : base(context)
         {
+            _studentClassRepository = studentClassRepository;
         }
 
         public async Task<LessonMaterialQuestion?> GetQuestionWithFullDetailsAsync(Guid questionId)
@@ -51,10 +53,10 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                 switch (userRole)
                 {
                     case "Student":
-                        return await StudentHasAccessToMaterial(userId, lessonMaterialId);
+                        return await _studentClassRepository.HasAccessToMaterialAsync(userId, lessonMaterialId);
                     case "Teacher":
                     case "ContentModerator":
-                        return await TeacherHasAccessToMaterial(userId, lessonMaterialId);
+                        return await _studentClassRepository.TeacherHasAccessToMaterialAsync(userId, lessonMaterialId);
                     default:
                         return false;
                 }
@@ -64,7 +66,7 @@ namespace Eduva.Infrastructure.Persistence.Repositories
             switch (userRole)
             {
                 case "Student":
-                    return await StudentHasAccessToMaterial(userId, lessonMaterialId);
+                    return await _studentClassRepository.HasAccessToMaterialAsync(userId, lessonMaterialId);
 
                 case "Teacher":
                 case "ContentModerator":
@@ -78,41 +80,11 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                         return false;
                     }
 
-                    return await TeacherHasAccessToMaterial(userId, lessonMaterialId);
+                    return await _studentClassRepository.TeacherHasAccessToMaterialAsync(userId, lessonMaterialId);
 
                 default:
                     return false;
             }
-        }
-
-        private async Task<bool> StudentHasAccessToMaterial(Guid userId, Guid lessonMaterialId)
-        {
-            return await _context.StudentClasses
-                .Where(sc => sc.StudentId == userId)
-                .Join(_context.Folders.Where(f => f.Status == EntityStatus.Active),
-                    sc => sc.ClassId,
-                    f => f.ClassId,
-                    (sc, f) => f)
-                .Join(_context.FolderLessonMaterials,
-                    f => f.Id,
-                    flm => flm.FolderId,
-                    (f, flm) => flm)
-                .AnyAsync(flm => flm.LessonMaterialId == lessonMaterialId);
-        }
-
-        private async Task<bool> TeacherHasAccessToMaterial(Guid teacherId, Guid lessonMaterialId)
-        {
-            return await _context.Classes
-                .Where(c => c.TeacherId == teacherId && c.Status == EntityStatus.Active)
-                .Join(_context.Folders.Where(f => f.Status == EntityStatus.Active),
-                    c => c.Id,
-                    f => f.ClassId,
-                    (c, f) => f)
-                .Join(_context.FolderLessonMaterials,
-                    f => f.Id,
-                    flm => flm.FolderId,
-                    (f, flm) => flm)
-                .AnyAsync(flm => flm.LessonMaterialId == lessonMaterialId);
         }
     }
 }
