@@ -112,6 +112,7 @@ namespace Eduva.Shared.Enums
         FolderAlreadyArchived = 4607,
         FolderAlreadyActive = 4608,
         FolderShouldBeArchivedBeforeDelete = 4609,
+        LessonMaterialNotFoundInFolder = 4610,
 
         // Class Errors - All consolidated in 4700 range
         ClassNotFound = 4700,
