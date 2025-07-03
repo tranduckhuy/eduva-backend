@@ -7,7 +7,35 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0" />
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.24.1" />
+    <PackageReference Include="EPPlus" Version="8.0.6" />
+    <PackageReference Include="MailKit" Version="4.12.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.17" />
+    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="8.0.17" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="sib_api_v3_sdk" Version="3.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Eduva.Application\Eduva.Application.csproj" />
+
+  <Content Include="Configurations\Email\Templates\*.html">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Link>email-templates\%(Filename)%(Extension)</Link>
+  </Content>
+
+  </ItemGroup>
+
+  <ItemGroup>
+  <Content Include="Configurations\Email\Templates\*.html">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </Content>
+</ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Identity\Providers\" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Xác thực OTP</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f4f6f8;
+            font-family: Arial, sans-serif;
+            color: #333;
+        }
+
+        .container {
+            width: 100%;
+            padding: 40px 20px;
+        }
+
+        .email-wrapper {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            padding: 30px;
+        }
+
+        .slogan {
+            font-size: 12px;
+            color: #777;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 16px;
+            line-height: 1.5;
+            margin: 12px 0;
+            color: #333;
+            font-weight: normal;
+        }
+
+        .otp-box {
+            background-color: #e6f0ff;
+            color: #0073e6;
+            text-align: center;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            border-radius: 6px;
+            padding: 14px 0;
+            margin: 20px 0;
+        }
+
+        .footer {
+            font-size: 12px;
+            color: #777;
+            text-align: center;
+            margin-top: 40px;
+        }
+    </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f6f8; font-family: Arial, sans-serif; color: #333; font-weight: normal;">
+    <table role="main" aria-label="Xác thực OTP" width="100%" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+            <td align="center" style="padding: 40px 0;">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #fff; border-radius: 8px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <tr>
+                        <td style="text-align: center; padding-bottom: 20px; color: #777; font-size: 12px;">
+                            EDUVA - Học, Học Nữa, Học Mãi
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center;">
+                            <h1 style="font-size: 24px; margin: 0 0 20px;">Xác thực OTP</h1>
+                            <p style="font-size: 16px; line-height: 1.5; margin: 0 0 30px; font-weight: normal;">
+                                Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi. Vì lý do bảo mật, vui lòng sử dụng mã xác thực một lần (OTP) dưới đây để hoàn tất quá trình xác thực.
+                            </p>
+                            <div class="otp-box">{{otp_code}}</div>
+                            <p style="font-size: 16px; line-height: 1.5; margin: 0 0 30px; font-weight: normal;">
+                                Mã OTP này chỉ có hiệu lực trong vòng 2 phút. Vui lòng không chia sẻ mã với bất kỳ ai.
+                            </p>
+                            <p style="font-size: 16px; line-height: 1.5; margin: 0 0 30px; font-weight: normal;">
+                                Nếu bạn không yêu cầu mã này, vui lòng liên hệ ngay với đội ngũ hỗ trợ của chúng tôi.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center; color: #777; font-size: 12px; padding-top: 40px;">
+                            &copy; {{current_year}} EDUVA - Nền tảng hỗ trợ tạo bài giảng đa phương tiện.
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

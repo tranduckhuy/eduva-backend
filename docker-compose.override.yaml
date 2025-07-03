@@ -1,0 +1,99 @@
+services:
+  nginx:
+    container_name: reverse-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    command: '/bin/sh -c ''while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g "daemon off;"'''
+    depends_on:
+      - eduva-api
+
+  certbot:
+    container_name: certbot
+    restart: unless-stopped
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 24h & wait $${!}; done;'"
+
+  eduva-api:
+    container_name: eduva-api
+    restart: unless-stopped
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:9001
+      - ConnectionStrings__DefaultConnection=${CONNECTION_STRING}
+      - JwtSettings__SecretKey=${JWT_SECRET_KEY}
+      - JwtSettings__ValidIssuer=${JWT_VALID_ISSUER}
+      - JwtSettings__ValidAudience=${JWT_VALID_AUDIENCE}
+      - JwtSettings__ExpiryInSecond=${JWT_EXPIRY_IN_SECONDS}
+      - EmailConfiguration__ApiKey=${EMAIL_API_KEY}
+      - EmailConfiguration__From=${EMAIL_FROM}
+      - EmailConfiguration__SmtpServer=${EMAIL_SMTP_SERVER}
+      - EmailConfiguration__SmtpPort=${EMAIL_SMTP_PORT}
+      - EmailConfiguration__Username=${EMAIL_USERNAME}
+      - EmailConfiguration__Password=${EMAIL_PASSWORD}
+      - Redis__ConnectionString=eduva-redis:6379
+      - Redis__InstanceName=${REDIS_INSTANCE_NAME}
+      - AzureBlobStorage__ConnectionString=${AZURE_BLOB_STORAGE_CONNECTION_STRING}
+      - AzureBlobStorage__ContainerName=${AZURE_BLOB_STORAGE_CONTAINER_NAME}
+      - AzureBlobStorage__TemporaryContainerName=${AZURE_BLOB_STORAGE_TEMP_CONTAINER_NAME}
+      - AzureBlobStorage__StorageAccountName=${AZURE_BLOB_STORAGE_ACCOUNT_NAME}
+      - AzureBlobStorage__StorageAccountKey=${AZURE_BLOB_STORAGE_ACCOUNT_KEY}
+      - PayOS__PAYOS_CLIENT_ID=${PAYOS_CLIENT_ID}
+      - PayOS__PAYOS_API_KEY=${PAYOS_API_KEY}
+      - PayOS__PAYOS_CHECKSUM_KEY=${PAYOS_CHECKSUM_KEY}
+      - PayOS__ReturnUrl=${PAYOS_RETURN_URL}
+      - PayOS__CancelUrl=${PAYOS_CANCEL_URL}
+      - ImportTemplate__Url=${IMPORT_TEMPLATE_URL}
+      - RabbitMQ__ConnectionUri=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@eduva-rabbitmq:5672
+    depends_on:
+      - redis
+      - rabbitmq
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  redis:
+    container_name: eduva-redis
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+  rabbitmq:
+    container_name: eduva-rabbitmq
+    restart: unless-stopped
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+    ports:
+      - "5672:5672"
+      - "15672:15672" # Management UI
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 30s
+      retries: 3
+
+  portainer:
+    container_name: eduva-portainer
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer-data:/data

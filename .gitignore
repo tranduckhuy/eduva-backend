@@ -178,3 +178,19 @@ testem.log
 # System Files
 .DS_Store
 Thumbs.db
+*coverage.opencover.xml
+
+*coverage.json
+
+.history/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# SSL certificates
+certbot/
+
+# Docker volumes
+docker-volumes/

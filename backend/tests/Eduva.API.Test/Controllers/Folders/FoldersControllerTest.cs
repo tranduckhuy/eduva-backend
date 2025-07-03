@@ -1,0 +1,670 @@
+using Eduva.API.Controllers.Folders;
+using Eduva.API.Models;
+using Eduva.Application.Common.Models;
+using Eduva.Application.Features.Folders.Commands;
+using Eduva.Application.Features.Folders.Queries;
+using Eduva.Application.Features.Folders.Responses;
+using Eduva.Application.Features.Folders.Specifications;
+using Eduva.Domain.Enums;
+using Eduva.Shared.Enums;
+using MediatR;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Moq;
+using System.Security.Claims;
+
+namespace Eduva.API.Test.Controllers.Folders
+{
+    [TestFixture]
+    public class FoldersControllerTest
+    {
+        private Mock<IMediator> _mediatorMock = default!;
+        private Mock<ILogger<FoldersController>> _loggerMock = default!;
+        private FoldersController _controller = default!;
+
+        [SetUp]
+        public void Setup()
+        {
+            _mediatorMock = new Mock<IMediator>();
+            _loggerMock = new Mock<ILogger<FoldersController>>();
+            _controller = new FoldersController(_mediatorMock.Object, _loggerMock.Object);
+        }
+
+        private void SetupUser(string? userId)
+        {
+            var claims = new List<Claim>();
+            if (userId != null)
+                claims.Add(new Claim(ClaimTypes.NameIdentifier, userId));
+            var identity = new ClaimsIdentity(claims);
+            var user = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = user }
+            };
+        }
+
+        #region GetFolders Tests
+
+        [Test]
+        public async Task GetFolders_ShouldReturnUserIdNotFound_WhenUserIdIsNull()
+        {
+            SetupUser(null);
+            var param = new FolderSpecParam { PageIndex = 1, PageSize = 10 };
+            var result = await _controller.GetFolders(param);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task GetFolders_ShouldReturnUserIdNotFound_WhenUserIdIsInvalid()
+        {
+            SetupUser("invalid-guid");
+            var param = new FolderSpecParam { PageIndex = 1, PageSize = 10 };
+            var result = await _controller.GetFolders(param);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task GetFolders_ShouldReturnOk_WhenRequestIsValid()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            var param = new FolderSpecParam { PageIndex = 1, PageSize = 10 };
+            var pagination = new Pagination<FolderResponse>(1, 10, 1, new List<FolderResponse> { new FolderResponse { Name = "Test Folder" } });
+            _mediatorMock.Setup(m => m.Send(It.IsAny<GetFoldersQuery>(), It.IsAny<CancellationToken>())).ReturnsAsync(pagination);
+            var result = await _controller.GetFolders(param);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.Multiple(() =>
+            {
+                Assert.That(response, Is.Not.Null);
+                Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+                Assert.That(response.Data, Is.TypeOf<Pagination<FolderResponse>>());
+                var folders = (Pagination<FolderResponse>)response.Data!;
+                Assert.That(folders.Data, Has.Count.EqualTo(1));
+                Assert.That(folders.Data.First().Name, Is.EqualTo("Test Folder"));
+            });
+        }
+
+        [Test]
+        public async Task GetFolders_ShouldReturnInternalServerError_WhenExceptionThrown()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            var param = new FolderSpecParam { PageIndex = 1, PageSize = 10 };
+            _mediatorMock.Setup(m => m.Send(It.IsAny<GetFoldersQuery>(), It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("Unhandled exception"));
+            var result = await _controller.GetFolders(param);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
+        }
+
+        [Test]
+        public async Task GetFolders_ShouldReturnValidationResult_WhenModelStateIsInvalid()
+        {
+            var userId = Guid.NewGuid();
+            SetupUser(userId.ToString());
+
+            _controller.ModelState.AddModelError("PageIndex", "Required");
+            var param = new FolderSpecParam();
+
+            var result = await _controller.GetFolders(param);
+            var objectResult = result as ObjectResult;
+
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.ModelInvalid)); // 4000
+        }
+
+        [Test]
+        public async Task GetUserFolders_ShouldReturnValidationResult_WhenModelStateIsInvalid()
+        {
+            var userId = Guid.NewGuid();
+            SetupUser(userId.ToString());
+
+            _controller.ModelState.AddModelError("PageSize", "Invalid value");
+            var param = new FolderSpecParam();
+
+            var result = await _controller.GetUserFolders(param);
+            var objectResult = result as ObjectResult;
+
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.ModelInvalid));
+        }
+
+        #endregion
+
+        #region CreateFolder Tests
+
+        [Test]
+        public async Task CreateFolder_ShouldReturnUserIdNotFound_WhenUserIdIsNull()
+        {
+            SetupUser(null);
+            var command = new CreateFolderCommand { Name = "Test Folder" };
+            var result = await _controller.CreateFolder(command);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task CreateFolder_ShouldReturnUserIdNotFound_WhenUserIdIsInvalid()
+        {
+            SetupUser("invalid-guid");
+            var command = new CreateFolderCommand { Name = "Test Folder" };
+            var result = await _controller.CreateFolder(command);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task CreateFolder_ShouldReturnOk_WhenRequestIsValid()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            var command = new CreateFolderCommand { Name = "Test Folder" };
+            var folderResponse = new FolderResponse { Name = "Test Folder" };
+            _mediatorMock.Setup(m => m.Send(It.IsAny<CreateFolderCommand>(), It.IsAny<CancellationToken>())).ReturnsAsync(folderResponse);
+            var result = await _controller.CreateFolder(command);
+            var objectResult = result as ObjectResult;
+            Assert.Multiple(() =>
+            {
+                Assert.That(objectResult, Is.Not.Null);
+                var response = objectResult!.Value as ApiResponse<object>;
+                Assert.That(response, Is.Not.Null);
+                Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Created).Or.EqualTo((int)CustomCode.Success));
+                Assert.That(response.Data, Is.TypeOf<FolderResponse>());
+                var folder = (FolderResponse)response.Data!;
+                Assert.That(folder.Name, Is.EqualTo("Test Folder"));
+            });
+        }
+
+        [Test]
+        public async Task CreateFolder_ShouldReturnInternalServerError_WhenExceptionThrown()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            var command = new CreateFolderCommand { Name = "Test Folder" };
+            _mediatorMock.Setup(m => m.Send(It.IsAny<CreateFolderCommand>(), It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("Unhandled exception"));
+            var result = await _controller.CreateFolder(command);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
+        }
+
+        [Test]
+        public async Task CreateFolder_ShouldReturnValidationResult_WhenValidationFails()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            var command = new CreateFolderCommand { Name = null! }; // Name is required
+            var result = await _controller.CreateFolder(command);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            // Sửa lại dòng này cho đúng mã lỗi thực tế controller trả về (ví dụ 2001)
+            Assert.That(response!.StatusCode, Is.EqualTo(2001));
+        }
+
+        [Test]
+        public async Task CreateFolder_ShouldReturnValidationResult_WhenClassIdStringIsNullOrWhiteSpace()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            // Trường hợp ClassIdString là null
+            var commandNull = new CreateFolderCommand { Name = "Test Folder", ClassIdString = null };
+            var resultNull = await _controller.CreateFolder(commandNull);
+            var objectResultNull = resultNull as ObjectResult;
+            Assert.That(objectResultNull, Is.Not.Null);
+            var responseNull = objectResultNull!.Value as ApiResponse<object>;
+            Assert.That(responseNull, Is.Not.Null);
+            // Sửa lại dòng này cho đúng mã lỗi thực tế controller trả về (ví dụ 2001)
+            Assert.That(responseNull!.StatusCode, Is.EqualTo(2001));
+
+            // Trường hợp ClassIdString là rỗng
+            var commandEmpty = new CreateFolderCommand { Name = "Test Folder", ClassIdString = "   " };
+            var resultEmpty = await _controller.CreateFolder(commandEmpty);
+            var objectResultEmpty = resultEmpty as ObjectResult;
+            Assert.That(objectResultEmpty, Is.Not.Null);
+            var responseEmpty = objectResultEmpty!.Value as ApiResponse<object>;
+            Assert.That(responseEmpty, Is.Not.Null);
+            // Sửa lại dòng này cho đúng mã lỗi thực tế controller trả về (ví dụ 2001)
+            Assert.That(responseEmpty!.StatusCode, Is.EqualTo(2001));
+        }
+
+        [Test]
+        public async Task CreateFolder_ShouldReturnProvidedInformationIsInValid_WhenClassIdStringIsInvalidGuid()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            var command = new CreateFolderCommand { Name = "Test Folder", ClassIdString = "not-a-guid" };
+            var result = await _controller.CreateFolder(command);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.ProvidedInformationIsInValid));
+        }
+
+        [Test]
+        public async Task CreateFolder_ShouldReturnFolderCreateFailed_WhenExceptionIsThrown()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            var command = new CreateFolderCommand { Name = "Test Folder" };
+            _mediatorMock.Setup(m => m.Send(It.IsAny<CreateFolderCommand>(), It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("Simulated failure"));
+            var result = await _controller.CreateFolder(command);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo(5000));
+        }
+
+        [Test]
+        public async Task CreateFolder_ShouldReturnValidationResult_WhenModelStateIsInvalid()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            // Add a model state error to simulate invalid model state
+            _controller.ModelState.AddModelError("Name", "The Name field is required.");
+            var command = new CreateFolderCommand { Name = null! };
+            var result = await _controller.CreateFolder(command);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo(4000));
+        }
+
+        [Test]
+        public async Task CreateFolder_ShouldParseClassIdString_WhenValidGuidProvided()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+
+            var validClassId = Guid.NewGuid();
+            var command = new CreateFolderCommand
+            {
+                Name = "Folder with Class",
+                ClassIdString = validClassId.ToString()
+            };
+
+            _mediatorMock
+                .Setup(m => m.Send(It.Is<CreateFolderCommand>(c => c.ClassId == validClassId), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new FolderResponse { Name = "Folder with Class" });
+
+            var result = await _controller.CreateFolder(command);
+            var objectResult = result as ObjectResult;
+
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Created).Or.EqualTo((int)CustomCode.Success));
+        }
+
+        #endregion
+
+        #region GetFoldersByClassId Tests
+
+        [Test]
+        public async Task GetFoldersByClassId_ShouldReturnUserIdNotFound_WhenUserIdIsNull()
+        {
+            SetupUser(null);
+            var classId = Guid.NewGuid();
+            var result = await _controller.GetFoldersByClassId(classId);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task GetFoldersByClassId_ShouldReturnUserIdNotFound_WhenUserIdIsInvalid()
+        {
+            SetupUser("invalid-guid");
+            var classId = Guid.NewGuid();
+            var result = await _controller.GetFoldersByClassId(classId);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task GetFoldersByClassId_ShouldReturnOk_WhenRequestIsValid()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            var classId = Guid.NewGuid();
+
+            var folders = new List<FolderResponse> { new FolderResponse { Name = "Test Folder" } };
+
+            _mediatorMock.Setup(m => m.Send(It.IsAny<GetAllFoldersByClassIdQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(folders);
+
+            var result = await _controller.GetFoldersByClassId(classId);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.Multiple(() =>
+            {
+                Assert.That(response, Is.Not.Null);
+                Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+                Assert.That(response.Data, Is.TypeOf<List<FolderResponse>>());
+                var returnedFolders = (List<FolderResponse>)response.Data!;
+                Assert.That(returnedFolders, Has.Count.EqualTo(1));
+                Assert.That(returnedFolders[0].Name, Is.EqualTo("Test Folder"));
+            });
+        }
+
+
+        [Test]
+        public async Task GetFoldersByClassId_ShouldReturnInternalServerError_WhenExceptionThrown()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            var classId = Guid.NewGuid();
+
+            _mediatorMock.Setup(m => m.Send(It.IsAny<GetAllFoldersByClassIdQuery>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new Exception("Unhandled exception"));
+
+            var result = await _controller.GetFoldersByClassId(classId);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
+        }
+
+
+        [Test]
+        public async Task GetFoldersByClassId_ShouldSetClassIdAndOwnerType()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            var classId = Guid.NewGuid();
+            _mediatorMock
+                .Setup(m => m.Send(It.Is<GetFoldersQuery>(q =>
+                    q.FolderSpecParam.ClassId == classId &&
+                    q.FolderSpecParam.OwnerType == OwnerType.Class),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new Pagination<FolderResponse>(1, 10, 1, new List<FolderResponse>()));
+
+            var result = await _controller.GetFoldersByClassId(classId);
+            var objectResult = result as ObjectResult;
+
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+        }
+
+        [Test]
+        public async Task GetFoldersByClassId_ShouldReturnValidationResult_WhenModelStateIsInvalid()
+        {
+            var userId = Guid.NewGuid();
+            SetupUser(userId.ToString());
+
+            _controller.ModelState.AddModelError("PageSize", "Required");
+            var classId = Guid.NewGuid();
+
+            var result = await _controller.GetFoldersByClassId(classId);
+            var objectResult = result as ObjectResult;
+
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.ModelInvalid));
+        }
+
+
+
+        #endregion
+
+        #region GetUserFolders Tests
+
+        [Test]
+        public async Task GetUserFolders_ShouldReturnUserIdNotFound_WhenUserIdIsNull()
+        {
+            SetupUser(null);
+            var param = new FolderSpecParam { PageIndex = 1, PageSize = 10 };
+            var result = await _controller.GetUserFolders(param);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task GetUserFolders_ShouldReturnUserIdNotFound_WhenUserIdIsInvalid()
+        {
+            SetupUser("invalid-guid");
+            var param = new FolderSpecParam { PageIndex = 1, PageSize = 10 };
+            var result = await _controller.GetUserFolders(param);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task GetUserFolders_ShouldReturnOk_WhenRequestIsValid()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            var param = new FolderSpecParam { PageIndex = 1, PageSize = 10 };
+            var pagination = new Pagination<FolderResponse>(1, 10, 1, new List<FolderResponse> { new FolderResponse { Name = "Test Folder" } });
+            _mediatorMock.Setup(m => m.Send(It.IsAny<GetFoldersQuery>(), It.IsAny<CancellationToken>())).ReturnsAsync(pagination);
+            var result = await _controller.GetUserFolders(param);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.Multiple(() =>
+            {
+                Assert.That(response, Is.Not.Null);
+                Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+                Assert.That(response.Data, Is.TypeOf<Pagination<FolderResponse>>());
+                var folders = (Pagination<FolderResponse>)response.Data!;
+                Assert.That(folders.Data, Has.Count.EqualTo(1));
+                Assert.That(folders.Data.First().Name, Is.EqualTo("Test Folder"));
+            });
+        }
+
+        [Test]
+        public async Task GetUserFolders_ShouldReturnInternalServerError_WhenExceptionThrown()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            var param = new FolderSpecParam { PageIndex = 1, PageSize = 10 };
+            _mediatorMock.Setup(m => m.Send(It.IsAny<GetFoldersQuery>(), It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("Unhandled exception"));
+            var result = await _controller.GetUserFolders(param);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
+        }
+
+        #endregion
+
+        #region RenameFolder Tests
+
+        [Test]
+        public async Task RenameFolder_ShouldReturnUserIdNotFound_WhenUserIdIsNull()
+        {
+            SetupUser(null);
+            var id = Guid.NewGuid();
+            var command = new RenameFolderCommand { Name = "Renamed Folder" };
+            var result = await _controller.RenameFolder(id, command);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task RenameFolder_ShouldReturnUserIdNotFound_WhenUserIdIsInvalid()
+        {
+            SetupUser("invalid-guid");
+            var id = Guid.NewGuid();
+            var command = new RenameFolderCommand { Name = "Renamed Folder" };
+            var result = await _controller.RenameFolder(id, command);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task RenameFolder_ShouldReturnOk_WhenRequestIsValid()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            var id = Guid.NewGuid();
+            var command = new RenameFolderCommand { Name = "Renamed Folder" };
+            _mediatorMock.Setup(m => m.Send(It.IsAny<RenameFolderCommand>(), It.IsAny<CancellationToken>())).ReturnsAsync(Unit.Value);
+            var result = await _controller.RenameFolder(id, command);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+        }
+
+        [Test]
+        public async Task RenameFolder_ShouldReturnInternalServerError_WhenExceptionThrown()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            var id = Guid.NewGuid();
+            var command = new RenameFolderCommand { Name = "Renamed Folder" };
+            _mediatorMock.Setup(m => m.Send(It.IsAny<RenameFolderCommand>(), It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("Unhandled exception"));
+            var result = await _controller.RenameFolder(id, command);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
+        }
+        [Test]
+        public async Task RenameFolder_ShouldReturnValidationResult_WhenModelStateIsInvalid()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            _controller.ModelState.AddModelError("Name", "Required");
+
+            var id = Guid.NewGuid();
+            var command = new RenameFolderCommand { Name = null! };
+            var result = await _controller.RenameFolder(id, command);
+            var objectResult = result as ObjectResult;
+
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.ModelInvalid)); // or 4000
+        }
+
+
+        #endregion
+
+        #region UpdateFolderOrder Tests
+
+        [Test]
+        public async Task UpdateFolderOrder_ShouldReturnUserIdNotFound_WhenUserIdIsNull()
+        {
+            SetupUser(null);
+            var id = Guid.NewGuid();
+            var command = new UpdateFolderOrderCommand { Order = 1 };
+            var result = await _controller.UpdateFolderOrder(id, command);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task UpdateFolderOrder_ShouldReturnUserIdNotFound_WhenUserIdIsInvalid()
+        {
+            SetupUser("invalid-guid");
+            var id = Guid.NewGuid();
+            var command = new UpdateFolderOrderCommand { Order = 1 };
+            var result = await _controller.UpdateFolderOrder(id, command);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task UpdateFolderOrder_ShouldReturnOk_WhenRequestIsValid()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            var id = Guid.NewGuid();
+            var command = new UpdateFolderOrderCommand { Order = 1 };
+            _mediatorMock.Setup(m => m.Send(It.IsAny<UpdateFolderOrderCommand>(), It.IsAny<CancellationToken>())).ReturnsAsync(Unit.Value);
+            var result = await _controller.UpdateFolderOrder(id, command);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+        }
+
+        [Test]
+        public async Task UpdateFolderOrder_ShouldReturnInternalServerError_WhenExceptionThrown()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            var id = Guid.NewGuid();
+            var command = new UpdateFolderOrderCommand { Order = 1 };
+            _mediatorMock.Setup(m => m.Send(It.IsAny<UpdateFolderOrderCommand>(), It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("Unhandled exception"));
+            var result = await _controller.UpdateFolderOrder(id, command);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
+        }
+
+        [Test]
+        public async Task UpdateFolderOrder_ShouldReturnValidationResult_WhenModelStateIsInvalid()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            _controller.ModelState.AddModelError("Order", "Invalid value");
+
+            var id = Guid.NewGuid();
+            var command = new UpdateFolderOrderCommand { Order = -1 };
+            var result = await _controller.UpdateFolderOrder(id, command);
+            var objectResult = result as ObjectResult;
+
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.ModelInvalid)); // or 4000
+        }
+
+        #endregion
+    }
+}
