@@ -5,52 +5,96 @@ on:
     workflows: ["Publish Eduva API Image"]
     types:
       - completed
+  workflow_dispatch:
 
 jobs:
   deploy:
-  name: Deploy Eduva
-  run-on: Linux
+    name: Deploy Eduva
+    runs-on: self-hosted
 
-  permissions:
-  contents: read
-  packages: write
+    # Only run if the previous workflow run was successful or if manually triggered
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
 
-  steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+    permissions:
+      contents: read
+      packages: write
 
-    - name: Setup Docker Compose environment
-      run: |
-        echo "Setting up Docker Compose environment..."
-        echo "CONNECTION_STRING=${{ secrets.CONNECTION_STRING }}" >> .env
-        echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" >> .env
-        echo "JWT_VALID_ISSUER=${{ secrets.JWT_VALID_ISSUER }}" >> .env
-        echo "JWT_VALID_AUDIENCE=${{ secrets.JWT_VALID_AUDIENCE }}" >> .env
-        echo "JWT_EXPIRY_IN_SECONDS=${{ secrets.JWT_EXPIRY_IN_SECONDS }}" >> .env
-        echo "EMAIL_API_KEY=${{ secrets.EMAIL_API_KEY }}" >> .env
-        echo "EMAIL_FROM=${{ secrets.EMAIL_FROM }}" >> .env
-        echo "EMAIL_SMTP_SERVER=${{ secrets.EMAIL_SMTP_SERVER }}" >> .env
-        echo "EMAIL_SMTP_PORT=${{ secrets.EMAIL_SMTP_PORT }}" >> .env
-        echo "EMAIL_USERNAME=${{ secrets.EMAIL_USERNAME }}" >> .env
-        echo "EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}" >> .env
-        echo "REDIS_CONNECTION_STRING=${{ secrets.REDIS_CONNECTION_STRING }}" >> .env
-        echo "REDIS_INSTANCE_NAME=${{ secrets.REDIS_INSTANCE_NAME }}" >> .env
-        echo "AZURE_BLOB_STORAGE_CONNECTION_STRING=${{ secrets.AZURE_BLOB_STORAGE_CONNECTION_STRING }}" >> .env
-        echo "AZURE_BLOB_STORAGE_CONTAINER_NAME=${{ secrets.AZURE_BLOB_STORAGE_CONTAINER_NAME }}" >> .env
-        echo "AZURE_BLOB_STORAGE_TEMP_CONTAINER_NAME=${{ secrets.AZURE_BLOB_STORAGE_TEMP_CONTAINER_NAME }}" >> .env
-        echo "AZURE_BLOB_STORAGE_ACCOUNT_NAME=${{ secrets.AZURE_BLOB_STORAGE_ACCOUNT_NAME }}" >> .env
-        echo "AZURE_BLOB_STORAGE_ACCOUNT_KEY=${{ secrets.AZURE_BLOB_STORAGE_ACCOUNT_KEY }}" >> .env
-        echo "PAYOS_CLIENT_ID=${{ secrets.PAYOS_CLIENT_ID }}" >> .env
-        echo "PAYOS_API_KEY=${{ secrets.PAYOS_API_KEY }}" >> .env
-        echo "PAYOS_CHECKSUM_KEY=${{ secrets.PAYOS_CHECKSUM_KEY }}" >> .env
-        echo "PAYOS_RETURN_URL=${{ secrets.PAYOS_RETURN_URL }}" >> .env
-        echo "PAYOS_CANCEL_URL=${{ secrets.PAYOS_CANCEL_URL }}" >> .env
-        echo "IMPORT_TEMPLATE_URL=${{ secrets.IMPORT_TEMPLATE_URL }}" >> .env
-        echo "RABBITMQ_DEFAULT_USER=${{ secrets.RABBITMQ_DEFAULT_USER }}" >> .env
-        echo "RABBITMQ_DEFAULT_PASS=${{ secrets.RABBITMQ_DEFAULT_PASS }}" >> .env
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Deploy with Docker Compose
-      run: |
-        docker-compose pull
-        docker-compose -f docker-compose.yml -f docker-compose.override.yml up --force-recreate --build -d
-        docker image prune -f
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Check if SSL certificate exists and is valid
+      - name: Check SSL Certificate Status
+        id: ssl_check
+        run: |
+          if [ -f "./certbot/conf/live/eduva.tech/fullchain.pem" ]; then
+            # Check if certificate expires in less than 30 days
+            if openssl x509 -checkend 2592000 -noout -in ./certbot/conf/live/eduva.tech/fullchain.pem; then
+              echo "ssl_valid=true" >> $GITHUB_OUTPUT
+              echo "SSL certificate is valid for more than 30 days"
+            else
+              echo "ssl_valid=false" >> $GITHUB_OUTPUT
+              echo "SSL certificate expires soon or is invalid"
+            fi
+          else
+            echo "ssl_valid=false" >> $GITHUB_OUTPUT
+            echo "SSL certificate not found"
+          fi
+
+      # Setup SSL Certificate (First time or renewal needed)
+      # This step will only run if the SSL certificate is not valid or does not exist
+      - name: Setup SSL Certificate (First time or renewal needed)
+        if: steps.ssl_check.outputs.ssl_valid != 'true'
+        run: |
+          echo "Setting up SSL certificate..."
+          chmod +x ./scripts/init-letsencrypt.sh
+          ./scripts/init-letsencrypt.sh
+
+      - name: Setup Docker Compose environment
+        run: |
+          echo "Setting up Docker Compose environment..."
+          echo "CONNECTION_STRING=${{ secrets.CONNECTION_STRING }}" >> .env
+          echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" >> .env
+          echo "JWT_VALID_ISSUER=${{ secrets.JWT_VALID_ISSUER }}" >> .env
+          echo "JWT_VALID_AUDIENCE=${{ secrets.JWT_VALID_AUDIENCE }}" >> .env
+          echo "JWT_EXPIRY_IN_SECONDS=${{ secrets.JWT_EXPIRY_IN_SECONDS }}" >> .env
+          echo "EMAIL_API_KEY=${{ secrets.EMAIL_API_KEY }}" >> .env
+          echo "EMAIL_FROM=${{ secrets.EMAIL_FROM }}" >> .env
+          echo "EMAIL_SMTP_SERVER=${{ secrets.EMAIL_SMTP_SERVER }}" >> .env
+          echo "EMAIL_SMTP_PORT=${{ secrets.EMAIL_SMTP_PORT }}" >> .env
+          echo "EMAIL_USERNAME=${{ secrets.EMAIL_USERNAME }}" >> .env
+          echo "EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}" >> .env
+          echo "REDIS_CONNECTION_STRING=${{ secrets.REDIS_CONNECTION_STRING }}" >> .env
+          echo "REDIS_INSTANCE_NAME=${{ secrets.REDIS_INSTANCE_NAME }}" >> .env
+          echo "AZURE_BLOB_STORAGE_CONNECTION_STRING=${{ secrets.AZURE_BLOB_STORAGE_CONNECTION_STRING }}" >> .env
+          echo "AZURE_BLOB_STORAGE_CONTAINER_NAME=${{ secrets.AZURE_BLOB_STORAGE_CONTAINER_NAME }}" >> .env
+          echo "AZURE_BLOB_STORAGE_TEMP_CONTAINER_NAME=${{ secrets.AZURE_BLOB_STORAGE_TEMP_CONTAINER_NAME }}" >> .env
+          echo "AZURE_BLOB_STORAGE_ACCOUNT_NAME=${{ secrets.AZURE_BLOB_STORAGE_ACCOUNT_NAME }}" >> .env
+          echo "AZURE_BLOB_STORAGE_ACCOUNT_KEY=${{ secrets.AZURE_BLOB_STORAGE_ACCOUNT_KEY }}" >> .env
+          echo "PAYOS_CLIENT_ID=${{ secrets.PAYOS_CLIENT_ID }}" >> .env
+          echo "PAYOS_API_KEY=${{ secrets.PAYOS_API_KEY }}" >> .env
+          echo "PAYOS_CHECKSUM_KEY=${{ secrets.PAYOS_CHECKSUM_KEY }}" >> .env
+          echo "PAYOS_RETURN_URL=${{ secrets.PAYOS_RETURN_URL }}" >> .env
+          echo "PAYOS_CANCEL_URL=${{ secrets.PAYOS_CANCEL_URL }}" >> .env
+          echo "IMPORT_TEMPLATE_URL=${{ secrets.IMPORT_TEMPLATE_URL }}" >> .env
+          echo "RABBITMQ_DEFAULT_USER=${{ secrets.RABBITMQ_DEFAULT_USER }}" >> .env
+          echo "RABBITMQ_DEFAULT_PASS=${{ secrets.RABBITMQ_DEFAULT_PASS }}" >> .env
+
+      - name: Deploy with Docker Compose
+        run: |
+          echo "Pulling latest images..."
+          docker compose pull
+          echo "Stopping existing containers..."
+          docker compose down
+          echo "Starting updated containers..."
+          docker compose up -d --force-recreate
+          echo "Cleaning up unused images..."
+          docker image prune -f
+          echo "Deployment completed successfully!"
