@@ -17,6 +17,7 @@ namespace Eduva.API.Controllers.LessonMaterials
     [Authorize]
     public class LessonMaterialController : BaseController<LessonMaterialController>
     {
+        private const string SCHOOL_ID_CLAIM = "SchoolId";
         private readonly IMediator _mediator;
 
         public LessonMaterialController(IMediator mediator, ILogger<LessonMaterialController> logger) : base(logger)
@@ -34,7 +35,7 @@ namespace Eduva.API.Controllers.LessonMaterials
                 return Respond(CustomCode.UserIdNotFound);
             }
 
-            var schoolId = User.FindFirstValue("SchoolId");
+            var schoolId = User.FindFirstValue(SCHOOL_ID_CLAIM);
             int? schoolIdInt = schoolId != null ? int.Parse(schoolId) : null;
             var isStudent = User.IsInRole(nameof(Role.Student));
 
@@ -65,7 +66,7 @@ namespace Eduva.API.Controllers.LessonMaterials
             }
 
             // Get schoolID from claims or context if needed
-            var schoolId = int.Parse(User.FindFirstValue("SchoolId") ?? "0");
+            var schoolId = int.Parse(User.FindFirstValue(SCHOOL_ID_CLAIM) ?? "0");
             command.SchoolId = schoolId > 0 ? schoolId : null;
 
             command.CreatedBy = Guid.Parse(userId);
@@ -86,7 +87,7 @@ namespace Eduva.API.Controllers.LessonMaterials
                 return Respond(CustomCode.UserIdNotFound);
             }
 
-            var schoolId = User.FindFirstValue("SchoolId");
+            var schoolId = User.FindFirstValue(SCHOOL_ID_CLAIM);
             if (schoolId != null)
             {
                 lessonMaterialSpecParam.SchoolId = int.Parse(schoolId);
@@ -113,7 +114,7 @@ namespace Eduva.API.Controllers.LessonMaterials
                 return Respond(CustomCode.UserIdNotFound);
             }
 
-            int? schoolId = int.TryParse(User.FindFirstValue("SchoolId"), out var parsedSchoolId) ? parsedSchoolId : null;
+            int? schoolId = int.TryParse(User.FindFirstValue(SCHOOL_ID_CLAIM), out var parsedSchoolId) ? parsedSchoolId : null;
 
             var query = new GetLessonMaterialByIdQuery
             {
