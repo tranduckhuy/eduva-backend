@@ -1,6 +1,6 @@
 services:
   nginx:
-    container_name: reverse-proxy
+    container_name: nginx
     restart: unless-stopped
     ports:
       - "80:80"
@@ -56,7 +56,7 @@ services:
       - redis
       - rabbitmq
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9001/health"]
+      test: ["CMD", "curl", "-f", "https://localhost:9001/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -94,6 +94,8 @@ services:
   portainer:
     container_name: eduva-portainer
     restart: unless-stopped
+    expose:
+      - "9000"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - portainer-data:/data

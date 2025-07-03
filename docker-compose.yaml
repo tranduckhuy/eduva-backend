@@ -33,6 +33,8 @@ volumes:
   redis-data:
   rabbitmq-data:
   portainer-data:
+  certbot-conf:
+  certbot-www:
 
 networks:
   eduva-network:

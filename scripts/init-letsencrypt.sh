@@ -22,15 +22,19 @@ openssl req -x509 -nodes -newkey rsa:$rsa_key_size -days 1 \
   -out "$data_path/conf/live/$domains/fullchain.pem" \
   -subj "/CN=localhost"
 
-echo "### Starting nginx ..."
+echo "### Starting all services ..."
 docker compose down
-docker compose up -d nginx
-echo "### Waiting for nginx to start ..."
-sleep 10
+docker compose up -d
+echo "### Waiting for services to start ..."
+sleep 30
 
 # Verify nginx is working by checking its response
 echo "### Testing nginx response ..."
 curl -I http://localhost || echo "Warning: Cannot connect to nginx locally. This might be okay if you're on a remote system."
+
+# Give additional time for all services to be fully ready
+echo "### Waiting for all services to be fully ready ..."
+sleep 10
 
 echo "### Deleting dummy certificate for $domains ..."
 rm -Rf "$data_path/conf/live/$domains"
