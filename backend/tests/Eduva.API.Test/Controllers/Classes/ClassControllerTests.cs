@@ -1,10 +1,11 @@
 ﻿using Eduva.API.Controllers.Classes;
 using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Common.Models;
+using Eduva.Application.Features.Classes.Commands.AddMaterialsToFolder;
 using Eduva.Application.Features.Classes.Commands.ArchiveClass;
 using Eduva.Application.Features.Classes.Commands.CreateClass;
 using Eduva.Application.Features.Classes.Commands.EnrollByClassCode;
-using Eduva.Application.Features.Classes.Commands.RemoveStudentFromClass;
+using Eduva.Application.Features.Classes.Commands.RemoveStudentsFromClass;
 using Eduva.Application.Features.Classes.Commands.ResetClassCode;
 using Eduva.Application.Features.Classes.Commands.RestoreClass;
 using Eduva.Application.Features.Classes.Commands.UpdateClass;
@@ -170,6 +171,26 @@ namespace Eduva.API.Test.Controllers.Classes
             Assert.That(((ObjectResult)result).StatusCode, Is.EqualTo(200));
         }
 
+        [Test]
+        public async Task RemoveStudentsFromClass_Success()
+        {
+            SetupUser();
+            _mediatorMock.Setup(m => m.Send(It.IsAny<RemoveStudentsFromClassCommand>(), default)).ReturnsAsync(Unit.Value);
+            var studentIds = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() };
+            var result = await _controller.RemoveStudentsFromClass(Guid.NewGuid(), studentIds);
+            Assert.That(((ObjectResult)result).StatusCode, Is.EqualTo(200));
+        }
+
+        [Test]
+        public async Task AddMaterialsToFolder_Success()
+        {
+            SetupUser();
+            _mediatorMock.Setup(m => m.Send(It.IsAny<AddMaterialsToFolderCommand>(), default)).ReturnsAsync(true);
+            var materialIds = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() };
+            var result = await _controller.AddMaterialsToFolder(Guid.NewGuid(), Guid.NewGuid(), materialIds);
+            Assert.That(((ObjectResult)result).StatusCode, Is.EqualTo(200));
+        }
+
         #endregion
 
         #region Error Tests - Validation & Authentication
@@ -183,6 +204,11 @@ namespace Eduva.API.Test.Controllers.Classes
         [TestCase("GetStudentById")]
         [TestCase("UpdateClass")]
         [TestCase("ResetClassCode")]
+        [TestCase("EnrollByClassCode")]
+        [TestCase("ArchiveClass")]
+        [TestCase("RestoreClass")]
+        [TestCase("RemoveStudentsFromClass")]
+        [TestCase("AddMaterialsToFolder")]
         public async Task Methods_ShouldReturn401_WhenUserIdMissing(string methodName)
         {
             SetupUser(includeUserId: false);
@@ -197,6 +223,11 @@ namespace Eduva.API.Test.Controllers.Classes
                 "GetStudentById" => await _controller.GetStudentById(Guid.NewGuid()),
                 "UpdateClass" => await _controller.UpdateClass(Guid.NewGuid(), new UpdateClassCommand { Name = "Test" }),
                 "ResetClassCode" => await _controller.ResetClassCode(Guid.NewGuid()),
+                "EnrollByClassCode" => await _controller.EnrollByClassCode(new EnrollByClassCodeCommand { ClassCode = "ABC123" }),
+                "ArchiveClass" => await _controller.ArchiveClass(Guid.NewGuid()),
+                "RestoreClass" => await _controller.RestoreClass(Guid.NewGuid()),
+                "RemoveStudentsFromClass" => await _controller.RemoveStudentsFromClass(Guid.NewGuid(), new List<Guid> { Guid.NewGuid() }),
+                "AddMaterialsToFolder" => await _controller.AddMaterialsToFolder(Guid.NewGuid(), Guid.NewGuid(), new List<Guid>()),
                 _ => throw new ArgumentException("Invalid method name")
             };
             Assert.That(((ObjectResult)result).StatusCode, Is.EqualTo(401));
@@ -204,7 +235,18 @@ namespace Eduva.API.Test.Controllers.Classes
 
         [TestCase("CreateClass")]
         [TestCase("GetClasses")]
+        [TestCase("GetTeacherClasses")]
+        [TestCase("GetMyClasses")]
+        [TestCase("GetClassById")]
+        [TestCase("GetAllStudentsInClass")]
+        [TestCase("GetStudentById")]
         [TestCase("UpdateClass")]
+        [TestCase("ResetClassCode")]
+        [TestCase("EnrollByClassCode")]
+        [TestCase("ArchiveClass")]
+        [TestCase("RestoreClass")]
+        [TestCase("RemoveStudentsFromClass")]
+        [TestCase("AddMaterialsToFolder")]
         public async Task Methods_ShouldReturn400_WhenModelInvalid(string methodName)
         {
             SetupUser();
@@ -213,7 +255,18 @@ namespace Eduva.API.Test.Controllers.Classes
             {
                 "CreateClass" => await _controller.CreateClass(new CreateClassCommand()),
                 "GetClasses" => await _controller.GetClasses(new ClassSpecParam()),
+                "GetTeacherClasses" => await _controller.GetTeacherClasses(new ClassSpecParam()),
+                "GetMyClasses" => await _controller.GetMyClasses(new StudentClassSpecParam()),
+                "GetClassById" => await _controller.GetClassById(Guid.NewGuid()),
+                "GetAllStudentsInClass" => await _controller.GetAllStudentsInClass(Guid.NewGuid(), new StudentClassSpecParam()),
+                "GetStudentById" => await _controller.GetStudentById(Guid.NewGuid()),
                 "UpdateClass" => await _controller.UpdateClass(Guid.NewGuid(), new UpdateClassCommand()),
+                "ResetClassCode" => await _controller.ResetClassCode(Guid.NewGuid()),
+                "EnrollByClassCode" => await _controller.EnrollByClassCode(new EnrollByClassCodeCommand()),
+                "ArchiveClass" => await _controller.ArchiveClass(Guid.NewGuid()),
+                "RestoreClass" => await _controller.RestoreClass(Guid.NewGuid()),
+                "RemoveStudentsFromClass" => await _controller.RemoveStudentsFromClass(Guid.NewGuid(), new List<Guid> { Guid.NewGuid() }),
+                "AddMaterialsToFolder" => await _controller.AddMaterialsToFolder(Guid.NewGuid(), Guid.NewGuid(), new List<Guid>()),
                 _ => throw new ArgumentException("Invalid method name")
             };
             Assert.That(((ObjectResult)result).StatusCode, Is.EqualTo(400));
@@ -253,6 +306,15 @@ namespace Eduva.API.Test.Controllers.Classes
         }
 
         [Test]
+        public async Task RestoreClass_GenericException()
+        {
+            SetupUser();
+            _mediatorMock.Setup(m => m.Send(It.IsAny<RestoreClassCommand>(), default)).ThrowsAsync(new Exception());
+            var result = await _controller.RestoreClass(Guid.NewGuid());
+            Assert.That(((ObjectResult)result).StatusCode, Is.EqualTo(500));
+        }
+
+        [Test]
         public async Task EnrollByClassCode_AppException()
         {
             SetupUser("Student");
@@ -262,36 +324,90 @@ namespace Eduva.API.Test.Controllers.Classes
             Assert.That(((ObjectResult)result).StatusCode, Is.EqualTo(400));
         }
 
+        [Test]
+        public async Task EnrollByClassCode_GenericException()
+        {
+            SetupUser("Student");
+            _mediatorMock.Setup(m => m.Send(It.IsAny<EnrollByClassCodeCommand>(), default)).ThrowsAsync(new Exception());
+            var result = await _controller.EnrollByClassCode(new EnrollByClassCodeCommand { ClassCode = "ABC" });
+            Assert.That(((ObjectResult)result).StatusCode, Is.EqualTo(500));
+        }
+
+        [Test]
+        public async Task RemoveStudentsFromClass_AppException()
+        {
+            SetupUser();
+            _mediatorMock.Setup(m => m.Send(It.IsAny<RemoveStudentsFromClassCommand>(), default))
+                .ThrowsAsync(new AppException(CustomCode.StudentNotEnrolled, new List<string>()));
+            var studentIds = new List<Guid> { Guid.NewGuid() };
+            var result = await _controller.RemoveStudentsFromClass(Guid.NewGuid(), studentIds);
+            Assert.That(((ObjectResult)result).StatusCode, Is.EqualTo(404));
+        }
+
+        [Test]
+        public async Task RemoveStudentsFromClass_GenericException()
+        {
+            SetupUser();
+            _mediatorMock.Setup(m => m.Send(It.IsAny<RemoveStudentsFromClassCommand>(), default)).ThrowsAsync(new Exception());
+            var studentIds = new List<Guid> { Guid.NewGuid() };
+            var result = await _controller.RemoveStudentsFromClass(Guid.NewGuid(), studentIds);
+            Assert.That(((ObjectResult)result).StatusCode, Is.EqualTo(500));
+        }
+
+        [Test]
+        public async Task AddMaterialsToFolder_AppException()
+        {
+            SetupUser();
+            _mediatorMock.Setup(m => m.Send(It.IsAny<AddMaterialsToFolderCommand>(), default))
+                .ThrowsAsync(new AppException(CustomCode.FolderNotFound, new List<string>()));
+            var materialIds = new List<Guid> { Guid.NewGuid() };
+            var result = await _controller.AddMaterialsToFolder(Guid.NewGuid(), Guid.NewGuid(), materialIds);
+            Assert.That(((ObjectResult)result).StatusCode, Is.EqualTo(404));
+        }
+
+        [Test]
+        public async Task AddMaterialsToFolder_GenericException()
+        {
+            SetupUser();
+            _mediatorMock.Setup(m => m.Send(It.IsAny<AddMaterialsToFolderCommand>(), default)).ThrowsAsync(new Exception());
+            var materialIds = new List<Guid> { Guid.NewGuid() };
+            var result = await _controller.AddMaterialsToFolder(Guid.NewGuid(), Guid.NewGuid(), materialIds);
+            Assert.That(((ObjectResult)result).StatusCode, Is.EqualTo(500));
+        }
+
         #endregion
 
         #region Business Logic Tests
 
         [Test]
-        public async Task RemoveStudentFromClass_AsTeacher()
+        public async Task RemoveStudentsFromClass_AsTeacher()
         {
             SetupUser("Teacher");
-            _mediatorMock.Setup(m => m.Send(It.IsAny<RemoveStudentFromClassCommand>(), default)).ReturnsAsync(Unit.Value);
-            var result = await _controller.RemoveStudentFromClass(Guid.NewGuid(), Guid.NewGuid());
+            _mediatorMock.Setup(m => m.Send(It.IsAny<RemoveStudentsFromClassCommand>(), default)).ReturnsAsync(Unit.Value);
+            var studentIds = new List<Guid> { Guid.NewGuid() };
+            var result = await _controller.RemoveStudentsFromClass(Guid.NewGuid(), studentIds);
             Assert.That(((ObjectResult)result).StatusCode, Is.EqualTo(200));
-            _mediatorMock.Verify(m => m.Send(It.Is<RemoveStudentFromClassCommand>(c => c.IsTeacher), default));
+            _mediatorMock.Verify(m => m.Send(It.Is<RemoveStudentsFromClassCommand>(c => c.IsTeacher), default));
         }
 
         [Test]
-        public async Task RemoveStudentFromClass_AsSchoolAdmin()
+        public async Task RemoveStudentsFromClass_AsSchoolAdmin()
         {
             SetupUser("SchoolAdmin");
-            _mediatorMock.Setup(m => m.Send(It.IsAny<RemoveStudentFromClassCommand>(), default)).ReturnsAsync(Unit.Value);
-            var result = await _controller.RemoveStudentFromClass(Guid.NewGuid(), Guid.NewGuid());
-            _mediatorMock.Verify(m => m.Send(It.Is<RemoveStudentFromClassCommand>(c => c.IsSchoolAdmin), default));
+            _mediatorMock.Setup(m => m.Send(It.IsAny<RemoveStudentsFromClassCommand>(), default)).ReturnsAsync(Unit.Value);
+            var studentIds = new List<Guid> { Guid.NewGuid() };
+            var result = await _controller.RemoveStudentsFromClass(Guid.NewGuid(), studentIds);
+            _mediatorMock.Verify(m => m.Send(It.Is<RemoveStudentsFromClassCommand>(c => c.IsSchoolAdmin), default));
         }
 
         [Test]
-        public async Task RemoveStudentFromClass_AsSystemAdmin()
+        public async Task RemoveStudentsFromClass_AsSystemAdmin()
         {
             SetupUser("SystemAdmin");
-            _mediatorMock.Setup(m => m.Send(It.IsAny<RemoveStudentFromClassCommand>(), default)).ReturnsAsync(Unit.Value);
-            var result = await _controller.RemoveStudentFromClass(Guid.NewGuid(), Guid.NewGuid());
-            _mediatorMock.Verify(m => m.Send(It.Is<RemoveStudentFromClassCommand>(c => c.IsSystemAdmin), default));
+            _mediatorMock.Setup(m => m.Send(It.IsAny<RemoveStudentsFromClassCommand>(), default)).ReturnsAsync(Unit.Value);
+            var studentIds = new List<Guid> { Guid.NewGuid() };
+            var result = await _controller.RemoveStudentsFromClass(Guid.NewGuid(), studentIds);
+            _mediatorMock.Verify(m => m.Send(It.Is<RemoveStudentsFromClassCommand>(c => c.IsSystemAdmin), default));
         }
 
         [Test]
@@ -301,6 +417,88 @@ namespace Eduva.API.Test.Controllers.Classes
             _mediatorMock.Setup(m => m.Send(It.IsAny<CreateClassCommand>(), default)).ReturnsAsync(new ClassResponse());
             await _controller.CreateClass(new CreateClassCommand { Name = "Test", SchoolId = 0 });
             _mediatorMock.Verify(m => m.Send(It.Is<CreateClassCommand>(c => c.SchoolId == 1), default));
+        }
+
+        [Test]
+        public async Task CreateClass_DoesNotOverrideExistingSchoolId()
+        {
+            SetupUser(includeSchoolId: true);
+            _mediatorMock.Setup(m => m.Send(It.IsAny<CreateClassCommand>(), default)).ReturnsAsync(new ClassResponse());
+            await _controller.CreateClass(new CreateClassCommand { Name = "Test", SchoolId = 5 });
+            _mediatorMock.Verify(m => m.Send(It.Is<CreateClassCommand>(c => c.SchoolId == 5), default));
+        }
+
+        [Test]
+        public async Task EnrollByClassCode_SetsStudentIdFromClaim()
+        {
+            SetupUser("Student");
+            _mediatorMock.Setup(m => m.Send(It.IsAny<EnrollByClassCodeCommand>(), default)).ReturnsAsync(new StudentClassResponse());
+            await _controller.EnrollByClassCode(new EnrollByClassCodeCommand { ClassCode = "ABC123" });
+            _mediatorMock.Verify(m => m.Send(It.Is<EnrollByClassCodeCommand>(c => c.StudentId == _testUserId), default));
+        }
+
+        [Test]
+        public async Task AddMaterialsToFolder_SetsCurrentUserIdFromClaim()
+        {
+            SetupUser();
+            _mediatorMock.Setup(m => m.Send(It.IsAny<AddMaterialsToFolderCommand>(), default)).ReturnsAsync(true);
+            var materialIds = new List<Guid> { Guid.NewGuid() };
+            await _controller.AddMaterialsToFolder(Guid.NewGuid(), Guid.NewGuid(), materialIds);
+            _mediatorMock.Verify(m => m.Send(It.Is<AddMaterialsToFolderCommand>(c => c.CurrentUserId == _testUserId), default));
+        }
+
+        [Test]
+        public async Task RemoveStudentsFromClass_SetsRequestUserIdAndRolesFromClaims()
+        {
+            SetupUser("Teacher");
+            _mediatorMock.Setup(m => m.Send(It.IsAny<RemoveStudentsFromClassCommand>(), default)).ReturnsAsync(Unit.Value);
+            var studentIds = new List<Guid> { Guid.NewGuid() };
+            await _controller.RemoveStudentsFromClass(Guid.NewGuid(), studentIds);
+            _mediatorMock.Verify(m => m.Send(It.Is<RemoveStudentsFromClassCommand>(c =>
+                c.RequestUserId == _testUserId &&
+                c.IsTeacher == true &&
+                c.IsSchoolAdmin == false &&
+                c.IsSystemAdmin == false), default));
+        }
+
+        #endregion
+
+        #region Additional Coverage Tests
+
+        [Test]
+        public async Task CreateClass_WithoutSchoolIdClaim_DoesNotSetSchoolId()
+        {
+            SetupUser(includeSchoolId: false);
+            _mediatorMock.Setup(m => m.Send(It.IsAny<CreateClassCommand>(), default)).ReturnsAsync(new ClassResponse());
+            await _controller.CreateClass(new CreateClassCommand { Name = "Test", SchoolId = 0 });
+            _mediatorMock.Verify(m => m.Send(It.Is<CreateClassCommand>(c => c.SchoolId == 0), default));
+        }
+
+        [Test]
+        public async Task ArchiveClass_SetsTeacherIdFromClaim()
+        {
+            SetupUser();
+            _mediatorMock.Setup(m => m.Send(It.IsAny<ArchiveClassCommand>(), default)).ReturnsAsync(Unit.Value);
+            await _controller.ArchiveClass(Guid.NewGuid());
+            _mediatorMock.Verify(m => m.Send(It.Is<ArchiveClassCommand>(c => c.TeacherId == _testUserId), default));
+        }
+
+        [Test]
+        public async Task RestoreClass_SetsTeacherIdFromClaim()
+        {
+            SetupUser();
+            _mediatorMock.Setup(m => m.Send(It.IsAny<RestoreClassCommand>(), default)).ReturnsAsync(Unit.Value);
+            await _controller.RestoreClass(Guid.NewGuid());
+            _mediatorMock.Verify(m => m.Send(It.Is<RestoreClassCommand>(c => c.TeacherId == _testUserId), default));
+        }
+
+        [Test]
+        public async Task ResetClassCode_SetsTeacherIdFromClaim()
+        {
+            SetupUser();
+            _mediatorMock.Setup(m => m.Send(It.IsAny<ResetClassCodeCommand>(), default)).ReturnsAsync(new ClassResponse());
+            await _controller.ResetClassCode(Guid.NewGuid());
+            _mediatorMock.Verify(m => m.Send(It.Is<ResetClassCodeCommand>(c => c.TeacherId == _testUserId), default));
         }
 
         #endregion
