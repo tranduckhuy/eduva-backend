@@ -40,7 +40,7 @@ namespace Eduva.Application.Features.Classes.Commands.RemoveStudentsFromClass
                 .Where(sc => sc.ClassId == request.ClassId && request.StudentIds.Contains(sc.StudentId))
                 .ToList();
 
-            if (!studentClasses.Any())
+            if (studentClasses.Count == 0)
             {
                 throw new AppException(CustomCode.StudentNotFoundInClass);
             }
