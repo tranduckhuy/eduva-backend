@@ -1,26 +1,14 @@
 using MediatR;
-using System.Text.Json.Serialization;
 
-namespace Eduva.Application.Features.Classes.Commands.RemoveStudentFromClass
+namespace Eduva.Application.Features.Classes.Commands.RemoveStudentsFromClass
 {
-    public class RemoveStudentFromClassCommand : IRequest<Unit>
+    public class RemoveStudentsFromClassCommand : IRequest<Unit>
     {
-        [JsonIgnore]
         public Guid ClassId { get; set; }
-        
-        [JsonIgnore]
-        public Guid StudentId { get; set; }
-        
-        [JsonIgnore]
+        public List<Guid> StudentIds { get; set; } = new List<Guid>();
         public Guid RequestUserId { get; set; }
-        
-        [JsonIgnore]
         public bool IsTeacher { get; set; }
-        
-        [JsonIgnore]
         public bool IsSchoolAdmin { get; set; }
-        
-        [JsonIgnore]
         public bool IsSystemAdmin { get; set; }
     }
 }
