@@ -24,6 +24,34 @@ namespace Eduva.API.Controllers.LessonMaterials
             _mediator = mediator;
         }
 
+
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllLessonMaterials([FromQuery] Guid? classId = null, [FromQuery] Guid? folderId = null)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+            {
+                return Respond(CustomCode.UserIdNotFound);
+            }
+
+            var schoolId = User.FindFirstValue("SchoolId");
+            int? schoolIdInt = schoolId != null ? int.Parse(schoolId) : null;
+            var isStudent = User.IsInRole(nameof(Role.Student));
+
+            var query = new GetAllLessonMaterialsQuery(
+                UserId: Guid.Parse(userId),
+                IsStudent: isStudent,
+                SchoolId: schoolIdInt,
+                ClassId: classId,
+                FolderId: folderId);
+
+            return await HandleRequestAsync(async () =>
+            {
+                var response = await _mediator.Send(query);
+                return (CustomCode.Success, response);
+            });
+        }
+
         [HttpPost]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
