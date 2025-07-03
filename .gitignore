@@ -183,3 +183,14 @@ Thumbs.db
 *coverage.json
 
 .history/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# SSL certificates
+certbot/
+
+# Docker volumes
+docker-volumes/

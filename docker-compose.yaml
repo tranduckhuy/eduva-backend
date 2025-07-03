@@ -1,0 +1,39 @@
+services:
+  nginx:
+    image: nginx:1.29-alpine
+    networks:
+      - eduva-network
+
+  certbot:
+    image: certbot/certbot
+    networks:
+      - eduva-network
+
+  eduva-api:
+    image: ghcr.io/tranduckhuy/eduva-api:latest
+    networks:
+      - eduva-network
+
+  redis:
+    image: redis:alpine3.21
+    networks:
+      - eduva-network
+
+  rabbitmq:
+    image: rabbitmq:3.13.7-management-alpine
+    networks:
+      - eduva-network
+
+  portainer:
+    image: portainer/portainer-ce:2.25.1-alpine
+    networks:
+      - eduva-network
+
+volumes:
+  redis-data:
+  rabbitmq-data:
+  portainer-data:
+
+networks:
+  eduva-network:
+    driver: bridge
