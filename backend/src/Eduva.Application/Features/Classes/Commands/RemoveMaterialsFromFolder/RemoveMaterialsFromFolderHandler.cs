@@ -44,7 +44,7 @@ namespace Eduva.Application.Features.Classes.Commands.RemoveMaterialsFromFolder
                 .Where(flm => flm.FolderId == request.FolderId && request.MaterialIds.Contains(flm.LessonMaterialId))
                 .ToList();
 
-            if (!folderMaterials.Any())
+            if (folderMaterials.Count == 0)
             {
                 throw new AppException(CustomCode.LessonMaterialNotFoundInFolder);
             }
