@@ -30,19 +30,7 @@ namespace Eduva.Infrastructure.Persistence.Repositories
 
             if (isStudent)
             {
-                if (classId.HasValue)
-                {
-                    var isEnrolled = await _studentClassRepository
-                        .IsStudentEnrolledInClassAsync(userId, classId.Value);
-
-                    if (!isEnrolled)
-                    {
-                        return new List<LessonMaterial>();
-                    }
-
-                    query = query.Where(lm => lm.FolderLessonMaterials.Any(flm => flm.Folder.ClassId == classId));
-                }
-                else if (folderId.HasValue)
+                if (folderId.HasValue)
                 {
                     var folderClassId = await _context.Folders
                         .Where(f => f.Id == folderId)
@@ -62,6 +50,18 @@ namespace Eduva.Infrastructure.Persistence.Repositories
 
                     query = query.Where(lm => lm.FolderLessonMaterials.Any(flm => flm.FolderId == folderId));
                 }
+                else if (classId.HasValue)
+                {
+                    var isEnrolled = await _studentClassRepository
+                        .IsStudentEnrolledInClassAsync(userId, classId.Value);
+
+                    if (!isEnrolled)
+                    {
+                        return new List<LessonMaterial>();
+                    }
+
+                    query = query.Where(lm => lm.FolderLessonMaterials.Any(flm => flm.Folder.ClassId == classId));
+                }
                 else
                 {
                     return new List<LessonMaterial>();
@@ -78,13 +78,17 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                     (lm.Visibility == LessonMaterialVisibility.School ||
                      (lm.Visibility == LessonMaterialVisibility.Private && lm.CreatedByUserId == userId)));
 
-                if (classId.HasValue)
+                if (folderId.HasValue)
+                {
+                    query = query.Where(lm => lm.FolderLessonMaterials.Any(flm => flm.FolderId == folderId));
+                }
+                else if (classId.HasValue)
                 {
                     query = query.Where(lm => lm.FolderLessonMaterials.Any(flm => flm.Folder.ClassId == classId));
                 }
-                else if (folderId.HasValue)
+                else
                 {
-                    query = query.Where(lm => lm.FolderLessonMaterials.Any(flm => flm.FolderId == folderId));
+                    return new List<LessonMaterial>();
                 }
             }
 
