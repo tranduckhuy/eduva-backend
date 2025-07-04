@@ -78,7 +78,7 @@ namespace Eduva.Infrastructure.Email
             }
         }
 
-        public async Task SendEmailBrevoAsync(string receiverEmail, string receiverName, string subject, string message)
+        public async Task SendEmailBrevoHtmlAsync(string receiverEmail, string receiverName, string subject, string htmlContent)
         {
             Configuration.Default.AddApiKey("api-key", _emailConfiguration.ApiKey);
 
@@ -92,7 +92,6 @@ namespace Eduva.Infrastructure.Email
 
             try
             {
-                var htmlContent = string.Format("<h2 style='color: blue;'>{0}</h2>", message);
                 var sendSmtpEmail = new sib_api_v3_sdk.Model.SendSmtpEmail(sender, to, null, null, htmlContent, null, subject);
 
                 await apiInstance.SendTransacEmailAsync(sendSmtpEmail);

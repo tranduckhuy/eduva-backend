@@ -1,5 +1,4 @@
 ﻿using Eduva.Application.Common.Exceptions;
-using Eduva.Application.Common.Models;
 using Eduva.Application.Exceptions.Auth;
 using Eduva.Application.Features.Auth.DTOs;
 using Eduva.Application.Interfaces.Services;
@@ -237,7 +236,7 @@ namespace Eduva.Infrastructure.Test.Services
             _userManager.Setup(x => x.GetTwoFactorEnabledAsync(user)).ReturnsAsync(true);
             _userManager.Setup(x => x.GetClaimsAsync(user)).ReturnsAsync(new List<Claim>());
 
-            _emailSender.Setup(x => x.SendEmailAsync(It.IsAny<EmailMessage>())).Returns(Task.CompletedTask);
+            _emailSender.Setup(x => x.SendEmailBrevoHtmlAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Returns(Task.CompletedTask);
 
             var result = await _authService.LoginAsync(new LoginRequestDto
             {
@@ -254,9 +253,12 @@ namespace Eduva.Infrastructure.Test.Services
 
             await Task.Delay(100);
 
-            _emailSender.Verify(x => x.SendEmailAsync(It.Is<EmailMessage>(m =>
-                m.To.First().DisplayName == "user@example.com"
-            )), Times.Once);
+            _emailSender.Verify(x => x.SendEmailBrevoHtmlAsync(
+                "user@example.com",
+                "user@example.com",
+                It.Is<string>(s => s.Contains("Xác thực OTP đăng nhập")),
+                It.IsAny<string>()
+            ), Times.Once);
         }
 
         [Test]
@@ -276,7 +278,7 @@ namespace Eduva.Infrastructure.Test.Services
             _userManager.Setup(m => m.GetTwoFactorEnabledAsync(user)).ReturnsAsync(true);
             _userManager.Setup(m => m.GetClaimsAsync(user)).ReturnsAsync(new List<Claim>());
 
-            _emailSender.Setup(x => x.SendEmailAsync(It.IsAny<EmailMessage>())).Returns(Task.CompletedTask);
+            _emailSender.Setup(x => x.SendEmailBrevoHtmlAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Returns(Task.CompletedTask);
 
             var result = await _authService.LoginAsync(new LoginRequestDto
             {
@@ -291,9 +293,12 @@ namespace Eduva.Infrastructure.Test.Services
                 Assert.That(result.Item2.Email, Is.EqualTo(user.Email));
             });
 
-            _emailSender.Verify(x => x.SendEmailAsync(It.Is<EmailMessage>(m =>
-                m.To.First().DisplayName == "User"
-            )), Times.Once);
+            _emailSender.Verify(x => x.SendEmailBrevoHtmlAsync(
+                user.Email,
+                "User",
+                It.Is<string>(s => s.Contains("Xác thực OTP đăng nhập")),
+                It.IsAny<string>()
+            ), Times.Once);
         }
 
         [Test]
@@ -991,9 +996,12 @@ namespace Eduva.Infrastructure.Test.Services
             _userManager.Setup(x => x.FindByEmailAsync(user.Email)).ReturnsAsync(user);
             _userManager.Setup(x => x.GeneratePasswordResetTokenAsync(user)).ReturnsAsync("reset-token");
 
-            _emailSender.Setup(x => x.SendEmailAsync(It.Is<EmailMessage>(m =>
-                m.Subject.Contains("Đặt Lại Mật Khẩu")
-            ))).Returns(Task.CompletedTask).Verifiable();
+            _emailSender.Setup(x => x.SendEmailBrevoHtmlAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.Is<string>(s => s.Contains("Đặt Lại Mật Khẩu")),
+                It.IsAny<string>()
+            )).Returns(Task.CompletedTask).Verifiable();
 
             var dto = new ForgotPasswordRequestDto { Email = user.Email, ClientUrl = ValidClientUrl };
             await _authService.ForgotPasswordAsync(dto);
@@ -1269,7 +1277,7 @@ namespace Eduva.Infrastructure.Test.Services
             _userManager.Setup(x => x.AddClaimAsync(user, It.IsAny<Claim>())).ReturnsAsync(IdentityResult.Success);
 
             // Mock Email Sender
-            _emailSender.Setup(x => x.SendEmailAsync(It.IsAny<EmailMessage>())).Returns(Task.CompletedTask);
+            _emailSender.Setup(x => x.SendEmailBrevoHtmlAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Returns(Task.CompletedTask);
 
             var dto = new Request2FaDto { UserId = Guid.NewGuid(), CurrentPassword = "correct" };
             var result = await _authService.RequestEnable2FaOtpAsync(dto);
@@ -1427,7 +1435,7 @@ namespace Eduva.Infrastructure.Test.Services
             _userManager.Setup(x => x.GenerateTwoFactorTokenAsync(user, It.IsAny<string>()))
                         .ReturnsAsync("token");
 
-            _emailSender.Setup(x => x.SendEmailAsync(It.IsAny<EmailMessage>()))
+            _emailSender.Setup(x => x.SendEmailBrevoHtmlAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                         .Returns(Task.CompletedTask);
 
             var dto = new Request2FaDto { UserId = Guid.NewGuid(), CurrentPassword = "correct" };
@@ -1547,11 +1555,14 @@ namespace Eduva.Infrastructure.Test.Services
 
             var method = typeof(AuthService).GetMethod("Send2FaOtpEmailAsync", BindingFlags.Instance | BindingFlags.NonPublic)!;
 
-            _emailSender.Setup(x => x.SendEmailAsync(It.Is<EmailMessage>(m =>
-                m.Subject.Contains("Bật xác thực 2 yếu tố")
-            ))).Returns(Task.CompletedTask).Verifiable();
+            _emailSender.Setup(x => x.SendEmailBrevoHtmlAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.Is<string>(s => s.Contains("Bật xác thực 2 yếu tố")),
+                It.IsAny<string>()
+            )).Returns(Task.CompletedTask).Verifiable();
 
-            await (Task)method.Invoke(_authService, [user, "Bật xác thực 2 yếu tố - EDUVA"])!;
+            await (Task)method.Invoke(_authService, [user, "Bật xác thực 2 yếu tố - EDUVA", "123456"])!;
 
             _emailSender.Verify();
         }
@@ -1664,7 +1675,7 @@ namespace Eduva.Infrastructure.Test.Services
 
             _userManager.Setup(x => x.FindByEmailAsync(user.Email)).ReturnsAsync(user);
             _userManager.Setup(x => x.GetClaimsAsync(user)).ReturnsAsync(new List<Claim>());
-            _emailSender.Setup(x => x.SendEmailAsync(It.IsAny<EmailMessage>())).Returns(Task.CompletedTask);
+            _emailSender.Setup(x => x.SendEmailBrevoHtmlAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Returns(Task.CompletedTask);
 
             var dto = new ResendOtpRequestDto
             {
@@ -1675,7 +1686,7 @@ namespace Eduva.Infrastructure.Test.Services
             var result = await _authService.ResendOtpAsync(dto);
 
             Assert.That(result, Is.EqualTo(CustomCode.OtpSentSuccessfully));
-            _emailSender.Verify(x => x.SendEmailAsync(It.IsAny<EmailMessage>()), Times.Once);
+            _emailSender.Verify(x => x.SendEmailBrevoHtmlAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
 
         [Test]
