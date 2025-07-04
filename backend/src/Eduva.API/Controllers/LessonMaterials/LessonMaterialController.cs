@@ -79,6 +79,7 @@ namespace Eduva.API.Controllers.LessonMaterials
         }
 
         [HttpGet]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         public async Task<IActionResult> GetLessonMaterials([FromQuery] LessonMaterialSpecParam lessonMaterialSpecParam)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -88,12 +89,8 @@ namespace Eduva.API.Controllers.LessonMaterials
             }
 
             var schoolId = User.FindFirstValue(SCHOOL_ID_CLAIM);
-            if (schoolId != null)
-            {
-                lessonMaterialSpecParam.SchoolId = int.Parse(schoolId);
-            }
 
-            var query = new GetLessonMaterialsQuery(lessonMaterialSpecParam, Guid.Parse(userId));
+            var query = new GetLessonMaterialsQuery(lessonMaterialSpecParam, Guid.Parse(userId), schoolId != null ? int.Parse(schoolId) : null);
 
             return await HandleRequestAsync(async () =>
             {
@@ -104,6 +101,7 @@ namespace Eduva.API.Controllers.LessonMaterials
 
         // get lesson material by id
         [HttpGet("{id:guid}")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetLessonMaterialById(Guid id)

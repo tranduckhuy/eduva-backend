@@ -29,10 +29,10 @@ namespace Eduva.Application.Features.LessonMaterials.Queries
                 .WithMessage("Access denied. You don't have permission to access these lesson materials.");
 
             // Basic existence validation
-            RuleFor(x => x.LessonMaterialSpecParam.SchoolId)
+            RuleFor(x => x.SchoolId)
                 .MustAsync(SchoolExists)
                 .WithMessage("The specified school does not exist.")
-                .When(x => x.LessonMaterialSpecParam.SchoolId.HasValue);
+                .When(x => x.SchoolId.HasValue);
 
             RuleFor(x => x.LessonMaterialSpecParam.ClassId)
                 .MustAsync(ClassExists)
@@ -59,10 +59,15 @@ namespace Eduva.Application.Features.LessonMaterials.Queries
             // Get user's school
             var userSchoolId = user.SchoolId;
 
+            if (userSchoolId == null)
+            {
+                return false;
+            }
+
             // SchoolAdmin/ContentModerator: bypass if same school
             if (roles.HasSchoolManagementRoles())
             {
-                return !param.SchoolId.HasValue || param.SchoolId == userSchoolId;
+                return !query.SchoolId.HasValue || query.SchoolId == userSchoolId;
             }
 
             // Teacher: same school for public, same class for all
@@ -75,7 +80,7 @@ namespace Eduva.Application.Features.LessonMaterials.Queries
                     return classroom?.TeacherId == query.UserId;
                 }
                 // For general access, same school only
-                return !param.SchoolId.HasValue || param.SchoolId == userSchoolId;
+                return !query.SchoolId.HasValue || query.SchoolId == userSchoolId;
             }
 
             // Student: only if enrolled in the specific class

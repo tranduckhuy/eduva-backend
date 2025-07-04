@@ -76,6 +76,8 @@ namespace Eduva.Shared.Enums
         UserAlreadyDeleted = 4063,
         UserMustBeLockedBeforeDelete = 4064,
         CannotUnlockDeletedUser = 4065,
+        CannotViewUserFromDifferentSchool = 4066,
+        CannotViewRestrictedUserRoles = 4067,
 
         // File Storage Errors
         InvalidBlobName = 4200,
