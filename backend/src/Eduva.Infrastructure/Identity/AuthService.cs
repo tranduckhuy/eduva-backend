@@ -426,6 +426,11 @@ namespace Eduva.Infrastructure.Identity
 
             var userClaims = await _userManager.GetClaimsAsync(user);
 
+            if (user.SchoolId.HasValue)
+            {
+                userClaims.Add(new Claim("SchoolId", user.SchoolId.Value.ToString()));
+            }
+
             var authResponse = await GenerateToken(user, userRoles, userClaims, false);
 
             return (CustomCode.Success, authResponse);
