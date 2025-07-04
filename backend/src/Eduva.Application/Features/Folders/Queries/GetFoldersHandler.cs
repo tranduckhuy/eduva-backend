@@ -64,18 +64,18 @@ namespace Eduva.Application.Features.Folders.Queries
 
                 if (folderIds.Count > 0)
                 {
-                    var folderLessonMaterialRepo = _unitOfWork.GetRepository<FolderLessonMaterial, int>();
+                    var lessonMaterialRepo = _unitOfWork.GetCustomRepository<ILessonMaterialRepository>();
+                    var countsByFolder = await lessonMaterialRepo.GetApprovedMaterialCountsByFolderAsync(folderIds, cancellationToken);
 
                     foreach (var folderResponse in data)
                     {
-                        int count = await folderLessonMaterialRepo.CountAsync(
-                            flm => flm.FolderId == folderResponse.Id,
-                            cancellationToken);
-
-                        folderResponse.CountLessonMaterial = count;
+                        folderResponse.CountLessonMaterial = countsByFolder.TryGetValue(folderResponse.Id, out var count)
+                            ? count
+                            : 0;
                     }
                 }
             }
+
             return new Pagination<FolderResponse>
             {
                 PageIndex = request.FolderSpecParam.PageIndex,

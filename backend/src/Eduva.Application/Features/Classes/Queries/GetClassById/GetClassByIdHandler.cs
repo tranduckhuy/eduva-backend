@@ -60,21 +60,13 @@ namespace Eduva.Application.Features.Classes.Queries.GetClassById
             if (folders.Count > 0)
             {
                 var folderIds = folders.Select(f => f.Id).ToList();
-
-                var folderLessonMaterialRepo = _unitOfWork.GetRepository<FolderLessonMaterial, int>();
-                var allFolderLessonMaterials = await folderLessonMaterialRepo.GetAllAsync();
-
-                var folderLessonMaterials = allFolderLessonMaterials
-                    .Where(flm => folderIds.Contains(flm.FolderId))
-                    .ToList();
-
-                response.CountLessonMaterial = folderLessonMaterials.Count;
+                var lessonMaterialRepo = _unitOfWork.GetCustomRepository<ILessonMaterialRepository>();
+                response.CountLessonMaterial = await lessonMaterialRepo.CountApprovedMaterialsInFoldersAsync(folderIds, cancellationToken);
             }
             else
             {
                 response.CountLessonMaterial = 0;
             }
-
             return response;
         }
 

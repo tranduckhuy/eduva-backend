@@ -63,7 +63,15 @@ namespace Eduva.Application.Features.Folders.Queries
                 throw new AppException(CustomCode.Forbidden);
             }
 
-            return AppMapper.Mapper.Map<FolderResponse>(folder);
+            // Map folder to response
+            var response = AppMapper.Mapper.Map<FolderResponse>(folder);
+
+            var lessonMaterialRepo = _unitOfWork.GetCustomRepository<ILessonMaterialRepository>();
+            var countsByFolder = await lessonMaterialRepo.GetApprovedMaterialCountsByFolderAsync(new List<Guid> { folder.Id }, cancellationToken);
+
+            response.CountLessonMaterial = countsByFolder.TryGetValue(folder.Id, out var count) ? count : 0;
+
+            return response;
         }
     }
 }

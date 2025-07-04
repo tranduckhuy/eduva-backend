@@ -56,15 +56,8 @@ namespace Eduva.Application.Features.Classes.Queries.GetStudentClasses
 
                     if (allFolderIds.Count > 0)
                     {
-                        var folderLessonMaterialRepo = _unitOfWork.GetRepository<FolderLessonMaterial, int>();
-                        var allFolderLessonMaterials = await folderLessonMaterialRepo.GetAllAsync();
-                        var relevantFolderLessonMaterials = allFolderLessonMaterials
-                            .Where(flm => allFolderIds.Contains(flm.FolderId))
-                            .ToList();
-
-                        var countsByFolder = relevantFolderLessonMaterials
-                            .GroupBy(flm => flm.FolderId)
-                            .ToDictionary(g => g.Key, g => g.Count());
+                        var lessonMaterialRepo = _unitOfWork.GetCustomRepository<ILessonMaterialRepository>();
+                        var countsByFolder = await lessonMaterialRepo.GetApprovedMaterialCountsByFolderAsync(allFolderIds, cancellationToken);
 
                         foreach (var studentClassResponse in studentClasses.Data)
                         {

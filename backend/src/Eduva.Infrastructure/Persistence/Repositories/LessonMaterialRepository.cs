@@ -96,5 +96,47 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
         }
+        public async Task<int> CountApprovedMaterialsInFoldersAsync(List<Guid> folderIds, CancellationToken cancellationToken = default)
+        {
+            if (folderIds == null || folderIds.Count == 0)
+                return 0;
+
+            var count = await _context.FolderLessonMaterials
+        .Where(flm => folderIds.Contains(flm.FolderId))
+        .Join(_context.LessonMaterials,
+            flm => flm.LessonMaterialId,
+            lm => lm.Id,
+            (flm, lm) => new { FolderId = flm.FolderId, IsApproved = lm.LessonStatus == LessonMaterialStatus.Approved })
+        .Where(x => x.IsApproved)
+        .CountAsync(cancellationToken);
+
+            return count;
+        }
+
+        public async Task<int> CountApprovedMaterialsInFolderAsync(Guid folderId, CancellationToken cancellationToken = default)
+        {
+            return await CountApprovedMaterialsInFoldersAsync(new List<Guid> { folderId }, cancellationToken);
+        }
+
+        public async Task<Dictionary<Guid, int>> GetApprovedMaterialCountsByFolderAsync(List<Guid> folderIds, CancellationToken cancellationToken = default)
+        {
+            if (folderIds == null || folderIds.Count == 0)
+                return new Dictionary<Guid, int>();
+
+            var folderMaterialCounts = await _context.FolderLessonMaterials
+                .Where(flm => folderIds.Contains(flm.FolderId))
+                .Join(_context.LessonMaterials,
+                    flm => flm.LessonMaterialId,
+                    lm => lm.Id,
+                    (flm, lm) => new { FolderId = flm.FolderId, IsApproved = lm.LessonStatus == LessonMaterialStatus.Approved })
+                .Where(x => x.IsApproved)
+                .GroupBy(x => x.FolderId)
+                .Select(g => new { FolderId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.FolderId, x => x.Count, cancellationToken);
+
+            var result = folderIds.ToDictionary(id => id, id => folderMaterialCounts.TryGetValue(id, out var count) ? count : 0);
+
+            return result;
+        }
     }
 }
