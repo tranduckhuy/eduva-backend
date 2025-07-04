@@ -112,6 +112,7 @@ namespace Eduva.Shared.Enums
         FolderAlreadyArchived = 4607,
         FolderAlreadyActive = 4608,
         FolderShouldBeArchivedBeforeDelete = 4609,
+        LessonMaterialNotFoundInFolder = 4610,
 
         // Class Errors - All consolidated in 4700 range
         ClassNotFound = 4700,
@@ -132,8 +133,10 @@ namespace Eduva.Shared.Enums
         NotAdminForClassList = 4715,
         StudentNotEnrolled = 4716,
         StudentRemovalFailed = 4717,
+        StudentNotFoundInClass = 4718,
         KeyConfigNotFound = 5001,
         KeyConfigAlreadyExist = 5002,
+
 
         // Question Errors
         InsufficientPermissionToCreateQuestion = 4800,

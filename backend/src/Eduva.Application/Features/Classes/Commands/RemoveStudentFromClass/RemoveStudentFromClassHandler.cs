@@ -1,80 +1,90 @@
 using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Interfaces;
-using Eduva.Application.Interfaces.Repositories;
 using Eduva.Domain.Entities;
-using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
 
-namespace Eduva.Application.Features.Classes.Commands.RemoveStudentFromClass
+namespace Eduva.Application.Features.Classes.Commands.RemoveStudentsFromClass
 {
-    public class RemoveStudentFromClassHandler : IRequestHandler<RemoveStudentFromClassCommand, Unit>
+    public class RemoveStudentsFromClassHandler : IRequestHandler<RemoveStudentsFromClassCommand, Unit>
     {
         private readonly IUnitOfWork _unitOfWork;
-        public RemoveStudentFromClassHandler(
-            IUnitOfWork unitOfWork)
+
+        public RemoveStudentsFromClassHandler(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<Unit> Handle(RemoveStudentFromClassCommand request, CancellationToken cancellationToken)
+        public async Task<Unit> Handle(RemoveStudentsFromClassCommand request, CancellationToken cancellationToken)
         {
-            var classroomRepository = _unitOfWork.GetCustomRepository<IClassroomRepository>();
-            var studentClassRepository = _unitOfWork.GetCustomRepository<IStudentClassRepository>();
-
-            // Get the classroom by ID
-            var classroom = await classroomRepository.GetByIdAsync(request.ClassId)
-                ?? throw new AppException(CustomCode.ClassNotFound);
-
-            // Check if the classroom is archived
-            if (classroom.Status == EntityStatus.Archived)
+            // Validate class exists
+            var classRepository = _unitOfWork.GetRepository<Classroom, Guid>();
+            var classroom = await classRepository.GetByIdAsync(request.ClassId);
+            if (classroom == null)
             {
-                throw new AppException(CustomCode.ClassNotActive);
+                throw new AppException(CustomCode.ClassNotFound);
             }
 
-            // Check if the student is enrolled in the class
-            var enrollment = await studentClassRepository.GetStudentClassAsync(request.StudentId, request.ClassId)
-                ?? throw new AppException(CustomCode.StudentNotEnrolled);
+            // Check permission
+            var hasPermission = await CheckPermission(request, classroom);
+            if (!hasPermission)
+            {
+                throw new AppException(CustomCode.Unauthorized);
+            }
 
-            // Verify the authorization based on role
+            // Get student classes to remove
+            var studentClassRepository = _unitOfWork.GetRepository<StudentClass, Guid>();
+
+            var allStudentClasses = await studentClassRepository.GetAllAsync();
+            var studentClasses = allStudentClasses
+                .Where(sc => sc.ClassId == request.ClassId && request.StudentIds.Contains(sc.StudentId))
+                .ToList();
+
+            if (studentClasses.Count == 0)
+            {
+                throw new AppException(CustomCode.StudentNotFoundInClass);
+            }
+
+            foreach (var studentClass in studentClasses)
+            {
+                studentClassRepository.Remove(studentClass);
+            }
+
+            // Save changes
+            await _unitOfWork.CommitAsync();
+
+            return Unit.Value;
+        }
+
+        private async Task<bool> CheckPermission(RemoveStudentsFromClassCommand request, Classroom classroom)
+        {
+            // System admin can do anything
+            if (request.IsSystemAdmin)
+            {
+                return true;
+            }
+
+            // Teacher can only remove students from their own classes
             if (request.IsTeacher)
             {
-                // Teachers can only remove students from their own classes
-                if (classroom.TeacherId != request.RequestUserId)
-                {
-                    throw new AppException(CustomCode.NotTeacherOfClass);
-                }
+                return classroom.TeacherId == request.RequestUserId;
             }
-            else if (request.IsSchoolAdmin)
+
+            // School admin can only remove students from classes in their school
+            if (request.IsSchoolAdmin)
             {
-                // School admins can only remove students from classes in their school
                 var userRepository = _unitOfWork.GetRepository<ApplicationUser, Guid>();
-                var schoolAdmin = await userRepository.GetByIdAsync(request.RequestUserId)
-                    ?? throw new AppException(CustomCode.UserNotExists);
+                var user = await userRepository.GetByIdAsync(request.RequestUserId);
 
-                if (classroom.SchoolId != schoolAdmin.SchoolId)
+                if (user == null)
                 {
-                    throw new AppException(CustomCode.Forbidden);
+                    return false;
                 }
-            }
-            else if (!request.IsSystemAdmin)
-            {
-                // If not a teacher, school admin, or system admin, deny access
-                throw new AppException(CustomCode.Forbidden);
+
+                return user.SchoolId == classroom.SchoolId;
             }
 
-            try
-            {
-                // Remove the student from the class
-                studentClassRepository.Remove(enrollment);
-                await _unitOfWork.CommitAsync();
-
-                return Unit.Value;
-            }
-            catch (Exception)
-            {
-                throw new AppException(CustomCode.StudentRemovalFailed);
-            }
+            return false;
         }
     }
 }

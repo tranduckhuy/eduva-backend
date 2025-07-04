@@ -226,6 +226,8 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status404NotFound, Message = "Student is not enrolled in this class" } },
             { CustomCode.StudentRemovalFailed, new MessageDetail {
                 HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to remove student from class" } },
+            { CustomCode.StudentNotFoundInClass, new MessageDetail {
+                HttpCode = StatusCodes.Status404NotFound, Message = "Student not found in this class" } },
 
             // Folder Errors
             { CustomCode.FolderNotFound, new MessageDetail {
@@ -248,6 +250,8 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Folder is already active" } },
             { CustomCode.FolderShouldBeArchivedBeforeDelete, new MessageDetail {
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Folder must be archived before it can be permanently deleted" } },
+            {CustomCode.LessonMaterialNotFoundInFolder, new MessageDetail{
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Lesson Material not found in this folder"} },
 
               // Question Error
             { CustomCode.InsufficientPermissionToCreateQuestion, new MessageDetail {

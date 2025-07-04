@@ -17,7 +17,6 @@ namespace Eduva.Application.Features.Classes.Queries.GetClasses
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<ApplicationUser> _userManager;
-
         public GetClassesHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
         {
             _unitOfWork = unitOfWork;
@@ -79,15 +78,8 @@ namespace Eduva.Application.Features.Classes.Queries.GetClasses
 
                     if (allFolderIds.Count > 0)
                     {
-                        var folderLessonMaterialRepo = _unitOfWork.GetRepository<FolderLessonMaterial, int>();
-                        var allFolderLessonMaterials = await folderLessonMaterialRepo.GetAllAsync();
-                        var folderLessonMaterials = allFolderLessonMaterials
-                            .Where(flm => allFolderIds.Contains(flm.FolderId))
-                            .ToList();
-
-                        var countsByFolder = folderLessonMaterials
-                            .GroupBy(flm => flm.FolderId)
-                            .ToDictionary(g => g.Key, g => g.Count());
+                        var lessonMaterialRepo = _unitOfWork.GetCustomRepository<ILessonMaterialRepository>();
+                        var countsByFolder = await lessonMaterialRepo.GetApprovedMaterialCountsByFolderAsync(allFolderIds, cancellationToken);
 
                         foreach (var classResponse in classrooms.Data)
                         {

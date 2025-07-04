@@ -7,7 +7,8 @@ using Eduva.Application.Features.Classes.Commands.AddMaterialsToFolder;
 using Eduva.Application.Features.Classes.Commands.ArchiveClass;
 using Eduva.Application.Features.Classes.Commands.CreateClass;
 using Eduva.Application.Features.Classes.Commands.EnrollByClassCode;
-using Eduva.Application.Features.Classes.Commands.RemoveStudentFromClass;
+using Eduva.Application.Features.Classes.Commands.RemoveMaterialsFromFolder;
+using Eduva.Application.Features.Classes.Commands.RemoveStudentsFromClass;
 using Eduva.Application.Features.Classes.Commands.ResetClassCode;
 using Eduva.Application.Features.Classes.Commands.RestoreClass;
 using Eduva.Application.Features.Classes.Commands.UpdateClass;
@@ -368,11 +369,11 @@ namespace Eduva.API.Controllers.Classes
             }
         }
 
-        [HttpDelete("{classId}/students/{studentId}")]
+        [HttpDelete("{classId}/students")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}")]
-        public async Task<IActionResult> RemoveStudentFromClass(Guid classId, Guid studentId)
+        public async Task<IActionResult> RemoveStudentsFromClass(Guid classId, [FromBody] List<Guid> studentIds)
         {
             var validationResult = CheckModelStateValidity();
             if (validationResult != null)
@@ -389,10 +390,10 @@ namespace Eduva.API.Controllers.Classes
             bool isSchoolAdmin = User.IsInRole(nameof(Role.SchoolAdmin));
             bool isSystemAdmin = User.IsInRole(nameof(Role.SystemAdmin));
 
-            var command = new RemoveStudentFromClassCommand
+            var command = new RemoveStudentsFromClassCommand
             {
                 ClassId = classId,
-                StudentId = studentId,
+                StudentIds = studentIds,
                 RequestUserId = currentUserId,
                 IsTeacher = isTeacher,
                 IsSchoolAdmin = isSchoolAdmin,
@@ -438,6 +439,34 @@ namespace Eduva.API.Controllers.Classes
                 CurrentUserId = currentUserId
             };
 
+            return await HandleRequestAsync<object>(async () =>
+            {
+                var result = await _mediator.Send(command);
+                return (CustomCode.Success, result);
+            });
+        }
+
+        [HttpDelete("{classId}/folders/{folderId}/lesson-materials")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
+        [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}")]
+        public async Task<IActionResult> RemoveMaterialsFromFolder(Guid classId, Guid folderId, [FromBody] List<Guid> materialIds)
+        {
+            var validationResult = CheckModelStateValidity();
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userId, out var currentUserId))
+                return Respond(CustomCode.UserIdNotFound);
+            var command = new RemoveMaterialsFromFolderCommand
+            {
+                ClassId = classId,
+                FolderId = folderId,
+                MaterialIds = materialIds,
+                CurrentUserId = currentUserId
+            };
             return await HandleRequestAsync<object>(async () =>
             {
                 var result = await _mediator.Send(command);
