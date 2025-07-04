@@ -102,6 +102,7 @@ namespace Eduva.Application.Common.Mappings
                 FullName = src.PaymentTransaction.User.FullName ?? string.Empty,
                 Email = src.PaymentTransaction.User.Email ?? string.Empty,
                 PhoneNumber = src.PaymentTransaction.User.PhoneNumber ?? string.Empty,
+                AvatarUrl = src.PaymentTransaction.User.AvatarUrl ?? string.Empty
             }));
             CreateMap<Pagination<SchoolSubscription>, Pagination<SchoolSubscriptionResponse>>();
 
@@ -112,7 +113,8 @@ namespace Eduva.Application.Common.Mappings
                 Id = src.User.Id,
                 FullName = src.User.FullName ?? string.Empty,
                 Email = src.User.Email ?? string.Empty,
-                PhoneNumber = src.User.PhoneNumber ?? string.Empty
+                PhoneNumber = src.User.PhoneNumber ?? string.Empty,
+                AvatarUrl = src.User.AvatarUrl ?? string.Empty
             }))
             .ForMember(dest => dest.AICreditPack, opt => opt.MapFrom(src => new AICreditPackInfor
             {
@@ -133,6 +135,7 @@ namespace Eduva.Application.Common.Mappings
                 FullName = src.User.FullName ?? string.Empty,
                 Email = src.User.Email ?? string.Empty,
                 PhoneNumber = src.User.PhoneNumber ?? string.Empty,
+                AvatarUrl = src.User.AvatarUrl ?? string.Empty
             }));
             CreateMap<Pagination<PaymentTransaction>, Pagination<PaymentResponse>>();
 

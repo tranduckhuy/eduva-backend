@@ -74,6 +74,27 @@ namespace Eduva.API.Controllers.Users
             );
         }
 
+        [HttpGet("school/{userId:guid}")]
+        [ProducesResponseType(typeof(ApiResponse<UserResponse>), StatusCodes.Status200OK)]
+        [Authorize(Roles = $"{nameof(Role.SchoolAdmin)}")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
+        public async Task<IActionResult> GetSchoolUserAsync(Guid userId)
+        {
+            var schoolAdminIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(schoolAdminIdStr, out var schoolAdminId))
+            {
+                return Respond(CustomCode.UserIdNotFound);
+            }
+
+            var query = new GetSchoolUserQuery(userId, schoolAdminId);
+
+            return await HandleRequestAsync(async () =>
+            {
+                var result = await _mediator.Send(query);
+                return (CustomCode.Success, result);
+            });
+        }
+
         [HttpGet]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
