@@ -136,6 +136,10 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status400BadRequest, Message = "You cannot delete your own account. Please contact support for assistance." } },
             { CustomCode.CannotUnlockDeletedUser, new MessageDetail {
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Cannot unlock a deleted user account. Please check the user status." } },
+            { CustomCode.CannotViewUserFromDifferentSchool, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You cannot view users from a different school. Please ensure you are viewing users within your own school." } },
+            { CustomCode.CannotViewRestrictedUserRoles, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You do not have permission to view restricted user roles." } },
 
             // File Storage Errors
             { CustomCode.InvalidBlobName, new MessageDetail {
