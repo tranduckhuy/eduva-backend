@@ -5,6 +5,6 @@ namespace Eduva.Application.Interfaces.Services
     public interface IEmailSender
     {
         Task SendEmailAsync(EmailMessage message);
-        Task SendEmailBrevoAsync(string receiverEmail, string receiverName, string subject, string message);
+        Task SendEmailBrevoHtmlAsync(string receiverEmail, string receiverName, string subject, string htmlContent);
     }
 }

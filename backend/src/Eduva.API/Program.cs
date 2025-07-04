@@ -70,11 +70,6 @@ builder.Services.AddJwtAuthentication(builder.Configuration);
 
 builder.Services.AddAuthorization();
 
-builder.Services.Configure<DataProtectionTokenProviderOptions>(opt =>
-{
-    opt.TokenLifespan = TimeSpan.FromMinutes(5);
-});
-
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddApplicationServices();
 

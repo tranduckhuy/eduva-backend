@@ -171,17 +171,17 @@ namespace Eduva.Infrastructure.Test.Email
             }
         }
 
-        // Verifies that sending an email using the Brevo API does not throw any exceptions.
+        // Verifies that sending an email using the Brevo API with HTML content does not throw any exceptions.
         [Test]
-        public async Task SendEmailBrevoAsync_ShouldNotThrow()
+        public async Task SendEmailBrevoHtmlAsync_ShouldNotThrow()
         {
             try
             {
-                await _emailSender.SendEmailBrevoAsync(
+                await _emailSender.SendEmailBrevoHtmlAsync(
                     "receiver@example.com",
                     "Receiver",
                     "Test Subject",
-                    "Test Brevo Email Content"
+                    "<html><body><h1>Test HTML Content</h1><p>This is a test email with HTML template.</p></body></html>"
                 );
             }
             catch (Exception ex)

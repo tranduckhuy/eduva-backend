@@ -105,9 +105,7 @@ namespace Eduva.Infrastructure.Identity
 
             _logger.LogInformation("Sending email to '{Email}' to confirm email.", newUser.Email);
 
-            //_ = _emailSender.SendEmailBrevoAsync(newUser.Email!, newUser.FirstName + " " + newUser.LastName, message.Subject, message.Content);
-
-            _ = _emailSender.SendEmailAsync(message);
+            _ = _emailSender.SendEmailBrevoHtmlAsync(newUser.Email!, newUser.FullName ?? newUser.Email!, message.Subject, message.Content);
         }
 
         public async Task<(CustomCode, AuthResultDto)> LoginAsync(LoginRequestDto request)
@@ -184,7 +182,7 @@ namespace Eduva.Infrastructure.Identity
                 null
             );
 
-            await _emailSender.SendEmailAsync(message);
+            await _emailSender.SendEmailBrevoHtmlAsync(user.Email!, user.FullName ?? user.Email!, message.Subject, message.Content);
         }
 
         public async Task<(CustomCode, AuthResultDto)> VerifyLoginOtpAsync(VerifyOtpRequestDto request)
@@ -210,13 +208,11 @@ namespace Eduva.Infrastructure.Identity
             return (CustomCode.Success, authResponse);
         }
 
-        private async Task Send2FaOtpEmailAsync(ApplicationUser user, string subject)
+        private async Task Send2FaOtpEmailAsync(ApplicationUser user, string subject, string otp)
         {
-            var otp = await GetOtpProvider().GenerateAsync("OTP", _userManager, user);
-
             var message = await MailMessageHelper.CreateMessageAsync(user, otp, subject);
 
-            await _emailSender.SendEmailAsync(message);
+            await _emailSender.SendEmailBrevoHtmlAsync(user.Email!, user.FullName ?? user.Email!, message.Subject, message.Content);
         }
 
         private async Task<CustomCode> Confirm2FaChangeAsync(ApplicationUser user, string otpCode, bool enable)
@@ -255,7 +251,9 @@ namespace Eduva.Infrastructure.Identity
                 throw new InvalidCredentialsException();
             }
 
-            _ = Send2FaOtpEmailAsync(user, "Bật xác thực 2 yếu tố - EDUVA");
+            var otp = await GetOtpProvider().GenerateAsync("OTP", _userManager, user);
+
+            _ = Send2FaOtpEmailAsync(user, "Bật xác thực 2 yếu tố - EDUVA", otp);
 
             return CustomCode.OtpSentSuccessfully;
         }
@@ -285,7 +283,9 @@ namespace Eduva.Infrastructure.Identity
                 throw new InvalidCredentialsException();
             }
 
-            await Send2FaOtpEmailAsync(user, "Tắt xác thực 2 yếu tố - EDUVA");
+            var otp = await GetOtpProvider().GenerateAsync("OTP", _userManager, user);
+
+            await Send2FaOtpEmailAsync(user, "Tắt xác thực 2 yếu tố - EDUVA", otp);
 
             return CustomCode.OtpSentSuccessfully;
         }
@@ -339,9 +339,7 @@ namespace Eduva.Infrastructure.Identity
 
             var message = MailMessageHelper.CreateMessage(user, token, request.ClientUrl, "reset-password.html", "Đặt Lại Mật Khẩu");
 
-            //_ = _emailSender.SendEmailBrevoAsync(user.Email!, user.FirstName + " " + user.LastName, message.Subject, message.Content);
-
-            _ = _emailSender.SendEmailAsync(message);
+            _ = _emailSender.SendEmailBrevoHtmlAsync(user.Email!, user.FullName ?? user.Email!, message.Subject, message.Content);
 
             return CustomCode.ResetPasswordEmailSent;
         }
@@ -534,7 +532,7 @@ namespace Eduva.Infrastructure.Identity
 
             var message = await MailMessageHelper.CreateMessageAsync(user, otp, subject);
 
-            _ = _emailSender.SendEmailAsync(message);
+            _ = _emailSender.SendEmailBrevoHtmlAsync(user.Email!, user.FullName ?? user.Email!, message.Subject, message.Content);
 
             return CustomCode.OtpSentSuccessfully;
         }
