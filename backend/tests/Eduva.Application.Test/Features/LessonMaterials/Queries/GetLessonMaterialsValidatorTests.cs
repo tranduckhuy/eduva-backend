@@ -7,7 +7,6 @@ using Eduva.Domain.Enums;
 using FluentValidation.TestHelper;
 using Microsoft.AspNetCore.Identity;
 using Moq;
-using NUnit.Framework;
 
 namespace Eduva.Application.Test.Features.LessonMaterials.Queries
 {
@@ -47,7 +46,8 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
             // Arrange
             var query = new GetLessonMaterialsQuery(
                 new LessonMaterialSpecParam { SearchTerm = new string('a', 256) },
-                Guid.NewGuid());
+                Guid.NewGuid(),
+                null);
 
             // Act & Assert
             var result = await _validator.TestValidateAsync(query);
@@ -60,7 +60,8 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
             // Arrange
             var query = new GetLessonMaterialsQuery(
                 new LessonMaterialSpecParam { Tag = new string('a', 101) },
-                Guid.NewGuid());
+                Guid.NewGuid(),
+                null);
 
             // Act & Assert
             var result = await _validator.TestValidateAsync(query);
@@ -83,13 +84,13 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
             _mockFolderRepo.Setup(x => x.ExistsAsync(It.IsAny<Guid>())).ReturnsAsync(true);
 
             var query = new GetLessonMaterialsQuery(
-                new LessonMaterialSpecParam 
-                { 
-                    SchoolId = 1,
+                new LessonMaterialSpecParam
+                {
                     ClassId = Guid.NewGuid(),
                     FolderId = Guid.NewGuid()
                 },
-                userId);
+                userId,
+                1);
 
             // Act & Assert
             var result = await _validator.TestValidateAsync(query);
@@ -107,8 +108,9 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
             SetupUserManagerMocks(user, roles);
 
             var query = new GetLessonMaterialsQuery(
-                new LessonMaterialSpecParam { SchoolId = 2 }, // Different school
-                userId);
+                new LessonMaterialSpecParam(),
+                userId,
+                2); // Different school
 
             // Act & Assert
             var result = await _validator.TestValidateAsync(query);
@@ -127,8 +129,9 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
             _mockSchoolRepo.Setup(x => x.ExistsAsync(1)).ReturnsAsync(true);
 
             var query = new GetLessonMaterialsQuery(
-                new LessonMaterialSpecParam { SchoolId = 1 },
-                userId);
+                new LessonMaterialSpecParam(),
+                userId,
+                1);
 
             // Act & Assert
             var result = await _validator.TestValidateAsync(query);
@@ -156,7 +159,8 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
 
             var query = new GetLessonMaterialsQuery(
                 new LessonMaterialSpecParam { ClassId = classId },
-                userId);
+                userId,
+                1);
 
             // Act & Assert
             var result = await _validator.TestValidateAsync(query);
@@ -174,12 +178,14 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
             var classroom = new Classroom { Id = classId, SchoolId = 1, TeacherId = userId };
 
             SetupUserManagerMocks(user, roles);
+            _mockSchoolRepo.Setup(x => x.ExistsAsync(1)).ReturnsAsync(true);
             _mockClassRepo.Setup(x => x.ExistsAsync(classId)).ReturnsAsync(true);
             _mockClassRepo.Setup(x => x.GetByIdAsync(classId)).ReturnsAsync(classroom);
 
             var query = new GetLessonMaterialsQuery(
                 new LessonMaterialSpecParam { ClassId = classId },
-                userId);
+                userId,
+                1);
 
             // Act & Assert
             var result = await _validator.TestValidateAsync(query);
@@ -197,12 +203,14 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
             var classroom = new Classroom { Id = classId, SchoolId = 1, TeacherId = Guid.NewGuid() }; // Different teacher
 
             SetupUserManagerMocks(user, roles);
+            _mockSchoolRepo.Setup(x => x.ExistsAsync(1)).ReturnsAsync(true);
             _mockClassRepo.Setup(x => x.ExistsAsync(classId)).ReturnsAsync(true);
             _mockClassRepo.Setup(x => x.GetByIdAsync(classId)).ReturnsAsync(classroom);
 
             var query = new GetLessonMaterialsQuery(
                 new LessonMaterialSpecParam { ClassId = classId },
-                userId);
+                userId,
+                1);
 
             // Act & Assert
             var result = await _validator.TestValidateAsync(query);
