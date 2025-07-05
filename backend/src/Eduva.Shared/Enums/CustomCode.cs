@@ -174,5 +174,8 @@ namespace Eduva.Shared.Enums
         CannotReplyToReply = 4828,
         ParentCommentNotFound = 4829,
         CommentContentRequired = 4830,
+        
+        // Storage Quota Errors
+        StorageQuotaExceeded = 4900,
     }
 }

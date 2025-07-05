@@ -10,10 +10,12 @@ namespace Eduva.Infrastructure.Services
     {
         private readonly AzureBlobStorageOptions _options;
         private readonly BlobContainerClient _containerClient;
+        private readonly IStorageQuotaService _storageQuotaService;
 
-        public AzureBlobStorageService(AzureBlobStorageOptions options)
+        public AzureBlobStorageService(AzureBlobStorageOptions options, IStorageQuotaService storageQuotaService)
         {
             _options = options;
+            _storageQuotaService = storageQuotaService;
             var blobServiceClient = new BlobServiceClient(_options.ConnectionString);
             _containerClient = blobServiceClient.GetBlobContainerClient(_options.ContainerName);
         }
@@ -99,6 +101,21 @@ namespace Eduva.Infrastructure.Services
                     throw new BlobNotFoundException();
                 }
             }
+        }
+
+        public async Task<ICollection<string>> GenerateUploadSasTokensWithQuotaCheck(List<string> blobNames, List<long> fileSizes, int schoolId)
+        {
+            // Validate file sizes match blob names
+            if (blobNames.Count != fileSizes.Count)
+            {
+                throw new ArgumentException("The number of blob names must match the number of file sizes");
+            }
+
+            // Validate storage quota before generating SAS tokens
+            await _storageQuotaService.ValidateUploadQuotaAsync(schoolId, fileSizes);
+
+            // Generate SAS tokens if quota check passes
+            return await GenerateUploadSasTokens(blobNames);
         }
 
         private static string GetBlobNameFromUrl(string blobUrl)

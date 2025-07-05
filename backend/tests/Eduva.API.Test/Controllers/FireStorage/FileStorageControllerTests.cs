@@ -14,6 +14,7 @@ namespace Eduva.API.Test.Controllers.FireStorage
     public class FileStorageControllerTests
     {
         private Mock<IStorageService> _storageServiceMock;
+        private Mock<IStorageQuotaService> _storageQuotaServiceMock;
         private Mock<ILogger<FileStorageController>> _loggerMock;
         private FileStorageController _controller;
 
@@ -21,8 +22,9 @@ namespace Eduva.API.Test.Controllers.FireStorage
         public void Setup()
         {
             _storageServiceMock = new Mock<IStorageService>();
+            _storageQuotaServiceMock = new Mock<IStorageQuotaService>();
             _loggerMock = new Mock<ILogger<FileStorageController>>();
-            _controller = new FileStorageController(_loggerMock.Object, _storageServiceMock.Object);
+            _controller = new FileStorageController(_loggerMock.Object, _storageServiceMock.Object, _storageQuotaServiceMock.Object);
         }
 
         #region GenerateUploadSasTokenTests        

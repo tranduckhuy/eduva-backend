@@ -101,6 +101,14 @@ namespace Eduva.API.Middlewares
 
             if (expired)
             {
+
+                // Change status subscription to Expired if it's not already
+                if (subscription.SubscriptionStatus == SubscriptionStatus.Active)
+                {
+                    subscription.SubscriptionStatus = SubscriptionStatus.Expired;
+                    await subscriptionService.UpdateSubscriptionStatusAsync(schoolIdInt, SubscriptionStatus.Expired);
+                }
+
                 if (accessLevel == SubscriptionAccessLevel.ReadOnly && withinGracePeriod)
                 {
                     await _next(context);
