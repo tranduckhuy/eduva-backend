@@ -77,9 +77,12 @@ namespace Eduva.Application.Test.Features.Classes.Queries.GetAllStudentsInClass
             var result = await _handler.Handle(query, CancellationToken.None);
 
             // Assert
-            Assert.That(result, Is.Not.Null);
-            Assert.That(result.Data.Count, Is.EqualTo(1));
-            Assert.That(result.Data.First().StudentName, Is.EqualTo("Student 1"));
+            Assert.Multiple(() =>
+            {
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result.Data, Has.Count.EqualTo(1));
+                Assert.That(result.Data.First().StudentName, Is.EqualTo("Student 1"));
+            });
         }
 
         [Test]
