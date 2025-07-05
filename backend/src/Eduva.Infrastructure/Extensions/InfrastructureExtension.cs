@@ -50,7 +50,7 @@ namespace Eduva.Infrastructure.Extensions
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             // Excel Service
-            services.Configure<ImportTemplateConfig>(configuration.GetSection("ImportTemplate"));
+            services.AddScoped<ImportTemplateConfig>();
 
             // Register repositories
             services.AddScoped(typeof(IGenericRepository<,>), typeof(GenericRepository<,>));
@@ -69,6 +69,7 @@ namespace Eduva.Infrastructure.Extensions
             services.AddScoped<ISystemConfigRepository, SystemConfigRepository>();
             services.AddScoped<ICreditTransactionRepository, CreditTransactionRepository>();
             services.AddScoped<IQuestionPermissionService, QuestionPermissionService>();
+            services.AddScoped<ISystemConfigHelper, SystemConfigHelper>();
 
             services.AddScoped<PayOS>(provider =>
             {

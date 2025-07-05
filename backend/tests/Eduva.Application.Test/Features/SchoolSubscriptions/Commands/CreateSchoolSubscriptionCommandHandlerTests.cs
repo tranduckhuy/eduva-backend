@@ -5,15 +5,14 @@ using Eduva.Application.Exceptions.School;
 using Eduva.Application.Exceptions.SchoolSubscription;
 using Eduva.Application.Exceptions.SubscriptionPlan;
 using Eduva.Application.Features.Payments.Commands;
-using Eduva.Application.Features.Payments.Configurations;
 using Eduva.Application.Features.SchoolSubscriptions.Commands;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
+using Eduva.Shared.Constants;
 using Eduva.Shared.Enums;
-using Microsoft.Extensions.Options;
 using Moq;
 using Net.payOS.Types;
 using System.Reflection;
@@ -25,7 +24,7 @@ public class CreateSchoolSubscriptionCommandHandlerTests
 {
     private Mock<IUnitOfWork> _unitOfWorkMock = null!;
     private Mock<IPayOSService> _payOsServiceMock = null!;
-    private IOptions<PayOSConfig> _payOsOptions = null!;
+    private Mock<ISystemConfigHelper> _systemConfigHelperMock = null!;
     private CreateSchoolSubscriptionCommandHandler _handler = null!;
 
     private Mock<IGenericRepository<School, int>> _schoolRepo = null!;
@@ -42,7 +41,7 @@ public class CreateSchoolSubscriptionCommandHandlerTests
     {
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _payOsServiceMock = new Mock<IPayOSService>();
-        _payOsOptions = Options.Create(new PayOSConfig { CancelUrl = "cancel", ReturnUrl = "return" });
+        _systemConfigHelperMock = new Mock<ISystemConfigHelper>();
 
         _userRepo = new Mock<IGenericRepository<ApplicationUser, Guid>>();
         _schoolRepo = new Mock<IGenericRepository<School, int>>();
@@ -60,7 +59,15 @@ public class CreateSchoolSubscriptionCommandHandlerTests
         _unitOfWorkMock.Setup(u => u.GetRepository<PaymentTransaction, Guid>()).Returns(_paymentRepo.Object);
         _unitOfWorkMock.Setup(u => u.GetCustomRepository<ISchoolSubscriptionRepository>()).Returns(_schoolSubRepo.Object);
 
-        _handler = new CreateSchoolSubscriptionCommandHandler(_unitOfWorkMock.Object, _payOsServiceMock.Object, _payOsOptions);
+        // Setup system config helper mock
+        _systemConfigHelperMock
+            .Setup(x => x.GetValueAsync(SystemConfigKeys.PAYOS_RETURN_URL_PLAN, It.IsAny<string>()))
+            .ReturnsAsync("https://school.eduva.tech/school-admin");
+
+        _handler = new CreateSchoolSubscriptionCommandHandler(
+            _unitOfWorkMock.Object,
+            _payOsServiceMock.Object,
+            _systemConfigHelperMock.Object);
     }
 
     #endregion
@@ -243,27 +250,29 @@ public class CreateSchoolSubscriptionCommandHandlerTests
 
     [TestCase(50000, 40000, 60000, 30, 10)]
     [TestCase(100000, 5000, 100000, 30, 29)]
-    public void Should_Build_Payment_Request_Correctly(
-        int amount,
-        int deducted,
-        int expectedAmount,
-        int totalDays,
-        int daysUsed)
+    public async Task Should_Build_Payment_Request_Correctly(
+    int amount,
+    int deducted,
+    int expectedAmount,
+    int totalDays,
+    int daysUsed)
     {
+        // Setup system config helper mock
+        var systemConfigHelperMock = new Mock<ISystemConfigHelper>();
+        systemConfigHelperMock
+            .Setup(x => x.GetValueAsync(SystemConfigKeys.PAYOS_RETURN_URL_PLAN, It.IsAny<string>()))
+            .ReturnsAsync("https://school.eduva.tech/school-admin");
+
         var method = typeof(CreateSchoolSubscriptionCommandHandler)
-            .GetMethod("BuildPaymentRequest", BindingFlags.NonPublic | BindingFlags.Instance);
+            .GetMethod("BuildPaymentRequestAsync", BindingFlags.NonPublic | BindingFlags.Instance);
 
         var handler = Activator.CreateInstance(typeof(CreateSchoolSubscriptionCommandHandler),
             Mock.Of<IUnitOfWork>(),
             Mock.Of<IPayOSService>(),
-            Options.Create(new PayOSConfig
-            {
-                CancelUrl = "https://cancel",
-                ReturnUrl = "https://return"
-            })
+            systemConfigHelperMock.Object
         );
 
-        var result = (PaymentData)method!.Invoke(handler, new object[]
+        var result = await (Task<PaymentData>)method!.Invoke(handler, new object[]
         {
             new SubscriptionPlan { Name = "Plan X" },
             BillingCycle.Monthly,
@@ -277,9 +286,14 @@ public class CreateSchoolSubscriptionCommandHandlerTests
             Assert.That(result.orderCode, Is.EqualTo(1234567890L));
             Assert.That(result.amount, Is.EqualTo(expectedAmount));
             Assert.That(result.description, Does.Contain("Plan X"));
-            Assert.That(result.cancelUrl, Is.EqualTo("https://cancel"));
-            Assert.That(result.returnUrl, Is.EqualTo("https://return"));
+            Assert.That(result.cancelUrl, Is.EqualTo("https://school.eduva.tech/school-admin"));
+            Assert.That(result.returnUrl, Is.EqualTo("https://school.eduva.tech/school-admin"));
         });
+
+        // Verify system config was called
+        systemConfigHelperMock.Verify(
+            x => x.GetValueAsync(SystemConfigKeys.PAYOS_RETURN_URL_PLAN, It.IsAny<string>()),
+            Times.Once);
     }
 
     [Test]
