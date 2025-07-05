@@ -94,8 +94,11 @@ namespace Eduva.API.Test.Controllers.SystemConfigs
 
             var configs = response.Data as List<SystemConfigDto>;
             Assert.That(configs, Has.Count.EqualTo(2));
-            Assert.That(configs![0].Key, Is.EqualTo("DEFAULT_AVATAR_URL"));
-            Assert.That(configs[1].Key, Is.EqualTo("PAYOS_RETURN_URL"));
+            Assert.Multiple(() =>
+            {
+                Assert.That(configs![0].Key, Is.EqualTo("DEFAULT_AVATAR_URL"));
+                Assert.That(configs[1].Key, Is.EqualTo("PAYOS_RETURN_URL"));
+            });
 
             _systemConfigServiceMock.Verify(s => s.GetAllAsync(), Times.Once);
         }
@@ -210,10 +213,13 @@ namespace Eduva.API.Test.Controllers.SystemConfigs
 
             var response = objectResult!.Value as ApiResponse<object>;
             Assert.That(response, Is.Not.Null);
-            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+            Assert.Multiple(() =>
+            {
+                Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
 
-            // Verify that the key was set from route parameter
-            Assert.That(updateDto.Key, Is.EqualTo(key));
+                // Verify that the key was set from route parameter
+                Assert.That(updateDto.Key, Is.EqualTo(key));
+            });
 
             _systemConfigServiceMock.Verify(s => s.UpdateAsync(It.Is<UpdateSystemConfigDto>(
                 dto => dto.Key == key &&
@@ -247,10 +253,13 @@ namespace Eduva.API.Test.Controllers.SystemConfigs
 
             var response = objectResult!.Value as ApiResponse<object>;
             Assert.That(response, Is.Not.Null);
-            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.KeyConfigNotFound));
+            Assert.Multiple(() =>
+            {
+                Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.KeyConfigNotFound));
 
-            // Verify key was set from route
-            Assert.That(updateDto.Key, Is.EqualTo(key));
+                // Verify key was set from route
+                Assert.That(updateDto.Key, Is.EqualTo(key));
+            });
 
             _systemConfigServiceMock.Verify(s => s.UpdateAsync(It.IsAny<UpdateSystemConfigDto>()), Times.Once);
         }

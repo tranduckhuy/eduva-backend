@@ -12,7 +12,7 @@ namespace Eduva.Infrastructure.Test.Services
     public class SystemConfigServiceTests
     {
         private Mock<ISystemConfigRepository> _repositoryMock = null!;
-        private IMemoryCache _cache = null!;
+        private MemoryCache _cache = null!;
         private SystemConfigService _service = null!;
 
         #region Setup
@@ -184,11 +184,14 @@ namespace Eduva.Infrastructure.Test.Services
             // Assert
             var cacheKey = $"SystemConfig:{key}";
             var cachedValue = _cache.Get(cacheKey);
-            Assert.That(cachedValue, Is.EqualTo(config.Value));
+            Assert.Multiple(() =>
+            {
+                Assert.That(cachedValue, Is.EqualTo(config.Value));
 
-            // Test that cache expires after the expected time
-            // Note: We can't easily test exact expiry time, but we can verify the value is cached
-            Assert.That(_cache.TryGetValue(cacheKey, out _), Is.True);
+                // Test that cache expires after the expected time
+                // Note: We can't easily test exact expiry time, but we can verify the value is cached
+                Assert.That(_cache.TryGetValue(cacheKey, out _), Is.True);
+            });
         }
 
         #endregion
@@ -216,9 +219,12 @@ namespace Eduva.Infrastructure.Test.Services
             // Act
             var (configs, code) = await _service.GetAllAsync();
 
-            // Assert
-            Assert.That(code, Is.EqualTo(CustomCode.Success));
-            Assert.That(configs, Is.EqualTo(cachedConfigs));
+            Assert.Multiple(() =>
+            {
+                // Assert
+                Assert.That(code, Is.EqualTo(CustomCode.Success));
+                Assert.That(configs, Is.EqualTo(cachedConfigs));
+            });
             _repositoryMock.Verify(r => r.GetAllAsync(), Times.Never);
         }
 
@@ -252,14 +258,20 @@ namespace Eduva.Infrastructure.Test.Services
             // Act
             var (configs, code) = await _service.GetAllAsync();
 
-            // Assert
-            Assert.That(code, Is.EqualTo(CustomCode.Success));
-            Assert.That(configs, Is.Not.Null);
+            Assert.Multiple(() =>
+            {
+                // Assert
+                Assert.That(code, Is.EqualTo(CustomCode.Success));
+                Assert.That(configs, Is.Not.Null);
+            });
             Assert.That(configs.Count(), Is.EqualTo(2));
 
             var configList = configs.ToList();
-            Assert.That(configList[0].Key, Is.EqualTo("KEY1"));
-            Assert.That(configList[1].Key, Is.EqualTo("KEY2"));
+            Assert.Multiple(() =>
+            {
+                Assert.That(configList[0].Key, Is.EqualTo("KEY1"));
+                Assert.That(configList[1].Key, Is.EqualTo("KEY2"));
+            });
 
             _repositoryMock.Verify(r => r.GetAllAsync(), Times.Once);
 
@@ -278,9 +290,12 @@ namespace Eduva.Infrastructure.Test.Services
             // Act
             var (configs, code) = await _service.GetAllAsync();
 
-            // Assert
-            Assert.That(code, Is.EqualTo(CustomCode.Success));
-            Assert.That(configs, Is.Not.Null);
+            Assert.Multiple(() =>
+            {
+                // Assert
+                Assert.That(code, Is.EqualTo(CustomCode.Success));
+                Assert.That(configs, Is.Not.Null);
+            });
             Assert.That(configs.Count(), Is.EqualTo(0));
 
             _repositoryMock.Verify(r => r.GetAllAsync(), Times.Once);
@@ -457,12 +472,15 @@ namespace Eduva.Infrastructure.Test.Services
             // Act
             var result = await _service.UpdateAsync(config);
 
-            // Assert
-            Assert.That(result, Is.EqualTo(CustomCode.Success));
+            Assert.Multiple(() =>
+            {
+                // Assert
+                Assert.That(result, Is.EqualTo(CustomCode.Success));
 
-            // Verify cache invalidation
-            Assert.That(_cache.TryGetValue($"SystemConfig:{config.Key}", out _), Is.False);
-            Assert.That(_cache.TryGetValue("SystemConfig:All", out _), Is.False);
+                // Verify cache invalidation
+                Assert.That(_cache.TryGetValue($"SystemConfig:{config.Key}", out _), Is.False);
+                Assert.That(_cache.TryGetValue("SystemConfig:All", out _), Is.False);
+            });
         }
 
         #endregion
@@ -497,9 +515,12 @@ namespace Eduva.Infrastructure.Test.Services
             // Act
             await _service.UpdateAsync(config);
 
-            // Assert
-            Assert.That(_cache.TryGetValue($"SystemConfig:{config.Key}", out _), Is.False);
-            Assert.That(_cache.TryGetValue("SystemConfig:All", out _), Is.False);
+            Assert.Multiple(() =>
+            {
+                // Assert
+                Assert.That(_cache.TryGetValue($"SystemConfig:{config.Key}", out _), Is.False);
+                Assert.That(_cache.TryGetValue("SystemConfig:All", out _), Is.False);
+            });
         }
 
         #endregion
@@ -582,11 +603,14 @@ namespace Eduva.Infrastructure.Test.Services
             var result1Second = await _service.GetByKeyAsync(key1);
             var result2Second = await _service.GetByKeyAsync(key2);
 
-            // Assert
-            Assert.That(result1First, Is.EqualTo(value1));
-            Assert.That(result2First, Is.EqualTo(value2));
-            Assert.That(result1Second, Is.EqualTo(value1));
-            Assert.That(result2Second, Is.EqualTo(value2));
+            Assert.Multiple(() =>
+            {
+                // Assert
+                Assert.That(result1First, Is.EqualTo(value1));
+                Assert.That(result2First, Is.EqualTo(value2));
+                Assert.That(result1Second, Is.EqualTo(value1));
+                Assert.That(result2Second, Is.EqualTo(value2));
+            });
 
             // Each key should be called only once (second calls from cache)
             _repositoryMock.Verify(r => r.GetByKeyAsync(key1), Times.Once);
