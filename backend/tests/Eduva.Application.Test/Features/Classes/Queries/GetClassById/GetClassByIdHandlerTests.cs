@@ -119,14 +119,17 @@ namespace Eduva.Application.Test.Features.Classes.Queries.GetClassById
 
             // Assert
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.Id, Is.EqualTo(classId));
-            Assert.That(result.Name, Is.EqualTo("Test Class"));
-            Assert.That(result.ClassCode, Is.EqualTo("TC123"));
-            Assert.That(result.TeacherId, Is.EqualTo(teacherId));
-            Assert.That(result.TeacherName, Is.EqualTo("Test Teacher"));
-            Assert.That(result.SchoolName, Is.EqualTo("Test School"));
-            Assert.That(result.TeacherAvatarUrl, Is.EqualTo("teacher-avatar.jpg"));
-            Assert.That(result.CountLessonMaterial, Is.EqualTo(5));
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Id, Is.EqualTo(classId));
+                Assert.That(result.Name, Is.EqualTo("Test Class"));
+                Assert.That(result.ClassCode, Is.EqualTo("TC123"));
+                Assert.That(result.TeacherId, Is.EqualTo(teacherId));
+                Assert.That(result.TeacherName, Is.EqualTo("Test Teacher"));
+                Assert.That(result.SchoolName, Is.EqualTo("Test School"));
+                Assert.That(result.TeacherAvatarUrl, Is.EqualTo("teacher-avatar.jpg"));
+                Assert.That(result.CountLessonMaterial, Is.EqualTo(5));
+            });
         }
 
         [Test]
@@ -204,8 +207,11 @@ namespace Eduva.Application.Test.Features.Classes.Queries.GetClassById
 
             // Assert
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.Id, Is.EqualTo(classId));
-            Assert.That(result.CountLessonMaterial, Is.EqualTo(3));
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Id, Is.EqualTo(classId));
+                Assert.That(result.CountLessonMaterial, Is.EqualTo(3));
+            });
         }
 
         [Test]
@@ -265,8 +271,11 @@ namespace Eduva.Application.Test.Features.Classes.Queries.GetClassById
 
             // Assert
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.Id, Is.EqualTo(classId));
-            Assert.That(result.CountLessonMaterial, Is.EqualTo(0));
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Id, Is.EqualTo(classId));
+                Assert.That(result.CountLessonMaterial, Is.EqualTo(0));
+            });
         }
 
         [Test]

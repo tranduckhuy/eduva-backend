@@ -118,9 +118,12 @@ namespace Eduva.Application.Test.Features.Classes.Queries.GetClasses
             {
                 var result = await _handler.Handle(query, CancellationToken.None);
 
-                Assert.That(result, Is.Not.Null);
-                Assert.That(result.Count, Is.EqualTo(2));
-                Assert.That(result.Data.Count, Is.EqualTo(2));
+                Assert.Multiple(() =>
+                {
+                    Assert.That(result, Is.Not.Null);
+                    Assert.That(result.Count, Is.EqualTo(2));
+                    Assert.That(result.Data, Has.Count.EqualTo(2));
+                });
             }
             finally
             {
@@ -179,9 +182,12 @@ namespace Eduva.Application.Test.Features.Classes.Queries.GetClasses
 
                 var result = await _handler.Handle(query, CancellationToken.None);
 
-                Assert.That(result, Is.Not.Null);
-                Assert.That(result.Count, Is.EqualTo(2));
-                Assert.That(query.ClassSpecParam.SchoolId, Is.EqualTo(schoolId));
+                Assert.Multiple(() =>
+                {
+                    Assert.That(result, Is.Not.Null);
+                    Assert.That(result.Count, Is.EqualTo(2));
+                    Assert.That(query.ClassSpecParam.SchoolId, Is.EqualTo(schoolId));
+                });
             }
             finally
             {
@@ -311,8 +317,11 @@ namespace Eduva.Application.Test.Features.Classes.Queries.GetClasses
                 var result = await _handler.Handle(query, CancellationToken.None);
 
                 Assert.That(result, Is.Not.Null);
-                Assert.That(result.Data.First(c => c.Id == classId1).CountLessonMaterial, Is.EqualTo(5));
-                Assert.That(result.Data.First(c => c.Id == classId2).CountLessonMaterial, Is.EqualTo(4));
+                Assert.Multiple(() =>
+                {
+                    Assert.That(result.Data.First(c => c.Id == classId1).CountLessonMaterial, Is.EqualTo(5));
+                    Assert.That(result.Data.First(c => c.Id == classId2).CountLessonMaterial, Is.EqualTo(4));
+                });
             }
             finally
             {
