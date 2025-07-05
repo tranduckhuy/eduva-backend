@@ -8,9 +8,11 @@ using Eduva.Application.Features.Users.Queries;
 using Eduva.Application.Features.Users.Requests;
 using Eduva.Application.Features.Users.Responses;
 using Eduva.Application.Features.Users.Specifications;
+using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using Eduva.Infrastructure.Configurations.ExcelTemplate;
+using Eduva.Shared.Constants;
 using Eduva.Shared.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -29,10 +31,10 @@ namespace Eduva.API.Test.Controllers.Users
     {
         private Mock<IMediator> _mediatorMock = default!;
         private Mock<ILogger<UserController>> _loggerMock = default!;
-        private UserController _controller = default!;
-        private Mock<IOptions<ImportTemplateConfig>> _importTemplateOptionsMock = default!;
+        private Mock<ISystemConfigHelper> _systemConfigHelperMock = default!;
         private Mock<IHttpClientFactory> _httpClientFactoryMock = default!;
         private Mock<UserManager<ApplicationUser>> _userManagerMock = default!;
+        private UserController _controller = default!;
 
 
         #region UserController Setup
@@ -42,7 +44,7 @@ namespace Eduva.API.Test.Controllers.Users
         {
             _mediatorMock = new Mock<IMediator>();
             _loggerMock = new Mock<ILogger<UserController>>();
-            _importTemplateOptionsMock = new Mock<IOptions<ImportTemplateConfig>>();
+            _systemConfigHelperMock = new Mock<ISystemConfigHelper>();
             _httpClientFactoryMock = new Mock<IHttpClientFactory>();
             var storeMock = new Mock<IUserStore<ApplicationUser>>();
 
@@ -58,13 +60,16 @@ namespace Eduva.API.Test.Controllers.Users
                 Mock.Of<ILogger<UserManager<ApplicationUser>>>()
             );
 
-            _importTemplateOptionsMock
-                .Setup(o => o.Value)
-                .Returns(new ImportTemplateConfig { UrlTemplateImportUser = "https://mock-url.com/template.xlsx" });
+            // Setup system config helper mock
+            _systemConfigHelperMock
+                .Setup(x => x.GetValueAsync(SystemConfigKeys.IMPORT_USERS_TEMPLATE, It.IsAny<string>()))
+                .ReturnsAsync("https://mock-url.com/template.xlsx");
+
+            var importTemplateConfig = new ImportTemplateConfig(_systemConfigHelperMock.Object);
 
             _controller = new UserController(
                 _loggerMock.Object,
-                _importTemplateOptionsMock.Object,
+                importTemplateConfig,
                 _httpClientFactoryMock.Object,
                 _mediatorMock.Object,
                 _userManagerMock.Object
@@ -494,7 +499,16 @@ namespace Eduva.API.Test.Controllers.Users
             var identity = new ClaimsIdentity(claims, "TestAuth");
             var principal = new ClaimsPrincipal(identity);
 
-            var controller = new UserController(_loggerMock.Object, _importTemplateOptionsMock.Object, _httpClientFactoryMock.Object, _mediatorMock.Object, _userManagerMock.Object);
+            var importTemplateConfig = new ImportTemplateConfig(_systemConfigHelperMock.Object);
+
+            var controller = new UserController(
+                _loggerMock.Object,
+                importTemplateConfig,
+                _httpClientFactoryMock.Object,
+                _mediatorMock.Object,
+                _userManagerMock.Object
+            );
+
             controller.ControllerContext = new ControllerContext
             {
                 HttpContext = new DefaultHttpContext { User = principal }
@@ -804,8 +818,12 @@ namespace Eduva.API.Test.Controllers.Users
             var type = ImportTemplateType.User;
             var fileBytes = new byte[] { 11, 22, 33 };
 
-            _importTemplateOptionsMock.Setup(o => o.Value)
-                .Returns(new ImportTemplateConfig { UrlTemplateImportUser = "https://mock-url.com/template.xlsx" });
+            // Setup system config to return the template URL
+            _systemConfigHelperMock
+                .Setup(x => x.GetValueAsync(SystemConfigKeys.IMPORT_USERS_TEMPLATE, It.IsAny<string>()))
+                .ReturnsAsync("https://mock-url.com/template.xlsx");
+
+            var importTemplateConfig = new ImportTemplateConfig(_systemConfigHelperMock.Object);
 
             var handler = new Mock<HttpMessageHandler>();
             handler.Protected()
@@ -821,7 +839,7 @@ namespace Eduva.API.Test.Controllers.Users
 
             _controller = new UserController(
                 _loggerMock.Object,
-                _importTemplateOptionsMock.Object,
+                importTemplateConfig,
                 _httpClientFactoryMock.Object,
                 _mediatorMock.Object,
                 _userManagerMock.Object
@@ -835,8 +853,13 @@ namespace Eduva.API.Test.Controllers.Users
             {
                 Assert.That(fileResult!.FileContents, Is.EqualTo(fileBytes));
                 Assert.That(fileResult.ContentType, Is.EqualTo("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
-                Assert.That(fileResult.FileDownloadName, Is.EqualTo("user_import_template.xlsx")); // or similar
+                Assert.That(fileResult.FileDownloadName, Is.EqualTo("user_import_template.xlsx"));
             });
+
+            // Verify system config was called
+            _systemConfigHelperMock.Verify(
+                x => x.GetValueAsync(SystemConfigKeys.IMPORT_USERS_TEMPLATE, It.IsAny<string>()),
+                Times.Once);
         }
 
         [Test]
@@ -856,9 +879,12 @@ namespace Eduva.API.Test.Controllers.Users
                 .Returns(new HttpClient(mockClient.Object));
 
             _httpClientFactoryMock = clientFactory;
+
+            var importTemplateConfig = new ImportTemplateConfig(_systemConfigHelperMock.Object);
+
             _controller = new UserController(
                 _loggerMock.Object,
-                _importTemplateOptionsMock.Object,
+                importTemplateConfig,
                 _httpClientFactoryMock.Object,
                 _mediatorMock.Object,
                 _userManagerMock.Object
@@ -874,8 +900,19 @@ namespace Eduva.API.Test.Controllers.Users
         [Test]
         public async Task DownloadImportTemplate_ShouldReturnInvalidTemplateType_WhenUrlIsEmpty()
         {
-            _importTemplateOptionsMock.Setup(x => x.Value)
-                .Returns(new ImportTemplateConfig());
+            _systemConfigHelperMock
+                .Setup(x => x.GetValueAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync("");
+
+            var importTemplateConfig = new ImportTemplateConfig(_systemConfigHelperMock.Object);
+
+            _controller = new UserController(
+                _loggerMock.Object,
+                importTemplateConfig,
+                _httpClientFactoryMock.Object,
+                _mediatorMock.Object,
+                _userManagerMock.Object
+            );
 
             var result = await _controller.DownloadImportTemplate((ImportTemplateType)999);
 
@@ -901,9 +938,12 @@ namespace Eduva.API.Test.Controllers.Users
                 .Returns(new HttpClient(mockClient.Object));
 
             _httpClientFactoryMock = clientFactory;
+
+            var importTemplateConfig = new ImportTemplateConfig(_systemConfigHelperMock.Object);
+
             _controller = new UserController(
                 _loggerMock.Object,
-                _importTemplateOptionsMock.Object,
+                importTemplateConfig,
                 _httpClientFactoryMock.Object,
                 _mediatorMock.Object,
                 _userManagerMock.Object
