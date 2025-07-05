@@ -1,12 +1,11 @@
 ﻿using Eduva.API.Controllers.LessonMaterials;
-using Eduva.API.Models;
 using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Common.Models;
+using Eduva.Application.Features.LessonMaterials;
 using Eduva.Application.Features.LessonMaterials.Commands;
 using Eduva.Application.Features.LessonMaterials.Queries;
 using Eduva.Application.Features.LessonMaterials.Responses;
 using Eduva.Application.Features.LessonMaterials.Specifications;
-using Eduva.Application.Features.LessonMaterials;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
@@ -33,7 +32,7 @@ namespace Eduva.API.Test.Controllers.LessonMaterials
             _mediatorMock = new Mock<IMediator>();
             _loggerMock = new Mock<ILogger<LessonMaterialController>>();
             _controller = new LessonMaterialController(_mediatorMock.Object, _loggerMock.Object);
-            
+
             SetupUserContext();
         }
 
@@ -117,7 +116,7 @@ namespace Eduva.API.Test.Controllers.LessonMaterials
             GetAllLessonMaterialsQuery? capturedQuery = null;
 
             _mediatorMock.Setup(m => m.Send(It.IsAny<GetAllLessonMaterialsQuery>(), default))
-                .Callback<IRequest<IReadOnlyList<LessonMaterialResponse>>, CancellationToken>((query, _) => 
+                .Callback<IRequest<IReadOnlyList<LessonMaterialResponse>>, CancellationToken>((query, _) =>
                 {
                     capturedQuery = query as GetAllLessonMaterialsQuery;
                 })
@@ -128,8 +127,11 @@ namespace Eduva.API.Test.Controllers.LessonMaterials
 
             // Assert
             Assert.That(capturedQuery, Is.Not.Null);
-            Assert.That(capturedQuery.ClassId, Is.EqualTo(classId));
-            Assert.That(capturedQuery.UserId, Is.EqualTo(_testUserId));
+            Assert.Multiple(() =>
+            {
+                Assert.That(capturedQuery.ClassId, Is.EqualTo(classId));
+                Assert.That(capturedQuery.UserId, Is.EqualTo(_testUserId));
+            });
         }
 
         [Test]
@@ -140,7 +142,7 @@ namespace Eduva.API.Test.Controllers.LessonMaterials
             GetAllLessonMaterialsQuery? capturedQuery = null;
 
             _mediatorMock.Setup(m => m.Send(It.IsAny<GetAllLessonMaterialsQuery>(), default))
-                .Callback<IRequest<IReadOnlyList<LessonMaterialResponse>>, CancellationToken>((query, _) => 
+                .Callback<IRequest<IReadOnlyList<LessonMaterialResponse>>, CancellationToken>((query, _) =>
                 {
                     capturedQuery = query as GetAllLessonMaterialsQuery;
                 })
@@ -162,7 +164,7 @@ namespace Eduva.API.Test.Controllers.LessonMaterials
             GetAllLessonMaterialsQuery? capturedQuery = null;
 
             _mediatorMock.Setup(m => m.Send(It.IsAny<GetAllLessonMaterialsQuery>(), default))
-                .Callback<IRequest<IReadOnlyList<LessonMaterialResponse>>, CancellationToken>((query, _) => 
+                .Callback<IRequest<IReadOnlyList<LessonMaterialResponse>>, CancellationToken>((query, _) =>
                 {
                     capturedQuery = query as GetAllLessonMaterialsQuery;
                 })
@@ -225,9 +227,12 @@ namespace Eduva.API.Test.Controllers.LessonMaterials
             // Assert
             var objectResult = result as ObjectResult;
             Assert.That(objectResult, Is.Not.Null);
-            Assert.That(objectResult.StatusCode, Is.EqualTo(200));
-            Assert.That(command.CreatedBy, Is.EqualTo(_testUserId));
-            Assert.That(command.SchoolId, Is.EqualTo(_testSchoolId));
+            Assert.Multiple(() =>
+            {
+                Assert.That(objectResult.StatusCode, Is.EqualTo(200));
+                Assert.That(command.CreatedBy, Is.EqualTo(_testUserId));
+                Assert.That(command.SchoolId, Is.EqualTo(_testSchoolId));
+            });
         }
 
         [Test]
@@ -359,7 +364,7 @@ namespace Eduva.API.Test.Controllers.LessonMaterials
             GetLessonMaterialsQuery? capturedQuery = null;
 
             _mediatorMock.Setup(m => m.Send(It.IsAny<GetLessonMaterialsQuery>(), default))
-                .Callback<IRequest<Pagination<LessonMaterialResponse>>, CancellationToken>((query, _) => 
+                .Callback<IRequest<Pagination<LessonMaterialResponse>>, CancellationToken>((query, _) =>
                 {
                     capturedQuery = query as GetLessonMaterialsQuery;
                 })
@@ -382,10 +387,10 @@ namespace Eduva.API.Test.Controllers.LessonMaterials
         {
             // Arrange
             var materialId = Guid.NewGuid();
-            var expectedResponse = new LessonMaterialResponse 
-            { 
-                Id = materialId, 
-                Title = "Test Material" 
+            var expectedResponse = new LessonMaterialResponse
+            {
+                Id = materialId,
+                Title = "Test Material"
             };
 
             _mediatorMock.Setup(m => m.Send(It.IsAny<GetLessonMaterialByIdQuery>(), default))
@@ -441,7 +446,7 @@ namespace Eduva.API.Test.Controllers.LessonMaterials
             GetLessonMaterialByIdQuery? capturedQuery = null;
 
             _mediatorMock.Setup(m => m.Send(It.IsAny<GetLessonMaterialByIdQuery>(), default))
-                .Callback<IRequest<LessonMaterialResponse>, CancellationToken>((query, _) => 
+                .Callback<IRequest<LessonMaterialResponse>, CancellationToken>((query, _) =>
                 {
                     capturedQuery = query as GetLessonMaterialByIdQuery;
                 })
@@ -452,9 +457,12 @@ namespace Eduva.API.Test.Controllers.LessonMaterials
 
             // Assert
             Assert.That(capturedQuery, Is.Not.Null);
-            Assert.That(capturedQuery.Id, Is.EqualTo(materialId));
-            Assert.That(capturedQuery.UserId, Is.EqualTo(_testUserId));
-            Assert.That(capturedQuery.SchoolId, Is.EqualTo(_testSchoolId));
+            Assert.Multiple(() =>
+            {
+                Assert.That(capturedQuery.Id, Is.EqualTo(materialId));
+                Assert.That(capturedQuery.UserId, Is.EqualTo(_testUserId));
+                Assert.That(capturedQuery.SchoolId, Is.EqualTo(_testSchoolId));
+            });
         }
 
         [Test]
@@ -466,7 +474,7 @@ namespace Eduva.API.Test.Controllers.LessonMaterials
             GetLessonMaterialByIdQuery? capturedQuery = null;
 
             _mediatorMock.Setup(m => m.Send(It.IsAny<GetLessonMaterialByIdQuery>(), default))
-                .Callback<IRequest<LessonMaterialResponse>, CancellationToken>((query, _) => 
+                .Callback<IRequest<LessonMaterialResponse>, CancellationToken>((query, _) =>
                 {
                     capturedQuery = query as GetLessonMaterialByIdQuery;
                 })

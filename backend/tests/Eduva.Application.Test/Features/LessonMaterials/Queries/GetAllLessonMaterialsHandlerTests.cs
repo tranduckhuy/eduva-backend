@@ -1,5 +1,4 @@
 using Eduva.Application.Features.LessonMaterials.Queries;
-using Eduva.Application.Features.LessonMaterials.Responses;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Domain.Entities;
@@ -20,7 +19,7 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
         {
             _mockUnitOfWork = new Mock<IUnitOfWork>();
             _mockRepository = new Mock<ILessonMaterialRepository>();
-            
+
             _mockUnitOfWork.Setup(x => x.GetCustomRepository<ILessonMaterialRepository>())
                 .Returns(_mockRepository.Object);
 
@@ -83,9 +82,12 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
 
             // Assert
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.Count, Is.EqualTo(2));
-            Assert.That(result.First().Title, Is.EqualTo("Test Material 1"));
-            Assert.That(result.Last().Title, Is.EqualTo("Test Material 2"));
+            Assert.That(result, Has.Count.EqualTo(2));
+            Assert.Multiple(() =>
+            {
+                Assert.That(result[0].Title, Is.EqualTo("Test Material 1"));
+                Assert.That(result[result.Count - 1].Title, Is.EqualTo("Test Material 2"));
+            });
 
             _mockRepository.Verify(r => r.GetAllBySchoolAsync(
                 userId, false, schoolId, classId, folderId, default), Times.Once);
@@ -207,7 +209,7 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
 
             // Assert
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.Count, Is.EqualTo(0));
+            Assert.That(result, Is.Empty);
         }
 
         [Test]
@@ -280,7 +282,7 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
                 .ThrowsAsync(new Exception("Database error"));
 
             // Act & Assert
-            Assert.ThrowsAsync<Exception>(async () => 
+            Assert.ThrowsAsync<Exception>(async () =>
                 await _handler.Handle(query, CancellationToken.None));
         }
     }

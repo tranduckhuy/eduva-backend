@@ -85,9 +85,12 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
 
             // Assert
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.Id, Is.EqualTo(materialId));
-            Assert.That(result.Title, Is.EqualTo("Test Material"));
-            Assert.That(result.SourceUrl, Is.EqualTo(readableUrl));
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Id, Is.EqualTo(materialId));
+                Assert.That(result.Title, Is.EqualTo("Test Material"));
+                Assert.That(result.SourceUrl, Is.EqualTo(readableUrl));
+            });
 
             _mockLessonMaterialRepository.Verify(r => r.GetByIdWithDetailsAsync(materialId, default), Times.Once);
             _mockUserRepository.Verify(r => r.GetByIdAsync(userId), Times.Once);
