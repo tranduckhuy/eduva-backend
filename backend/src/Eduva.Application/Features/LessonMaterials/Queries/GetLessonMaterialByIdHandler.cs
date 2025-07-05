@@ -46,12 +46,13 @@ namespace Eduva.Application.Features.LessonMaterials.Queries
 
         private static bool HasAccessToLessonMaterial(int? userSchoolId, int? lessonMaterialSchoolId)
         {
+            // If either is null, deny access
             if (lessonMaterialSchoolId == null || userSchoolId == null)
             {
                 return false;
             }
 
-            return userSchoolId.HasValue && userSchoolId.Value == lessonMaterialSchoolId.Value;
+            return userSchoolId.Value == lessonMaterialSchoolId.Value;
         }
     }
 }

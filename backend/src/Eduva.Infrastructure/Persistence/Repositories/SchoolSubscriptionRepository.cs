@@ -74,8 +74,8 @@ namespace Eduva.Infrastructure.Persistence.Repositories
 
         public async Task UpdateSubscriptionStatusAsync(int schoolId, SubscriptionStatus status)
         {
-            var subscription = _context.SchoolSubscriptions
-                .FirstOrDefault(s => s.SchoolId == schoolId);
+            var subscription = await _context.SchoolSubscriptions
+                .FirstOrDefaultAsync(s => s.SchoolId == schoolId);
 
             if (subscription != null)
             {

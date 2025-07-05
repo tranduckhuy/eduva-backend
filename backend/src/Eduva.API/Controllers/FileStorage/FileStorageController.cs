@@ -42,7 +42,7 @@ namespace Eduva.API.Controllers.FileStorage
         public async Task<IActionResult> GenerateUploadSasTokenWithQuota([FromBody] GenerateUploadTokensRequest request)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId == null)
+            if (string.IsNullOrEmpty(userId))
             {
                 return Respond(CustomCode.UserIdNotFound);
             }
