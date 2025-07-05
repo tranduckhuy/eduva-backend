@@ -68,7 +68,7 @@ namespace Eduva.API.Controllers.Base
             }
             catch (AppException ex)
             {
-                return Respond(ex.StatusCode, resultSelector(defaultResult), ex.Errors);
+                return Respond(ex.StatusCode, resultSelector(defaultResult), [ex.Message]);
             }
             catch (Exception ex)
             {

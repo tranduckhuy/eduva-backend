@@ -44,6 +44,7 @@ namespace Eduva.Infrastructure.Extensions
             var azureBlobStorageOptions = configuration.GetSection("AzureBlobStorage").Get<AzureBlobStorageOptions>();
             services.AddSingleton(azureBlobStorageOptions ?? throw new InvalidDataException("AzureBlobStorageOptions is missing in appsettings.json"));
             services.AddScoped<IStorageService, AzureBlobStorageService>();
+            services.AddScoped<IStorageQuotaService, StorageQuotaService>();
 
             // Unit of Work 
             services.AddScoped<IUnitOfWork, UnitOfWork>();

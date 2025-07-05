@@ -68,9 +68,9 @@ namespace Eduva.Application.Features.Users.Queries
                     var mapped = AppMapper.Mapper.Map<UserResponse>(user);
                     mapped.Roles = roles.ToList();
 
-                    if (user.SchoolId.HasValue && schools.ContainsKey(user.SchoolId.Value))
+                    if (user.SchoolId.HasValue && schools.TryGetValue(user.SchoolId.Value, out var schoolEntity))
                     {
-                        mapped.School = AppMapper.Mapper.Map<SchoolResponse>(schools[user.SchoolId.Value]);
+                        mapped.School = AppMapper.Mapper.Map<SchoolResponse>(schoolEntity);
                     }
 
                     filteredUsers.Add(mapped);

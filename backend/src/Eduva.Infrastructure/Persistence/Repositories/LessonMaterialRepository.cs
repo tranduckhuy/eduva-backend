@@ -138,5 +138,12 @@ namespace Eduva.Infrastructure.Persistence.Repositories
 
             return result;
         }
+
+        public async Task<long> GetTotalFileSizeBySchoolAsync(int schoolId, CancellationToken cancellationToken = default)
+        {
+            return await _context.LessonMaterials
+                .Where(lm => lm.SchoolId == schoolId && lm.Status == EntityStatus.Active)
+                .SumAsync(lm => (long)lm.FileSize, cancellationToken);
+        }
     }
 }

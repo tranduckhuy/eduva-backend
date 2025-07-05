@@ -12,5 +12,7 @@ namespace Eduva.Application.Interfaces.Repositories
         Task<int> CountApprovedMaterialsInFolderAsync(Guid folderId, CancellationToken cancellationToken = default);
 
         Task<Dictionary<Guid, int>> GetApprovedMaterialCountsByFolderAsync(List<Guid> folderIds, CancellationToken cancellationToken = default);
+
+        Task<long> GetTotalFileSizeBySchoolAsync(int schoolId, CancellationToken cancellationToken = default);
     }
 }
