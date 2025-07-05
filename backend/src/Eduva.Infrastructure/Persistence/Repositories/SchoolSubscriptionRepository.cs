@@ -71,5 +71,22 @@ namespace Eduva.Infrastructure.Persistence.Repositories
              .ThenInclude(pt => pt.User)
              .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
         }
+
+        public async Task UpdateSubscriptionStatusAsync(int schoolId, SubscriptionStatus status)
+        {
+            var subscription = _context.SchoolSubscriptions
+                .FirstOrDefault(s => s.SchoolId == schoolId);
+
+            if (subscription != null)
+            {
+                subscription.SubscriptionStatus = status;
+                _context.SchoolSubscriptions.Update(subscription);
+                await _context.SaveChangesAsync();
+            }
+            else
+            {
+                throw new KeyNotFoundException($"No subscription found for school ID {schoolId}.");
+            }
+        }
     }
 }
