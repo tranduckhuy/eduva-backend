@@ -10,10 +10,12 @@ namespace Eduva.Domain.Entities
         public string AvatarUrl { get; set; } = AppConstants.DEFAULT_AVATAR;
         public int? SchoolId { get; set; }
         public EntityStatus Status { get; set; } = EntityStatus.Active;
-
         public int TotalCredits { get; set; } = 0;
         public string? RefreshToken { get; set; }
         public DateTimeOffset? RefreshTokenExpiryTime { get; set; }
+        public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+        public DateTimeOffset? LastLoginAt { get; set; } = null;
+        public DateTimeOffset? LastModifiedAt { get; set; } = null;
 
         // Navigation properties
         public School? School { get; set; } = null!;
