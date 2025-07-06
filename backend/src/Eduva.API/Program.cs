@@ -2,20 +2,18 @@ using Eduva.API.Adapters;
 using Eduva.API.Hubs;
 using Eduva.API.Middlewares;
 using Eduva.Application.Contracts.Hubs;
-using Eduva.Application.Extentions;
+using Eduva.Application.Extensions;
 using Eduva.Domain.Entities;
 using Eduva.Infrastructure.Extensions;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
 builder.Services.AddControllers();
 
 // Add memory cache

@@ -4,7 +4,7 @@ using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 
-namespace Eduva.Application.Extentions
+namespace Eduva.Application.Extensions
 {
     public static class ApplicationExtension
     {

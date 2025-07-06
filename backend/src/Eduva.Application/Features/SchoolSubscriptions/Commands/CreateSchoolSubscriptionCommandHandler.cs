@@ -1,11 +1,10 @@
-﻿using Eduva.Application.Common.Exceptions;
+using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Exceptions.Auth;
 using Eduva.Application.Exceptions.PaymentTransaction;
 using Eduva.Application.Exceptions.School;
 using Eduva.Application.Exceptions.SchoolSubscription;
 using Eduva.Application.Exceptions.SubscriptionPlan;
-using Eduva.Application.Features.Payments.Commands;
-using Eduva.Application.Features.Payments.Responses;
+using Eduva.Application.Features.SchoolSubscriptions.Responses;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Application.Interfaces.Services;

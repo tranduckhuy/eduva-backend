@@ -2,9 +2,8 @@
 using Eduva.API.Controllers.Base;
 using Eduva.API.Models;
 using Eduva.Application.Common.Models;
-using Eduva.Application.Features.Payments.Commands;
 using Eduva.Application.Features.Payments.Queries;
-using Eduva.Application.Features.Payments.Responses;
+using Eduva.Application.Features.SchoolSubscriptions.Commands;
 using Eduva.Application.Features.SchoolSubscriptions.Queries;
 using Eduva.Application.Features.SchoolSubscriptions.Responses;
 using Eduva.Application.Features.SchoolSubscriptions.Specifications;
