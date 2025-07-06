@@ -33,9 +33,9 @@ namespace Eduva.Application.Test.Features.Classes.Specifications
             }.AsQueryable();
 
             var filtered = data.Where(spec.Criteria.Compile()).ToList();
-
-            Assert.That(filtered.Count, Is.EqualTo(1));
+            Assert.That(filtered, Has.Count.EqualTo(1));
             Assert.That(filtered[0].Name, Is.EqualTo("Math 101"));
+
         }
 
         [Test]
@@ -44,7 +44,7 @@ namespace Eduva.Application.Test.Features.Classes.Specifications
             var param = new ClassSpecParam { PageIndex = 1, PageSize = 10 };
             var spec = new ClassSpecification(param);
 
-            Assert.That(spec.Includes.Count, Is.EqualTo(2));
+            Assert.That(spec.Includes, Has.Count.EqualTo(2));
             Assert.Multiple(() =>
             {
                 Assert.That(spec.Includes.Any(static i => i.Body.ToString().Contains("Teacher")), Is.True);

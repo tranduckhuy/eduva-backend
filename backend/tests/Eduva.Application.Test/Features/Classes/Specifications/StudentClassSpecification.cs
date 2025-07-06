@@ -49,7 +49,7 @@ namespace Eduva.Application.Test.Features.Classes.Specifications
 
             var filtered = data.Where(spec.Criteria.Compile()).ToList();
 
-            Assert.That(filtered.Count, Is.EqualTo(1));
+            Assert.That(filtered, Has.Count.EqualTo(1));
             Assert.Multiple(() =>
             {
                 Assert.That(filtered[0].StudentId, Is.EqualTo(param.StudentId));
@@ -83,8 +83,7 @@ namespace Eduva.Application.Test.Features.Classes.Specifications
             }.AsQueryable();
 
             var filtered = data.Where(spec.Criteria.Compile()).ToList();
-
-            Assert.That(filtered.Count, Is.EqualTo(2));
+            Assert.That(filtered, Has.Count.EqualTo(2));
         }
 
         [Test]
@@ -130,8 +129,7 @@ namespace Eduva.Application.Test.Features.Classes.Specifications
             }.AsQueryable();
 
             var filtered = data.Where(spec.Criteria.Compile()).ToList();
-
-            Assert.That(filtered.Count, Is.EqualTo(1));
+            Assert.That(filtered, Has.Count.EqualTo(1));
             Assert.That(filtered[0].Class.Status, Is.EqualTo(EntityStatus.Active));
         }
 
@@ -141,7 +139,7 @@ namespace Eduva.Application.Test.Features.Classes.Specifications
             var param = new StudentClassSpecParam { PageIndex = 1, PageSize = 10 };
             var spec = new StudentClassSpecification(param);
 
-            Assert.That(spec.Includes.Count, Is.EqualTo(4));
+            Assert.That(spec.Includes, Has.Count.EqualTo(4));
             Assert.Multiple(() =>
             {
                 Assert.That(spec.Includes.Any(i => i.Body.ToString().Contains("Class")), Is.True);

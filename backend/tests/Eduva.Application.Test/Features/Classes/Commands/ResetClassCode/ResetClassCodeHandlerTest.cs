@@ -93,9 +93,12 @@ namespace Eduva.Application.Test.Features.Classes.Commands.ResetClassCode
 
                 // Assert
                 Assert.That(result, Is.Not.Null);
-                Assert.That(result.ClassCode, Is.Not.EqualTo("OLD123"));
-                Assert.That(result.TeacherName, Is.EqualTo("Teacher Name"));
-                Assert.That(result.SchoolName, Is.EqualTo("School Name"));
+                Assert.Multiple(() =>
+                {
+                    Assert.That(result.ClassCode, Is.Not.EqualTo("OLD123"));
+                    Assert.That(result.TeacherName, Is.EqualTo("Teacher Name"));
+                    Assert.That(result.SchoolName, Is.EqualTo("School Name"));
+                });
                 _classroomRepoMock.Verify(r => r.Update(It.IsAny<Classroom>()), Times.Once);
                 _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Once);
             }
