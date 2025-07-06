@@ -218,5 +218,243 @@ namespace Eduva.Application.Test.Features.Classes.Commands.AddMaterialsToFolder
             _folderLessonMaterialRepoMock.Verify(r => r.AddAsync(It.IsAny<FolderLessonMaterial>()), Times.Never);
             _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Once);
         }
+
+        [Test]
+        public void Handle_ShouldThrow_WhenUserNotExists()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var folderId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
+            var materialId = Guid.NewGuid();
+
+            var folder = new Folder { Id = folderId, ClassId = classId, OwnerType = OwnerType.Class };
+
+            var command = new AddMaterialsToFolderCommand
+            {
+                FolderId = folderId,
+                ClassId = classId,
+                MaterialIds = new List<Guid> { materialId },
+                CurrentUserId = userId
+            };
+
+            _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
+            _userManagerMock.Setup(u => u.FindByIdAsync(userId.ToString())).ReturnsAsync((ApplicationUser?)null);
+
+            // Act & Assert
+            var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, CancellationToken.None));
+            Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.UserNotExists));
+        }
+
+        [Test]
+        public async Task Handle_ShouldAllow_WhenPersonalFolderAndOwner()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var folderId = Guid.NewGuid();
+            var materialId = Guid.NewGuid();
+
+            var folder = new Folder { Id = folderId, OwnerType = OwnerType.Personal, UserId = userId };
+            var material = new LessonMaterial { Id = materialId, CreatedByUserId = userId };
+            var user = new ApplicationUser { Id = userId };
+
+            var command = new AddMaterialsToFolderCommand
+            {
+                FolderId = folderId,
+                MaterialIds = new List<Guid> { materialId },
+                CurrentUserId = userId
+            };
+
+            _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
+            _lessonMaterialRepoMock.Setup(r => r.GetByIdAsync(materialId)).ReturnsAsync(material);
+            _folderLessonMaterialRepoMock.Setup(r => r.ExistsAsync(It.IsAny<Expression<Func<FolderLessonMaterial, bool>>>())).ReturnsAsync(false);
+            _userManagerMock.Setup(u => u.FindByIdAsync(userId.ToString())).ReturnsAsync(user);
+            _userManagerMock.Setup(u => u.GetRolesAsync(user)).ReturnsAsync(new List<string> { nameof(Role.Student) });
+            _folderLessonMaterialRepoMock.Setup(r => r.AddAsync(It.IsAny<FolderLessonMaterial>())).Returns(Task.CompletedTask);
+            _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
+
+            // Act
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            Assert.That(result, Is.True);
+        }
+
+        [Test]
+        public void Handle_ShouldThrow_WhenClassNotFound()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var folderId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
+            var materialId = Guid.NewGuid();
+
+            var folder = new Folder { Id = folderId, OwnerType = OwnerType.Class, ClassId = classId };
+            var user = new ApplicationUser { Id = userId, SchoolId = 1 };
+
+            var command = new AddMaterialsToFolderCommand
+            {
+                FolderId = folderId,
+                ClassId = classId,
+                MaterialIds = new List<Guid> { materialId },
+                CurrentUserId = userId
+            };
+
+            _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
+            _userManagerMock.Setup(u => u.FindByIdAsync(userId.ToString())).ReturnsAsync(user);
+            _userManagerMock.Setup(u => u.GetRolesAsync(user)).ReturnsAsync(new List<string> { nameof(Role.Teacher) });
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync((Classroom?)null);
+
+            // Act & Assert
+            var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, CancellationToken.None));
+            Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.ClassNotFound));
+        }
+
+        [Test]
+        public async Task Handle_ShouldAllow_WhenTeacherOfClass()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var folderId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
+            var materialId = Guid.NewGuid();
+
+            var folder = new Folder { Id = folderId, OwnerType = OwnerType.Class, ClassId = classId };
+            var user = new ApplicationUser { Id = userId, SchoolId = 1 };
+            var classroom = new Classroom { Id = classId, TeacherId = userId, SchoolId = 1 };
+            var material = new LessonMaterial { Id = materialId, CreatedByUserId = userId };
+
+            var command = new AddMaterialsToFolderCommand
+            {
+                FolderId = folderId,
+                ClassId = classId,
+                MaterialIds = new List<Guid> { materialId },
+                CurrentUserId = userId
+            };
+
+            _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
+            _userManagerMock.Setup(u => u.FindByIdAsync(userId.ToString())).ReturnsAsync(user);
+            _userManagerMock.Setup(u => u.GetRolesAsync(user)).ReturnsAsync(new List<string> { nameof(Role.Teacher) });
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+            _lessonMaterialRepoMock.Setup(r => r.GetByIdAsync(materialId)).ReturnsAsync(material);
+            _folderLessonMaterialRepoMock.Setup(r => r.ExistsAsync(It.IsAny<Expression<Func<FolderLessonMaterial, bool>>>())).ReturnsAsync(false);
+            _folderLessonMaterialRepoMock.Setup(r => r.AddAsync(It.IsAny<FolderLessonMaterial>())).Returns(Task.CompletedTask);
+            _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
+
+            // Act
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            Assert.That(result, Is.True);
+        }
+
+        [Test]
+        public async Task Handle_ShouldAllow_WhenSchoolAdminOfSameSchool()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var folderId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
+            var materialId = Guid.NewGuid();
+
+            var folder = new Folder { Id = folderId, OwnerType = OwnerType.Class, ClassId = classId };
+            var user = new ApplicationUser { Id = userId, SchoolId = 1 };
+            var classroom = new Classroom { Id = classId, TeacherId = Guid.NewGuid(), SchoolId = 1 };
+            var material = new LessonMaterial { Id = materialId, CreatedByUserId = userId };
+
+            var command = new AddMaterialsToFolderCommand
+            {
+                FolderId = folderId,
+                ClassId = classId,
+                MaterialIds = new List<Guid> { materialId },
+                CurrentUserId = userId
+            };
+
+            _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
+            _userManagerMock.Setup(u => u.FindByIdAsync(userId.ToString())).ReturnsAsync(user);
+            _userManagerMock.Setup(u => u.GetRolesAsync(user)).ReturnsAsync(new List<string> { nameof(Role.SchoolAdmin) });
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+            _lessonMaterialRepoMock.Setup(r => r.GetByIdAsync(materialId)).ReturnsAsync(material);
+            _folderLessonMaterialRepoMock.Setup(r => r.ExistsAsync(It.IsAny<Expression<Func<FolderLessonMaterial, bool>>>())).ReturnsAsync(false);
+            _folderLessonMaterialRepoMock.Setup(r => r.AddAsync(It.IsAny<FolderLessonMaterial>())).Returns(Task.CompletedTask);
+            _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
+
+            // Act
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            Assert.That(result, Is.True);
+        }
+
+        [Test]
+        public async Task Handle_ShouldAllow_WhenStudentEnrolledInClass()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var folderId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
+            var materialId = Guid.NewGuid();
+
+            var folder = new Folder { Id = folderId, OwnerType = OwnerType.Class, ClassId = classId };
+            var user = new ApplicationUser { Id = userId, SchoolId = 1 };
+            var classroom = new Classroom { Id = classId, TeacherId = Guid.NewGuid(), SchoolId = 1 };
+            var material = new LessonMaterial { Id = materialId, CreatedByUserId = userId };
+
+            var command = new AddMaterialsToFolderCommand
+            {
+                FolderId = folderId,
+                ClassId = classId,
+                MaterialIds = new List<Guid> { materialId },
+                CurrentUserId = userId
+            };
+
+            _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
+            _userManagerMock.Setup(u => u.FindByIdAsync(userId.ToString())).ReturnsAsync(user);
+            _userManagerMock.Setup(u => u.GetRolesAsync(user)).ReturnsAsync(new List<string> { nameof(Role.Student) });
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+            _studentClassRepoMock.Setup(r => r.ExistsAsync(It.IsAny<Expression<Func<StudentClass, bool>>>())).ReturnsAsync(true);
+            _lessonMaterialRepoMock.Setup(r => r.GetByIdAsync(materialId)).ReturnsAsync(material);
+            _folderLessonMaterialRepoMock.Setup(r => r.ExistsAsync(It.IsAny<Expression<Func<FolderLessonMaterial, bool>>>())).ReturnsAsync(false);
+            _folderLessonMaterialRepoMock.Setup(r => r.AddAsync(It.IsAny<FolderLessonMaterial>())).Returns(Task.CompletedTask);
+            _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
+
+            // Act
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            Assert.That(result, Is.True);
+        }
+
+        [Test]
+        public void Handle_ShouldThrow_WhenStudentNotEnrolledInClass()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var folderId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
+            var materialId = Guid.NewGuid();
+
+            var folder = new Folder { Id = folderId, OwnerType = OwnerType.Class, ClassId = classId };
+            var user = new ApplicationUser { Id = userId, SchoolId = 1 };
+            var classroom = new Classroom { Id = classId, TeacherId = Guid.NewGuid(), SchoolId = 1 };
+
+            var command = new AddMaterialsToFolderCommand
+            {
+                FolderId = folderId,
+                ClassId = classId,
+                MaterialIds = new List<Guid> { materialId },
+                CurrentUserId = userId
+            };
+
+            _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
+            _userManagerMock.Setup(u => u.FindByIdAsync(userId.ToString())).ReturnsAsync(user);
+            _userManagerMock.Setup(u => u.GetRolesAsync(user)).ReturnsAsync(new List<string> { nameof(Role.Student) });
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+            _studentClassRepoMock.Setup(r => r.ExistsAsync(It.IsAny<Expression<Func<StudentClass, bool>>>())).ReturnsAsync(false);
+
+            // Act & Assert
+            var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, CancellationToken.None));
+            Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.Unauthorized));
+        }
     }
 }

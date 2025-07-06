@@ -172,6 +172,76 @@ namespace Eduva.Application.Test.Features.Classes.Specifications
             });
         }
 
+        [TestCase(null)]
+        public void OrderBy_Should_Sort_By_Correct_Field(string? sortBy)
+        {
+            var param = new StudentClassSpecParam
+            {
+                SortBy = sortBy,
+                SortDirection = "desc",
+                PageIndex = 1,
+                PageSize = 10
+            };
+            var spec = new StudentClassSpecification(param);
+
+            var now = DateTime.UtcNow;
+            var data = new List<StudentClass>
+            {
+                new()
+                {
+                    EnrolledAt = now.AddDays(-1),
+                    Class = new Classroom
+                    {
+                        Name = "B",
+                        School = new School { Name = "School B" },
+                        Teacher = new ApplicationUser { FullName = "Teacher B" },
+                        ClassCode = "B",
+                        Status = EntityStatus.Inactive
+                    },
+                    Student = new ApplicationUser { FullName = "Student B" }
+                },
+                new()
+                {
+                    EnrolledAt = now,
+                    Class = new Classroom
+                    {
+                        Name = "A",
+                        School = new School { Name = "School A" },
+                        Teacher = new ApplicationUser { FullName = "Teacher A" },
+                        ClassCode = "A",
+                        Status = EntityStatus.Active
+                    },
+                    Student = new ApplicationUser { FullName = "Student A" }
+                }
+            }.AsQueryable();
+
+            var ordered = spec.OrderBy!(data).ToList();
+
+            // Kiểm tra đúng trường sắp xếp: phần tử "A" sẽ đứng đầu khi desc với các trường string, còn EnrolledAt thì phần tử mới nhất đứng đầu
+            if (sortBy == "classname")
+                Assert.That(ordered[0].Class.Name, Is.EqualTo("B"));
+            else if (sortBy == "schoolname")
+                Assert.That(ordered[0].Class.School.Name, Is.EqualTo("School B"));
+            else if (sortBy == "teachername")
+                Assert.That(ordered[0].Class.Teacher.FullName, Is.EqualTo("Teacher B"));
+            else if (sortBy == "classcode")
+                Assert.That(ordered[0].Class.ClassCode, Is.EqualTo("B"));
+            else if (sortBy == "status")
+                Assert.That(ordered[0].Class.Status, Is.EqualTo(EntityStatus.Inactive));
+            else if (sortBy == "studentname")
+                Assert.That(ordered[0].Student.FullName, Is.EqualTo("Student B"));
+            else // enrolledat hoặc null hoặc không hợp lệ
+                Assert.That(ordered[0].EnrolledAt, Is.GreaterThan(ordered[1].EnrolledAt));
+        }
+
+        [Test]
+        public void Selector_Should_Be_Null()
+        {
+            var param = new StudentClassSpecParam { PageIndex = 1, PageSize = 10 };
+            var spec = new StudentClassSpecification(param);
+            Assert.That(spec.Selector, Is.Null);
+        }
+
 
         [Test]
         public void Skip_And_Take_Should_Be_Set_Correctly()
