@@ -1,14 +1,13 @@
 ﻿using Eduva.Application.Exceptions.AICreditPack;
 using Eduva.Application.Exceptions.CreditTransaction;
 using Eduva.Application.Features.CreditTransactions.Responses;
-using Eduva.Application.Features.Payments.Configurations;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
+using Eduva.Shared.Constants;
 using Eduva.Shared.Enums;
 using MediatR;
-using Microsoft.Extensions.Options;
 using Net.payOS.Types;
 
 namespace Eduva.Application.Features.CreditTransactions.Commands
@@ -18,16 +17,13 @@ namespace Eduva.Application.Features.CreditTransactions.Commands
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IPayOSService _payOSService;
-        private readonly PayOSConfig _payOSConfig;
+        private readonly ISystemConfigHelper _systemConfigHelper;
 
-        public CreateCreditPackPaymentLinkCommandHandler(
-            IUnitOfWork unitOfWork,
-            IPayOSService payOSService,
-            IOptions<PayOSConfig> payOSOptions)
+        public CreateCreditPackPaymentLinkCommandHandler(IUnitOfWork unitOfWork, IPayOSService payOSService, ISystemConfigHelper systemConfigHelper)
         {
             _unitOfWork = unitOfWork;
             _payOSService = payOSService;
-            _payOSConfig = payOSOptions.Value;
+            _systemConfigHelper = systemConfigHelper;
         }
 
         public async Task<(CustomCode, CreateCreditPackPaymentLinkResponse)> Handle(
@@ -60,6 +56,8 @@ namespace Eduva.Application.Features.CreditTransactions.Commands
             await transactionRepo.AddAsync(transaction);
             await _unitOfWork.CommitAsync();
 
+            var returnUrl = await _systemConfigHelper.GetValueAsync(SystemConfigKeys.PAYOS_RETURN_URL_PACK);
+
             var paymentData = new PaymentData(
                 orderCode: long.Parse(transactionCode),
                 amount: (int)creditPack.Price,
@@ -68,8 +66,8 @@ namespace Eduva.Application.Features.CreditTransactions.Commands
                 {
                     new ItemData(name: creditPack.Name, quantity: 1, price: (int)creditPack.Price)
                 },
-                cancelUrl: _payOSConfig.CancelUrl,
-                returnUrl: _payOSConfig.ReturnUrl
+                cancelUrl: returnUrl,
+                returnUrl: returnUrl
             );
 
             var result = await _payOSService.CreatePaymentLinkAsync(paymentData);

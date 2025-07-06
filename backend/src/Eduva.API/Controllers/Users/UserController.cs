@@ -16,7 +16,6 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 using System.Security.Claims;
 
 namespace Eduva.API.Controllers.Users
@@ -29,10 +28,10 @@ namespace Eduva.API.Controllers.Users
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly UserManager<ApplicationUser> _userManager;
 
-        public UserController(ILogger<UserController> logger, IOptions<ImportTemplateConfig> importTemplateOptions, IHttpClientFactory httpClientFactory, IMediator mediator, UserManager<ApplicationUser> userManager) : base(logger)
+        public UserController(ILogger<UserController> logger, ImportTemplateConfig importTemplateConfig, IHttpClientFactory httpClientFactory, IMediator mediator, UserManager<ApplicationUser> userManager) : base(logger)
         {
             _mediator = mediator;
-            _importTemplateConfig = importTemplateOptions.Value;
+            _importTemplateConfig = importTemplateConfig;
             _httpClientFactory = httpClientFactory;
             _userManager = userManager;
         }
@@ -261,7 +260,7 @@ namespace Eduva.API.Controllers.Users
         {
             try
             {
-                var url = _importTemplateConfig.GetUrl(type);
+                var url = await _importTemplateConfig.GetUrl(type);
 
                 if (string.IsNullOrWhiteSpace(url))
                 {

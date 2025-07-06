@@ -30,7 +30,7 @@ namespace Eduva.API.Controllers.LessonMaterials
         public async Task<IActionResult> GetAllLessonMaterials([FromQuery] Guid? classId = null, [FromQuery] Guid? folderId = null)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId == null)
+            if (string.IsNullOrEmpty(userId))
             {
                 return Respond(CustomCode.UserIdNotFound);
             }
@@ -60,7 +60,7 @@ namespace Eduva.API.Controllers.LessonMaterials
         public async Task<IActionResult> CreateLessonMaterial([FromBody] CreateLessonMaterialCommand command)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId == null)
+            if (string.IsNullOrEmpty(userId))
             {
                 return Respond(CustomCode.UserIdNotFound);
             }
@@ -83,7 +83,7 @@ namespace Eduva.API.Controllers.LessonMaterials
         public async Task<IActionResult> GetLessonMaterials([FromQuery] LessonMaterialSpecParam lessonMaterialSpecParam)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId == null)
+            if (string.IsNullOrEmpty(userId))
             {
                 return Respond(CustomCode.UserIdNotFound);
             }
@@ -107,7 +107,7 @@ namespace Eduva.API.Controllers.LessonMaterials
         public async Task<IActionResult> GetLessonMaterialById(Guid id)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId == null)
+            if (string.IsNullOrEmpty(userId))
             {
                 return Respond(CustomCode.UserIdNotFound);
             }

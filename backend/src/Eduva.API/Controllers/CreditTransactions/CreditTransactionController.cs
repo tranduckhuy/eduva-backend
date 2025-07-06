@@ -57,7 +57,7 @@ namespace Eduva.API.Controllers.CreditTransactions
         }
 
         [HttpPost("payment-link")]
-        [Authorize(Roles = $"{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}, {nameof(Role.SystemAdmin)}")]
+        [Authorize(Roles = $"{nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}")]
         [ProducesResponseType(typeof(ApiResponse<CreateCreditPackPaymentLinkResponse>), StatusCodes.Status200OK)]
         public async Task<IActionResult> CreatePaymentLink([FromBody] CreateCreditPackPaymentLinkCommand command)
         {

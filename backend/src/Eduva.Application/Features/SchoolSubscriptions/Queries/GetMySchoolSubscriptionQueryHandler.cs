@@ -2,12 +2,12 @@
 using Eduva.Application.Exceptions.Auth;
 using Eduva.Application.Exceptions.School;
 using Eduva.Application.Exceptions.SchoolSubscription;
-using Eduva.Application.Features.Payments.Responses;
+using Eduva.Application.Features.SchoolSubscriptions.Responses;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using MediatR;
 
-namespace Eduva.Application.Features.Payments.Queries
+namespace Eduva.Application.Features.SchoolSubscriptions.Queries
 {
     public class GetMySchoolSubscriptionQueryHandler : IRequestHandler<GetMySchoolSubscriptionQuery, MySchoolSubscriptionResponse>
     {

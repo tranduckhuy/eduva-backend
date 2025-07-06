@@ -2,6 +2,7 @@
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
+using Eduva.Domain.Enums;
 
 namespace Eduva.Infrastructure.Services
 {
@@ -46,6 +47,12 @@ namespace Eduva.Infrastructure.Services
             var isActive = subscription != null && subscription.EndDate > DateTimeOffset.UtcNow;
 
             return (isActive, subscription?.EndDate ?? DateTimeOffset.MinValue);
+        }
+
+        public Task UpdateSubscriptionStatusAsync(int schoolId, SubscriptionStatus status)
+        {
+            var schoolSubscriptionRepository = _unitOfWork.GetCustomRepository<ISchoolSubscriptionRepository>();
+            return schoolSubscriptionRepository.UpdateSubscriptionStatusAsync(schoolId, status);
         }
     }
 }

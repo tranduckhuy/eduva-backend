@@ -84,47 +84,50 @@ public class GetUsersBySpecQueryHandlerTests
     [Test]
     public async Task Should_Filter_Users_With_Matching_Role()
     {
-        var user = new ApplicationUser { Id = Guid.NewGuid(), FullName = "MatchRole" };
+        // Arrange
+        var param = new UserSpecParam { Role = Role.Student };
+        var query = new GetUsersBySpecQuery(param);
 
-        _userRepoMock.Setup(repo => repo.GetWithSpecAsync(It.IsAny<UserSpecification>()))
-            .ReturnsAsync(new Pagination<ApplicationUser>
-            {
-                PageIndex = 1,
-                PageSize = 10,
-                Count = 1,
-                Data = new List<ApplicationUser> { user }
-            });
+        var mockUsers = new List<ApplicationUser>
+    {
+        new ApplicationUser { Id = Guid.NewGuid(), FullName = "Student 1" },
+        new ApplicationUser { Id = Guid.NewGuid(), FullName = "Student 2" }
+    };
 
-        _userManagerMock.Setup(mgr => mgr.GetRolesAsync(user))
-            .ReturnsAsync([Role.Teacher.ToString()]);
+        _userManagerMock.Setup(um => um.GetUsersInRoleAsync("Student"))
+            .ReturnsAsync(mockUsers);
 
-        var query = new GetUsersBySpecQuery(new UserSpecParam { Role = Role.Teacher });
-        var result = await _handler.Handle(query, default);
+        foreach (var user in mockUsers)
+        {
+            _userManagerMock.Setup(um => um.GetRolesAsync(user))
+                .ReturnsAsync(new List<string> { "Student" });
+        }
 
-        Assert.That(result.Data, Has.Count.EqualTo(1));
-        Assert.That(result.Data.First().Roles, Contains.Item("Teacher"));
+        // Act
+        var result = await _handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.Count, Is.EqualTo(2));
+        Assert.That(result.Data, Has.Count.EqualTo(2));
     }
 
     [Test]
     public async Task Should_Exclude_Users_Without_Matching_Role()
     {
-        var user = new ApplicationUser { Id = Guid.NewGuid(), FullName = "WrongRole" };
+        // Arrange
+        var param = new UserSpecParam { Role = Role.Teacher };
+        var query = new GetUsersBySpecQuery(param);
 
-        _userRepoMock.Setup(repo => repo.GetWithSpecAsync(It.IsAny<UserSpecification>()))
-            .ReturnsAsync(new Pagination<ApplicationUser>
-            {
-                PageIndex = 1,
-                PageSize = 10,
-                Count = 1,
-                Data = [user]
-            });
+        _userManagerMock.Setup(um => um.GetUsersInRoleAsync("Teacher"))
+            .ReturnsAsync(new List<ApplicationUser>());
 
-        _userManagerMock.Setup(mgr => mgr.GetRolesAsync(user))
-            .ReturnsAsync([Role.Student.ToString()]);
+        // Act
+        var result = await _handler.Handle(query, CancellationToken.None);
 
-        var query = new GetUsersBySpecQuery(new UserSpecParam { Role = Role.Teacher });
-        var result = await _handler.Handle(query, default);
-
+        // Assert
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.Count, Is.EqualTo(0));
         Assert.That(result.Data, Is.Empty);
     }
 
@@ -145,6 +148,131 @@ public class GetUsersBySpecQueryHandlerTests
 
         Assert.That(result.Count, Is.EqualTo(0));
         Assert.That(result.Data, Is.Empty);
+    }
+
+    [Test]
+    public async Task Should_Handle_Empty_UsersInRole()
+    {
+        // Arrange
+        var param = new UserSpecParam { Role = Role.Student };
+        var query = new GetUsersBySpecQuery(param);
+
+        _userManagerMock.Setup(um => um.GetUsersInRoleAsync("Student"))
+            .ReturnsAsync(new List<ApplicationUser>());
+
+        // Act
+        var result = await _handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.Count, Is.EqualTo(0));
+        Assert.That(result.Data, Is.Empty);
+    }
+
+    [Test]
+    public async Task Should_Apply_School_Filter_With_Role()
+    {
+        // Arrange
+        var param = new UserSpecParam { Role = Role.Student, SchoolId = 1 };
+        var query = new GetUsersBySpecQuery(param);
+
+        var mockSchool = new School { Id = 1, Name = "Test School" };
+        var mockUsers = new List<ApplicationUser>
+    {
+        new ApplicationUser { Id = Guid.NewGuid(), FullName = "Student 1", SchoolId = 1 },
+        new ApplicationUser { Id = Guid.NewGuid(), FullName = "Student 2", SchoolId = 2 }
+    };
+
+        _userManagerMock.Setup(um => um.GetUsersInRoleAsync("Student"))
+            .ReturnsAsync(mockUsers);
+
+        foreach (var user in mockUsers)
+        {
+            _userManagerMock.Setup(um => um.GetRolesAsync(user))
+                .ReturnsAsync(new List<string> { "Student" });
+        }
+
+        var schoolRepoMock = new Mock<IGenericRepository<School, int>>();
+        schoolRepoMock.Setup(repo => repo.GetByIdAsync(1))
+            .ReturnsAsync(mockSchool);
+
+        _unitOfWorkMock.Setup(uow => uow.GetRepository<School, int>())
+            .Returns(schoolRepoMock.Object);
+
+        // Act
+        var result = await _handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.Count, Is.EqualTo(1)); // Only SchoolId = 1
+        Assert.That(result.Data, Has.Count.EqualTo(1));
+    }
+
+    [Test]
+    public async Task Should_Apply_Search_Filter_With_Role()
+    {
+        // Arrange
+        var param = new UserSpecParam { Role = Role.Student, SearchTerm = "John" };
+        var query = new GetUsersBySpecQuery(param);
+
+        var mockUsers = new List<ApplicationUser>
+    {
+        new ApplicationUser { Id = Guid.NewGuid(), FullName = "John Doe" },
+        new ApplicationUser { Id = Guid.NewGuid(), FullName = "Jane Smith" }
+    };
+
+        _userManagerMock.Setup(um => um.GetUsersInRoleAsync("Student"))
+            .ReturnsAsync(mockUsers);
+
+        foreach (var user in mockUsers)
+        {
+            _userManagerMock.Setup(um => um.GetRolesAsync(user))
+                .ReturnsAsync(new List<string> { "Student" });
+        }
+
+        // Act
+        var result = await _handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.Count, Is.EqualTo(1)); // Only "John Doe"
+        Assert.That(result.Data, Has.Count.EqualTo(1));
+    }
+
+    [Test]
+    public async Task Should_Apply_Pagination_With_Role()
+    {
+        // Arrange
+        var param = new UserSpecParam { Role = Role.Student, PageIndex = 1, PageSize = 1 };
+        var query = new GetUsersBySpecQuery(param);
+
+        var mockUsers = new List<ApplicationUser>
+    {
+        new ApplicationUser { Id = Guid.NewGuid(), FullName = "Student 1" },
+        new ApplicationUser { Id = Guid.NewGuid(), FullName = "Student 2" }
+    };
+
+        _userManagerMock.Setup(um => um.GetUsersInRoleAsync("Student"))
+            .ReturnsAsync(mockUsers);
+
+        foreach (var user in mockUsers)
+        {
+            _userManagerMock.Setup(um => um.GetRolesAsync(user))
+                .ReturnsAsync(new List<string> { "Student" });
+        }
+
+        // Act
+        var result = await _handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.Count, Is.EqualTo(2)); // Total count
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Data, Has.Count.EqualTo(1)); // Page size
+            Assert.That(result.PageIndex, Is.EqualTo(1));
+            Assert.That(result.PageSize, Is.EqualTo(1));
+        });
     }
 
     #endregion

@@ -1,4 +1,5 @@
 ﻿using Eduva.Application.Features.Payments.Commands;
+using Eduva.Application.Features.SchoolSubscriptions.Commands;
 using Eduva.Domain.Enums;
 using FluentValidation.TestHelper;
 

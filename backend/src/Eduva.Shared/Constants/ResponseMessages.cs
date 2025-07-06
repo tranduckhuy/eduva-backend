@@ -323,6 +323,9 @@ namespace Eduva.Shared.Constants
             { CustomCode.CommentContentRequired, new MessageDetail {
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Comment content is required" } },
 
+            // Storage Quota Errors
+            { CustomCode.StorageQuotaExceeded, new MessageDetail {
+                HttpCode = StatusCodes.Status413PayloadTooLarge, Message = "Storage quota exceeded. Please upgrade your subscription or delete some files" } },
 
             #endregion
         };

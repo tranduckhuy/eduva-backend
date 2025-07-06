@@ -60,9 +60,6 @@ jobs:
           echo "PAYOS_CLIENT_ID=${{ secrets.PAYOS_CLIENT_ID }}" >> .env
           echo "PAYOS_API_KEY=${{ secrets.PAYOS_API_KEY }}" >> .env
           echo "PAYOS_CHECKSUM_KEY=${{ secrets.PAYOS_CHECKSUM_KEY }}" >> .env
-          echo "PAYOS_RETURN_URL=${{ secrets.PAYOS_RETURN_URL }}" >> .env
-          echo "PAYOS_CANCEL_URL=${{ secrets.PAYOS_CANCEL_URL }}" >> .env
-          echo "IMPORT_TEMPLATE_URL=${{ secrets.IMPORT_TEMPLATE_URL }}" >> .env
           echo "RABBITMQ_DEFAULT_USER=${{ secrets.RABBITMQ_DEFAULT_USER }}" >> .env
           echo "RABBITMQ_DEFAULT_PASS=${{ secrets.RABBITMQ_DEFAULT_PASS }}" >> .env
 

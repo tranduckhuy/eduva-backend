@@ -3,6 +3,7 @@ using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Sas;
 using Eduva.Application.Exceptions.FileStorage;
+using Eduva.Application.Interfaces.Services;
 using Eduva.Infrastructure.Configurations;
 using Eduva.Infrastructure.Services;
 using Moq;
@@ -14,6 +15,7 @@ namespace Eduva.Infrastructure.Test.Services
     {
         private Mock<BlobContainerClient> _containerClientMock;
         private Mock<BlobClient> _blobClientMock;
+        private Mock<IStorageQuotaService> _storageQuotaServiceMock;
         private AzureBlobStorageOptions _options;
         private AzureBlobStorageService _service;
 
@@ -30,13 +32,14 @@ namespace Eduva.Infrastructure.Test.Services
 
             _containerClientMock = new Mock<BlobContainerClient>();
             _blobClientMock = new Mock<BlobClient>();
+            _storageQuotaServiceMock = new Mock<IStorageQuotaService>();
 
             // Setup the container client to return our mocked blob client
             _containerClientMock.Setup(c => c.GetBlobClient(It.IsAny<string>()))
                 .Returns(_blobClientMock.Object);
 
             // Create service with mocked dependencies
-            _service = new TestableAzureBlobStorageService(_options, _containerClientMock.Object);
+            _service = new TestableAzureBlobStorageService(_options, _containerClientMock.Object, _storageQuotaServiceMock.Object);
         }
 
         #region Constructor Tests
@@ -44,15 +47,21 @@ namespace Eduva.Infrastructure.Test.Services
         [Test]
         public void Constructor_ShouldInitializeService_WhenValidOptionsProvided()
         {
+            // Arrange
+            var mockStorageQuotaService = new Mock<IStorageQuotaService>();
+
             // Act & Assert
-            Assert.DoesNotThrow(() => new AzureBlobStorageService(_options));
+            Assert.DoesNotThrow(() => new AzureBlobStorageService(_options, mockStorageQuotaService.Object));
         }
 
         [Test]
         public void Constructor_ShouldThrowException_WhenNullOptionsProvided()
         {
+            // Arrange
+            var mockStorageQuotaService = new Mock<IStorageQuotaService>();
+
             // Act & Assert
-            Assert.Throws<NullReferenceException>(() => new AzureBlobStorageService(null!));
+            Assert.Throws<NullReferenceException>(() => new AzureBlobStorageService(null!, mockStorageQuotaService.Object));
         }
 
         #endregion
@@ -314,8 +323,11 @@ namespace Eduva.Infrastructure.Test.Services
                 StorageAccountKey = "test-key"
             };
 
+            // Arrange
+            var mockStorageQuotaService = new Mock<IStorageQuotaService>();
+
             // Act & Assert
-            Assert.DoesNotThrow(() => new AzureBlobStorageService(customOptions));
+            Assert.DoesNotThrow(() => new AzureBlobStorageService(customOptions, mockStorageQuotaService.Object));
         }
 
         [Test]
@@ -330,8 +342,11 @@ namespace Eduva.Infrastructure.Test.Services
                 StorageAccountKey = "test-key"
             };
 
+            // Arrange
+            var mockStorageQuotaService = new Mock<IStorageQuotaService>();
+
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new AzureBlobStorageService(invalidOptions));
+            Assert.Throws<ArgumentNullException>(() => new AzureBlobStorageService(invalidOptions, mockStorageQuotaService.Object));
         }
 
         #endregion
@@ -381,8 +396,8 @@ namespace Eduva.Infrastructure.Test.Services
     {
         private readonly BlobContainerClient _containerClient;
 
-        public TestableAzureBlobStorageService(AzureBlobStorageOptions options, BlobContainerClient containerClient)
-            : base(options)
+        public TestableAzureBlobStorageService(AzureBlobStorageOptions options, BlobContainerClient containerClient, IStorageQuotaService storageQuotaService)
+            : base(options, storageQuotaService)
         {
             _containerClient = containerClient;
 
