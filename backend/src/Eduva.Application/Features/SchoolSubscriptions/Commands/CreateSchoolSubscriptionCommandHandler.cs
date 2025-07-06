@@ -5,16 +5,15 @@ using Eduva.Application.Exceptions.School;
 using Eduva.Application.Exceptions.SchoolSubscription;
 using Eduva.Application.Exceptions.SubscriptionPlan;
 using Eduva.Application.Features.Payments.Commands;
-using Eduva.Application.Features.Payments.Configurations;
 using Eduva.Application.Features.Payments.Responses;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
+using Eduva.Shared.Constants;
 using Eduva.Shared.Enums;
 using MediatR;
-using Microsoft.Extensions.Options;
 using Net.payOS.Types;
 
 namespace Eduva.Application.Features.SchoolSubscriptions.Commands
@@ -23,13 +22,13 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Commands
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IPayOSService _payOSService;
-        private readonly PayOSConfig _payOSConfig;
+        private readonly ISystemConfigHelper _systemConfigHelper;
 
-        public CreateSchoolSubscriptionCommandHandler(IUnitOfWork unitOfWork, IPayOSService payOSService, IOptions<PayOSConfig> payOSOptions)
+        public CreateSchoolSubscriptionCommandHandler(IUnitOfWork unitOfWork, IPayOSService payOSService, ISystemConfigHelper systemConfigHelper)
         {
             _unitOfWork = unitOfWork;
             _payOSService = payOSService;
-            _payOSConfig = payOSOptions.Value;
+            _systemConfigHelper = systemConfigHelper;
         }
 
         public async Task<(CustomCode, CreatePaymentLinkResponse)> Handle(CreateSchoolSubscriptionCommand request, CancellationToken cancellationToken)
@@ -68,7 +67,7 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Commands
             await transactionRepo.AddAsync(paymentTransaction);
             await _unitOfWork.CommitAsync();
 
-            var paymentRequest = BuildPaymentRequest(plan, request.BillingCycle, (int)finalAmount, school, long.Parse(transactionCode));
+            var paymentRequest = await BuildPaymentRequestAsync(plan, request.BillingCycle, (int)finalAmount, school, long.Parse(transactionCode));
             var result = await _payOSService.CreatePaymentLinkAsync(paymentRequest);
 
             var response = new CreatePaymentLinkResponse
@@ -153,9 +152,11 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Commands
                 || request.BillingCycle == BillingCycle.Yearly && newPlan.PricePerYear < current.Plan.PricePerYear;
         }
 
-        private PaymentData BuildPaymentRequest(SubscriptionPlan plan, BillingCycle cycle, int amount, School school, long orderCode)
+        private async Task<PaymentData> BuildPaymentRequestAsync(SubscriptionPlan plan, BillingCycle cycle, int amount, School school, long orderCode)
         {
             var billingCode = cycle == BillingCycle.Monthly ? " Thang" : " Nam";
+            var returnUrl = await _systemConfigHelper.GetValueAsync(SystemConfigKeys.PAYOS_RETURN_URL_PLAN);
+
             return new PaymentData(
                 orderCode: orderCode,
                 amount: amount,
@@ -164,8 +165,8 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Commands
                 {
                     new ItemData(name: plan.Name, quantity: 1, price: amount)
                 },
-                cancelUrl: _payOSConfig.CancelUrl,
-                returnUrl: _payOSConfig.ReturnUrl,
+                cancelUrl: returnUrl,
+                returnUrl: returnUrl,
                 buyerName: school.Name,
                 buyerEmail: school.ContactEmail,
                 buyerPhone: school.ContactPhone

@@ -42,7 +42,11 @@ namespace Eduva.API.Controllers.SystemConfigs
         public async Task<IActionResult> UpdateAsync(string key, [FromBody] UpdateSystemConfigDto updateDto)
         {
             updateDto.Key = key; // Ensure consistency between route and body
-            return await HandleRequestAsync(() => _systemConfigService.UpdateAsync(updateDto));
+            return await HandleRequestAsync(async () =>
+            {
+                var code = await _systemConfigService.UpdateAsync(updateDto);
+                return (code, new object());
+            });
         }
     }
 }
