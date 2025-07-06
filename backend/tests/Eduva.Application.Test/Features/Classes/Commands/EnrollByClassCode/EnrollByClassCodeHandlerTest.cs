@@ -78,13 +78,16 @@ namespace Eduva.Application.Test.Features.Classes.Commands.EnrollByClassCode
 
             // Assert
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.StudentId, Is.EqualTo(studentId));
-            Assert.That(result.ClassId, Is.EqualTo(classId));
-            Assert.That(result.ClassName, Is.EqualTo("Math"));
-            Assert.That(result.TeacherName, Is.EqualTo("Teacher Name"));
-            Assert.That(result.SchoolName, Is.EqualTo("School Name"));
-            Assert.That(result.ClassCode, Is.EqualTo("ABC123"));
-            Assert.That(result.ClassStatus, Is.EqualTo(EntityStatus.Active));
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.StudentId, Is.EqualTo(studentId));
+                Assert.That(result.ClassId, Is.EqualTo(classId));
+                Assert.That(result.ClassName, Is.EqualTo("Math"));
+                Assert.That(result.TeacherName, Is.EqualTo("Teacher Name"));
+                Assert.That(result.SchoolName, Is.EqualTo("School Name"));
+                Assert.That(result.ClassCode, Is.EqualTo("ABC123"));
+                Assert.That(result.ClassStatus, Is.EqualTo(EntityStatus.Active));
+            });
             _studentClassGenericRepoMock.Verify(r => r.AddAsync(It.IsAny<StudentClass>()), Times.Once);
             _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Once);
         }

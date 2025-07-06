@@ -83,9 +83,12 @@ namespace Eduva.Application.Test.Features.Classes.Commands.CreateClass
 
                 // Assert
                 Assert.That(result, Is.Not.Null);
-                Assert.That(result.Name, Is.EqualTo(command.Name));
-                Assert.That(result.TeacherId, Is.EqualTo(command.TeacherId));
-                Assert.That(result.SchoolId, Is.EqualTo(command.SchoolId));
+                Assert.Multiple(() =>
+                {
+                    Assert.That(result.Name, Is.EqualTo(command.Name));
+                    Assert.That(result.TeacherId, Is.EqualTo(command.TeacherId));
+                    Assert.That(result.SchoolId, Is.EqualTo(command.SchoolId));
+                });
                 _classroomRepoMock.Verify(r => r.AddAsync(It.IsAny<Classroom>()), Times.Once);
                 _folderRepoMock.Verify(r => r.AddAsync(It.IsAny<Folder>()), Times.Once);
                 _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Once);
