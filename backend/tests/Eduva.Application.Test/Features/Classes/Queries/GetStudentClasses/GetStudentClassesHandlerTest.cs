@@ -107,10 +107,13 @@ namespace Eduva.Application.Test.Features.Classes.Queries.GetStudentClasses
                 // Assert
                 Assert.That(result, Is.Not.Null);
                 Assert.That(result.Count, Is.EqualTo(1));
-                Assert.That(result.Data.First().StudentId, Is.EqualTo(studentId));
+                Assert.Multiple(() =>
+                {
+                    Assert.That(result.Data.First().StudentId, Is.EqualTo(studentId));
 
-                // Verify StudentId was set in the spec params
-                Assert.That(query.StudentClassSpecParam.StudentId, Is.EqualTo(studentId));
+                    // Verify StudentId was set in the spec params
+                    Assert.That(query.StudentClassSpecParam.StudentId, Is.EqualTo(studentId));
+                });
 
                 // Verify StudentClassRepository was called with the right spec
                 _studentClassRepoMock.Verify(r => r.GetWithSpecAsync(It.IsAny<StudentClassSpecification>()), Times.Once);
@@ -221,8 +224,11 @@ namespace Eduva.Application.Test.Features.Classes.Queries.GetStudentClasses
                 var class1Response = result.Data.First(r => r.ClassId == classId1);
                 var class2Response = result.Data.First(r => r.ClassId == classId2);
 
-                Assert.That(class1Response.CountLessonMaterial, Is.EqualTo(5));
-                Assert.That(class2Response.CountLessonMaterial, Is.EqualTo(4));
+                Assert.Multiple(() =>
+                {
+                    Assert.That(class1Response.CountLessonMaterial, Is.EqualTo(5));
+                    Assert.That(class2Response.CountLessonMaterial, Is.EqualTo(4));
+                });
 
                 // Verify material count API was called with the right folder IDs
                 _lessonMaterialRepoMock.Verify(r => r.GetApprovedMaterialCountsByFolderAsync(
