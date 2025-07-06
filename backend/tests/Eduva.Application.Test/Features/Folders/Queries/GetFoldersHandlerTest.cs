@@ -7,6 +7,7 @@ using Eduva.Application.Features.Folders.Specifications;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Domain.Entities;
+using Eduva.Domain.Enums;
 using Microsoft.AspNetCore.Identity;
 using Moq;
 
@@ -387,5 +388,61 @@ namespace Eduva.Application.Test.Features.Folders.Queries
             Assert.ThrowsAsync<Eduva.Application.Common.Exceptions.AppException>(async () => await _handler.Handle(query, CancellationToken.None));
         }
         #endregion
+
+        [Test]
+        public async Task Handle_Should_Set_CountLessonMaterial_When_LessonMaterialRepo_Is_Not_Null()
+        {
+            // Arrange
+            var folderId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+
+            var folderResponses = new List<FolderResponse>
+    {
+        new FolderResponse { Id = folderId }
+    };
+
+            var folders = new List<Folder> { new Folder { Id = folderId } };
+            var pagination = new Pagination<Folder>(1, 10, 1, folders);
+
+            var folderRepoMock = new Mock<IFolderRepository>();
+            folderRepoMock.Setup(r => r.GetWithSpecAsync(It.IsAny<ISpecification<Folder>>())).ReturnsAsync(pagination);
+
+            var mapperMock = new Mock<IMapper>();
+            mapperMock.Setup(m => m.Map<IReadOnlyCollection<FolderResponse>>(It.IsAny<IReadOnlyCollection<Folder>>()))
+                .Returns(folderResponses);
+
+            var lessonMaterialRepoMock = new Mock<ILessonMaterialRepository>();
+            lessonMaterialRepoMock.Setup(r => r.GetApprovedMaterialCountsByFolderAsync(
+                It.IsAny<List<Guid>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new Dictionary<Guid, int> { { folderId, 7 } });
+
+            var unitOfWorkMock = new Mock<IUnitOfWork>();
+            unitOfWorkMock.Setup(u => u.GetCustomRepository<ILessonMaterialRepository>())
+                .Returns(lessonMaterialRepoMock.Object);
+
+            var userManagerMock = new Mock<UserManager<ApplicationUser>>(
+                Mock.Of<IUserStore<ApplicationUser>>(), null!, null!, null!, null!, null!, null!, null!, null!);
+
+            var handler = new GetFoldersHandler(
+                folderRepoMock.Object,
+                mapperMock.Object,
+                unitOfWorkMock.Object,
+                userManagerMock.Object
+            );
+
+            var param = new FolderSpecParam
+            {
+                OwnerType = OwnerType.Personal,
+                PageIndex = 1,
+                PageSize = 10
+            };
+            var query = new GetFoldersQuery(param, userId);
+
+            // Act
+            var result = await handler.Handle(query, CancellationToken.None);
+
+            // Assert
+            Assert.That(result.Data.First().CountLessonMaterial, Is.EqualTo(7));
+        }
     }
 }
