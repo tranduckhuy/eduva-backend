@@ -17,6 +17,9 @@ namespace Eduva.Application.Features.Users.Responses
         public bool IsEmailConfirmed { get; set; }
         public EntityStatus Status { get; set; }
         public UserSubscriptionResponse? UserSubscriptionResponse { get; set; }
+        public DateTimeOffset CreatedAt { get; set; }
+        public DateTimeOffset? LastModifiedAt { get; set; }
+        public DateTimeOffset? LastLoginAt { get; set; }
 
     }
 

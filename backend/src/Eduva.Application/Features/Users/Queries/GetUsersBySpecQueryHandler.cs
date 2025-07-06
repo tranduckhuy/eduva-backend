@@ -33,7 +33,14 @@ namespace Eduva.Application.Features.Users.Queries
                 var query = usersInRole.AsQueryable();
 
                 if (request.Param.SchoolId.HasValue)
+                {
                     query = query.Where(u => u.SchoolId == request.Param.SchoolId.Value);
+                }
+
+                if (request.Param.Status.HasValue)
+                {
+                    query = query.Where(u => u.Status == request.Param.Status.Value);
+                }
 
                 if (!string.IsNullOrWhiteSpace(request.Param.SearchTerm))
                 {
@@ -41,6 +48,46 @@ namespace Eduva.Application.Features.Users.Queries
                     query = query.Where(u =>
                         (u.FullName ?? "").ToLower().Contains(searchTerm) ||
                         (u.Email ?? "").ToLower().Contains(searchTerm));
+                }
+
+                if (!string.IsNullOrWhiteSpace(request.Param.SortBy))
+                {
+                    bool isDesc = request.Param.SortDirection.ToLower() == "desc";
+                    string sort = request.Param.SortBy.ToLower();
+
+                    query = sort switch
+                    {
+                        "fullname" => isDesc
+                            ? query.OrderByDescending(u => u.FullName)
+                            : query.OrderBy(u => u.FullName),
+                        "email" => isDesc
+                            ? query.OrderByDescending(u => u.Email)
+                            : query.OrderBy(u => u.Email),
+                        "status" => isDesc
+                            ? query.OrderByDescending(u => u.Status)
+                            : query.OrderBy(u => u.Status),
+                        "totalcredits" => isDesc
+                            ? query.OrderByDescending(u => u.TotalCredits)
+                            : query.OrderBy(u => u.TotalCredits),
+                        "phonenumber" => isDesc
+                            ? query.OrderByDescending(u => u.PhoneNumber)
+                            : query.OrderBy(u => u.PhoneNumber),
+                        "accessfailedcount" => isDesc
+                            ? query.OrderByDescending(u => u.AccessFailedCount)
+                            : query.OrderBy(u => u.AccessFailedCount),
+                        "createdat" => isDesc
+                            ? query.OrderByDescending(u => u.CreatedAt)
+                            : query.OrderBy(u => u.CreatedAt),
+                        "lastmodifiedat" => isDesc
+                            ? query.OrderByDescending(u => u.LastModifiedAt)
+                            : query.OrderBy(u => u.LastModifiedAt),
+                        "lastloginin" => isDesc
+                            ? query.OrderByDescending(u => u.LastLoginAt)
+                            : query.OrderBy(u => u.LastLoginAt),
+                        _ => isDesc
+                            ? query.OrderByDescending(u => u.FullName)
+                            : query.OrderBy(u => u.FullName)
+                    };
                 }
 
                 var totalCount = query.Count();

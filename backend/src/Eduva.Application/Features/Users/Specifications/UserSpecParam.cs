@@ -7,5 +7,6 @@ namespace Eduva.Application.Features.Users.Specifications
     {
         public int? SchoolId { get; set; }
         public Role? Role { get; set; }
+        public EntityStatus? Status { get; set; }
     }
 }

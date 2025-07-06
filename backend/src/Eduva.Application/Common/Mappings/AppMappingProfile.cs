@@ -29,7 +29,10 @@ namespace Eduva.Application.Common.Mappings
         {
             // User mappings
             CreateMap<ApplicationUser, UserResponse>()
-                .ForMember(dest => dest.School, opt => opt.MapFrom(src => src.School));
+                .ForMember(dest => dest.School, opt => opt.MapFrom(src => src.School))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
+                .ForMember(dest => dest.LastModifiedAt, opt => opt.MapFrom(src => src.LastModifiedAt))
+                .ForMember(dest => dest.LastLoginAt, opt => opt.MapFrom(src => src.LastLoginAt));
             CreateMap<Pagination<ApplicationUser>, Pagination<UserResponse>>();
 
             // Lesson Materials mappings
@@ -44,11 +47,15 @@ namespace Eduva.Application.Common.Mappings
 
             // Subscription Plan mappings
             CreateMap<Pagination<SubscriptionPlan>, Pagination<SubscriptionPlanResponse>>();
-            CreateMap<SubscriptionPlan, SubscriptionPlanResponse>();
+            CreateMap<SubscriptionPlan, SubscriptionPlanResponse>()
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
+                .ForMember(dest => dest.LastModifiedAt, opt => opt.MapFrom(src => src.LastModifiedAt));
 
             // AICreditPack mappings
             CreateMap<Pagination<AICreditPack>, Pagination<AICreditPackResponse>>();
-            CreateMap<AICreditPack, AICreditPackResponse>();
+            CreateMap<AICreditPack, AICreditPackResponse>()
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
+                .ForMember(dest => dest.LastModifiedAt, opt => opt.MapFrom(src => src.LastModifiedAt));
 
             // School mappings
             CreateMap<CreateSchoolCommand, SchoolResponse>();
