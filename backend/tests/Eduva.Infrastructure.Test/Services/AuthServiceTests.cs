@@ -199,6 +199,51 @@ namespace Eduva.Infrastructure.Test.Services
         #region LoginAsync Tests
 
         [Test]
+        public async Task LoginAsync_Should_Update_LastLoginAt_When_Success()
+        {
+            // Arrange
+            var user = new ApplicationUser
+            {
+                Id = Guid.NewGuid(),
+                Email = "test@example.com",
+                UserName = "test@example.com",
+                FullName = "Test User",
+                EmailConfirmed = true,
+                LastLoginAt = null
+            };
+
+            _userManager.Setup(um => um.FindByEmailAsync(It.IsAny<string>()))
+                .ReturnsAsync(user);
+            _userManager.Setup(um => um.CheckPasswordAsync(user, It.IsAny<string>()))
+                .ReturnsAsync(true);
+            _userManager.Setup(um => um.IsLockedOutAsync(user))
+                .ReturnsAsync(false);
+            _userManager.Setup(um => um.GetTwoFactorEnabledAsync(user))
+                .ReturnsAsync(false);
+            _userManager.Setup(um => um.GetRolesAsync(user))
+                .ReturnsAsync(new List<string> { "User" });
+            _userManager.Setup(um => um.GetClaimsAsync(user))
+                .ReturnsAsync(new List<Claim>
+                {
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim("FullName", user.FullName!)
+                });
+            _userManager.Setup(um => um.UpdateAsync(user))
+                .ReturnsAsync(IdentityResult.Success);
+
+            var request = new LoginRequestDto { Email = "test@example.com", Password = "password" };
+
+            // Act
+            var result = await _authService.LoginAsync(request);
+
+            // Assert
+            Assert.That(user.LastLoginAt, Is.Not.Null);
+            Assert.That(user.LastLoginAt.Value, Is.GreaterThan(DateTimeOffset.UtcNow.AddMinutes(-1)));
+            Assert.That(result.Item1, Is.EqualTo(CustomCode.Success));
+        }
+
+        [Test]
         public void LoginAsync_UserNotExists_ThrowsException()
         {
             _userManager.Setup(m => m.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync((ApplicationUser?)null);
@@ -376,6 +421,50 @@ namespace Eduva.Infrastructure.Test.Services
         // Tests for VerifyLoginOtpAsync method - valid OTP, user not found, 2FA not enabled, invalid OTP.
 
         #region VerifyLoginOtpAsync Tests
+
+        [Test]
+        public async Task VerifyLoginOtpAsync_Should_Update_LastLoginAt_When_Success()
+        {
+            // Arrange
+            var user = new ApplicationUser
+            {
+                Id = Guid.NewGuid(),
+                Email = "test@example.com",
+                UserName = "test@example.com",
+                FullName = "Test User",
+                EmailConfirmed = true,
+                TwoFactorEnabled = true,
+                LastLoginAt = null
+            };
+
+            _userManager.Setup(um => um.FindByEmailAsync(It.IsAny<string>()))
+                .ReturnsAsync(user);
+            _userManager.Setup(um => um.GetTwoFactorEnabledAsync(user))
+                .ReturnsAsync(true);
+            _userManager.Setup(um => um.VerifyTwoFactorTokenAsync(user, "OTP", "123456"))
+                .ReturnsAsync(true);
+            _userManager.Setup(um => um.GetRolesAsync(user))
+                .ReturnsAsync(new List<string> { "User" });
+            _userManager.Setup(um => um.GetClaimsAsync(user))
+                .ReturnsAsync(new List<Claim>
+                {
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim("FullName", user.FullName!)
+                });
+            _userManager.Setup(um => um.UpdateAsync(user))
+                .ReturnsAsync(IdentityResult.Success);
+
+            var request = new VerifyOtpRequestDto { Email = "test@example.com", OtpCode = "123456" };
+
+            // Act
+            var result = await _authService.VerifyLoginOtpAsync(request);
+
+            // Assert
+            Assert.That(user.LastLoginAt, Is.Not.Null);
+            Assert.That(user.LastLoginAt.Value, Is.GreaterThan(DateTimeOffset.UtcNow.AddMinutes(-1)));
+            Assert.That(result.Item1, Is.EqualTo(CustomCode.Success));
+        }
 
         [Test]
         public async Task VerifyLoginOtpAsync_ValidOtp_ReturnsAuthResult()

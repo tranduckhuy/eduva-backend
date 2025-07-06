@@ -54,6 +54,111 @@ public class GetUsersBySpecQueryHandlerTests
     #region GetUsersBySpecQueryHandler Tests
 
     [Test]
+    public async Task Should_Sort_By_LastLoginAt_With_Role()
+    {
+        // Arrange
+        var param = new UserSpecParam
+        {
+            Role = Role.Student,
+            SortBy = "lastloginin",
+            SortDirection = "desc"
+        };
+        var query = new GetUsersBySpecQuery(param);
+
+        var now = DateTimeOffset.UtcNow;
+        var mockUsers = new List<ApplicationUser>
+    {
+        new ApplicationUser { Id = Guid.NewGuid(), FullName = "Student 1", LastLoginAt = now.AddHours(-1) },
+        new ApplicationUser { Id = Guid.NewGuid(), FullName = "Student 2", LastLoginAt = now.AddHours(-2) }
+    };
+
+        _userManagerMock.Setup(um => um.GetUsersInRoleAsync("Student"))
+            .ReturnsAsync(mockUsers);
+
+        foreach (var user in mockUsers)
+        {
+            _userManagerMock.Setup(um => um.GetRolesAsync(user))
+                .ReturnsAsync(new List<string> { "Student" });
+        }
+
+        // Act
+        var result = await _handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        Assert.That(result.Data.First().LastLoginAt, Is.GreaterThan(result.Data.Last().LastLoginAt));
+    }
+
+    [Test]
+    public async Task Should_Sort_By_CreatedAt_With_Role()
+    {
+        // Arrange
+        var param = new UserSpecParam
+        {
+            Role = Role.Student,
+            SortBy = "createdat",
+            SortDirection = "desc"
+        };
+        var query = new GetUsersBySpecQuery(param);
+
+        var now = DateTimeOffset.UtcNow;
+        var mockUsers = new List<ApplicationUser>
+    {
+        new ApplicationUser { Id = Guid.NewGuid(), FullName = "Student 1", CreatedAt = now.AddDays(-1) },
+        new ApplicationUser { Id = Guid.NewGuid(), FullName = "Student 2", CreatedAt = now.AddDays(-2) }
+    };
+
+        _userManagerMock.Setup(um => um.GetUsersInRoleAsync("Student"))
+            .ReturnsAsync(mockUsers);
+
+        foreach (var user in mockUsers)
+        {
+            _userManagerMock.Setup(um => um.GetRolesAsync(user))
+                .ReturnsAsync(new List<string> { "Student" });
+        }
+
+        // Act
+        var result = await _handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        Assert.That(result.Data.First().CreatedAt, Is.GreaterThan(result.Data.Last().CreatedAt));
+    }
+
+    [Test]
+    public async Task Should_Sort_By_LastModifiedAt_With_Role()
+    {
+        // Arrange
+        var param = new UserSpecParam
+        {
+            Role = Role.Teacher,
+            SortBy = "lastmodifiedat",
+            SortDirection = "asc"
+        };
+        var query = new GetUsersBySpecQuery(param);
+
+        var now = DateTimeOffset.UtcNow;
+        var mockUsers = new List<ApplicationUser>
+    {
+        new ApplicationUser { Id = Guid.NewGuid(), FullName = "Teacher 1", LastModifiedAt = now.AddHours(-1) },
+        new ApplicationUser { Id = Guid.NewGuid(), FullName = "Teacher 2", LastModifiedAt = now.AddHours(-2) }
+    };
+
+        _userManagerMock.Setup(um => um.GetUsersInRoleAsync("Teacher"))
+            .ReturnsAsync(mockUsers);
+
+        foreach (var user in mockUsers)
+        {
+            _userManagerMock.Setup(um => um.GetRolesAsync(user))
+                .ReturnsAsync(new List<string> { "Teacher" });
+        }
+
+        // Act
+        var result = await _handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        Assert.That(result.Data.First().LastModifiedAt, Is.LessThan(result.Data.Last().LastModifiedAt));
+    }
+
+    [Test]
     public async Task Should_Return_All_Users_When_Role_Not_Specified()
     {
         var user = new ApplicationUser { Id = Guid.NewGuid(), FullName = "NoRoleCheck" };

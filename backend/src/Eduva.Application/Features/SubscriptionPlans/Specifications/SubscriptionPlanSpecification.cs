@@ -46,8 +46,8 @@ namespace Eduva.Application.Features.SubscriptionPlans.Specifications
             return sortBy switch
             {
                 "name" => isDescending
-                    ? q => q.OrderByDescending(x => x.Name)
-                    : q => q.OrderBy(x => x.Name),
+             ? q => q.OrderByDescending(x => x.Name)
+             : q => q.OrderBy(x => x.Name),
 
                 "storage" => isDescending
                     ? q => q.OrderByDescending(x => x.StorageLimitGB)
@@ -64,6 +64,14 @@ namespace Eduva.Application.Features.SubscriptionPlans.Specifications
                 "yearly" => isDescending
                     ? q => q.OrderByDescending(x => x.PricePerYear)
                     : q => q.OrderBy(x => x.PricePerYear),
+
+                "createdat" => isDescending
+                    ? q => q.OrderByDescending(x => x.CreatedAt)
+                    : q => q.OrderBy(x => x.CreatedAt),
+
+                "lastmodified" => isDescending
+                    ? q => q.OrderByDescending(x => x.LastModifiedAt)
+                    : q => q.OrderBy(x => x.LastModifiedAt),
 
                 _ => isDescending
                     ? q => q.OrderByDescending(x => x.CreatedAt)
