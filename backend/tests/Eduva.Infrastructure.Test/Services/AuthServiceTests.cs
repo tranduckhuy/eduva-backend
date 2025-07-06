@@ -239,8 +239,11 @@ namespace Eduva.Infrastructure.Test.Services
 
             // Assert
             Assert.That(user.LastLoginAt, Is.Not.Null);
-            Assert.That(user.LastLoginAt.Value, Is.GreaterThan(DateTimeOffset.UtcNow.AddMinutes(-1)));
-            Assert.That(result.Item1, Is.EqualTo(CustomCode.Success));
+            Assert.Multiple(() =>
+            {
+                Assert.That(user.LastLoginAt.Value, Is.GreaterThan(DateTimeOffset.UtcNow.AddMinutes(-1)));
+                Assert.That(result.Item1, Is.EqualTo(CustomCode.Success));
+            });
         }
 
         [Test]
@@ -462,8 +465,11 @@ namespace Eduva.Infrastructure.Test.Services
 
             // Assert
             Assert.That(user.LastLoginAt, Is.Not.Null);
-            Assert.That(user.LastLoginAt.Value, Is.GreaterThan(DateTimeOffset.UtcNow.AddMinutes(-1)));
-            Assert.That(result.Item1, Is.EqualTo(CustomCode.Success));
+            Assert.Multiple(() =>
+            {
+                Assert.That(user.LastLoginAt.Value, Is.GreaterThan(DateTimeOffset.UtcNow.AddMinutes(-1)));
+                Assert.That(result.Item1, Is.EqualTo(CustomCode.Success));
+            });
         }
 
         [Test]
