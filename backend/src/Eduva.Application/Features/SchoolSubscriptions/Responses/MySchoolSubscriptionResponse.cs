@@ -4,6 +4,8 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Responses
 {
     public class MySchoolSubscriptionResponse
     {
+        public Guid Id { get; set; }
+
         public string PlanName { get; set; } = string.Empty;
         public string? Description { get; set; }
 
@@ -12,6 +14,9 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Responses
 
         public SubscriptionStatus SubscriptionStatus { get; set; }
         public BillingCycle BillingCycle { get; set; }
+
+        public decimal PriceMonthly { get; set; }
+        public decimal PricePerYear { get; set; }
 
         public int MaxUsers { get; set; }
         public decimal StorageLimitGB { get; set; }

@@ -65,7 +65,7 @@ namespace Eduva.Application.Features.Payments.Commands
             var planRepo = _unitOfWork.GetCustomRepository<ISubscriptionPlanRepository>();
             var plan = await planRepo.GetByIdAsync(transaction.PaymentItemId) ?? throw new PlanNotFoundException();
 
-            var cycle = transaction.Amount == plan.PriceMonthly ? BillingCycle.Monthly : BillingCycle.Yearly;
+            var cycle = transaction.BillingCycle!.Value;
 
             var duration = cycle == BillingCycle.Monthly ? 30 : 365;
 

@@ -63,6 +63,7 @@ public class GetMySchoolSubscriptionQueryHandlerTests
 
         var subscription = new SchoolSubscription
         {
+            Id = Guid.NewGuid(),
             Plan = new SubscriptionPlan
             {
                 Name = "Plus",
@@ -77,7 +78,7 @@ public class GetMySchoolSubscriptionQueryHandlerTests
             StartDate = DateTimeOffset.UtcNow.AddDays(-10),
             EndDate = DateTimeOffset.UtcNow.AddDays(20),
             BillingCycle = BillingCycle.Monthly,
-            SubscriptionStatus = SubscriptionStatus.Active
+            SubscriptionStatus = SubscriptionStatus.Active,
         };
 
         _userRepoMock.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(user);
@@ -90,6 +91,7 @@ public class GetMySchoolSubscriptionQueryHandlerTests
         // Assert
         Assert.Multiple(() =>
         {
+            Assert.That(result.Id, Is.EqualTo(subscription.Id));
             Assert.That(result.PlanName, Is.EqualTo(subscription.Plan.Name));
             Assert.That(result.Description, Is.EqualTo(subscription.Plan.Description));
             Assert.That(result.MaxUsers, Is.EqualTo(subscription.Plan.MaxUsers));
@@ -97,6 +99,8 @@ public class GetMySchoolSubscriptionQueryHandlerTests
             Assert.That(result.SubscriptionStatus, Is.EqualTo(subscription.SubscriptionStatus));
             Assert.That(result.BillingCycle, Is.EqualTo(subscription.BillingCycle));
             Assert.That(result.AmountPaid, Is.EqualTo(subscription.PaymentTransaction.Amount));
+            Assert.That(result.PriceMonthly, Is.EqualTo(subscription.Plan.PriceMonthly));
+            Assert.That(result.PricePerYear, Is.EqualTo(subscription.Plan.PricePerYear));
         });
     }
 

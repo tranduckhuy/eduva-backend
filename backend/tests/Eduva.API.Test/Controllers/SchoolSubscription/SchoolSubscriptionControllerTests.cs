@@ -147,6 +147,7 @@ public class SchoolSubscriptionControllerTests
 
         var expectedResponse = new MySchoolSubscriptionResponse
         {
+            Id = Guid.NewGuid(),
             PlanName = "Plus",
             StartDate = DateTimeOffset.UtcNow,
             EndDate = DateTimeOffset.UtcNow.AddDays(30),

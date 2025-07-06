@@ -387,7 +387,8 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     PaymentStatus = table.Column<string>(type: "text", nullable: false),
                     TransactionCode = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     Amount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    BillingCycle = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {

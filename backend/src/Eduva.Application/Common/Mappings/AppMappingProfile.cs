@@ -68,7 +68,9 @@ namespace Eduva.Application.Common.Mappings
                 .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Plan.Description))
                 .ForMember(dest => dest.MaxUsers, opt => opt.MapFrom(src => src.Plan.MaxUsers))
                 .ForMember(dest => dest.StorageLimitGB, opt => opt.MapFrom(src => src.Plan.StorageLimitGB))
-                .ForMember(dest => dest.AmountPaid, opt => opt.MapFrom(src => src.PaymentTransaction.Amount));
+                .ForMember(dest => dest.AmountPaid, opt => opt.MapFrom(src => src.PaymentTransaction.Amount))
+                .ForMember(dest => dest.PriceMonthly, otp => otp.MapFrom(src => src.Plan.PriceMonthly))
+                .ForMember(dest => dest.PricePerYear, otp => otp.MapFrom(src => src.Plan.PricePerYear));
 
             // SchoolSubscription → SchoolSubscriptionResponse
             CreateMap<SchoolSubscription, SchoolSubscriptionResponse>()

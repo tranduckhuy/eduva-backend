@@ -59,7 +59,8 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Commands
                 PaymentItemId = request.PlanId,
                 Amount = finalAmount,
                 TransactionCode = transactionCode,
-                CreatedAt = now
+                CreatedAt = now,
+                BillingCycle = request.BillingCycle,
             };
 
             var transactionRepo = _unitOfWork.GetRepository<PaymentTransaction, Guid>();
