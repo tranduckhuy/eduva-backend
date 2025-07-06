@@ -360,13 +360,23 @@ namespace Eduva.Infrastructure.Extensions
 
             if (!await context.FolderLessonMaterials.AnyAsync())
             {
-                var folderLessonMaterial = new FolderLessonMaterial
+                var folderLessonMaterials = new List<FolderLessonMaterial>
                 {
-                    Id = new Guid("4d4d4d4d-4d4d-4d4d-4d4d-4d4d4d4d4d4d"),
-                    FolderId = new Guid("1a1a1a1a-1a1a-1a1a-1a1a-1a1a1a1a1a1a"), // Toán 10A1 - Bài giảng
-                    LessonMaterialId = new Guid("3c3c3c3c-3c3c-3c3c-3c3c-3c3c3c3c3c3c"), // Giới thiệu về Đại số
+                    new FolderLessonMaterial
+                    {
+                        Id = new Guid("4d4d4d4d-4d4d-4d4d-4d4d-4d4d4d4d4d4d"),
+                        FolderId = new Guid("1a1a1a1a-1a1a-1a1a-1a1a-1a1a1a1a1a1a"), // Toán 10A1 - Bài giảng
+                        LessonMaterialId = new Guid("3c3c3c3c-3c3c-3c3c-3c3c-3c3c3c3c3c3c"), // Giới thiệu về Đại số
+                    },
+                    new FolderLessonMaterial
+                    {
+                        Id = new Guid("2b2b2b2b-2b2b-2b2b-2b2b-2b2b2b2b2b2b"),
+                        FolderId = new Guid("2b2b2b2b-2b2b-2b2b-2b2b-2b2b2b2b2b2b"), // Toán 10A1 - Bài giảng Cá nhân
+                        LessonMaterialId = new Guid("3c3c3c3c-3c3c-3c3c-3c3c-3c3c3c3c3c3c"), // Giới thiệu về Đại số
+                    }
                 };
-                context.FolderLessonMaterials.Add(folderLessonMaterial);
+
+                context.FolderLessonMaterials.AddRange(folderLessonMaterials);
                 await context.SaveChangesAsync();
             }
 

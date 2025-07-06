@@ -3,7 +3,7 @@ using Eduva.Application.Common.Mappings;
 using Eduva.Application.Exceptions.Auth;
 using Eduva.Application.Exceptions.School;
 using Eduva.Application.Exceptions.SchoolSubscription;
-using Eduva.Application.Features.Payments.Queries;
+using Eduva.Application.Features.SchoolSubscriptions.Queries;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Domain.Entities;
