@@ -1,5 +1,6 @@
 using Eduva.API.Controllers.Folders;
 using Eduva.API.Models;
+using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Common.Models;
 using Eduva.Application.Features.Folders.Commands;
 using Eduva.Application.Features.Folders.Queries;
@@ -666,5 +667,163 @@ namespace Eduva.API.Test.Controllers.Folders
         }
 
         #endregion
+
+        [Test]
+        public async Task GetFolderById_ShouldReturn_ModelInvalid_WhenModelStateInvalid()
+        {
+            SetupUser(Guid.NewGuid().ToString());
+            _controller.ModelState.AddModelError("Id", "Required");
+            var result = await _controller.GetFolderById(Guid.NewGuid());
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.ModelInvalid));
+        }
+
+        [Test]
+        public async Task GetFolderById_ShouldReturn_UserIdNotFound_WhenUserIdInvalid()
+        {
+            SetupUser("invalid-guid");
+            var result = await _controller.GetFolderById(Guid.NewGuid());
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task ArchiveFolder_ShouldReturn_ModelInvalid_WhenModelStateInvalid()
+        {
+            SetupUser(Guid.NewGuid().ToString());
+            _controller.ModelState.AddModelError("Id", "Required");
+            var result = await _controller.ArchiveFolder(Guid.NewGuid());
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.ModelInvalid));
+        }
+
+        [Test]
+        public async Task ArchiveFolder_ShouldReturn_UserIdNotFound_WhenUserIdInvalid()
+        {
+            SetupUser("invalid-guid");
+            var result = await _controller.ArchiveFolder(Guid.NewGuid());
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task RestoreFolder_ShouldReturn_ModelInvalid_WhenModelStateInvalid()
+        {
+            SetupUser(Guid.NewGuid().ToString());
+            _controller.ModelState.AddModelError("Id", "Required");
+            var result = await _controller.RestoreFolder(Guid.NewGuid());
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.ModelInvalid));
+        }
+
+        [Test]
+        public async Task RestoreFolder_ShouldReturn_UserIdNotFound_WhenUserIdInvalid()
+        {
+            SetupUser("invalid-guid");
+            var result = await _controller.RestoreFolder(Guid.NewGuid());
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task DeleteFolder_ShouldReturn_ModelInvalid_WhenModelStateInvalid()
+        {
+            SetupUser(Guid.NewGuid().ToString());
+            _controller.ModelState.AddModelError("Id", "Required");
+            var result = await _controller.DeleteFolder(Guid.NewGuid());
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.ModelInvalid));
+        }
+
+        [Test]
+        public async Task DeleteFolder_ShouldReturn_UserIdNotFound_WhenUserIdInvalid()
+        {
+            SetupUser("invalid-guid");
+            var result = await _controller.DeleteFolder(Guid.NewGuid());
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task DeleteFolder_ShouldReturn_Deleted_WhenMediatorReturnsTrue()
+        {
+            var userId = Guid.NewGuid();
+            SetupUser(userId.ToString());
+            _mediatorMock.Setup(m => m.Send(It.IsAny<DeleteFolderCommand>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            var result = await _controller.DeleteFolder(Guid.NewGuid());
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Deleted));
+        }
+
+        [Test]
+        public async Task DeleteFolder_ShouldReturn_FolderDeleteFailed_WhenMediatorReturnsFalse()
+        {
+            var userId = Guid.NewGuid();
+            SetupUser(userId.ToString());
+            _mediatorMock.Setup(m => m.Send(It.IsAny<DeleteFolderCommand>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
+            var result = await _controller.DeleteFolder(Guid.NewGuid());
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.FolderDeleteFailed));
+        }
+
+        [Test]
+        public async Task DeleteFolder_ShouldReturn_AppException_StatusCode()
+        {
+            var userId = Guid.NewGuid();
+            SetupUser(userId.ToString());
+            _mediatorMock.Setup(m => m.Send(It.IsAny<DeleteFolderCommand>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new AppException(CustomCode.FolderArchiveFailed));
+            var result = await _controller.DeleteFolder(Guid.NewGuid());
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.FolderArchiveFailed));
+        }
+
+        [Test]
+        public async Task DeleteFolder_ShouldReturn_FolderDeleteFailed_On_Exception()
+        {
+            var userId = Guid.NewGuid();
+            SetupUser(userId.ToString());
+            _mediatorMock.Setup(m => m.Send(It.IsAny<DeleteFolderCommand>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new Exception("unexpected"));
+            var result = await _controller.DeleteFolder(Guid.NewGuid());
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.FolderDeleteFailed));
+        }
     }
 }
