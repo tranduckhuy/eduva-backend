@@ -1,4 +1,5 @@
-﻿using Eduva.Domain.Entities;
+﻿using Eduva.Application.Features.Auth.Enums;
+using Eduva.Domain.Entities;
 using Eduva.Infrastructure.Email;
 
 namespace Eduva.Infrastructure.Test.Email
@@ -52,7 +53,15 @@ namespace Eduva.Infrastructure.Test.Email
             var clientUrl = "https://example.com/reset";
             var subject = "Reset Your Password";
 
-            var message = MailMessageHelper.CreateMessage(user, token, clientUrl, "reset-password.html", subject);
+            var message = MailMessageHelper.CreateMessage(new EmailMessageContext
+            {
+                User = user,
+                Token = token,
+                ClientUrl = clientUrl,
+                TemplateFileName = "reset-password.html",
+                Subject = subject,
+                Action = AuthEmailAction.ResetPassword
+            });
 
             Assert.Multiple(() =>
             {
@@ -78,7 +87,15 @@ namespace Eduva.Infrastructure.Test.Email
                 FullName = null
             };
 
-            var message = MailMessageHelper.CreateMessage(user, "token321", "https://client.com/verify", "reset.html", "Reset");
+            var message = MailMessageHelper.CreateMessage(new EmailMessageContext
+            {
+                User = user,
+                Token = "token321",
+                ClientUrl = "https://client.com/verify",
+                TemplateFileName = "reset.html",
+                Subject = "Reset",
+                Action = AuthEmailAction.ResetPassword
+            });
 
             Assert.That(message.To[0].DisplayName, Is.EqualTo(user.Email));
         }
@@ -92,7 +109,15 @@ namespace Eduva.Infrastructure.Test.Email
             var user = new ApplicationUser { Email = "x@x.com", FullName = "X" };
 
             var clientUrl = "https://app.com/invite?x=1";
-            var message = MailMessageHelper.CreateMessage(user, "abc", clientUrl, "query.html", "Join");
+
+            var message = MailMessageHelper.CreateMessage(new EmailMessageContext
+            {
+                User = user,
+                Token = "abc",
+                ClientUrl = clientUrl,
+                TemplateFileName = "query.html",
+                Subject = "Join"
+            });
 
             Assert.That(message.Content, Does.Contain("x=1"));
             Assert.That(message.Content, Does.Contain("token=abc"));
@@ -103,9 +128,15 @@ namespace Eduva.Infrastructure.Test.Email
         public void CreateMessage_TemplateFileNotFound_ThrowsFileNotFoundException()
         {
             var user = new ApplicationUser { Email = "no@file.com", FullName = "No File" };
-
             var ex = Assert.Throws<FileNotFoundException>(() =>
-                MailMessageHelper.CreateMessage(user, "token", "https://client.com", "notfound.html", "Subject"));
+                    MailMessageHelper.CreateMessage(new EmailMessageContext
+                    {
+                        User = user,
+                        Token = "token",
+                        ClientUrl = "https://client.com",
+                        TemplateFileName = "notfound.html",
+                        Subject = "Subject"
+                    }));
 
             Assert.That(ex!.Message, Does.Contain("Email template file not found"));
         }
