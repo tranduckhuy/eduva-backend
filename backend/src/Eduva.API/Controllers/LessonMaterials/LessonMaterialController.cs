@@ -138,5 +138,40 @@ namespace Eduva.API.Controllers.LessonMaterials
                 return (CustomCode.Success, response);
             });
         }
+
+        [HttpGet("pending-approval")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
+        [Authorize(Roles = $"{nameof(Role.SchoolAdmin)},{nameof(Role.ContentModerator)},{nameof(Role.Teacher)}")]
+        public async Task<IActionResult> GetPendingLessonMaterials([FromQuery] GetPendingLessonMaterialsRequest request)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Respond(CustomCode.UserIdNotFound);
+            }
+
+            int schoolIdInt = int.TryParse(User.FindFirstValue(SCHOOL_ID_CLAIM), out var parsedSchoolId) ? parsedSchoolId : 0;
+
+            if (schoolIdInt <= 0)
+            {
+                return Respond(CustomCode.SchoolNotFound);
+            }
+
+            // Get user roles
+            var userRoles = User.Claims
+                .Where(c => c.Type == ClaimTypes.Role)
+                .Select(c => c.Value)
+                .ToList();
+
+            var lessonMaterialSpecParam = AppMapper<ModelMappingProfile>.Mapper.Map<LessonMaterialSpecParam>(request);
+
+            var query = new GetPendingLessonMaterialsQuery(lessonMaterialSpecParam, Guid.Parse(userId), schoolIdInt, userRoles);
+
+            return await HandleRequestAsync(async () =>
+            {
+                var response = await _mediator.Send(query);
+                return (CustomCode.Success, response);
+            });
+        }
     }
 }
