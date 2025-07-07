@@ -245,7 +245,7 @@ namespace Eduva.Infrastructure.Persistence.Repositories
             };
         }
 
-        private IQueryable<LessonMaterial> ApplyLessonMaterialFilters(IQueryable<LessonMaterial> query, LessonMaterialFilterOptions? filterOptions)
+        private static IQueryable<LessonMaterial> ApplyLessonMaterialFilters(IQueryable<LessonMaterial> query, LessonMaterialFilterOptions? filterOptions)
         {
             if (filterOptions == null)
                 return query;
