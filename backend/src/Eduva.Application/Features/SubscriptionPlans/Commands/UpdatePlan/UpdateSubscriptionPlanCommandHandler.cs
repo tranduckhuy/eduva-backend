@@ -34,7 +34,7 @@ namespace Eduva.Application.Features.SubscriptionPlans.Commands.UpdatePlan
             repo.Update(plan);
             await _unitOfWork.CommitAsync();
 
-            return AppMapper.Mapper.Map<SubscriptionPlanResponse>(plan);
+            return AppMapper<AppMappingProfile>.Mapper.Map<SubscriptionPlanResponse>(plan);
         }
     }
 }

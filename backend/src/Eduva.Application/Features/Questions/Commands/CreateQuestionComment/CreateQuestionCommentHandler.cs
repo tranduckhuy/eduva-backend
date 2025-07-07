@@ -162,7 +162,7 @@ namespace Eduva.Application.Features.Questions.Commands.CreateQuestionComment
 
         private static QuestionCommentResponse BuildCommentResponse(QuestionComment comment, ApplicationUser user, string userRole)
         {
-            var response = AppMapper.Mapper.Map<QuestionCommentResponse>(comment);
+            var response = AppMapper<AppMappingProfile>.Mapper.Map<QuestionCommentResponse>(comment);
 
             response.CreatedByName = user.FullName;
             response.CreatedByAvatar = user.AvatarUrl;

@@ -30,7 +30,7 @@ namespace Eduva.Application.Test.Features.Users.Commands
             _handler = new UpdateUserProfileHandler(_unitOfWorkMock.Object);
 
             // Initialize AutoMapper
-            _ = AppMapper.Mapper;
+            _ = AppMapper<AppMappingProfile>.Mapper;
         }
 
         #endregion

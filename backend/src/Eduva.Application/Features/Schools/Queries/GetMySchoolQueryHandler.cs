@@ -30,7 +30,7 @@ namespace Eduva.Application.Features.Schools.Queries
 
             var school = await _schoolRepo.GetByIdAsync(user.SchoolId.Value) ?? throw new SchoolNotFoundException();
 
-            return AppMapper.Mapper.Map<SchoolResponse>(school);
+            return AppMapper<AppMappingProfile>.Mapper.Map<SchoolResponse>(school);
         }
     }
 }

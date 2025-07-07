@@ -25,7 +25,7 @@ namespace Eduva.Application.Features.SubscriptionPlans.Queries
                 .GetRepository<SubscriptionPlan, int>()
                 .GetWithSpecAsync(spec);
 
-            return AppMapper.Mapper.Map<Pagination<SubscriptionPlanResponse>>(result);
+            return AppMapper<AppMappingProfile>.Mapper.Map<Pagination<SubscriptionPlanResponse>>(result);
         }
     }
 }

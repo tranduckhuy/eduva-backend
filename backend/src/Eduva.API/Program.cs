@@ -1,4 +1,4 @@
-using Eduva.API.Adapters;
+﻿using Eduva.API.Adapters;
 using Eduva.API.Hubs;
 using Eduva.API.Middlewares;
 using Eduva.Application.Contracts.Hubs;
@@ -9,6 +9,7 @@ using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,6 +29,25 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(setup =>
 {
+    setup.SwaggerDoc("v1", new OpenApiInfo { Title = "API", Version = "v1" });
+
+    setup.TagActionsBy(api =>
+    {
+        if (api.GroupName != null)
+        {
+            return [api.GroupName];
+        }
+
+        ControllerActionDescriptor? controllerActionDescriptor = api.ActionDescriptor as ControllerActionDescriptor;
+        if (controllerActionDescriptor != null)
+        {
+            return [controllerActionDescriptor.ControllerName];
+        }
+
+        throw new InvalidOperationException("Unable to determine tag for endpoint.");
+    });
+    setup.DocInclusionPredicate((name, api) => true);
+
     // Include 'SecurityScheme' to use JWT Authentication
     var jwtSecurityScheme = new OpenApiSecurityScheme
     {

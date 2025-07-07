@@ -48,7 +48,7 @@ namespace Eduva.Application.Features.Questions.Queries
 
             var spec = new MyQuestionsSpecification(request.Param, request.UserId, user.SchoolId);
             var result = await _repository.GetWithSpecAsync(spec);
-            var response = AppMapper.Mapper.Map<Pagination<QuestionResponse>>(result);
+            var response = AppMapper<AppMappingProfile>.Mapper.Map<Pagination<QuestionResponse>>(result);
 
             foreach (var question in response.Data)
             {

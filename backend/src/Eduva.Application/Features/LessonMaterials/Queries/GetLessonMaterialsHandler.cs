@@ -24,7 +24,7 @@ namespace Eduva.Application.Features.LessonMaterials.Queries
             var result = await _unitOfWork.GetCustomRepository<ILessonMaterialRepository>()
                 .GetWithSpecAsync(spec);
 
-            var lessonMaterials = AppMapper.Mapper.Map<Pagination<LessonMaterialResponse>>(result);
+            var lessonMaterials = AppMapper<AppMappingProfile>.Mapper.Map<Pagination<LessonMaterialResponse>>(result);
 
             return lessonMaterials;
         }

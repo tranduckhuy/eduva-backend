@@ -44,7 +44,7 @@ namespace Eduva.Application.Features.Classes.Queries.GetStudentById
             {
                 throw new AppException(CustomCode.Unauthorized);
             }
-            var response = AppMapper.Mapper.Map<StudentClassResponse>(studentClass);
+            var response = AppMapper<AppMappingProfile>.Mapper.Map<StudentClassResponse>(studentClass);
             response.StudentName = student.FullName ?? string.Empty;
             response.ClassName = classroom.Name;
             response.TeacherName = (await userRepository.GetByIdAsync(classroom.TeacherId))?.FullName ?? string.Empty;

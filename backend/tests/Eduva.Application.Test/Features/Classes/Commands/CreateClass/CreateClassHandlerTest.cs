@@ -61,7 +61,7 @@ namespace Eduva.Application.Test.Features.Classes.Commands.CreateClass
             _folderRepoMock.Setup(r => r.AddAsync(It.IsAny<Folder>())).Returns(Task.CompletedTask);
             _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
 
-            // Mock AppMapper.Mapper
+            // Mock AppMapper<AppMappingProfile>.Mapper
             var classroom = new Classroom { Id = Guid.NewGuid(), Name = command.Name, TeacherId = teacherId, SchoolId = schoolId };
             var classResponse = new ClassResponse { Id = classroom.Id, Name = classroom.Name, TeacherId = teacherId, SchoolId = schoolId };
 
@@ -69,7 +69,7 @@ namespace Eduva.Application.Test.Features.Classes.Commands.CreateClass
             mockMapper.Setup(m => m.Map<Classroom>(It.IsAny<CreateClassCommand>())).Returns(classroom);
             mockMapper.Setup(m => m.Map<ClassResponse>(It.IsAny<Classroom>())).Returns(classResponse);
 
-            var appMapperType = typeof(AppMapper);
+            var appMapperType = typeof(AppMapper<AppMappingProfile>);
             var mapperField = appMapperType.GetField("_mapper", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
             var originalMapper = mapperField?.GetValue(null);
 
@@ -216,7 +216,7 @@ namespace Eduva.Application.Test.Features.Classes.Commands.CreateClass
             _folderRepoMock.Setup(r => r.AddAsync(It.IsAny<Folder>())).Returns(Task.CompletedTask);
             _unitOfWorkMock.Setup(u => u.CommitAsync()).ThrowsAsync(new Exception("DB error"));
 
-            // Mock AppMapper.Mapper
+            // Mock AppMapper<AppMappingProfile>.Mapper
             var classroom = new Classroom { Id = Guid.NewGuid(), Name = command.Name, TeacherId = teacherId, SchoolId = schoolId };
             var classResponse = new ClassResponse { Id = classroom.Id, Name = classroom.Name, TeacherId = teacherId, SchoolId = schoolId };
 
@@ -224,7 +224,7 @@ namespace Eduva.Application.Test.Features.Classes.Commands.CreateClass
             mockMapper.Setup(m => m.Map<Classroom>(It.IsAny<CreateClassCommand>())).Returns(classroom);
             mockMapper.Setup(m => m.Map<ClassResponse>(It.IsAny<Classroom>())).Returns(classResponse);
 
-            var appMapperType = typeof(AppMapper);
+            var appMapperType = typeof(AppMapper<AppMappingProfile>);
             var mapperField = appMapperType.GetField("_mapper", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
             var originalMapper = mapperField?.GetValue(null);
 

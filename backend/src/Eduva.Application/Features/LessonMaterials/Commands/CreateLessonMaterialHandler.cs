@@ -34,7 +34,7 @@ namespace Eduva.Application.Features.LessonMaterials.Commands
                 foreach (var materialRequest in request.LessonMaterials)
                 {
                     // Map to entity
-                    var lessonMaterial = AppMapper.Mapper.Map<LessonMaterial>(materialRequest);
+                    var lessonMaterial = AppMapper<AppMappingProfile>.Mapper.Map<LessonMaterial>(materialRequest);
 
                     // Set default status and visibility
                     lessonMaterial.Id = Guid.NewGuid();

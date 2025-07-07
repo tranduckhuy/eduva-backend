@@ -25,7 +25,7 @@ namespace Eduva.Application.Features.Payments.Queries
 
             var result = await _repository.GetWithSpecAsync(spec);
 
-            return AppMapper.Mapper.Map<Pagination<PaymentResponse>>(result);
+            return AppMapper<AppMappingProfile>.Mapper.Map<Pagination<PaymentResponse>>(result);
         }
     }
 }

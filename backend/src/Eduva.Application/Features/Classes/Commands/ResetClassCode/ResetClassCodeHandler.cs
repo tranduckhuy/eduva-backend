@@ -75,7 +75,7 @@ namespace Eduva.Application.Features.Classes.Commands.ResetClassCode
             {
                 await _unitOfWork.CommitAsync();
 
-                var response = AppMapper.Mapper.Map<ClassResponse>(classroom);
+                var response = AppMapper<AppMappingProfile>.Mapper.Map<ClassResponse>(classroom);
                 response.TeacherName = classroom.Teacher?.FullName ?? string.Empty;
                 response.SchoolName = classroom.School?.Name ?? string.Empty;
 
