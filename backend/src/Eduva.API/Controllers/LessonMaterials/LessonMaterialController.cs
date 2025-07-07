@@ -90,8 +90,6 @@ namespace Eduva.API.Controllers.LessonMaterials
                 return Respond(CustomCode.UserIdNotFound);
             }
 
-            var schoolId = User.FindFirstValue(SCHOOL_ID_CLAIM);
-
             int schoolIdInt = int.TryParse(User.FindFirstValue(SCHOOL_ID_CLAIM), out var parsedSchoolId) ? parsedSchoolId : 0;
 
             if (schoolIdInt <= 0)

@@ -1,5 +1,5 @@
-using FluentValidation;
 using Eduva.Domain.Enums;
+using FluentValidation;
 
 namespace Eduva.Application.Features.LessonMaterials.Queries.Validators
 {

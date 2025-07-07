@@ -8,12 +8,10 @@ namespace Eduva.Application.Features.LessonMaterials.Queries
 {
     public class GetPendingLessonMaterialsQueryValidator : AbstractValidator<GetPendingLessonMaterialsQuery>
     {
-        private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<ApplicationUser> _userManager;
 
         public GetPendingLessonMaterialsQueryValidator(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
         {
-            _unitOfWork = unitOfWork;
             _userManager = userManager;
 
             RuleFor(x => x.UserId)
@@ -24,8 +22,8 @@ namespace Eduva.Application.Features.LessonMaterials.Queries
 
             RuleFor(x => x.UserRoles)
                 .NotEmpty().WithMessage("User roles are required.")
-                .Must(roles => roles.Any(role => role == nameof(Role.SchoolAdmin) || 
-                                               role == nameof(Role.ContentModerator) || 
+                .Must(roles => roles.Any(role => role == nameof(Role.SchoolAdmin) ||
+                                               role == nameof(Role.ContentModerator) ||
                                                role == nameof(Role.Teacher)))
                 .WithMessage("User must have SchoolAdmin, ContentModerator, or Teacher role to access pending materials.");
 
@@ -53,7 +51,7 @@ namespace Eduva.Application.Features.LessonMaterials.Queries
             }
 
             // School admins and content moderators can see all pending materials in their school
-            if (query.UserRoles.Contains(nameof(Role.SchoolAdmin)) || 
+            if (query.UserRoles.Contains(nameof(Role.SchoolAdmin)) ||
                 query.UserRoles.Contains(nameof(Role.ContentModerator)))
             {
                 return true;

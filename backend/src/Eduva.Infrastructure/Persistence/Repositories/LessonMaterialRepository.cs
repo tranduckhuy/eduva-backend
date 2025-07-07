@@ -224,7 +224,7 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                 .ToListAsync(cancellationToken);
         }
 
-        private IQueryable<LessonMaterial> ApplyLessonMaterialSorting(IQueryable<LessonMaterial> query, string? sortBy, string? sortDirection)
+        private static IQueryable<LessonMaterial> ApplyLessonMaterialSorting(IQueryable<LessonMaterial> query, string? sortBy, string? sortDirection)
         {
             if (string.IsNullOrWhiteSpace(sortBy))
             {
