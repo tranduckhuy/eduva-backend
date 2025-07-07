@@ -408,6 +408,100 @@ namespace Eduva.API.Test.Controllers.SystemConfigs
         #region Edge Cases and Validation Tests
 
         [Test]
+        public void CreateSystemConfigDto_ShouldHaveRequiredValidation()
+        {
+            // Arrange
+            var dto = new CreateSystemConfigDto { Key = null!, Value = null! };
+            var validationContext = new ValidationContext(dto);
+            var validationResults = new List<ValidationResult>();
+
+            // Act
+            var isValid = Validator.TryValidateObject(dto, validationContext, validationResults, true);
+
+            Assert.Multiple(() =>
+            {
+                // Assert
+                Assert.That(isValid, Is.False);
+                Assert.That(validationResults.Any(v => v.MemberNames.Contains("Key")), Is.True);
+                Assert.That(validationResults.Any(v => v.MemberNames.Contains("Value")), Is.True);
+            });
+        }
+
+        [Test]
+        public void CreateSystemConfigDto_ShouldHaveStringLengthValidation()
+        {
+            // Arrange
+            var dto = new CreateSystemConfigDto
+            {
+                Key = new string('A', 101), // Exceeds 100 character limit
+                Value = new string('B', 501), // Exceeds 500 character limit
+                Description = new string('C', 256) // Exceeds 255 character limit
+            };
+            var validationContext = new ValidationContext(dto);
+            var validationResults = new List<ValidationResult>();
+
+            // Act
+            var isValid = Validator.TryValidateObject(dto, validationContext, validationResults, true);
+
+            Assert.Multiple(() =>
+            {
+                // Assert
+                Assert.That(isValid, Is.False);
+                Assert.That(validationResults.Any(v => v.MemberNames.Contains("Key")), Is.True);
+                Assert.That(validationResults.Any(v => v.MemberNames.Contains("Value")), Is.True);
+                Assert.That(validationResults.Any(v => v.MemberNames.Contains("Description")), Is.True);
+            });
+        }
+
+        [Test]
+        public void CreateSystemConfigDto_ShouldPassValidation_WhenValidData()
+        {
+            // Arrange
+            var dto = new CreateSystemConfigDto
+            {
+                Key = "VALID_KEY",
+                Value = "Valid value content",
+                Description = "Valid description"
+            };
+            var validationContext = new ValidationContext(dto);
+            var validationResults = new List<ValidationResult>();
+
+            // Act
+            var isValid = Validator.TryValidateObject(dto, validationContext, validationResults, true);
+
+            Assert.Multiple(() =>
+            {
+                // Assert
+                Assert.That(isValid, Is.True);
+                Assert.That(validationResults, Is.Empty);
+            });
+        }
+
+        [Test]
+        public void CreateSystemConfigDto_ShouldPassValidation_WhenDescriptionIsNull()
+        {
+            // Arrange
+            var dto = new CreateSystemConfigDto
+            {
+                Key = "VALID_KEY",
+                Value = "Valid value content",
+                Description = null // Description is optional
+            };
+            var validationContext = new ValidationContext(dto);
+            var validationResults = new List<ValidationResult>();
+
+            // Act
+            var isValid = Validator.TryValidateObject(dto, validationContext, validationResults, true);
+
+            Assert.Multiple(() =>
+            {
+                // Assert
+                Assert.That(isValid, Is.True);
+                Assert.That(validationResults, Is.Empty);
+            });
+        }
+
+        [Test]
         public async Task UpdateAsync_ShouldReturnBadRequest_WhenDtoIsInvalid()
         {
             // Arrange

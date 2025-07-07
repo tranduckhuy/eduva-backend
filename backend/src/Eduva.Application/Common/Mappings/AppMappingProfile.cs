@@ -30,6 +30,7 @@ namespace Eduva.Application.Common.Mappings
             // User mappings
             CreateMap<ApplicationUser, UserResponse>()
                 .ForMember(dest => dest.School, opt => opt.MapFrom(src => src.School))
+                .ForMember(dest => dest.CreditBalance, opt => opt.MapFrom(src => src.TotalCredits))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
                 .ForMember(dest => dest.LastModifiedAt, opt => opt.MapFrom(src => src.LastModifiedAt))
                 .ForMember(dest => dest.LastLoginAt, opt => opt.MapFrom(src => src.LastLoginAt));
@@ -69,6 +70,7 @@ namespace Eduva.Application.Common.Mappings
                 .ForMember(dest => dest.MaxUsers, opt => opt.MapFrom(src => src.Plan.MaxUsers))
                 .ForMember(dest => dest.StorageLimitGB, opt => opt.MapFrom(src => src.Plan.StorageLimitGB))
                 .ForMember(dest => dest.AmountPaid, opt => opt.MapFrom(src => src.PaymentTransaction.Amount))
+                .ForMember(dest => dest.PlanId, opt => opt.MapFrom(src => src.Plan.Id))
                 .ForMember(dest => dest.PriceMonthly, otp => otp.MapFrom(src => src.Plan.PriceMonthly))
                 .ForMember(dest => dest.PricePerYear, otp => otp.MapFrom(src => src.Plan.PricePerYear));
 
