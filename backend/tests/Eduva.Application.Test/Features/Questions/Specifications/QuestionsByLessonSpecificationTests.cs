@@ -77,7 +77,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
             var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
 
             // Assert
-            Assert.That(spec.Includes.Count, Is.EqualTo(3));
+            Assert.That(spec.Includes, Has.Count.EqualTo(3));
         }
 
         #endregion
