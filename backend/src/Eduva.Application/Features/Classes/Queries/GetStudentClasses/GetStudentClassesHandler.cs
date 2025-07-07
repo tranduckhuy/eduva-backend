@@ -32,7 +32,7 @@ namespace Eduva.Application.Features.Classes.Queries.GetStudentClasses
                 .GetWithSpecAsync(spec);
 
             // Map to response model
-            var studentClasses = AppMapper.Mapper.Map<Pagination<StudentClassResponse>>(result);
+            var studentClasses = AppMapper<AppMappingProfile>.Mapper.Map<Pagination<StudentClassResponse>>(result);
 
             if (studentClasses.Data.Count > 0)
             {

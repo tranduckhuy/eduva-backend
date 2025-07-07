@@ -43,7 +43,7 @@ namespace Eduva.Application.Features.Classes.Queries.GetClassById
                 throw new AppException(CustomCode.Unauthorized);
             }
 
-            var response = AppMapper.Mapper.Map<ClassResponse>(classroom);
+            var response = AppMapper<AppMappingProfile>.Mapper.Map<ClassResponse>(classroom);
             response.TeacherName = teacher?.FullName ?? string.Empty;
             response.SchoolName = school?.Name ?? string.Empty;
             response.TeacherAvatarUrl = teacher?.AvatarUrl ?? string.Empty;

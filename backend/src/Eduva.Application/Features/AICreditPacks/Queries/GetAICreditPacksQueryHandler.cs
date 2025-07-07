@@ -25,7 +25,7 @@ namespace Eduva.Application.Features.AICreditPacks.Queries
                 .GetRepository<AICreditPack, int>()
                 .GetWithSpecAsync(spec);
 
-            return AppMapper.Mapper.Map<Pagination<AICreditPackResponse>>(result);
+            return AppMapper<AppMappingProfile>.Mapper.Map<Pagination<AICreditPackResponse>>(result);
         }
     }
 }

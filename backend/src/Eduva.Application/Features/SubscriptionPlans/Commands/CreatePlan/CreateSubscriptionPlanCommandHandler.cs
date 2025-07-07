@@ -36,7 +36,7 @@ namespace Eduva.Application.Features.SubscriptionPlans.Commands.CreatePlan
             await repo.AddAsync(plan);
             await _unitOfWork.CommitAsync();
 
-            return AppMapper.Mapper.Map<SubscriptionPlanResponse>(plan);
+            return AppMapper<AppMappingProfile>.Mapper.Map<SubscriptionPlanResponse>(plan);
         }
     }
 }

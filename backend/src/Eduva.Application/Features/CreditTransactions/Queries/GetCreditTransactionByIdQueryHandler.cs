@@ -26,7 +26,7 @@ namespace Eduva.Application.Features.CreditTransactions.Queries
                 throw new AppException(CustomCode.CreditTransactionNotFound);
             }
 
-            return AppMapper.Mapper.Map<CreditTransactionResponse>(creditTransaction);
+            return AppMapper<AppMappingProfile>.Mapper.Map<CreditTransactionResponse>(creditTransaction);
         }
     }
 }

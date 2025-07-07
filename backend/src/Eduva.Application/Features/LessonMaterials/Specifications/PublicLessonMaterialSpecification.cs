@@ -1,10 +1,11 @@
 ﻿using Eduva.Application.Common.Specifications;
 using Eduva.Domain.Entities;
+using Eduva.Domain.Enums;
 using System.Linq.Expressions;
 
 namespace Eduva.Application.Features.LessonMaterials.Specifications
 {
-    public class LessonMaterialSpecification : ISpecification<LessonMaterial>
+    public class PublicLessonMaterialSpecification : ISpecification<LessonMaterial>
     {
         public Expression<Func<LessonMaterial, bool>> Criteria { get; private set; }
 
@@ -18,17 +19,16 @@ namespace Eduva.Application.Features.LessonMaterials.Specifications
 
         public int Take { get; private set; }
 
-        public LessonMaterialSpecification(LessonMaterialSpecParam param)
+        public PublicLessonMaterialSpecification(LessonMaterialSpecParam param)
         {
             Criteria = lm =>
                 (!param.CreatedByUserId.HasValue || lm.CreatedByUserId == param.CreatedByUserId) &&
                 (string.IsNullOrEmpty(param.SearchTerm) || lm.Title.ToLower().Contains(param.SearchTerm.ToLower())) &&
                 (string.IsNullOrEmpty(param.Tag) || lm.Tag == param.Tag) &&
                 (!param.ContentType.HasValue || lm.ContentType == param.ContentType) &&
-                (!param.ClassId.HasValue || lm.FolderLessonMaterials.Any(flm => flm.Folder.ClassId == param.ClassId)) &&
-                (!param.FolderId.HasValue || lm.FolderLessonMaterials.Any(flm => flm.FolderId == param.FolderId)) &&
-                (!param.LessonStatus.HasValue || lm.LessonStatus == param.LessonStatus) &&
-                (!param.Visibility.HasValue || lm.Visibility == param.Visibility);
+                (lm.LessonStatus == LessonMaterialStatus.Approved) &&
+                (lm.Visibility == LessonMaterialVisibility.School) &&
+                (lm.Status == param.EntityStatus);
 
             Includes.Add(lm => lm.CreatedByUser);
 
@@ -42,9 +42,13 @@ namespace Eduva.Application.Features.LessonMaterials.Specifications
                         ? q => q.OrderByDescending(lm => lm.Title)
                         : q => q.OrderBy(lm => lm.Title),
 
-                    _ => isDescending
+                    "createdat" => isDescending
                         ? q => q.OrderByDescending(lm => lm.CreatedAt)
-                        : q => q.OrderBy(lm => lm.CreatedAt)
+                        : q => q.OrderBy(lm => lm.CreatedAt),
+
+                    _ => isDescending
+                        ? q => q.OrderByDescending(lm => lm.LastModifiedAt)
+                        : q => q.OrderBy(lm => lm.LastModifiedAt),
                 };
             }
 

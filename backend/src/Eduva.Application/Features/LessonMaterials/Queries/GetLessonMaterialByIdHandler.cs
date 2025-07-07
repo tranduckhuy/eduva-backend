@@ -38,7 +38,7 @@ namespace Eduva.Application.Features.LessonMaterials.Queries
             }
 
 
-            var response = AppMapper.Mapper.Map<LessonMaterialResponse>(lessonMaterial);
+            var response = AppMapper<AppMappingProfile>.Mapper.Map<LessonMaterialResponse>(lessonMaterial);
             response.SourceUrl = _storageService.GetReadableUrl(lessonMaterial.SourceUrl);
 
             return response;

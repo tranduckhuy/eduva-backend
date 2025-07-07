@@ -55,7 +55,7 @@ namespace Eduva.Application.Features.Classes.Queries.GetClasses
             var result = await _unitOfWork.GetCustomRepository<IClassroomRepository>()
                 .GetWithSpecAsync(spec);
 
-            var classrooms = AppMapper.Mapper.Map<Pagination<ClassResponse>>(result);
+            var classrooms = AppMapper<AppMappingProfile>.Mapper.Map<Pagination<ClassResponse>>(result);
 
             if (classrooms.Data.Count > 0)
             {

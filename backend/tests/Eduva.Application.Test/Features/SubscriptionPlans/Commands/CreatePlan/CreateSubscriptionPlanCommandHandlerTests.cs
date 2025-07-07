@@ -29,7 +29,7 @@ namespace Eduva.Application.Test.Features.SubscriptionPlans.Commands.CreatePlan
 
             _handler = new CreateSubscriptionPlanCommandHandler(_unitOfWorkMock.Object);
 
-            _ = AppMapper.Mapper;
+            _ = AppMapper<AppMappingProfile>.Mapper;
         }
 
         #endregion

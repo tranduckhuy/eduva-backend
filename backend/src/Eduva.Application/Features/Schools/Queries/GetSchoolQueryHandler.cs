@@ -25,7 +25,7 @@ namespace Eduva.Application.Features.Schools.Queries
                 .GetRepository<School, int>()
                 .GetWithSpecAsync(spec);
 
-            return AppMapper.Mapper.Map<Pagination<SchoolResponse>>(result);
+            return AppMapper<AppMappingProfile>.Mapper.Map<Pagination<SchoolResponse>>(result);
         }
     }
 }
