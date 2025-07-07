@@ -13,6 +13,8 @@ namespace Eduva.Application.Features.SubscriptionPlans.Responses
         public decimal PricePerYear { get; set; }
         public bool IsRecommended { get; set; } = false;
         public EntityStatus Status { get; set; }
+        public DateTimeOffset CreatedAt { get; set; }
+        public DateTimeOffset? LastModifiedAt { get; set; }
 
         public int NumberOfSchoolsUsing { get; set; }
     }

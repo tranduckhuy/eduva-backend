@@ -27,6 +27,48 @@ public class AICreditPackSpecificationTests
     #region Tests
 
     [Test]
+    public void Should_Order_By_LastModified_Desc()
+    {
+        var param = new AICreditPackSpecParam
+        {
+            SortBy = "lastmodified",
+            SortDirection = "desc"
+        };
+
+        var spec = new AICreditPackSpecification(param);
+        var mockData = new[]
+        {
+        new AICreditPack { Name = "Pack1", LastModifiedAt = DateTimeOffset.UtcNow.AddDays(-1) },
+        new AICreditPack { Name = "Pack2", LastModifiedAt = DateTimeOffset.UtcNow }
+    }.AsQueryable();
+
+        var sorted = spec.OrderBy!(mockData).ToList();
+
+        Assert.That(sorted[0].Name, Is.EqualTo("Pack2"));
+    }
+
+    [Test]
+    public void Should_Order_By_CreatedAt_Asc()
+    {
+        var param = new AICreditPackSpecParam
+        {
+            SortBy = "createdat",
+            SortDirection = "asc"
+        };
+
+        var spec = new AICreditPackSpecification(param);
+        var mockData = new[]
+        {
+        new AICreditPack { Name = "Pack1", CreatedAt = DateTimeOffset.UtcNow },
+        new AICreditPack { Name = "Pack2", CreatedAt = DateTimeOffset.UtcNow.AddDays(-1) }
+    }.AsQueryable();
+
+        var sorted = spec.OrderBy!(mockData).ToList();
+
+        Assert.That(sorted[0].Name, Is.EqualTo("Pack2")); // Oldest first
+    }
+
+    [Test]
     public void OrderBy_ShouldHandleAscendingDirection()
     {
         var param = new AICreditPackSpecParam

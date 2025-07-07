@@ -84,7 +84,8 @@ public class ConfirmPayOSPaymentReturnCommandHandlerTests
             PaymentStatus = PaymentStatus.Pending,
             PaymentPurpose = PaymentPurpose.SchoolSubscription,
             PaymentItemId = 1,
-            Amount = 999999 // not equal to PriceMonthly
+            Amount = 999999, // not equal to PriceMonthly
+            BillingCycle = BillingCycle.Yearly
         };
 
         var school = new School { Id = 1, Status = EntityStatus.Active };
@@ -176,7 +177,8 @@ public class ConfirmPayOSPaymentReturnCommandHandlerTests
             TransactionCode = "1",
             PaymentStatus = PaymentStatus.Pending,
             PaymentPurpose = PaymentPurpose.SchoolSubscription,
-            PaymentItemId = 1
+            PaymentItemId = 1,
+            BillingCycle = BillingCycle.Monthly
         };
 
         var school = new School { Id = 1, Status = EntityStatus.Inactive };
@@ -274,7 +276,8 @@ public class ConfirmPayOSPaymentReturnCommandHandlerTests
             PaymentStatus = PaymentStatus.Pending,
             PaymentPurpose = PaymentPurpose.SchoolSubscription,
             UserId = _userId,
-            PaymentItemId = 1
+            PaymentItemId = 1,
+            BillingCycle = BillingCycle.Monthly
         };
 
         _transactionRepoMock.Setup(x => x.GetByTransactionCodeAsync("9999", It.IsAny<CancellationToken>())).ReturnsAsync(transaction);
@@ -292,7 +295,8 @@ public class ConfirmPayOSPaymentReturnCommandHandlerTests
             PaymentStatus = PaymentStatus.Pending,
             PaymentPurpose = PaymentPurpose.SchoolSubscription,
             UserId = _userId,
-            PaymentItemId = 999
+            PaymentItemId = 999,
+            BillingCycle = BillingCycle.Monthly
         };
 
         var request = new ConfirmPayOSPaymentReturnCommand
