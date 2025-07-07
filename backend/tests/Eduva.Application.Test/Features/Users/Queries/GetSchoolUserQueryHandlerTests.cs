@@ -26,7 +26,7 @@ namespace Eduva.Application.Test.Features.Users.Queries
         public void OneTimeSetUp()
         {
             // Force AutoMapper initialization
-            _ = AppMapper.Mapper;
+            _ = AppMapper<AppMappingProfile>.Mapper;
         }
 
         [SetUp]

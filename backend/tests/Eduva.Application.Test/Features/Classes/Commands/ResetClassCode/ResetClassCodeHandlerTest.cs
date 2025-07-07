@@ -79,7 +79,7 @@ namespace Eduva.Application.Test.Features.Classes.Commands.ResetClassCode
                     SchoolName = c.School?.Name ?? ""
                 });
 
-            var appMapperType = typeof(AppMapper);
+            var appMapperType = typeof(AppMapper<AppMappingProfile>);
             var mapperField = appMapperType.GetField("_mapper", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
             var originalMapper = mapperField?.GetValue(null);
 
@@ -206,7 +206,7 @@ namespace Eduva.Application.Test.Features.Classes.Commands.ResetClassCode
                     SchoolName = c.School?.Name ?? ""
                 });
 
-            var appMapperType = typeof(AppMapper);
+            var appMapperType = typeof(AppMapper<AppMappingProfile>);
             var mapperField = appMapperType.GetField("_mapper", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
             var originalMapper = mapperField?.GetValue(null);
 
