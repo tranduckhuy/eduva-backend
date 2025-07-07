@@ -10,5 +10,7 @@ namespace Eduva.Application.Features.AICreditPacks.Responses
         public int Credits { get; set; }
         public int BonusCredits { get; set; }
         public EntityStatus Status { get; set; }
+        public DateTimeOffset CreatedAt { get; set; }
+        public DateTimeOffset? LastModifiedAt { get; set; }
     }
 }

@@ -360,13 +360,23 @@ namespace Eduva.Infrastructure.Extensions
 
             if (!await context.FolderLessonMaterials.AnyAsync())
             {
-                var folderLessonMaterial = new FolderLessonMaterial
+                var folderLessonMaterials = new List<FolderLessonMaterial>
                 {
-                    Id = new Guid("4d4d4d4d-4d4d-4d4d-4d4d-4d4d4d4d4d4d"),
-                    FolderId = new Guid("1a1a1a1a-1a1a-1a1a-1a1a-1a1a1a1a1a1a"), // Toán 10A1 - Bài giảng
-                    LessonMaterialId = new Guid("3c3c3c3c-3c3c-3c3c-3c3c-3c3c3c3c3c3c"), // Giới thiệu về Đại số
+                    new FolderLessonMaterial
+                    {
+                        Id = new Guid("4d4d4d4d-4d4d-4d4d-4d4d-4d4d4d4d4d4d"),
+                        FolderId = new Guid("1a1a1a1a-1a1a-1a1a-1a1a-1a1a1a1a1a1a"), // Toán 10A1 - Bài giảng
+                        LessonMaterialId = new Guid("3c3c3c3c-3c3c-3c3c-3c3c-3c3c3c3c3c3c"), // Giới thiệu về Đại số
+                    },
+                    new FolderLessonMaterial
+                    {
+                        Id = new Guid("2b2b2b2b-2b2b-2b2b-2b2b-2b2b2b2b2b2b"),
+                        FolderId = new Guid("2b2b2b2b-2b2b-2b2b-2b2b-2b2b2b2b2b2b"), // Toán 10A1 - Bài giảng Cá nhân
+                        LessonMaterialId = new Guid("3c3c3c3c-3c3c-3c3c-3c3c-3c3c3c3c3c3c"), // Giới thiệu về Đại số
+                    }
                 };
-                context.FolderLessonMaterials.Add(folderLessonMaterial);
+
+                context.FolderLessonMaterials.AddRange(folderLessonMaterials);
                 await context.SaveChangesAsync();
             }
 
@@ -411,20 +421,28 @@ namespace Eduva.Infrastructure.Extensions
                         Value = "https://firebasestorage.googleapis.com/v0/b/gdupa-2fa82.appspot.com/o/avatar%2Fdefault_avatar.png?alt=media&token=8654c964-e226-4777-ac66-b60d4182d287",
                         Description = "Default avatar URL for users."
                     },
-                    new SystemConfig
+                     new SystemConfig
                     {
                         Id = 2,
-                        Key = SystemConfigKeys.PAYOS_RETURN_URL,
-                        Value = "https://localhost:9001/api/payments/payos-return",
-                        Description = "Return URL for PayOS payment gateway."
+                        Key = SystemConfigKeys.IMPORT_USERS_TEMPLATE,
+                        Value = "https://firebasestorage.googleapis.com/v0/b/gdupa-2fa82.appspot.com/o/excel-template%2Fuser-import-template.xlsx?alt=media&token=a1863610-2ab1-4d81-893b-bef6f3f6f4e0",
+                        Description = "Template for importing users."
                     },
                     new SystemConfig
                     {
                         Id = 3,
-                        Key = SystemConfigKeys.IMPORT_USERS_TEMPLATE,
-                        Value = "https://firebasestorage.googleapis.com/v0/b/gdupa-2fa82.appspot.com/o/excel-template%2Fuser-import-template.xlsx?alt=media&token=a1863610-2ab1-4d81-893b-bef6f3f6f4e0",
-                        Description = "Template for importing users."
-                    }
+                        Key = SystemConfigKeys.PAYOS_RETURN_URL_PLAN,
+                        Value = "https://school.eduva.tech/school-admin",
+                        Description = "Default return URL payment plan for users."
+                    },
+                    new SystemConfig
+                    {
+                        Id = 4,
+                        Key = SystemConfigKeys.PAYOS_RETURN_URL_PACK,
+                        Value = "https://school.eduva.tech/teacher",
+                        Description = "Default return URL payment pack for users."
+                    },
+
                 };
                 context.SystemConfigs.AddRange(systemConfigs);
                 await context.SaveChangesAsync();

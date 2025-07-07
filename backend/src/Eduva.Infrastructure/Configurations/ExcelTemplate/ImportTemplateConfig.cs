@@ -1,16 +1,23 @@
-﻿using Eduva.Domain.Enums;
+﻿using Eduva.Application.Interfaces.Services;
+using Eduva.Domain.Enums;
+using Eduva.Shared.Constants;
 
 namespace Eduva.Infrastructure.Configurations.ExcelTemplate
 {
     public class ImportTemplateConfig
     {
-        public string UrlTemplateImportUser { get; set; } = string.Empty;
+        private readonly ISystemConfigHelper _systemConfigHelper;
 
-        public string? GetUrl(ImportTemplateType type)
+        public ImportTemplateConfig(ISystemConfigHelper systemConfigHelper)
+        {
+            _systemConfigHelper = systemConfigHelper;
+        }
+
+        public async Task<string?> GetUrl(ImportTemplateType type)
         {
             return type switch
             {
-                ImportTemplateType.User => UrlTemplateImportUser,
+                ImportTemplateType.User => await _systemConfigHelper.GetValueAsync(SystemConfigKeys.IMPORT_USERS_TEMPLATE, ""),
                 _ => null
             };
         }

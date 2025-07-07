@@ -551,5 +551,126 @@ namespace Eduva.Application.Test.Features.Folders.Commands
         }
 
         #endregion
+
+        [Test]
+        public async Task Handle_Should_Decrement_Order_Of_Folders_Between_Original_And_New_Order()
+        {
+            var userId = Guid.NewGuid();
+            var folderId = Guid.NewGuid();
+
+            var folder = new Folder
+            {
+                Id = folderId,
+                Status = EntityStatus.Active,
+                OwnerType = OwnerType.Personal,
+                UserId = userId,
+                Order = 1
+            };
+
+            var folder2 = new Folder
+            {
+                Id = Guid.NewGuid(),
+                Status = EntityStatus.Active,
+                OwnerType = OwnerType.Personal,
+                UserId = userId,
+                Order = 2
+            };
+
+            var folder3 = new Folder
+            {
+                Id = Guid.NewGuid(),
+                Status = EntityStatus.Active,
+                OwnerType = OwnerType.Personal,
+                UserId = userId,
+                Order = 3
+            };
+
+            var repoMock = new Mock<IGenericRepository<Folder, Guid>>();
+            repoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
+            repoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Folder> { folder, folder2, folder3 });
+            repoMock.Setup(r => r.Update(It.IsAny<Folder>()));
+
+            var unitOfWorkMock = new Mock<IUnitOfWork>();
+            unitOfWorkMock.Setup(u => u.GetRepository<Folder, Guid>()).Returns(repoMock.Object);
+            unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
+
+            var loggerMock = new Mock<ILogger<UpdateFolderOrderHandler>>();
+            var handler = new UpdateFolderOrderHandler(unitOfWorkMock.Object, loggerMock.Object);
+
+            var command = new UpdateFolderOrderCommand
+            {
+                Id = folderId,
+                CurrentUserId = userId,
+                Order = 3
+            };
+
+            await handler.Handle(command, CancellationToken.None);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(folder2.Order, Is.EqualTo(1));
+                Assert.That(folder3.Order, Is.EqualTo(2));
+                Assert.That(folder.Order, Is.EqualTo(3));
+            });
+        }
+
+
+        [Test]
+        public async Task HasPermissionToUpdateFolder_Should_Return_True_For_Personal_Owner()
+        {
+            var userId = Guid.NewGuid();
+            var folder = new Folder
+            {
+                Id = Guid.NewGuid(),
+                OwnerType = OwnerType.Personal,
+                UserId = userId
+            };
+
+            var unitOfWorkMock = new Mock<IUnitOfWork>();
+            var loggerMock = new Mock<ILogger<UpdateFolderOrderHandler>>();
+            var handler = new UpdateFolderOrderHandler(unitOfWorkMock.Object, loggerMock.Object);
+
+            var result = handler.GetType()
+            .GetMethod("HasPermissionToUpdateFolder", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+            .Invoke(handler, new object[] { folder, userId });
+
+            Assert.That(await (Task<bool>)result!, Is.True);
+
+        }
+
+        [Test]
+        public async Task HasPermissionToUpdateFolder_Should_Return_True_For_ClassTeacher()
+        {
+            var userId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
+            var folder = new Folder
+            {
+                Id = Guid.NewGuid(),
+                OwnerType = OwnerType.Class,
+                ClassId = classId
+            };
+
+            var classroom = new Classroom
+            {
+                Id = classId,
+                TeacherId = userId,
+                SchoolId = 1
+            };
+
+            var classRepoMock = new Mock<IGenericRepository<Classroom, Guid>>();
+            classRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+
+            var unitOfWorkMock = new Mock<IUnitOfWork>();
+            unitOfWorkMock.Setup(u => u.GetRepository<Classroom, Guid>()).Returns(classRepoMock.Object);
+
+            var loggerMock = new Mock<ILogger<UpdateFolderOrderHandler>>();
+            var handler = new UpdateFolderOrderHandler(unitOfWorkMock.Object, loggerMock.Object);
+
+            var result = handler.GetType()
+            .GetMethod("HasPermissionToUpdateFolder", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+            .Invoke(handler, new object[] { folder, userId });
+
+            Assert.That(await (Task<bool>)result!, Is.True);
+        }
     }
 }

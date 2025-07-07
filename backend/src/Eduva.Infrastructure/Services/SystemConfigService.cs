@@ -54,7 +54,7 @@ namespace Eduva.Infrastructure.Services
 
             if (configs != null && configs.Any())
             {
-                var configDtos = configs.Select(AppMapper.Mapper.Map<SystemConfigDto>).ToList();
+                var configDtos = configs.Select(AppMapper<AppMappingProfile>.Mapper.Map<SystemConfigDto>).ToList();
                 _cache.Set(cacheKey, configDtos, TimeSpan.FromMinutes(CACHE_MINUTES));
                 return (configDtos, CustomCode.Success);
             }
@@ -71,7 +71,7 @@ namespace Eduva.Infrastructure.Services
             if (existing == null)
                 return CustomCode.KeyConfigNotFound;
 
-            var updatedConfig = AppMapper.Mapper.Map<SystemConfig>(config);
+            var updatedConfig = AppMapper<AppMappingProfile>.Mapper.Map<SystemConfig>(config);
 
             await _repository.UpdateAsync(updatedConfig);
             InvalidateCache(config.Key);

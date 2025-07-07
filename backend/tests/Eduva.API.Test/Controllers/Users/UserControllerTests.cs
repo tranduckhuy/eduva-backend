@@ -2,15 +2,18 @@
 using Eduva.API.Models;
 using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Common.Models;
+using Eduva.Application.Exceptions.Auth;
 using Eduva.Application.Features.Schools.Responses;
 using Eduva.Application.Features.Users.Commands;
 using Eduva.Application.Features.Users.Queries;
 using Eduva.Application.Features.Users.Requests;
 using Eduva.Application.Features.Users.Responses;
 using Eduva.Application.Features.Users.Specifications;
+using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using Eduva.Infrastructure.Configurations.ExcelTemplate;
+using Eduva.Shared.Constants;
 using Eduva.Shared.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -29,10 +32,10 @@ namespace Eduva.API.Test.Controllers.Users
     {
         private Mock<IMediator> _mediatorMock = default!;
         private Mock<ILogger<UserController>> _loggerMock = default!;
-        private UserController _controller = default!;
-        private Mock<IOptions<ImportTemplateConfig>> _importTemplateOptionsMock = default!;
+        private Mock<ISystemConfigHelper> _systemConfigHelperMock = default!;
         private Mock<IHttpClientFactory> _httpClientFactoryMock = default!;
         private Mock<UserManager<ApplicationUser>> _userManagerMock = default!;
+        private UserController _controller = default!;
 
 
         #region UserController Setup
@@ -42,7 +45,7 @@ namespace Eduva.API.Test.Controllers.Users
         {
             _mediatorMock = new Mock<IMediator>();
             _loggerMock = new Mock<ILogger<UserController>>();
-            _importTemplateOptionsMock = new Mock<IOptions<ImportTemplateConfig>>();
+            _systemConfigHelperMock = new Mock<ISystemConfigHelper>();
             _httpClientFactoryMock = new Mock<IHttpClientFactory>();
             var storeMock = new Mock<IUserStore<ApplicationUser>>();
 
@@ -58,13 +61,16 @@ namespace Eduva.API.Test.Controllers.Users
                 Mock.Of<ILogger<UserManager<ApplicationUser>>>()
             );
 
-            _importTemplateOptionsMock
-                .Setup(o => o.Value)
-                .Returns(new ImportTemplateConfig { UrlTemplateImportUser = "https://mock-url.com/template.xlsx" });
+            // Setup system config helper mock
+            _systemConfigHelperMock
+                .Setup(x => x.GetValueAsync(SystemConfigKeys.IMPORT_USERS_TEMPLATE, It.IsAny<string>()))
+                .ReturnsAsync("https://mock-url.com/template.xlsx");
+
+            var importTemplateConfig = new ImportTemplateConfig(_systemConfigHelperMock.Object);
 
             _controller = new UserController(
                 _loggerMock.Object,
-                _importTemplateOptionsMock.Object,
+                importTemplateConfig,
                 _httpClientFactoryMock.Object,
                 _mediatorMock.Object,
                 _userManagerMock.Object
@@ -248,6 +254,182 @@ namespace Eduva.API.Test.Controllers.Users
             var objectResult = result as ObjectResult;
             Assert.That(objectResult, Is.Not.Null);
             Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
+        }
+
+        #endregion
+
+        #region GetSchoolUserAsync Tests
+
+        [Test]
+        public async Task GetSchoolUserAsync_ShouldReturnUserIdNotFound_WhenSchoolAdminIdIsNull()
+        {
+            // Arrange
+            SetupUser(null);
+            var userId = Guid.NewGuid();
+
+            // Act
+            var result = await _controller.GetSchoolUserAsync(userId);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task GetSchoolUserAsync_ShouldReturnUserIdNotFound_WhenSchoolAdminIdIsInvalid()
+        {
+            // Arrange
+            SetupUser("invalid-guid");
+            var userId = Guid.NewGuid();
+
+            // Act
+            var result = await _controller.GetSchoolUserAsync(userId);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task GetSchoolUserAsync_ShouldReturnOk_WhenRequestIsValid()
+        {
+            // Arrange
+            var schoolAdminId = Guid.NewGuid();
+            var targetUserId = Guid.NewGuid();
+            SetupUser(schoolAdminId.ToString());
+
+            var expectedUserResponse = new UserResponse
+            {
+                Id = targetUserId,
+                FullName = "Test User",
+                Email = "test@example.com",
+                PhoneNumber = "1234567890",
+                AvatarUrl = "https://example.com/avatar.jpg",
+                School = new SchoolResponse
+                {
+                    Id = 1,
+                    Name = "Test School",
+                    ContactEmail = "contact@test.edu.vn",
+                    ContactPhone = "123456789",
+                    WebsiteUrl = "https://test.edu.vn"
+                },
+                Roles = new List<string> { "Student" },
+                CreditBalance = 100,
+                Is2FAEnabled = true,
+                IsEmailConfirmed = true,
+                Status = EntityStatus.Active,
+                UserSubscriptionResponse = new UserSubscriptionResponse
+                {
+                    IsSubscriptionActive = true,
+                    SubscriptionEndDate = DateTime.UtcNow.AddDays(30)
+                }
+            };
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<GetSchoolUserQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(expectedUserResponse);
+
+            // Act
+            var result = await _controller.GetSchoolUserAsync(targetUserId);
+
+            // Assert
+            Assert.That(result, Is.Not.Null, "Controller result is null");
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null, "Result is not ObjectResult");
+
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null, "Response value is null");
+            Assert.Multiple(() =>
+            {
+                Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success), "Status code mismatch");
+                Assert.That(response.Data, Is.Not.Null, "Response data is null");
+            });
+
+            // Cast the data to UserResponse
+            var userData = response.Data as UserResponse;
+            Assert.That(userData, Is.Not.Null, "User data is null");
+            Assert.That(userData!.Id, Is.EqualTo(expectedUserResponse.Id), "User ID mismatch");
+
+            _mediatorMock.Verify(m => m.Send(
+                It.Is<GetSchoolUserQuery>(q => q.TargetUserId == targetUserId && q.SchoolAdminId == schoolAdminId),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Test]
+        public async Task GetSchoolUserAsync_ShouldReturnInternalServerError_WhenExceptionThrown()
+        {
+            // Arrange
+            var schoolAdminId = Guid.NewGuid();
+            var targetUserId = Guid.NewGuid();
+            SetupUser(schoolAdminId.ToString());
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<GetSchoolUserQuery>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new Exception("Database error"));
+
+            // Act
+            var result = await _controller.GetSchoolUserAsync(targetUserId);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
+        }
+
+        [Test]
+        public async Task GetSchoolUserAsync_ShouldReturnAppException_WhenHandlerThrowsAppException()
+        {
+            // Arrange
+            var schoolAdminId = Guid.NewGuid();
+            var targetUserId = Guid.NewGuid();
+            SetupUser(schoolAdminId.ToString());
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<GetSchoolUserQuery>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new AppException(CustomCode.UserNotPartOfSchool));
+
+            // Act
+            var result = await _controller.GetSchoolUserAsync(targetUserId);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserNotPartOfSchool));
+        }
+
+        [Test]
+        public async Task GetSchoolUserAsync_ShouldReturnUserNotExistsException_WhenHandlerThrowsUserNotExistsException()
+        {
+            // Arrange
+            var schoolAdminId = Guid.NewGuid();
+            var targetUserId = Guid.NewGuid();
+            SetupUser(schoolAdminId.ToString());
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<GetSchoolUserQuery>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new UserNotExistsException());
+
+            // Act
+            var result = await _controller.GetSchoolUserAsync(targetUserId);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserNotExists));
         }
 
         #endregion
@@ -494,7 +676,16 @@ namespace Eduva.API.Test.Controllers.Users
             var identity = new ClaimsIdentity(claims, "TestAuth");
             var principal = new ClaimsPrincipal(identity);
 
-            var controller = new UserController(_loggerMock.Object, _importTemplateOptionsMock.Object, _httpClientFactoryMock.Object, _mediatorMock.Object, _userManagerMock.Object);
+            var importTemplateConfig = new ImportTemplateConfig(_systemConfigHelperMock.Object);
+
+            var controller = new UserController(
+                _loggerMock.Object,
+                importTemplateConfig,
+                _httpClientFactoryMock.Object,
+                _mediatorMock.Object,
+                _userManagerMock.Object
+            );
+
             controller.ControllerContext = new ControllerContext
             {
                 HttpContext = new DefaultHttpContext { User = principal }
@@ -804,8 +995,12 @@ namespace Eduva.API.Test.Controllers.Users
             var type = ImportTemplateType.User;
             var fileBytes = new byte[] { 11, 22, 33 };
 
-            _importTemplateOptionsMock.Setup(o => o.Value)
-                .Returns(new ImportTemplateConfig { UrlTemplateImportUser = "https://mock-url.com/template.xlsx" });
+            // Setup system config to return the template URL
+            _systemConfigHelperMock
+                .Setup(x => x.GetValueAsync(SystemConfigKeys.IMPORT_USERS_TEMPLATE, It.IsAny<string>()))
+                .ReturnsAsync("https://mock-url.com/template.xlsx");
+
+            var importTemplateConfig = new ImportTemplateConfig(_systemConfigHelperMock.Object);
 
             var handler = new Mock<HttpMessageHandler>();
             handler.Protected()
@@ -821,7 +1016,7 @@ namespace Eduva.API.Test.Controllers.Users
 
             _controller = new UserController(
                 _loggerMock.Object,
-                _importTemplateOptionsMock.Object,
+                importTemplateConfig,
                 _httpClientFactoryMock.Object,
                 _mediatorMock.Object,
                 _userManagerMock.Object
@@ -835,8 +1030,13 @@ namespace Eduva.API.Test.Controllers.Users
             {
                 Assert.That(fileResult!.FileContents, Is.EqualTo(fileBytes));
                 Assert.That(fileResult.ContentType, Is.EqualTo("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
-                Assert.That(fileResult.FileDownloadName, Is.EqualTo("user_import_template.xlsx")); // or similar
+                Assert.That(fileResult.FileDownloadName, Is.EqualTo("user_import_template.xlsx"));
             });
+
+            // Verify system config was called
+            _systemConfigHelperMock.Verify(
+                x => x.GetValueAsync(SystemConfigKeys.IMPORT_USERS_TEMPLATE, It.IsAny<string>()),
+                Times.Once);
         }
 
         [Test]
@@ -856,9 +1056,12 @@ namespace Eduva.API.Test.Controllers.Users
                 .Returns(new HttpClient(mockClient.Object));
 
             _httpClientFactoryMock = clientFactory;
+
+            var importTemplateConfig = new ImportTemplateConfig(_systemConfigHelperMock.Object);
+
             _controller = new UserController(
                 _loggerMock.Object,
-                _importTemplateOptionsMock.Object,
+                importTemplateConfig,
                 _httpClientFactoryMock.Object,
                 _mediatorMock.Object,
                 _userManagerMock.Object
@@ -874,8 +1077,19 @@ namespace Eduva.API.Test.Controllers.Users
         [Test]
         public async Task DownloadImportTemplate_ShouldReturnInvalidTemplateType_WhenUrlIsEmpty()
         {
-            _importTemplateOptionsMock.Setup(x => x.Value)
-                .Returns(new ImportTemplateConfig());
+            _systemConfigHelperMock
+                .Setup(x => x.GetValueAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync("");
+
+            var importTemplateConfig = new ImportTemplateConfig(_systemConfigHelperMock.Object);
+
+            _controller = new UserController(
+                _loggerMock.Object,
+                importTemplateConfig,
+                _httpClientFactoryMock.Object,
+                _mediatorMock.Object,
+                _userManagerMock.Object
+            );
 
             var result = await _controller.DownloadImportTemplate((ImportTemplateType)999);
 
@@ -901,9 +1115,12 @@ namespace Eduva.API.Test.Controllers.Users
                 .Returns(new HttpClient(mockClient.Object));
 
             _httpClientFactoryMock = clientFactory;
+
+            var importTemplateConfig = new ImportTemplateConfig(_systemConfigHelperMock.Object);
+
             _controller = new UserController(
                 _loggerMock.Object,
-                _importTemplateOptionsMock.Object,
+                importTemplateConfig,
                 _httpClientFactoryMock.Object,
                 _mediatorMock.Object,
                 _userManagerMock.Object

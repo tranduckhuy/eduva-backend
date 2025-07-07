@@ -25,7 +25,7 @@ namespace Eduva.Application.Features.CreditTransactions.Queries
                 .GetRepository<UserCreditTransaction, Unit>()
                 .GetWithSpecAsync(spec);
 
-            return AppMapper.Mapper.Map<Pagination<CreditTransactionResponse>>(result);
+            return AppMapper<AppMappingProfile>.Mapper.Map<Pagination<CreditTransactionResponse>>(result);
         }
     }
 }

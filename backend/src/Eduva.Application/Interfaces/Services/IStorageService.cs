@@ -3,6 +3,7 @@
     public interface IStorageService
     {
         Task<ICollection<string>> GenerateUploadSasTokens(List<string> blobNames);
+        Task<ICollection<string>> GenerateUploadSasTokensWithQuotaCheck(List<string> blobNames, List<long> fileSizes, int schoolId);
         string GetReadableUrl(string blobUrl);
         Task DeleteFileAsync(string blobName);
         Task DeleteRangeFileAsync(List<string> blobNames);

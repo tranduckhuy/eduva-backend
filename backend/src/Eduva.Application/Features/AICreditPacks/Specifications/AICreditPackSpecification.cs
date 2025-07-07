@@ -46,8 +46,8 @@ namespace Eduva.Application.Features.AICreditPacks.Specifications
             return sortBy switch
             {
                 "name" => isDescending
-                    ? q => q.OrderByDescending(x => x.Name)
-                    : q => q.OrderBy(x => x.Name),
+             ? q => q.OrderByDescending(x => x.Name)
+             : q => q.OrderBy(x => x.Name),
 
                 "price" => isDescending
                     ? q => q.OrderByDescending(x => x.Price)
@@ -60,6 +60,14 @@ namespace Eduva.Application.Features.AICreditPacks.Specifications
                 "bonuscredits" => isDescending
                     ? q => q.OrderByDescending(x => x.BonusCredits)
                     : q => q.OrderBy(x => x.BonusCredits),
+
+                "createdat" => isDescending
+                    ? q => q.OrderByDescending(x => x.CreatedAt)
+                    : q => q.OrderBy(x => x.CreatedAt),
+
+                "lastmodified" => isDescending
+                    ? q => q.OrderByDescending(x => x.LastModifiedAt)
+                    : q => q.OrderBy(x => x.LastModifiedAt),
 
                 _ => isDescending
                     ? q => q.OrderByDescending(x => x.CreatedAt)

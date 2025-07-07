@@ -35,7 +35,7 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Queries
                 }
             }
 
-            return AppMapper.Mapper.Map<SchoolSubscriptionResponse>(subscription);
+            return AppMapper<AppMappingProfile>.Mapper.Map<SchoolSubscriptionResponse>(subscription);
         }
     }
 }

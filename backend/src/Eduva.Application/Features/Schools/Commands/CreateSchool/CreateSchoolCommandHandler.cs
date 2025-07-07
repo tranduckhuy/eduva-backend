@@ -49,7 +49,7 @@ namespace Eduva.Application.Features.Schools.Commands.CreateSchool
             userRepo.Update(user);
             await _unitOfWork.CommitAsync();
 
-            return AppMapper.Mapper.Map<SchoolResponse>(school);
+            return AppMapper<AppMappingProfile>.Mapper.Map<SchoolResponse>(school);
         }
     }
 }

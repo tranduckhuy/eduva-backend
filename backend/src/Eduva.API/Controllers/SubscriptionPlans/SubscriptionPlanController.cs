@@ -1,5 +1,4 @@
-﻿using Eduva.API.Attributes;
-using Eduva.API.Controllers.Base;
+﻿using Eduva.API.Controllers.Base;
 using Eduva.API.Models;
 using Eduva.Application.Common.Models;
 using Eduva.Application.Features.SubscriptionPlans.Commands.ActivatePlan;
@@ -44,7 +43,6 @@ namespace Eduva.API.Controllers.SubscriptionPlans
 
         [HttpGet("{id}")]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
-        [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         [ProducesResponseType(typeof(ApiResponse<SubscriptionPlanResponse>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetSubscriptionPlanById(int id)
         {
@@ -59,7 +57,6 @@ namespace Eduva.API.Controllers.SubscriptionPlans
 
         [HttpGet("{id}/details")]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
-        [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         [ProducesResponseType(typeof(ApiResponse<SubscriptionPlanDetailResponse>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetSubscriptionPlanDetail(int id)
         {

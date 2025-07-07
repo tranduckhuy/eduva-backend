@@ -27,6 +27,27 @@ namespace Eduva.Application.Test.Features.SubscriptionPlans.Specifications
         #region SubscriptionPlanSpecification Tests
 
         [Test]
+        public void Should_Order_By_LastModified_Asc()
+        {
+            var param = new SubscriptionPlanSpecParam
+            {
+                SortBy = "lastmodified",
+                SortDirection = "asc"
+            };
+
+            var spec = new SubscriptionPlanSpecification(param);
+            var mockData = new[]
+            {
+                new SubscriptionPlan { Name = "Plan1", LastModifiedAt = DateTimeOffset.UtcNow },
+                new SubscriptionPlan { Name = "Plan2", LastModifiedAt = DateTimeOffset.UtcNow.AddDays(-1) }
+            }.AsQueryable();
+
+            var sorted = spec.OrderBy!(mockData).ToList();
+
+            Assert.That(sorted[0].Name, Is.EqualTo("Plan2")); // Least recently modified first
+        }
+
+        [Test]
         public void Should_Not_Filter_By_ActiveOnly_When_Null()
         {
             var param = new SubscriptionPlanSpecParam { ActiveOnly = null };

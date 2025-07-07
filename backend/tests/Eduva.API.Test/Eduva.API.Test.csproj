@@ -34,4 +34,8 @@
     <Using Include="NUnit.Framework" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Controllers\LessonMaterials\" />
+  </ItemGroup>
+
 </Project>

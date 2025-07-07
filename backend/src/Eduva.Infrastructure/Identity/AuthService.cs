@@ -144,6 +144,8 @@ namespace Eduva.Infrastructure.Identity
                 });
             }
 
+            user.LastLoginAt = DateTimeOffset.UtcNow;
+
             var userRoles = await _userManager.GetRolesAsync(user);
 
             var userClaims = await _userManager.GetClaimsAsync(user);
@@ -200,6 +202,8 @@ namespace Eduva.Infrastructure.Identity
             }
 
             await GetOtpProvider().ForceClearOtpClaimsAsync(_userManager, user);
+
+            user.LastLoginAt = DateTimeOffset.UtcNow;
 
             var roles = await _userManager.GetRolesAsync(user);
             var claims = await _userManager.GetClaimsAsync(user);
@@ -315,6 +319,7 @@ namespace Eduva.Infrastructure.Identity
             if (populateExp)
             {
                 user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(30);
+                user.LastLoginAt = DateTimeOffset.UtcNow;
             }
 
             await _userManager.UpdateAsync(user);
