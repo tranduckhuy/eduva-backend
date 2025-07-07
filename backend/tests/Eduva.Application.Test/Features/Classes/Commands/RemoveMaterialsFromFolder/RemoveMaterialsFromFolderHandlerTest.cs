@@ -193,5 +193,105 @@ namespace Eduva.Application.Test.Features.Classes.Commands.RemoveMaterialsFromFo
             var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, CancellationToken.None));
             Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.Unauthorized));
         }
+
+
+        [Test]
+        public void Handle_Should_Throw_When_Class_Not_Found()
+        {
+            var userId = Guid.NewGuid();
+            var folderId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
+            var materialId = Guid.NewGuid();
+
+            var folder = new Folder { Id = folderId, ClassId = classId, OwnerType = OwnerType.Class };
+            var user = new ApplicationUser { Id = userId, SchoolId = 1 };
+            var roles = new List<string> { nameof(Role.Teacher) };
+
+            var command = new RemoveMaterialsFromFolderCommand
+            {
+                FolderId = folderId,
+                ClassId = classId,
+                MaterialIds = new List<Guid> { materialId },
+                CurrentUserId = userId
+            };
+
+            _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
+            _userManagerMock.Setup(u => u.FindByIdAsync(userId.ToString())).ReturnsAsync(user);
+            _userManagerMock.Setup(u => u.GetRolesAsync(user)).ReturnsAsync(roles);
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync((Classroom?)null);
+
+            var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, CancellationToken.None));
+            Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.ClassNotFound));
+        }
+
+        [Test]
+        public async Task Handle_Should_Allow_When_Teacher_Of_Class()
+        {
+            var userId = Guid.NewGuid();
+            var folderId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
+            var materialId = Guid.NewGuid();
+
+            var folder = new Folder { Id = folderId, ClassId = classId, OwnerType = OwnerType.Class };
+            var classroom = new Classroom { Id = classId, TeacherId = userId, SchoolId = 1 };
+            var user = new ApplicationUser { Id = userId, SchoolId = 1 };
+            var roles = new List<string> { nameof(Role.Teacher) };
+            var folderMaterial = new FolderLessonMaterial { Id = Guid.NewGuid(), FolderId = folderId, LessonMaterialId = materialId };
+
+            var command = new RemoveMaterialsFromFolderCommand
+            {
+                FolderId = folderId,
+                ClassId = classId,
+                MaterialIds = new List<Guid> { materialId },
+                CurrentUserId = userId
+            };
+
+            _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
+            _userManagerMock.Setup(u => u.FindByIdAsync(userId.ToString())).ReturnsAsync(user);
+            _userManagerMock.Setup(u => u.GetRolesAsync(user)).ReturnsAsync(roles);
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+            _folderLessonMaterialRepoMock.Setup(r => r.GetAllAsync())
+                .ReturnsAsync(new List<FolderLessonMaterial> { folderMaterial });
+            _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
+
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            Assert.That(result, Is.True);
+        }
+
+        [Test]
+        public async Task Handle_Should_Allow_When_SchoolAdmin_Of_Same_School()
+        {
+            var userId = Guid.NewGuid();
+            var folderId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
+            var materialId = Guid.NewGuid();
+
+            var folder = new Folder { Id = folderId, ClassId = classId, OwnerType = OwnerType.Class };
+            var classroom = new Classroom { Id = classId, TeacherId = Guid.NewGuid(), SchoolId = 1 };
+            var user = new ApplicationUser { Id = userId, SchoolId = 1 };
+            var roles = new List<string> { nameof(Role.SchoolAdmin) };
+            var folderMaterial = new FolderLessonMaterial { Id = Guid.NewGuid(), FolderId = folderId, LessonMaterialId = materialId };
+
+            var command = new RemoveMaterialsFromFolderCommand
+            {
+                FolderId = folderId,
+                ClassId = classId,
+                MaterialIds = new List<Guid> { materialId },
+                CurrentUserId = userId
+            };
+
+            _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
+            _userManagerMock.Setup(u => u.FindByIdAsync(userId.ToString())).ReturnsAsync(user);
+            _userManagerMock.Setup(u => u.GetRolesAsync(user)).ReturnsAsync(roles);
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+            _folderLessonMaterialRepoMock.Setup(r => r.GetAllAsync())
+                .ReturnsAsync(new List<FolderLessonMaterial> { folderMaterial });
+            _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
+
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            Assert.That(result, Is.True);
+        }
     }
 }
