@@ -15,6 +15,7 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Responses
         public SubscriptionStatus SubscriptionStatus { get; set; }
         public BillingCycle BillingCycle { get; set; }
 
+        public int PlanId { get; set; }
         public decimal PriceMonthly { get; set; }
         public decimal PricePerYear { get; set; }
 

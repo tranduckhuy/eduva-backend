@@ -29,7 +29,8 @@ namespace Eduva.Application.Features.SubscriptionPlans.Commands.CreatePlan
                 PriceMonthly = request.PriceMonthly,
                 PricePerYear = request.PricePerYear,
                 IsRecommended = request.IsRecommended,
-                Status = EntityStatus.Active
+                Status = EntityStatus.Active,
+                LastModifiedAt = DateTimeOffset.UtcNow,
             };
 
             await repo.AddAsync(plan);

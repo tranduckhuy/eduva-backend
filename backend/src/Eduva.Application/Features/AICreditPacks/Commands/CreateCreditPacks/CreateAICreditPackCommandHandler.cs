@@ -25,7 +25,7 @@ namespace Eduva.Application.Features.AICreditPacks.Commands.CreateCreditPacks
                 Credits = request.Credits,
                 BonusCredits = request.BonusCredits,
                 Status = EntityStatus.Active,
-                CreatedAt = DateTime.UtcNow
+                LastModifiedAt = DateTimeOffset.UtcNow,
             };
 
             await repo.AddAsync(pack);
