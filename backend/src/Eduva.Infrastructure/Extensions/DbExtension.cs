@@ -153,7 +153,6 @@ namespace Eduva.Infrastructure.Extensions
             {
                 var school = new School
                 {
-                    Id = 1,
                     Name = "FPT University",
                     Address = "FPT University Quy Nhon AI Campus",
                     ContactEmail = "fptuniversity@fpt.edu.vn",
@@ -167,7 +166,6 @@ namespace Eduva.Infrastructure.Extensions
             {
                 var plan = new SubscriptionPlan
                 {
-                    Id = 1,
                     Name = "Basic Plan",
                     Description = "Basic plan for small schools with limited features.",
                     MaxUsers = 100,
@@ -183,7 +181,6 @@ namespace Eduva.Infrastructure.Extensions
             {
                 var creditPack = new AICreditPack
                 {
-                    Id = 1,
                     Name = "Basic AI Credit Pack",
                     Credits = 1000,
                     Price = 50000m, // 50,000 VND
@@ -263,7 +260,6 @@ namespace Eduva.Infrastructure.Extensions
             {
                 var aiServicePricing = new AIServicePricing
                 {
-                    Id = 1,
                     ServiceType = AIServiceType.GenAudio,
                     PricePerMinuteCredits = 10,
                 };
@@ -416,28 +412,24 @@ namespace Eduva.Infrastructure.Extensions
                 {
                     new SystemConfig
                     {
-                        Id = 1,
                         Key = SystemConfigKeys.DEFAULT_AVATAR_URL,
                         Value = "https://firebasestorage.googleapis.com/v0/b/gdupa-2fa82.appspot.com/o/avatar%2Fdefault_avatar.png?alt=media&token=8654c964-e226-4777-ac66-b60d4182d287",
                         Description = "Default avatar URL for users."
                     },
                      new SystemConfig
                     {
-                        Id = 2,
                         Key = SystemConfigKeys.IMPORT_USERS_TEMPLATE,
                         Value = "https://firebasestorage.googleapis.com/v0/b/gdupa-2fa82.appspot.com/o/excel-template%2Fuser-import-template.xlsx?alt=media&token=a1863610-2ab1-4d81-893b-bef6f3f6f4e0",
                         Description = "Template for importing users."
                     },
                     new SystemConfig
                     {
-                        Id = 3,
                         Key = SystemConfigKeys.PAYOS_RETURN_URL_PLAN,
                         Value = "https://school.eduva.tech/school-admin",
                         Description = "Default return URL payment plan for users."
                     },
                     new SystemConfig
                     {
-                        Id = 4,
                         Key = SystemConfigKeys.PAYOS_RETURN_URL_PACK,
                         Value = "https://school.eduva.tech/teacher",
                         Description = "Default return URL payment pack for users."
