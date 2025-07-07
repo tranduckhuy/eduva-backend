@@ -5,10 +5,10 @@ using MediatR;
 
 namespace Eduva.Application.Features.LessonMaterials.Queries
 {
-    public record GetLessonMaterialsQuery(
+    public record GetSchoolPublicLessonMaterialsQuery(
         LessonMaterialSpecParam LessonMaterialSpecParam,
         Guid UserId,
-        int? SchoolId
+        int SchoolId
     )
     : IRequest<Pagination<LessonMaterialResponse>>;
 }

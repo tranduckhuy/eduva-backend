@@ -1,4 +1,5 @@
-﻿using Eduva.Domain.Entities;
+﻿using Eduva.Application.Features.LessonMaterials.DTOs;
+using Eduva.Domain.Entities;
 
 namespace Eduva.Application.Interfaces.Repositories
 {
@@ -14,5 +15,14 @@ namespace Eduva.Application.Interfaces.Repositories
         Task<Dictionary<Guid, int>> GetApprovedMaterialCountsByFolderAsync(List<Guid> folderIds, CancellationToken cancellationToken = default);
 
         Task<long> GetTotalFileSizeBySchoolAsync(int schoolId, CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<LessonMaterial>> GetLessonMaterialsByFolderAsync(Guid folderId, int schoolId,
+            LessonMaterialFilterOptions? filterOptions = null, CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<LessonMaterial>> GetLessonMaterialsByFolderForTeacherAsync(Guid folderId, Guid teacherId,
+            int schoolId, LessonMaterialFilterOptions? filterOptions = null, CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<LessonMaterial>> GetLessonMaterialsByFolderForStudentAsync(Guid folderId, Guid studentId,
+            int schoolId, LessonMaterialFilterOptions? filterOptions = null, CancellationToken cancellationToken = default);
     }
 }

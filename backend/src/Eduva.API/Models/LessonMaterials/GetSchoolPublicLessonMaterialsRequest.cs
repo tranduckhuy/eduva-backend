@@ -1,9 +1,9 @@
-﻿using Eduva.Application.Common.Specifications;
+using Eduva.Application.Common.Specifications;
 using Eduva.Domain.Enums;
 
-namespace Eduva.Application.Features.LessonMaterials.Specifications
+namespace Eduva.API.Models.LessonMaterials
 {
-    public class LessonMaterialSpecParam : BaseSpecParam
+    public class GetSchoolPublicLessonMaterialsRequest : BaseSpecParam
     {
         public Guid? CreatedByUserId { get; set; }
         public string? Tag { get; set; }

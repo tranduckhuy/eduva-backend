@@ -8,7 +8,7 @@ namespace Eduva.API.Mappings
     {
         public ModelMappingProfile()
         {
-            CreateMap<SchoolAdminLessonMaterialRequest, LessonMaterialSpecParam>();
+            CreateMap<GetSchoolPublicLessonMaterialsRequest, LessonMaterialSpecParam>();
         }
     }
 }

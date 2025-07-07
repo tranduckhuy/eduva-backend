@@ -1,6 +1,9 @@
 ﻿using Eduva.API.Attributes;
 using Eduva.API.Controllers.Base;
+using Eduva.API.Mappings;
 using Eduva.API.Models;
+using Eduva.API.Models.LessonMaterials;
+using Eduva.Application.Common.Mappings;
 using Eduva.Application.Features.LessonMaterials.Commands;
 using Eduva.Application.Features.LessonMaterials.Queries;
 using Eduva.Application.Features.LessonMaterials.Specifications;
@@ -24,7 +27,6 @@ namespace Eduva.API.Controllers.LessonMaterials
         {
             _mediator = mediator;
         }
-
 
         [HttpGet("all")]
         public async Task<IActionResult> GetAllLessonMaterials([FromQuery] Guid? classId = null, [FromQuery] Guid? folderId = null)
@@ -75,12 +77,12 @@ namespace Eduva.API.Controllers.LessonMaterials
             {
                 await _mediator.Send(command);
             });
-
         }
 
-        [HttpGet]
+
+        [HttpGet("school-public")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
-        public async Task<IActionResult> GetLessonMaterials([FromQuery] LessonMaterialSpecParam lessonMaterialSpecParam)
+        public async Task<IActionResult> GetSchoolPublicLessonMaterials([FromQuery] GetSchoolPublicLessonMaterialsRequest request)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
@@ -90,7 +92,17 @@ namespace Eduva.API.Controllers.LessonMaterials
 
             var schoolId = User.FindFirstValue(SCHOOL_ID_CLAIM);
 
-            var query = new GetLessonMaterialsQuery(lessonMaterialSpecParam, Guid.Parse(userId), schoolId != null ? int.Parse(schoolId) : null);
+            int schoolIdInt = int.TryParse(User.FindFirstValue(SCHOOL_ID_CLAIM), out var parsedSchoolId) ? parsedSchoolId : 0;
+
+            if (schoolIdInt <= 0)
+            {
+                return Respond(CustomCode.SchoolNotFound);
+            }
+
+
+            var lessonMaterialSpecParam = AppMapper<ModelMappingProfile>.Mapper.Map<LessonMaterialSpecParam>(request);
+
+            var query = new GetSchoolPublicLessonMaterialsQuery(lessonMaterialSpecParam, Guid.Parse(userId), schoolIdInt);
 
             return await HandleRequestAsync(async () =>
             {

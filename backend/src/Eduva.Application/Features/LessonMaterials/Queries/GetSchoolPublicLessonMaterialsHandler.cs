@@ -8,18 +8,18 @@ using MediatR;
 
 namespace Eduva.Application.Features.LessonMaterials.Queries
 {
-    public class GetLessonMaterialsHandler : IRequestHandler<GetLessonMaterialsQuery, Pagination<LessonMaterialResponse>>
+    public class GetSchoolPublicLessonMaterialsHandler : IRequestHandler<GetSchoolPublicLessonMaterialsQuery, Pagination<LessonMaterialResponse>>
     {
         private readonly IUnitOfWork _unitOfWork;
 
-        public GetLessonMaterialsHandler(IUnitOfWork unitOfWork)
+        public GetSchoolPublicLessonMaterialsHandler(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<Pagination<LessonMaterialResponse>> Handle(GetLessonMaterialsQuery request, CancellationToken cancellationToken)
+        public async Task<Pagination<LessonMaterialResponse>> Handle(GetSchoolPublicLessonMaterialsQuery request, CancellationToken cancellationToken)
         {
-            var spec = new LessonMaterialSpecification(request.LessonMaterialSpecParam);
+            var spec = new PublicLessonMaterialSpecification(request.LessonMaterialSpecParam);
 
             var result = await _unitOfWork.GetCustomRepository<ILessonMaterialRepository>()
                 .GetWithSpecAsync(spec);
