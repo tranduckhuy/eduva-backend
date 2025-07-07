@@ -103,7 +103,7 @@ namespace Eduva.Application.Features.Folders.Commands
                 }
 
                 // Map to response with loaded navigation properties
-                return AppMapper.Mapper.Map<FolderResponse>(folder);
+                return AppMapper<AppMappingProfile>.Mapper.Map<FolderResponse>(folder);
             }
             catch (Exception)
             {

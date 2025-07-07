@@ -30,7 +30,7 @@ namespace Eduva.Application.Test.Features.SubscriptionPlans.Commands.UpdatePlan
 
             _handler = new UpdateSubscriptionPlanCommandHandler(_unitOfWorkMock.Object);
 
-            _ = AppMapper.Mapper; // Force lazy mapper init
+            _ = AppMapper<AppMappingProfile>.Mapper; // Force lazy mapper init
         }
 
         #endregion

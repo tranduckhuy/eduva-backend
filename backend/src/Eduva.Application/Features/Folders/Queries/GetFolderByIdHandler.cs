@@ -64,7 +64,7 @@ namespace Eduva.Application.Features.Folders.Queries
             }
 
             // Map folder to response
-            var response = AppMapper.Mapper.Map<FolderResponse>(folder);
+            var response = AppMapper<AppMappingProfile>.Mapper.Map<FolderResponse>(folder);
 
             var lessonMaterialRepo = _unitOfWork.GetCustomRepository<ILessonMaterialRepository>();
             var countsByFolder = await lessonMaterialRepo.GetApprovedMaterialCountsByFolderAsync(new List<Guid> { folder.Id }, cancellationToken);

@@ -25,7 +25,7 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Queries
 
             var result = await _repository.GetWithSpecAsync(spec);
 
-            return AppMapper.Mapper.Map<Pagination<SchoolSubscriptionResponse>>(result);
+            return AppMapper<AppMappingProfile>.Mapper.Map<Pagination<SchoolSubscriptionResponse>>(result);
         }
     }
 }

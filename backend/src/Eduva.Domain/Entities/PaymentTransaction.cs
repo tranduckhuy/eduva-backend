@@ -15,6 +15,8 @@ namespace Eduva.Domain.Entities
         public decimal Amount { get; set; }
         public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
+        public BillingCycle? BillingCycle { get; set; } // Optional: for subscription-related transactions
+
         // Navigation property
         public ApplicationUser User { get; set; } = null!;
     }

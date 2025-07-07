@@ -2,6 +2,7 @@ using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Common.Models;
 using Eduva.Application.Exceptions.Auth;
 using Eduva.Application.Features.Auth.DTOs;
+using Eduva.Application.Features.Auth.Enums;
 using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
@@ -78,7 +79,7 @@ namespace Eduva.Infrastructure.Identity
         {
             var token = await _userManager.GenerateEmailConfirmationTokenAsync(newUser);
 
-            var verifyLink = $"{clientUrl}?email={Uri.EscapeDataString(newUser.Email!)}&token={Uri.EscapeDataString(token)}";
+            var verifyLink = $"{clientUrl}?email={Uri.EscapeDataString(newUser.Email!)}&token={Uri.EscapeDataString(token)}&action={AuthEmailAction.ConfirmEmail.ToString().ToLowerInvariant()}";
 
             var basePath = AppContext.BaseDirectory;
             var templatePath = Path.Combine(basePath, "email-templates", "verify-email.html");
@@ -144,6 +145,8 @@ namespace Eduva.Infrastructure.Identity
                 });
             }
 
+            user.LastLoginAt = DateTimeOffset.UtcNow;
+
             var userRoles = await _userManager.GetRolesAsync(user);
 
             var userClaims = await _userManager.GetClaimsAsync(user);
@@ -200,6 +203,8 @@ namespace Eduva.Infrastructure.Identity
             }
 
             await GetOtpProvider().ForceClearOtpClaimsAsync(_userManager, user);
+
+            user.LastLoginAt = DateTimeOffset.UtcNow;
 
             var roles = await _userManager.GetRolesAsync(user);
             var claims = await _userManager.GetClaimsAsync(user);
@@ -315,6 +320,7 @@ namespace Eduva.Infrastructure.Identity
             if (populateExp)
             {
                 user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(30);
+                user.LastLoginAt = DateTimeOffset.UtcNow;
             }
 
             await _userManager.UpdateAsync(user);
@@ -337,9 +343,17 @@ namespace Eduva.Infrastructure.Identity
 
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
 
-            var message = MailMessageHelper.CreateMessage(user, token, request.ClientUrl, "reset-password.html", "Đặt Lại Mật Khẩu");
+            var emailMessage = MailMessageHelper.CreateMessage(new EmailMessageContext
+            {
+                User = user,
+                Token = token,
+                ClientUrl = request.ClientUrl,
+                TemplateFileName = "reset-password.html",
+                Subject = "Đặt Lại Mật Khẩu",
+                Action = AuthEmailAction.ResetPassword
+            });
 
-            _ = _emailSender.SendEmailBrevoHtmlAsync(user.Email!, user.FullName ?? user.Email!, message.Subject, message.Content);
+            _ = _emailSender.SendEmailBrevoHtmlAsync(user.Email!, user.FullName ?? user.Email!, emailMessage.Subject, emailMessage.Content);
 
             return CustomCode.ResetPasswordEmailSent;
         }

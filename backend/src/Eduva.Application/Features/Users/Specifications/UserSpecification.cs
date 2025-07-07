@@ -30,6 +30,7 @@ namespace Eduva.Application.Features.Users.Specifications
 
             return u =>
                 (param.SchoolId == null || u.SchoolId == param.SchoolId) &&
+                (param.Status == null || u.Status == param.Status) &&
                 (string.IsNullOrWhiteSpace(loweredSearch) ||
                     EF.Functions.Like((u.FullName ?? "").ToLower(), $"%{loweredSearch}%") ||
                     EF.Functions.Like((u.Email ?? "").ToLower(), $"%{loweredSearch}%"));
@@ -46,12 +47,40 @@ namespace Eduva.Application.Features.Users.Specifications
             return sort switch
             {
                 "fullname" => isDesc
-                    ? q => q.OrderByDescending(u => u.FullName)
-                    : q => q.OrderBy(u => u.FullName),
+                      ? q => q.OrderByDescending(u => u.FullName)
+                      : q => q.OrderBy(u => u.FullName),
 
                 "email" => isDesc
                     ? q => q.OrderByDescending(u => u.Email)
                     : q => q.OrderBy(u => u.Email),
+
+                "status" => isDesc
+                    ? q => q.OrderByDescending(u => u.Status)
+                    : q => q.OrderBy(u => u.Status),
+
+                "totalcredits" => isDesc
+                    ? q => q.OrderByDescending(u => u.TotalCredits)
+                    : q => q.OrderBy(u => u.TotalCredits),
+
+                "phonenumber" => isDesc
+                    ? q => q.OrderByDescending(u => u.PhoneNumber)
+                    : q => q.OrderBy(u => u.PhoneNumber),
+
+                "accessfailedcount" => isDesc
+                    ? q => q.OrderByDescending(u => u.AccessFailedCount)
+                    : q => q.OrderBy(u => u.AccessFailedCount),
+
+                "createdat" => isDesc
+                    ? q => q.OrderByDescending(u => u.CreatedAt)
+                    : q => q.OrderBy(u => u.CreatedAt),
+
+                "lastmodifiedat" => isDesc
+                ? q => q.OrderByDescending(u => u.LastModifiedAt)
+                : q => q.OrderBy(u => u.LastModifiedAt),
+
+                "lastloginin" => isDesc
+                ? q => q.OrderByDescending(u => u.LastLoginAt)
+                : q => q.OrderBy(u => u.LastLoginAt),
 
                 _ => isDesc
                     ? q => q.OrderByDescending(u => u.FullName)

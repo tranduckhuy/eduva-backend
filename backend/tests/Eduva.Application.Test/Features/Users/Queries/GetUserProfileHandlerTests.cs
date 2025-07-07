@@ -32,7 +32,7 @@ public class GetUserProfileHandlerTests
             _schoolSubscriptionServiceMock.Object
         );
 
-        _ = AppMapper.Mapper; // ensure mapper is initialized
+        _ = AppMapper<AppMappingProfile>.Mapper; // ensure mapper is initialized
     }
 
     #endregion

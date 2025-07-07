@@ -29,7 +29,11 @@ namespace Eduva.Application.Common.Mappings
         {
             // User mappings
             CreateMap<ApplicationUser, UserResponse>()
-                .ForMember(dest => dest.School, opt => opt.MapFrom(src => src.School));
+                .ForMember(dest => dest.School, opt => opt.MapFrom(src => src.School))
+                .ForMember(dest => dest.CreditBalance, opt => opt.MapFrom(src => src.TotalCredits))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
+                .ForMember(dest => dest.LastModifiedAt, opt => opt.MapFrom(src => src.LastModifiedAt))
+                .ForMember(dest => dest.LastLoginAt, opt => opt.MapFrom(src => src.LastLoginAt));
             CreateMap<Pagination<ApplicationUser>, Pagination<UserResponse>>();
 
             // Lesson Materials mappings
@@ -44,11 +48,15 @@ namespace Eduva.Application.Common.Mappings
 
             // Subscription Plan mappings
             CreateMap<Pagination<SubscriptionPlan>, Pagination<SubscriptionPlanResponse>>();
-            CreateMap<SubscriptionPlan, SubscriptionPlanResponse>();
+            CreateMap<SubscriptionPlan, SubscriptionPlanResponse>()
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
+                .ForMember(dest => dest.LastModifiedAt, opt => opt.MapFrom(src => src.LastModifiedAt));
 
             // AICreditPack mappings
             CreateMap<Pagination<AICreditPack>, Pagination<AICreditPackResponse>>();
-            CreateMap<AICreditPack, AICreditPackResponse>();
+            CreateMap<AICreditPack, AICreditPackResponse>()
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
+                .ForMember(dest => dest.LastModifiedAt, opt => opt.MapFrom(src => src.LastModifiedAt));
 
             // School mappings
             CreateMap<CreateSchoolCommand, SchoolResponse>();
@@ -61,7 +69,10 @@ namespace Eduva.Application.Common.Mappings
                 .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Plan.Description))
                 .ForMember(dest => dest.MaxUsers, opt => opt.MapFrom(src => src.Plan.MaxUsers))
                 .ForMember(dest => dest.StorageLimitGB, opt => opt.MapFrom(src => src.Plan.StorageLimitGB))
-                .ForMember(dest => dest.AmountPaid, opt => opt.MapFrom(src => src.PaymentTransaction.Amount));
+                .ForMember(dest => dest.AmountPaid, opt => opt.MapFrom(src => src.PaymentTransaction.Amount))
+                .ForMember(dest => dest.PlanId, opt => opt.MapFrom(src => src.Plan.Id))
+                .ForMember(dest => dest.PriceMonthly, otp => otp.MapFrom(src => src.Plan.PriceMonthly))
+                .ForMember(dest => dest.PricePerYear, otp => otp.MapFrom(src => src.Plan.PricePerYear));
 
             // SchoolSubscription → SchoolSubscriptionResponse
             CreateMap<SchoolSubscription, SchoolSubscriptionResponse>()

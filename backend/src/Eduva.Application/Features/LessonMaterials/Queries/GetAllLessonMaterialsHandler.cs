@@ -26,7 +26,7 @@ namespace Eduva.Application.Features.LessonMaterials.Queries
                     request.FolderId,
                     cancellationToken);
 
-            return AppMapper.Mapper.Map<IReadOnlyList<LessonMaterialResponse>>(lessonMaterials);
+            return AppMapper<AppMappingProfile>.Mapper.Map<IReadOnlyList<LessonMaterialResponse>>(lessonMaterials);
         }
     }
 }

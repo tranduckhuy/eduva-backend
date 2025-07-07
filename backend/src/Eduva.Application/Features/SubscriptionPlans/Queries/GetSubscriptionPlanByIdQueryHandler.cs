@@ -21,7 +21,7 @@ namespace Eduva.Application.Features.SubscriptionPlans.Queries
             var repo = _unitOfWork.GetRepository<SubscriptionPlan, int>();
             var plan = await repo.GetByIdAsync(request.Id) ?? throw new PlanNotFoundException();
 
-            return AppMapper.Mapper.Map<SubscriptionPlanResponse>(plan);
+            return AppMapper<AppMappingProfile>.Mapper.Map<SubscriptionPlanResponse>(plan);
         }
     }
 }

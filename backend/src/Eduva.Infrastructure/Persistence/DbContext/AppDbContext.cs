@@ -47,21 +47,43 @@ namespace Eduva.Infrastructure.Persistence.DbContext
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
+            UpdateTimestamps<Guid>();
+            UpdateTimestamps<int>();
+            UpdateApplicationUserTimestamps();
+
+            return await base.SaveChangesAsync(cancellationToken);
+        }
+
+        private void UpdateTimestamps<TKey>()
+        {
             var entries = ChangeTracker.Entries()
-            .Where(e => e.Entity is BaseTimestampedEntity<Guid> &&
-                        (e.State == EntityState.Added || e.State == EntityState.Modified));
+                .Where(e => e.Entity is BaseTimestampedEntity<TKey> &&
+                            (e.State == EntityState.Added || e.State == EntityState.Modified));
 
             foreach (var entry in entries)
             {
-                var entity = (BaseTimestampedEntity<Guid>)entry.Entity;
-
+                var entity = (BaseTimestampedEntity<TKey>)entry.Entity;
                 if (entry.State == EntityState.Modified)
                 {
                     entity.LastModifiedAt = DateTimeOffset.UtcNow;
                 }
             }
+        }
 
-            return await base.SaveChangesAsync(cancellationToken);
+        private void UpdateApplicationUserTimestamps()
+        {
+            var userEntries = ChangeTracker.Entries()
+                .Where(e => e.Entity is ApplicationUser &&
+                            (e.State == EntityState.Added || e.State == EntityState.Modified));
+
+            foreach (var entry in userEntries)
+            {
+                var user = (ApplicationUser)entry.Entity;
+                if (entry.State == EntityState.Modified)
+                {
+                    user.LastModifiedAt = DateTimeOffset.UtcNow;
+                }
+            }
         }
 
         protected override void OnModelCreating(ModelBuilder builder)

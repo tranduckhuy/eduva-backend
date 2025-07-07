@@ -50,7 +50,7 @@ namespace Eduva.Application.Features.Classes.Commands.CreateClass
                 throw new AppException(CustomCode.ProvidedInformationIsInValid);
             }
 
-            var classroom = AppMapper.Mapper.Map<Classroom>(request);
+            var classroom = AppMapper<AppMappingProfile>.Mapper.Map<Classroom>(request);
 
             // Automatically create classcode 8 characters (with retry for duplicates)
             string classCode;
@@ -93,7 +93,7 @@ namespace Eduva.Application.Features.Classes.Commands.CreateClass
             try
             {
                 await _unitOfWork.CommitAsync();
-                return AppMapper.Mapper.Map<ClassResponse>(classroom);
+                return AppMapper<AppMappingProfile>.Mapper.Map<ClassResponse>(classroom);
             }
             catch (Exception)
             {

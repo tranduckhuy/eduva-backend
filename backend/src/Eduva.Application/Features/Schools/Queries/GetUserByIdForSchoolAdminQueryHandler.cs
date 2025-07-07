@@ -59,7 +59,7 @@ namespace Eduva.Application.Features.Schools.Queries
 
             var (isActive, endDate) = await _schoolSubscriptionService.GetUserSubscriptionStatusAsync(targetUser.Id);
 
-            var response = AppMapper.Mapper.Map<UserResponse>(targetUser);
+            var response = AppMapper<AppMappingProfile>.Mapper.Map<UserResponse>(targetUser);
             response.Roles = targetUserRoles.ToList();
             response.Is2FAEnabled = is2FAEnabled;
             response.IsEmailConfirmed = isEmailConfirmed;

@@ -29,13 +29,14 @@ namespace Eduva.Application.Features.SubscriptionPlans.Commands.CreatePlan
                 PriceMonthly = request.PriceMonthly,
                 PricePerYear = request.PricePerYear,
                 IsRecommended = request.IsRecommended,
-                Status = EntityStatus.Active
+                Status = EntityStatus.Active,
+                LastModifiedAt = DateTimeOffset.UtcNow,
             };
 
             await repo.AddAsync(plan);
             await _unitOfWork.CommitAsync();
 
-            return AppMapper.Mapper.Map<SubscriptionPlanResponse>(plan);
+            return AppMapper<AppMappingProfile>.Mapper.Map<SubscriptionPlanResponse>(plan);
         }
     }
 }

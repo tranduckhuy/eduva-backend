@@ -7,6 +7,8 @@ using Eduva.Application.Features.Folders.Commands;
 using Eduva.Application.Features.Folders.Queries;
 using Eduva.Application.Features.Folders.Responses;
 using Eduva.Application.Features.Folders.Specifications;
+using Eduva.Application.Features.LessonMaterials.DTOs;
+using Eduva.Application.Features.LessonMaterials.Queries;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
@@ -20,6 +22,7 @@ namespace Eduva.API.Controllers.Folders
     public class FoldersController : BaseController<FoldersController>
     {
         private readonly IMediator _mediator;
+        private const string SCHOOL_ID_CLAIM = "SchoolId";
 
         public FoldersController(IMediator mediator, ILogger<FoldersController> logger) : base(logger)
         {
@@ -313,6 +316,49 @@ namespace Eduva.API.Controllers.Folders
             {
                 return Respond(CustomCode.FolderDeleteFailed);
             }
+        }
+
+        [HttpGet("{folderId:guid}/lesson-materials")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
+        [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<object>>), StatusCodes.Status200OK)]
+        [Authorize]
+        [ApiExplorerSettings(GroupName = "LessonMaterial")]
+        public async Task<IActionResult> GetLessonMaterialsByFolder(
+            Guid folderId,
+            [FromQuery] LessonMaterialFilterOptions lessonMaterialFilterOptions)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Respond(CustomCode.UserIdNotFound);
+            }
+
+            int schoolId = int.TryParse(User.FindFirstValue(SCHOOL_ID_CLAIM), out var parsedSchoolId) ? parsedSchoolId : 0;
+
+            if (schoolId <= 0)
+            {
+                return Respond(CustomCode.SchoolNotFound);
+            }
+
+            // Get user roles
+            var userRoles = User.Claims
+                .Where(c => c.Type == ClaimTypes.Role)
+                .Select(c => c.Value)
+                .ToList();
+
+            var query = new GetLessonMaterialsByFolderQuery(
+                folderId,
+                Guid.Parse(userId),
+                schoolId,
+                userRoles,
+                lessonMaterialFilterOptions
+            );
+
+            return await HandleRequestAsync(async () =>
+            {
+                var response = await _mediator.Send(query);
+                return (CustomCode.Success, response);
+            });
         }
     }
 }
