@@ -91,7 +91,7 @@ namespace Eduva.Application.Features.Questions.Queries
 
         private async Task<QuestionDetailResponse> BuildQuestionDetailResponseWithMapping(LessonMaterialQuestion question, ApplicationUser currentUser, string userRole)
         {
-            var response = AppMapper.Mapper.Map<QuestionDetailResponse>(question);
+            var response = AppMapper<AppMappingProfile>.Mapper.Map<QuestionDetailResponse>(question);
 
             response.CreatedByRole = await _permissionService.GetUserRoleSafelyAsync(question.CreatedByUser);
             response.CommentCount = _permissionService.CalculateTotalCommentCount(question.Comments);
@@ -130,7 +130,7 @@ namespace Eduva.Application.Features.Questions.Queries
 
         private async Task<QuestionCommentResponse> BuildCommentResponseWithMapping(QuestionComment comment, ApplicationUser currentUser, string userRole)
         {
-            var response = AppMapper.Mapper.Map<QuestionCommentResponse>(comment);
+            var response = AppMapper<AppMappingProfile>.Mapper.Map<QuestionCommentResponse>(comment);
 
             response.CreatedByRole = await _permissionService.GetUserRoleSafelyAsync(comment.CreatedByUser);
             response.CanUpdate = _permissionService.CanUserUpdateComment(comment, currentUser, userRole);
@@ -162,7 +162,7 @@ namespace Eduva.Application.Features.Questions.Queries
 
         private async Task<QuestionReplyResponse> BuildReplyResponseWithMapping(QuestionComment reply, ApplicationUser currentUser, string userRole)
         {
-            var response = AppMapper.Mapper.Map<QuestionReplyResponse>(reply);
+            var response = AppMapper<AppMappingProfile>.Mapper.Map<QuestionReplyResponse>(reply);
 
             response.CreatedByRole = await _permissionService.GetUserRoleSafelyAsync(reply.CreatedByUser);
             response.CanUpdate = _permissionService.CanUserUpdateComment(reply, currentUser, userRole);

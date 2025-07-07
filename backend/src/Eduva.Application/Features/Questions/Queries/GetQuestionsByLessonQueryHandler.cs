@@ -60,7 +60,7 @@ namespace Eduva.Application.Features.Questions.Queries
 
             var spec = new QuestionsByLessonSpecification(request.Param, request.LessonMaterialId, request.CurrentUserId, user.SchoolId, userRole);
             var result = await _repository.GetWithSpecAsync(spec);
-            var response = AppMapper.Mapper.Map<Pagination<QuestionResponse>>(result);
+            var response = AppMapper<AppMappingProfile>.Mapper.Map<Pagination<QuestionResponse>>(result);
 
             var filteredData = new List<QuestionResponse>();
 

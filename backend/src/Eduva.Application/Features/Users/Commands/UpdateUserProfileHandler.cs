@@ -39,7 +39,7 @@ namespace Eduva.Application.Features.Users.Commands
             _unitOfWork.GetCustomRepository<IUserRepository>().Update(user);
             await _unitOfWork.CommitAsync();
 
-            return AppMapper.Mapper.Map<UserResponse>(user);
+            return AppMapper<AppMappingProfile>.Mapper.Map<UserResponse>(user);
         }
     }
 }

@@ -42,7 +42,7 @@ namespace Eduva.Application.Test.Features.Schools.Queries
             );
 
             // Ensure AppMapper is initialized
-            _ = AppMapper.Mapper;
+            _ = AppMapper<AppMappingProfile>.Mapper;
         }
 
         private static Mock<UserManager<TUser>> MockUserManager<TUser>() where TUser : class

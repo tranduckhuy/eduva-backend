@@ -105,8 +105,8 @@ namespace Eduva.Application.Test.Features.Classes.Queries.GetClasses
             mockMapper.Setup(m => m.Map<Pagination<ClassResponse>>(It.IsAny<Pagination<Classroom>>()))
                 .Returns(paginatedResponses);
 
-            // Replace AppMapper.Mapper with our mock using reflection
-            var appMapperType = typeof(AppMapper);
+            // Replace AppMapper<AppMappingProfile>.Mapper with our mock using reflection
+            var appMapperType = typeof(AppMapper<AppMappingProfile>);
             var mapperField = appMapperType.GetField("_mapper",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
             var originalMapper = mapperField?.GetValue(null);
@@ -167,8 +167,8 @@ namespace Eduva.Application.Test.Features.Classes.Queries.GetClasses
             mockMapper.Setup(m => m.Map<Pagination<ClassResponse>>(It.IsAny<Pagination<Classroom>>()))
                 .Returns(paginatedResponses);
 
-            // Replace AppMapper.Mapper with our mock using reflection
-            var appMapperType = typeof(AppMapper);
+            // Replace AppMapper<AppMappingProfile>.Mapper with our mock using reflection
+            var appMapperType = typeof(AppMapper<AppMappingProfile>);
             var mapperField = appMapperType.GetField("_mapper",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
@@ -305,7 +305,7 @@ namespace Eduva.Application.Test.Features.Classes.Queries.GetClasses
             mockMapper.Setup(m => m.Map<Pagination<ClassResponse>>(It.IsAny<Pagination<Classroom>>()))
                 .Returns(paginatedResponses);
 
-            var appMapperType = typeof(AppMapper);
+            var appMapperType = typeof(AppMapper<AppMappingProfile>);
             var mapperField = appMapperType.GetField("_mapper",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
             var originalMapper = mapperField?.GetValue(null);

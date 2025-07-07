@@ -111,7 +111,7 @@ namespace Eduva.Application.Features.Questions.Commands.UpdateQuestionComment
 
         private async Task<QuestionCommentResponse> BuildCommentResponseWithPermissions(QuestionComment comment, ApplicationUser currentUser, string userRole)
         {
-            var response = AppMapper.Mapper.Map<QuestionCommentResponse>(comment);
+            var response = AppMapper<AppMappingProfile>.Mapper.Map<QuestionCommentResponse>(comment);
 
             response.CreatedByName = comment.CreatedByUser?.FullName ?? currentUser.FullName;
             response.CreatedByAvatar = comment.CreatedByUser?.AvatarUrl ?? currentUser.AvatarUrl;

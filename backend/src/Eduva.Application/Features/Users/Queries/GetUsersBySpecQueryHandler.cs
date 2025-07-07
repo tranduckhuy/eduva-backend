@@ -112,12 +112,12 @@ namespace Eduva.Application.Features.Users.Queries
                 foreach (var user in pagedUsers)
                 {
                     var roles = await _userManager.GetRolesAsync(user);
-                    var mapped = AppMapper.Mapper.Map<UserResponse>(user);
+                    var mapped = AppMapper<AppMappingProfile>.Mapper.Map<UserResponse>(user);
                     mapped.Roles = roles.ToList();
 
                     if (user.SchoolId.HasValue && schools.TryGetValue(user.SchoolId.Value, out var schoolEntity))
                     {
-                        mapped.School = AppMapper.Mapper.Map<SchoolResponse>(schoolEntity);
+                        mapped.School = AppMapper<AppMappingProfile>.Mapper.Map<SchoolResponse>(schoolEntity);
                     }
 
                     filteredUsers.Add(mapped);
@@ -141,7 +141,7 @@ namespace Eduva.Application.Features.Users.Queries
                 foreach (var user in result.Data)
                 {
                     var roles = await _userManager.GetRolesAsync(user);
-                    var mapped = AppMapper.Mapper.Map<UserResponse>(user);
+                    var mapped = AppMapper<AppMappingProfile>.Mapper.Map<UserResponse>(user);
                     mapped.Roles = roles.ToList();
                     filteredUsers.Add(mapped);
                 }

@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Eduva.Application.Common.Mappings;
 using Eduva.Application.Common.Models;
 using Eduva.Application.Features.Classes.Queries.GetStudentClasses;
 using Eduva.Application.Features.Classes.Responses;
@@ -88,7 +89,7 @@ namespace Eduva.Application.Test.Features.Classes.Queries.GetStudentClasses
                 .Returns(paginatedResponses);
 
             // Apply AutoMapper mock using reflection for this test only
-            var appMapperType = typeof(Eduva.Application.Common.Mappings.AppMapper);
+            var appMapperType = typeof(Eduva.Application.Common.Mappings.AppMapper<AppMappingProfile>);
             var mapperField = appMapperType.GetField("_mapper", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
             var originalMapper = mapperField?.GetValue(null);
 
@@ -176,7 +177,7 @@ namespace Eduva.Application.Test.Features.Classes.Queries.GetStudentClasses
                 .Returns(paginatedResponses);
 
             // Apply AutoMapper mock using reflection for this test only
-            var appMapperType = typeof(Eduva.Application.Common.Mappings.AppMapper);
+            var appMapperType = typeof(Eduva.Application.Common.Mappings.AppMapper<AppMappingProfile>);
             var mapperField = appMapperType.GetField("_mapper", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
             var originalMapper = mapperField?.GetValue(null);
 
@@ -270,7 +271,7 @@ namespace Eduva.Application.Test.Features.Classes.Queries.GetStudentClasses
                 .Returns(paginatedResponses);
 
             // Apply AutoMapper mock using reflection for this test only
-            var appMapperType = typeof(Eduva.Application.Common.Mappings.AppMapper);
+            var appMapperType = typeof(Eduva.Application.Common.Mappings.AppMapper<AppMappingProfile>);
             var mapperField = appMapperType.GetField("_mapper", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
             var originalMapper = mapperField?.GetValue(null);
 
@@ -342,7 +343,7 @@ namespace Eduva.Application.Test.Features.Classes.Queries.GetStudentClasses
                 .Returns(paginatedResponses);
 
             // Apply AutoMapper mock using reflection for this test only
-            var appMapperType = typeof(Eduva.Application.Common.Mappings.AppMapper);
+            var appMapperType = typeof(Eduva.Application.Common.Mappings.AppMapper<AppMappingProfile>);
             var mapperField = appMapperType.GetField("_mapper", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
             var originalMapper = mapperField?.GetValue(null);
 
@@ -423,7 +424,7 @@ namespace Eduva.Application.Test.Features.Classes.Queries.GetStudentClasses
                 .Returns(paginatedResponses);
 
             // Apply AutoMapper mock using reflection for this test only
-            var appMapperType = typeof(Eduva.Application.Common.Mappings.AppMapper);
+            var appMapperType = typeof(Eduva.Application.Common.Mappings.AppMapper<AppMappingProfile>);
             var mapperField = appMapperType.GetField("_mapper", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
             var originalMapper = mapperField?.GetValue(null);
 
