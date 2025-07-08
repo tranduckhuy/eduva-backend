@@ -1,21 +1,10 @@
-﻿using Eduva.Domain.Enums;
+﻿using System.Text.Json.Serialization;
 
 namespace Eduva.Application.Features.SubscriptionPlans.Responses
 {
-    public class SubscriptionPlanDetailResponse
+    public class SubscriptionPlanDetailResponse : SubscriptionPlanResponse
     {
-        public int Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public string? Description { get; set; }
-        public int MaxUsers { get; set; }
-        public decimal StorageLimitGB { get; set; }
-        public decimal PriceMonthly { get; set; }
-        public decimal PricePerYear { get; set; }
-        public bool IsRecommended { get; set; } = false;
-        public EntityStatus Status { get; set; }
-        public DateTimeOffset CreatedAt { get; set; }
-        public DateTimeOffset? LastModifiedAt { get; set; }
-
+        [JsonPropertyOrder(12)]
         public int NumberOfSchoolsUsing { get; set; }
     }
 }
