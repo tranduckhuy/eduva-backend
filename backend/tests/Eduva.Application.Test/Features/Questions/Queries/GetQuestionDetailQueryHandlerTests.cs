@@ -348,18 +348,21 @@ namespace Eduva.Application.Test.Features.Questions.Queries
             // Act
             var response = new QuestionReplyResponse();
 
-            // Assert
-            Assert.That(response.Id, Is.EqualTo(Guid.Empty));
-            Assert.That(response.Content, Is.EqualTo(default(string)));
-            Assert.That(response.CreatedAt, Is.EqualTo(default(DateTimeOffset)));
-            Assert.That(response.LastModifiedAt, Is.Null);
-            Assert.That(response.CreatedByUserId, Is.EqualTo(Guid.Empty));
-            Assert.That(response.CreatedByName, Is.Null);
-            Assert.That(response.CreatedByAvatar, Is.Null);
-            Assert.That(response.CreatedByRole, Is.Null);
-            Assert.That(response.CanUpdate, Is.False);
-            Assert.That(response.CanDelete, Is.False);
-            Assert.That(response.ParentCommentId, Is.EqualTo(Guid.Empty));
+            Assert.Multiple(() =>
+            {
+                // Assert
+                Assert.That(response.Id, Is.EqualTo(Guid.Empty));
+                Assert.That(response.Content, Is.EqualTo(default(string)));
+                Assert.That(response.CreatedAt, Is.EqualTo(default(DateTimeOffset)));
+                Assert.That(response.LastModifiedAt, Is.Null);
+                Assert.That(response.CreatedByUserId, Is.EqualTo(Guid.Empty));
+                Assert.That(response.CreatedByName, Is.Null);
+                Assert.That(response.CreatedByAvatar, Is.Null);
+                Assert.That(response.CreatedByRole, Is.Null);
+                Assert.That(response.CanUpdate, Is.False);
+                Assert.That(response.CanDelete, Is.False);
+                Assert.That(response.ParentCommentId, Is.EqualTo(Guid.Empty));
+            });
         }
 
         [Test]
@@ -488,7 +491,7 @@ namespace Eduva.Application.Test.Features.Questions.Queries
             Assert.Multiple(() =>
             {
                 Assert.That(response.Replies, Is.EqualTo(replies));
-                Assert.That(response.Replies.Count, Is.EqualTo(2));
+                Assert.That(response.Replies, Has.Count.EqualTo(2));
                 Assert.That(response.ReplyCount, Is.EqualTo(2));
                 Assert.That(response.Replies[0].Content, Is.EqualTo("Reply 1"));
                 Assert.That(response.Replies[1].Content, Is.EqualTo("Reply 2"));
