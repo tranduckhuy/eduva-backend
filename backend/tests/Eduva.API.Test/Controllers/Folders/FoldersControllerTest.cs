@@ -6,6 +6,9 @@ using Eduva.Application.Features.Folders.Commands;
 using Eduva.Application.Features.Folders.Queries;
 using Eduva.Application.Features.Folders.Responses;
 using Eduva.Application.Features.Folders.Specifications;
+using Eduva.Application.Features.LessonMaterials.DTOs;
+using Eduva.Application.Features.LessonMaterials.Queries;
+using Eduva.Application.Features.LessonMaterials.Responses;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
@@ -320,6 +323,22 @@ namespace Eduva.API.Test.Controllers.Folders
             var response = objectResult!.Value as ApiResponse<object>;
             Assert.That(response, Is.Not.Null);
             Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Created).Or.EqualTo((int)CustomCode.Success));
+        }
+
+        [Test]
+        public async Task CreateFolder_ShouldReturnFolderCreateFailed_On_Exception()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            var command = new CreateFolderCommand { Name = "Test Folder" };
+            _mediatorMock.Setup(m => m.Send(It.IsAny<CreateFolderCommand>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new Exception("Simulated error"));
+            var result = await _controller.CreateFolder(command);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.SystemError));
         }
 
         #endregion
@@ -694,6 +713,25 @@ namespace Eduva.API.Test.Controllers.Folders
         }
 
         [Test]
+        public async Task GetFolderById_ShouldReturnSuccess_WhenValid()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            var folderId = Guid.NewGuid();
+            var folderResponse = new FolderResponse { Name = "Test Folder" };
+            _mediatorMock.Setup(m => m.Send(It.IsAny<GetFolderByIdQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(folderResponse);
+
+            var result = await _controller.GetFolderById(folderId);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+            Assert.That(response.Data, Is.TypeOf<FolderResponse>());
+        }
+
+        [Test]
         public async Task ArchiveFolder_ShouldReturn_ModelInvalid_WhenModelStateInvalid()
         {
             SetupUser(Guid.NewGuid().ToString());
@@ -716,6 +754,80 @@ namespace Eduva.API.Test.Controllers.Folders
             var response = objectResult!.Value as ApiResponse<object>;
             Assert.That(response, Is.Not.Null);
             Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task ArchiveFolder_ShouldReturnUserIdNotFound_WhenUserIdIsNullOrInvalid()
+        {
+            SetupUser(null);
+            var id = Guid.NewGuid();
+            var result = await _controller.ArchiveFolder(id);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+
+            SetupUser("invalid-guid");
+            result = await _controller.ArchiveFolder(id);
+            objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task ArchiveFolder_ShouldReturnSuccess_WhenValid()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            var id = Guid.NewGuid();
+            _mediatorMock.Setup(m => m.Send(It.IsAny<ArchiveFolderCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(Unit.Value);
+            var result = await _controller.ArchiveFolder(id);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+        }
+
+        [Test]
+        public async Task RestoreFolder_ShouldReturnUserIdNotFound_WhenUserIdIsNullOrInvalid()
+        {
+            SetupUser(null);
+            var id = Guid.NewGuid();
+            var result = await _controller.RestoreFolder(id);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+
+            SetupUser("invalid-guid");
+            result = await _controller.RestoreFolder(id);
+            objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task RestoreFolder_ShouldReturnSuccess_WhenValid()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            var id = Guid.NewGuid();
+            _mediatorMock.Setup(m => m.Send(It.IsAny<RestoreFolderCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(Unit.Value);
+            var result = await _controller.RestoreFolder(id);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
         }
 
         [Test]
@@ -825,5 +937,143 @@ namespace Eduva.API.Test.Controllers.Folders
             Assert.That(response, Is.Not.Null);
             Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.FolderDeleteFailed));
         }
+
+        #region GetLessonMaterialsByFolder 
+        [Test]
+        public async Task GetLessonMaterialsByFolder_ShouldReturnUserIdNotFound_WhenUserIdIsNull()
+        {
+            SetupUser(null);
+            var result = await _controller.GetLessonMaterialsByFolder(Guid.NewGuid(), new LessonMaterialFilterOptions());
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task GetLessonMaterialsByFolder_ShouldReturnSchoolNotFound_WhenSchoolIdIsInvalid()
+        {
+            var validUserId = Guid.NewGuid();
+            var claims = new List<Claim>
+            {
+                new(ClaimTypes.NameIdentifier, validUserId.ToString())
+            };
+            var identity = new ClaimsIdentity(claims);
+            var user = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = user }
+            };
+
+            var result = await _controller.GetLessonMaterialsByFolder(Guid.NewGuid(), new LessonMaterialFilterOptions());
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.SchoolNotFound));
+        }
+
+        [Test]
+        public async Task GetLessonMaterialsByFolder_ShouldReturnInternalServerError_WhenExceptionThrown()
+        {
+            var validUserId = Guid.NewGuid();
+            var claims = new List<Claim>
+            {
+                new(ClaimTypes.NameIdentifier, validUserId.ToString()),
+                new("SchoolId", "123")
+            };
+            var identity = new ClaimsIdentity(claims);
+            var user = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = user }
+            };
+
+            _mediatorMock.Setup(m => m.Send(It.IsAny<GetLessonMaterialsByFolderQuery>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new Exception("Unhandled exception"));
+
+            var result = await _controller.GetLessonMaterialsByFolder(Guid.NewGuid(), new LessonMaterialFilterOptions());
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
+        }
+
+        [Test]
+        public async Task GetLessonMaterialsByFolder_ShouldReturnSuccess_WhenValid()
+        {
+            // Arrange
+            var validUserId = Guid.NewGuid();
+            var schoolId = 123;
+            var folderId = Guid.NewGuid();
+            var claims = new List<Claim>
+            {
+                new(ClaimTypes.NameIdentifier, validUserId.ToString()),
+                new("SchoolId", schoolId.ToString()),
+                new(ClaimTypes.Role, "Teacher")
+            };
+            var identity = new ClaimsIdentity(claims);
+            var user = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = user }
+            };
+            var filterOptions = new LessonMaterialFilterOptions();
+
+            var fakeResponse = new List<LessonMaterialResponse>
+            {
+                new() { Id = Guid.NewGuid(), Title = "Material 1" }
+            };
+            _mediatorMock.Setup(m => m.Send(It.IsAny<GetLessonMaterialsByFolderQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((IReadOnlyList<LessonMaterialResponse>)fakeResponse);
+
+
+            // Act
+            var result = await _controller.GetLessonMaterialsByFolder(folderId, filterOptions);
+            var objectResult = result as ObjectResult;
+
+            // Assert
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+                Assert.That(response.Data, Is.Not.Null);
+            });
+        }
+
+        [Test]
+        public async Task GetLessonMaterialsByFolder_ShouldReturnModelInvalid_WhenModelStateInvalid()
+        {
+            // Arrange
+            var validUserId = Guid.NewGuid();
+            var schoolId = 123;
+            var claims = new List<Claim>
+            {
+                new(ClaimTypes.NameIdentifier, validUserId.ToString()),
+                new("SchoolId", schoolId.ToString())
+            };
+            var identity = new ClaimsIdentity(claims);
+            var user = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = user }
+            };
+
+            _controller.ModelState.AddModelError("AnyField", "Any error");
+
+            // Act
+            var result = await _controller.GetLessonMaterialsByFolder(Guid.NewGuid(), new LessonMaterialFilterOptions());
+            var objectResult = result as ObjectResult;
+
+            // Assert
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.ModelInvalid));
+        }
+
+        #endregion
     }
 }
