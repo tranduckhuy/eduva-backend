@@ -84,7 +84,7 @@ namespace Eduva.Application.Features.Folders.Commands
             }
         }
 
-        private async Task<bool> HasPermissionToUpdateFolder(Folder folder, Guid userId)
+        public async Task<bool> HasPermissionToUpdateFolder(Folder folder, Guid userId)
         {
             // Get user information
             var userRepository = _unitOfWork.GetRepository<ApplicationUser, Guid>();
