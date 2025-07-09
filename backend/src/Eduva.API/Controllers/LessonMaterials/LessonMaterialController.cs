@@ -171,5 +171,27 @@ namespace Eduva.API.Controllers.LessonMaterials
                 return (CustomCode.Success, response);
             });
         }
+
+        [HttpPut("{id:guid}/pending-approval")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
+        [Authorize(Roles = $"{nameof(Role.ContentModerator)},{nameof(Role.SchoolAdmin)}")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> ApproveLessonMaterial(Guid id, [FromBody] ApproveLessonMaterialCommand command)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Respond(CustomCode.UserIdNotFound);
+            }
+
+            command.Id = id;
+            command.ModeratorId = Guid.Parse(userId);
+
+            return await HandleRequestAsync(async () =>
+            {
+                await _mediator.Send(command);
+            });
+        }
     }
 }

@@ -380,7 +380,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.CreateQuestion
                 CreatedByUserId = userId
             };
             var user = new ApplicationUser { Id = userId, SchoolId = 1, FullName = "Test User", AvatarUrl = "avatar.jpg" };
-            var lessonMaterial = new LessonMaterial { Id = lessonMaterialId, Status = EntityStatus.Active, SchoolId = 1, Title = "Test Lesson" };
+            var lessonMaterial = new LessonMaterial { Id = lessonMaterialId, Status = EntityStatus.Active, SchoolId = 1, Title = "Test Lesson", LessonStatus = LessonMaterialStatus.Approved };
 
             _userRepositoryMock.Setup(x => x.GetByIdAsync(userId))
                 .ReturnsAsync(user);
