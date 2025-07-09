@@ -727,8 +727,11 @@ namespace Eduva.API.Test.Controllers.Folders
             Assert.That(objectResult, Is.Not.Null);
             var response = objectResult!.Value as ApiResponse<object>;
             Assert.That(response, Is.Not.Null);
-            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
-            Assert.That(response.Data, Is.TypeOf<FolderResponse>());
+            Assert.Multiple(() =>
+            {
+                Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+                Assert.That(response.Data, Is.TypeOf<FolderResponse>());
+            });
         }
 
         [Test]
