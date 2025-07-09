@@ -38,7 +38,7 @@ namespace Eduva.Application.Features.LessonMaterials.Commands
 
                     // Set default status and visibility
                     lessonMaterial.Id = Guid.NewGuid();
-                    lessonMaterial.LessonStatus = LessonMaterialStatus.Draft;
+                    lessonMaterial.LessonStatus = LessonMaterialStatus.Pending;
                     lessonMaterial.Visibility = LessonMaterialVisibility.Private;
                     lessonMaterial.CreatedByUserId = request.CreatedBy;
                     lessonMaterial.SchoolId = request.SchoolId;
