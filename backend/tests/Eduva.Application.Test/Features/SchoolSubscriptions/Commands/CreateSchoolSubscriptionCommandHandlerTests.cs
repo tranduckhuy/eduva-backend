@@ -4,7 +4,6 @@ using Eduva.Application.Exceptions.PaymentTransaction;
 using Eduva.Application.Exceptions.School;
 using Eduva.Application.Exceptions.SchoolSubscription;
 using Eduva.Application.Exceptions.SubscriptionPlan;
-using Eduva.Application.Features.Payments.Commands;
 using Eduva.Application.Features.SchoolSubscriptions.Commands;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
@@ -277,7 +276,8 @@ public class CreateSchoolSubscriptionCommandHandlerTests
             new SubscriptionPlan { Name = "Plan X" },
             BillingCycle.Monthly,
             expectedAmount,
-            new School { Name = "School A", ContactEmail = "mail@mail.com", ContactPhone = "012345" },
+            new ApplicationUser { FullName = "Test User", Email = "sang@gmail.com" },
+            new School { ContactPhone = "0935433495" },
             1234567890L
         })!;
 
