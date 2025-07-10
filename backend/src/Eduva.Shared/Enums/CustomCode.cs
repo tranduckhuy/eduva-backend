@@ -195,5 +195,8 @@ namespace Eduva.Shared.Enums
         ReasonIsRequiredWhenRejectingLessonMaterial = 4853,
         // Storage Quota Errors
         StorageQuotaExceeded = 4900,
+
+        // Notification Errors
+        NotificationNotFound = 4950,
     }
 }
