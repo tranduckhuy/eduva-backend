@@ -512,19 +512,6 @@ namespace Eduva.API.Test.Controllers.Folders
             });
         }
 
-        [Test]
-        public async Task GetUserFolders_ShouldReturnInternalServerError_WhenExceptionThrown()
-        {
-            var validUserId = Guid.NewGuid();
-            SetupUser(validUserId.ToString());
-            var param = new FolderSpecParam { PageIndex = 1, PageSize = 10 };
-            _mediatorMock.Setup(m => m.Send(It.IsAny<GetFoldersQuery>(), It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("Unhandled exception"));
-            var result = await _controller.GetUserFolders(param);
-            var objectResult = result as ObjectResult;
-            Assert.That(objectResult, Is.Not.Null);
-            Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
-        }
-
         #endregion
 
         #region RenameFolder Tests

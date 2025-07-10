@@ -1,4 +1,5 @@
 using Eduva.Domain.Entities;
+using System.Linq.Expressions;
 
 namespace Eduva.Application.Interfaces.Repositories
 {
@@ -7,5 +8,6 @@ namespace Eduva.Application.Interfaces.Repositories
         Task<int> GetMaxOrderAsync(Guid? userId, Guid? classId);
 
         Task<Folder?> GetFolderWithMaterialsAsync(Guid folderId);
+        Task<IEnumerable<Folder>> ListAsync(Expression<Func<Folder, bool>> predicate, CancellationToken cancellationToken);
     }
 }
