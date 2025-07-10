@@ -55,7 +55,7 @@ namespace Eduva.Application.Test.Features.Classes.Commands.AddMaterialsToFolder
             var materialId = Guid.NewGuid();
 
             var folder = new Folder { Id = folderId, ClassId = classId, OwnerType = OwnerType.Class };
-            var material = new LessonMaterial { Id = materialId, CreatedByUserId = userId };
+            var material = new LessonMaterial { Id = materialId, CreatedByUserId = userId, LessonStatus = LessonMaterialStatus.Approved };
             var user = new ApplicationUser { Id = userId };
 
             var command = new AddMaterialsToFolderCommand
@@ -161,7 +161,7 @@ namespace Eduva.Application.Test.Features.Classes.Commands.AddMaterialsToFolder
             var materialId = Guid.NewGuid();
 
             var folder = new Folder { Id = folderId, ClassId = classId, OwnerType = OwnerType.Class };
-            var material = new LessonMaterial { Id = materialId, CreatedByUserId = Guid.NewGuid() }; // khác userId
+            var material = new LessonMaterial { Id = materialId, CreatedByUserId = Guid.NewGuid(), LessonStatus = LessonMaterialStatus.Approved };
 
             var command = new AddMaterialsToFolderCommand
             {
@@ -191,7 +191,7 @@ namespace Eduva.Application.Test.Features.Classes.Commands.AddMaterialsToFolder
             var materialId = Guid.NewGuid();
 
             var folder = new Folder { Id = folderId, ClassId = classId, OwnerType = OwnerType.Class };
-            var material = new LessonMaterial { Id = materialId, CreatedByUserId = userId };
+            var material = new LessonMaterial { Id = materialId, CreatedByUserId = userId, LessonStatus = LessonMaterialStatus.Approved };
             var user = new ApplicationUser { Id = userId };
 
             var command = new AddMaterialsToFolderCommand
@@ -255,7 +255,7 @@ namespace Eduva.Application.Test.Features.Classes.Commands.AddMaterialsToFolder
             var materialId = Guid.NewGuid();
 
             var folder = new Folder { Id = folderId, OwnerType = OwnerType.Personal, UserId = userId };
-            var material = new LessonMaterial { Id = materialId, CreatedByUserId = userId };
+            var material = new LessonMaterial { Id = materialId, CreatedByUserId = userId, LessonStatus = LessonMaterialStatus.Approved };
             var user = new ApplicationUser { Id = userId };
 
             var command = new AddMaterialsToFolderCommand
@@ -322,7 +322,7 @@ namespace Eduva.Application.Test.Features.Classes.Commands.AddMaterialsToFolder
             var folder = new Folder { Id = folderId, OwnerType = OwnerType.Class, ClassId = classId };
             var user = new ApplicationUser { Id = userId, SchoolId = 1 };
             var classroom = new Classroom { Id = classId, TeacherId = userId, SchoolId = 1 };
-            var material = new LessonMaterial { Id = materialId, CreatedByUserId = userId };
+            var material = new LessonMaterial { Id = materialId, CreatedByUserId = userId, LessonStatus = LessonMaterialStatus.Approved };
 
             var command = new AddMaterialsToFolderCommand
             {
@@ -360,7 +360,7 @@ namespace Eduva.Application.Test.Features.Classes.Commands.AddMaterialsToFolder
             var folder = new Folder { Id = folderId, OwnerType = OwnerType.Class, ClassId = classId };
             var user = new ApplicationUser { Id = userId, SchoolId = 1 };
             var classroom = new Classroom { Id = classId, TeacherId = Guid.NewGuid(), SchoolId = 1 };
-            var material = new LessonMaterial { Id = materialId, CreatedByUserId = userId };
+            var material = new LessonMaterial { Id = materialId, CreatedByUserId = userId, LessonStatus = LessonMaterialStatus.Approved };
 
             var command = new AddMaterialsToFolderCommand
             {
@@ -398,7 +398,7 @@ namespace Eduva.Application.Test.Features.Classes.Commands.AddMaterialsToFolder
             var folder = new Folder { Id = folderId, OwnerType = OwnerType.Class, ClassId = classId };
             var user = new ApplicationUser { Id = userId, SchoolId = 1 };
             var classroom = new Classroom { Id = classId, TeacherId = Guid.NewGuid(), SchoolId = 1 };
-            var material = new LessonMaterial { Id = materialId, CreatedByUserId = userId };
+            var material = new LessonMaterial { Id = materialId, CreatedByUserId = userId, LessonStatus = LessonMaterialStatus.Approved };
 
             var command = new AddMaterialsToFolderCommand
             {

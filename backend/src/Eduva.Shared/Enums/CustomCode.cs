@@ -188,6 +188,11 @@ namespace Eduva.Shared.Enums
         ParentCommentNotFound = 4829,
         CommentContentRequired = 4830,
 
+        //Lesson Material
+        LessonMaterialAlreadyApproved = 4850,
+        LessonMaterialAlreadyRejected = 4851,
+        LessonMaterialNotApproved = 4852,
+
         // Storage Quota Errors
         StorageQuotaExceeded = 4900,
     }

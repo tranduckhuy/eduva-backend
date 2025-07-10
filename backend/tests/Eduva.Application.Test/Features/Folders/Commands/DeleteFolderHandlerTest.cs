@@ -233,5 +233,114 @@ namespace Eduva.Application.Test.Features.Folders.Commands
             var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, CancellationToken.None));
             Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.FolderDeleteFailed));
         }
+
+        [Test]
+        public async Task HasPermissionToUpdateFolder_ShouldReturnTrue_ForPersonalFolderOwner()
+        {
+            var userId = Guid.NewGuid();
+            var folder = new Folder { OwnerType = OwnerType.Personal, UserId = userId };
+
+            _userRepoMock.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(new ApplicationUser { Id = userId });
+            _userManagerMock.Setup(m => m.GetRolesAsync(It.IsAny<ApplicationUser>())).ReturnsAsync(new List<string> { Role.Teacher.ToString() });
+
+            var result = await _handler.HasPermissionToUpdateFolder(folder, userId);
+            Assert.That(result, Is.True);
+        }
+
+
+        [Test]
+        public async Task HasPermissionToUpdateFolder_ShouldReturnFalse_ForPersonalFolderNotOwner()
+        {
+            var ownerId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var folder = new Folder { OwnerType = OwnerType.Personal, UserId = ownerId };
+
+            _userRepoMock.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(new ApplicationUser { Id = userId });
+            _userManagerMock.Setup(m => m.GetRolesAsync(It.IsAny<ApplicationUser>())).ReturnsAsync(new List<string> { Role.Teacher.ToString() });
+
+            var result = await _handler.HasPermissionToUpdateFolder(folder, userId);
+            Assert.That(result, Is.False);
+        }
+
+        [Test]
+        public async Task HasPermissionToUpdateFolder_ShouldReturnTrue_ForSystemAdmin()
+        {
+            var userId = Guid.NewGuid();
+            var folder = new Folder { OwnerType = OwnerType.Personal, UserId = Guid.NewGuid() };
+
+            _userRepoMock.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(new ApplicationUser { Id = userId });
+            _userManagerMock.Setup(m => m.GetRolesAsync(It.IsAny<ApplicationUser>())).ReturnsAsync(new List<string> { Role.SystemAdmin.ToString() });
+
+            var result = await _handler.HasPermissionToUpdateFolder(folder, userId);
+            Assert.That(result, Is.True);
+        }
+
+
+        [Test]
+        public async Task HasPermissionToUpdateFolder_ShouldReturnTrue_ForClassTeacher()
+        {
+            var userId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
+            var folder = new Folder { OwnerType = OwnerType.Class, ClassId = classId };
+
+            _userRepoMock.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(new ApplicationUser { Id = userId });
+            _userManagerMock.Setup(m => m.GetRolesAsync(It.IsAny<ApplicationUser>())).ReturnsAsync(new List<string> { Role.Teacher.ToString() });
+
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(new Classroom { Id = classId, TeacherId = userId, SchoolId = 1 });
+
+            var result = await _handler.HasPermissionToUpdateFolder(folder, userId);
+            Assert.That(result, Is.True);
+        }
+
+        [Test]
+        public async Task HasPermissionToUpdateFolder_ShouldReturnTrue_ForSchoolAdminOfClassSchool()
+        {
+            var userId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
+            var folder = new Folder { OwnerType = OwnerType.Class, ClassId = classId };
+
+            _userRepoMock.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(new ApplicationUser { Id = userId, SchoolId = 10 });
+            _userManagerMock.Setup(m => m.GetRolesAsync(It.IsAny<ApplicationUser>())).ReturnsAsync(new List<string> { Role.SchoolAdmin.ToString() });
+
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(new Classroom { Id = classId, TeacherId = Guid.NewGuid(), SchoolId = 10 });
+
+            var result = await _handler.HasPermissionToUpdateFolder(folder, userId);
+            Assert.That(result, Is.True);
+        }
+
+        [Test]
+        public async Task HasPermissionToUpdateFolder_ShouldReturnFalse_ForClassFolder_UserNotTeacherOrSchoolAdmin()
+        {
+            var userId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
+            var folder = new Folder { OwnerType = OwnerType.Class, ClassId = classId };
+
+            var user = new ApplicationUser { Id = userId, SchoolId = 2 };
+            _userRepoMock.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(user);
+            _userManagerMock.Setup(m => m.GetRolesAsync(user)).ReturnsAsync(new List<string> { Role.Teacher.ToString() });
+
+            var classroom = new Classroom { Id = classId, TeacherId = Guid.NewGuid(), SchoolId = 1 };
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+
+            var result = await _handler.HasPermissionToUpdateFolder(folder, userId);
+            Assert.That(result, Is.False);
+        }
+
+        [Test]
+        public async Task HasPermissionToUpdateFolder_ShouldReturnFalse_ForClassFolder_ClassroomNotFound()
+        {
+            var userId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
+            var folder = new Folder { OwnerType = OwnerType.Class, ClassId = classId };
+
+            var user = new ApplicationUser { Id = userId, SchoolId = 1 };
+            _userRepoMock.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(user);
+            _userManagerMock.Setup(m => m.GetRolesAsync(user)).ReturnsAsync(new List<string> { Role.SchoolAdmin.ToString() });
+
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync((Classroom?)null);
+
+            var result = await _handler.HasPermissionToUpdateFolder(folder, userId);
+            Assert.That(result, Is.False);
+        }
     }
 }
