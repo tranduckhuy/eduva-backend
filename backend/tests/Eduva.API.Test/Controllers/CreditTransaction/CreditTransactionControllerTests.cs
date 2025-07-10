@@ -140,9 +140,12 @@ namespace Eduva.API.Test.Controllers.CreditTransaction
                     new()
                     {
                         Id = Guid.NewGuid(),
-                        Credits = 100,
+                        TotalCredits = 100,
                         CreatedAt = DateTimeOffset.UtcNow,
                         User = new UserInfo { Id = Guid.NewGuid(), FullName = "Test User" },
+                        PaymentStatus = PaymentStatus.Paid,
+                        Amount = 50000,
+                        TransactionCode = "1687500000",
                         AICreditPack = new AICreditPackInfor { Id = 1, Name = "Starter Pack", Price = 50000, Credits = 100, BonusCredits = 10 },
                         PaymentTransactionId = Guid.NewGuid()
                     }
@@ -205,9 +208,12 @@ namespace Eduva.API.Test.Controllers.CreditTransaction
                     new()
                     {
                         Id = Guid.NewGuid(),
-                        Credits = 100,
+                        TotalCredits = 100,
                         CreatedAt = DateTimeOffset.UtcNow,
                         User = new UserInfo { Id = currentUserId, FullName = "Teacher User" },
+                        PaymentStatus = PaymentStatus.Paid,
+                        Amount = 50000,
+                        TransactionCode = "1687500000",
                         AICreditPack = new AICreditPackInfor { Id = 1, Name = "Starter Pack", Price = 50000, Credits = 100, BonusCredits = 10 },
                         PaymentTransactionId = Guid.NewGuid()
                     }
@@ -270,8 +276,11 @@ namespace Eduva.API.Test.Controllers.CreditTransaction
                     new()
                     {
                         Id = Guid.NewGuid(),
-                        Credits = 100,
+                        TotalCredits = 100,
                         CreatedAt = DateTimeOffset.UtcNow,
+                        PaymentStatus = PaymentStatus.Paid,
+                        Amount = 50000,
+                        TransactionCode = "1687500000",
                         User = new UserInfo { Id = currentUserId, FullName = "ContentModerator User" },
                         AICreditPack = new AICreditPackInfor { Id = 1, Name = "Starter Pack", Price = 50000, Credits = 100, BonusCredits = 10 },
                         PaymentTransactionId = Guid.NewGuid()
@@ -380,7 +389,7 @@ namespace Eduva.API.Test.Controllers.CreditTransaction
             var expectedResponse = new CreditTransactionResponse
             {
                 Id = transactionId,
-                Credits = 300,
+                TotalCredits = 300,
                 CreatedAt = DateTimeOffset.UtcNow,
                 User = new UserInfo
                 {
