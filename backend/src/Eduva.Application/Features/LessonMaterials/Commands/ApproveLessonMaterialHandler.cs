@@ -37,6 +37,9 @@ namespace Eduva.Application.Features.LessonMaterials.Commands
 
             if ((isModerator || isSchoolAdmin) && moderator.SchoolId == lesson.SchoolId)
             {
+                if (request.Status == LessonMaterialStatus.Rejected && string.IsNullOrWhiteSpace(request.Feedback))
+                    throw new AppException(CustomCode.ReasonIsRequiredWhenRejectingLessonMaterial);
+
                 if (lesson.LessonStatus == request.Status)
                 {
                     if (request.Status == LessonMaterialStatus.Approved)
@@ -47,6 +50,18 @@ namespace Eduva.Application.Features.LessonMaterials.Commands
 
                 lesson.LessonStatus = request.Status;
                 repo.Update(lesson);
+
+                var approvalRepo = _unitOfWork.GetRepository<LessonMaterialApproval, Guid>();
+                var approval = new LessonMaterialApproval
+                {
+                    LessonMaterialId = lesson.Id,
+                    ApproverId = moderator.Id,
+                    StatusChangeTo = request.Status,
+                    Feedback = request.Feedback?.Trim(),
+                    CreatedAt = DateTimeOffset.UtcNow
+                };
+                await approvalRepo.AddAsync(approval);
+
                 await _unitOfWork.CommitAsync();
                 return Unit.Value;
             }
