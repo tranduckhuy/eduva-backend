@@ -1856,6 +1856,454 @@ namespace Eduva.Infrastructure.Test.Services
         #endregion
 
 
+        // Tests for SchoolId Claim handling in LoginAsync, VerifyLoginOtpAsync, and RefreshTokenAsync
+
+        #region SchoolId Claim Tests
+
+        [Test]
+        public async Task LoginAsync_UserWithSchoolId_ShouldAddSchoolIdClaim()
+        {
+            // Arrange
+            var schoolId = 123;
+            var user = new ApplicationUser
+            {
+                Id = Guid.NewGuid(),
+                Email = "test@example.com",
+                UserName = "test@example.com",
+                EmailConfirmed = true,
+                TwoFactorEnabled = false,
+                SchoolId = schoolId
+            };
+
+            _userManager.Setup(m => m.FindByEmailAsync("test@example.com")).ReturnsAsync(user);
+            _userManager.Setup(m => m.CheckPasswordAsync(user, "ValidPassword123!")).ReturnsAsync(true);
+            _userManager.Setup(m => m.IsLockedOutAsync(user)).ReturnsAsync(false);
+            _userManager.Setup(m => m.GetTwoFactorEnabledAsync(user)).ReturnsAsync(false);
+            _userManager.Setup(m => m.GetRolesAsync(user)).ReturnsAsync(new List<string> { "SchoolAdmin" });
+            _userManager.Setup(m => m.GetClaimsAsync(user)).ReturnsAsync(new List<Claim>());
+            _userManager.Setup(m => m.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
+
+            var dto = new LoginRequestDto
+            {
+                Email = "test@example.com",
+                Password = "ValidPassword123!"
+            };
+
+            // Act
+            var (code, result) = await _authService.LoginAsync(dto);
+
+            Assert.Multiple(() =>
+            {
+                // Assert
+                Assert.That(code, Is.EqualTo(CustomCode.Success));
+                Assert.That(result.AccessToken, Is.Not.Null);
+            });
+
+            // Verify that the token contains SchoolId claim
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var token = tokenHandler.ReadJwtToken(result.AccessToken);
+            var schoolIdClaim = token.Claims.FirstOrDefault(c => c.Type == "SchoolId");
+
+            Assert.That(schoolIdClaim, Is.Not.Null);
+            Assert.That(schoolIdClaim!.Value, Is.EqualTo(schoolId.ToString()));
+        }
+
+        [Test]
+        public async Task LoginAsync_UserWithoutSchoolId_ShouldNotAddSchoolIdClaim()
+        {
+            // Arrange
+            var user = new ApplicationUser
+            {
+                Id = Guid.NewGuid(),
+                Email = "test@example.com",
+                UserName = "test@example.com",
+                EmailConfirmed = true,
+                TwoFactorEnabled = false,
+                SchoolId = null
+            };
+
+            _userManager.Setup(m => m.FindByEmailAsync("test@example.com")).ReturnsAsync(user);
+            _userManager.Setup(m => m.CheckPasswordAsync(user, "ValidPassword123!")).ReturnsAsync(true);
+            _userManager.Setup(m => m.IsLockedOutAsync(user)).ReturnsAsync(false);
+            _userManager.Setup(m => m.GetTwoFactorEnabledAsync(user)).ReturnsAsync(false);
+            _userManager.Setup(m => m.GetRolesAsync(user)).ReturnsAsync(new List<string> { "SchoolAdmin" });
+            _userManager.Setup(m => m.GetClaimsAsync(user)).ReturnsAsync(new List<Claim>());
+            _userManager.Setup(m => m.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
+
+            var dto = new LoginRequestDto
+            {
+                Email = "test@example.com",
+                Password = "ValidPassword123!"
+            };
+
+            // Act
+            var (code, result) = await _authService.LoginAsync(dto);
+
+            Assert.Multiple(() =>
+            {
+                // Assert
+                Assert.That(code, Is.EqualTo(CustomCode.Success));
+                Assert.That(result.AccessToken, Is.Not.Null);
+            });
+
+            // Verify that the token does not contain SchoolId claim
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var token = tokenHandler.ReadJwtToken(result.AccessToken);
+            var schoolIdClaim = token.Claims.FirstOrDefault(c => c.Type == "SchoolId");
+
+            Assert.That(schoolIdClaim, Is.Null);
+        }
+
+        [Test]
+        public async Task VerifyLoginOtpAsync_UserWithSchoolId_ShouldAddSchoolIdClaim()
+        {
+            // Arrange
+            var schoolId = 456;
+            var user = new ApplicationUser
+            {
+                Id = Guid.NewGuid(),
+                Email = "test@example.com",
+                UserName = "test@example.com",
+                TwoFactorEnabled = true,
+                SchoolId = schoolId
+            };
+
+            _userManager.Setup(m => m.FindByEmailAsync("test@example.com")).ReturnsAsync(user);
+            _userManager.Setup(m => m.GetTwoFactorEnabledAsync(user)).ReturnsAsync(true);
+            _userManager.Setup(m => m.VerifyTwoFactorTokenAsync(user, "OTP", "123456")).ReturnsAsync(true);
+            _userManager.Setup(m => m.GetRolesAsync(user)).ReturnsAsync(new List<string> { "SchoolAdmin" });
+            _userManager.Setup(m => m.GetClaimsAsync(user)).ReturnsAsync(new List<Claim>());
+            _userManager.Setup(m => m.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
+
+            var dto = new VerifyOtpRequestDto
+            {
+                Email = "test@example.com",
+                OtpCode = "123456"
+            };
+
+            // Act
+            var (code, result) = await _authService.VerifyLoginOtpAsync(dto);
+
+            Assert.Multiple(() =>
+            {
+                // Assert
+                Assert.That(code, Is.EqualTo(CustomCode.Success));
+                Assert.That(result.AccessToken, Is.Not.Null);
+            });
+
+            // Verify that the token contains SchoolId claim
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var token = tokenHandler.ReadJwtToken(result.AccessToken);
+            var schoolIdClaim = token.Claims.FirstOrDefault(c => c.Type == "SchoolId");
+
+            Assert.That(schoolIdClaim, Is.Not.Null);
+            Assert.That(schoolIdClaim!.Value, Is.EqualTo(schoolId.ToString()));
+        }
+
+        [Test]
+        public async Task VerifyLoginOtpAsync_UserWithoutSchoolId_ShouldNotAddSchoolIdClaim()
+        {
+            // Arrange
+            var user = new ApplicationUser
+            {
+                Id = Guid.NewGuid(),
+                Email = "test@example.com",
+                UserName = "test@example.com",
+                TwoFactorEnabled = true,
+                SchoolId = null
+            };
+
+            _userManager.Setup(m => m.FindByEmailAsync("test@example.com")).ReturnsAsync(user);
+            _userManager.Setup(m => m.GetTwoFactorEnabledAsync(user)).ReturnsAsync(true);
+            _userManager.Setup(m => m.VerifyTwoFactorTokenAsync(user, "OTP", "123456")).ReturnsAsync(true);
+            _userManager.Setup(m => m.GetRolesAsync(user)).ReturnsAsync(new List<string> { "SchoolAdmin" });
+            _userManager.Setup(m => m.GetClaimsAsync(user)).ReturnsAsync(new List<Claim>());
+            _userManager.Setup(m => m.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
+
+            var dto = new VerifyOtpRequestDto
+            {
+                Email = "test@example.com",
+                OtpCode = "123456"
+            };
+
+            // Act
+            var (code, result) = await _authService.VerifyLoginOtpAsync(dto);
+
+            Assert.Multiple(() =>
+            {
+                // Assert
+                Assert.That(code, Is.EqualTo(CustomCode.Success));
+                Assert.That(result.AccessToken, Is.Not.Null);
+            });
+
+            // Verify that the token does not contain SchoolId claim
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var token = tokenHandler.ReadJwtToken(result.AccessToken);
+            var schoolIdClaim = token.Claims.FirstOrDefault(c => c.Type == "SchoolId");
+
+            Assert.That(schoolIdClaim, Is.Null);
+        }
+
+        [Test]
+        public async Task RefreshTokenAsync_UserWithSchoolId_ShouldAddSchoolIdClaim()
+        {
+            // Arrange
+            var schoolId = 789;
+            var userId = Guid.NewGuid();
+            var user = new ApplicationUser
+            {
+                Id = userId,
+                UserName = "test@example.com",
+                Email = "test@example.com",
+                RefreshToken = "valid-refresh-token",
+                RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(1),
+                SchoolId = schoolId
+            };
+
+            var accessToken = GenerateJwtAccessToken(userId.ToString(), DateTime.UtcNow.AddMinutes(15));
+
+            _userManager.Setup(m => m.FindByNameAsync("test@example.com")).ReturnsAsync(user);
+            _userManager.Setup(m => m.IsLockedOutAsync(user)).ReturnsAsync(false);
+            _userManager.Setup(m => m.GetRolesAsync(user)).ReturnsAsync(new List<string> { "SchoolAdmin" });
+            _userManager.Setup(m => m.GetClaimsAsync(user)).ReturnsAsync(new List<Claim>());
+            _userManager.Setup(m => m.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
+
+            var dto = new RefreshTokenRequestDto
+            {
+                AccessToken = accessToken,
+                RefreshToken = "valid-refresh-token"
+            };
+
+            // Act
+            var (code, result) = await _authService.RefreshTokenAsync(dto);
+
+            Assert.Multiple(() =>
+            {
+                // Assert
+                Assert.That(code, Is.EqualTo(CustomCode.Success));
+                Assert.That(result.AccessToken, Is.Not.Null);
+            });
+
+            // Verify that the token contains SchoolId claim
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var token = tokenHandler.ReadJwtToken(result.AccessToken);
+            var schoolIdClaim = token.Claims.FirstOrDefault(c => c.Type == "SchoolId");
+
+            Assert.That(schoolIdClaim, Is.Not.Null);
+            Assert.That(schoolIdClaim!.Value, Is.EqualTo(schoolId.ToString()));
+        }
+
+        [Test]
+        public async Task RefreshTokenAsync_UserWithoutSchoolId_ShouldNotAddSchoolIdClaim()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var user = new ApplicationUser
+            {
+                Id = userId,
+                UserName = "test@example.com",
+                Email = "test@example.com",
+                RefreshToken = "valid-refresh-token",
+                RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(1),
+                SchoolId = null
+            };
+
+            var accessToken = GenerateJwtAccessToken(userId.ToString(), DateTime.UtcNow.AddMinutes(15));
+
+            _userManager.Setup(m => m.FindByNameAsync("test@example.com")).ReturnsAsync(user);
+            _userManager.Setup(m => m.IsLockedOutAsync(user)).ReturnsAsync(false);
+            _userManager.Setup(m => m.GetRolesAsync(user)).ReturnsAsync(new List<string> { "SchoolAdmin" });
+            _userManager.Setup(m => m.GetClaimsAsync(user)).ReturnsAsync(new List<Claim>());
+            _userManager.Setup(m => m.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
+
+            var dto = new RefreshTokenRequestDto
+            {
+                AccessToken = accessToken,
+                RefreshToken = "valid-refresh-token"
+            };
+
+            // Act
+            var (code, result) = await _authService.RefreshTokenAsync(dto);
+
+            Assert.Multiple(() =>
+            {
+                // Assert
+                Assert.That(code, Is.EqualTo(CustomCode.Success));
+                Assert.That(result.AccessToken, Is.Not.Null);
+            });
+
+            // Verify that the token does not contain SchoolId claim
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var token = tokenHandler.ReadJwtToken(result.AccessToken);
+            var schoolIdClaim = token.Claims.FirstOrDefault(c => c.Type == "SchoolId");
+
+            Assert.That(schoolIdClaim, Is.Null);
+        }
+
+        #endregion
+
+        // Tests for OTP throttle and provider functionality
+
+        #region OTP Provider and Throttle Tests
+
+        [Test]
+        public void EnsureOtpThrottleAsync_OtpProviderNull_ThrowsInvalidOperationException()
+        {
+            // Arrange
+            var user = new ApplicationUser { Email = "test@example.com" };
+
+            // Setup service provider to return null for OtpProvider  
+            var nullServiceProvider = new Mock<IServiceProvider>();
+            nullServiceProvider
+                .Setup(sp => sp.GetService(typeof(SixDigitTokenProvider<ApplicationUser>)))
+                .Returns((object?)null);
+
+            var jwtSettings = new Dictionary<string, string?>
+            {
+                ["JwtSettings:SecretKey"] = "super_secret_key_1234567890123456",
+                ["JwtSettings:ValidIssuer"] = "issuer",
+                ["JwtSettings:ValidAudience"] = "audience",
+                ["JwtSettings:ExpiryInSecond"] = "3600"
+            };
+
+            var config = new ConfigurationBuilder()
+                .AddInMemoryCollection(jwtSettings)
+                .Build();
+
+            var authServiceWithNullProvider = new AuthService(
+                _userManager.Object,
+                _emailSender.Object,
+                _logger.Object,
+                new JwtHandler(config, new Mock<ILogger<JwtHandler>>().Object),
+                _tokenService.Object,
+                nullServiceProvider.Object);
+
+            _userManager.Setup(x => x.FindByEmailAsync("test@example.com")).ReturnsAsync(user);
+
+            var dto = new ResendOtpRequestDto
+            {
+                Email = "test@example.com",
+                Purpose = OtpPurpose.Login
+            };
+
+            // Act & Assert - The actual exception will be thrown by GetRequiredService when service is null
+            var ex = Assert.ThrowsAsync<InvalidOperationException>(() => authServiceWithNullProvider.ResendOtpAsync(dto));
+            Assert.That(ex!.Message, Does.Contain("No service for type").Or.Contain("Unable to resolve service"));
+        }
+
+        [Test]
+        public async Task ResendOtpAsync_AllOtpPurposeValues_ShouldSetCorrectSubject()
+        {
+            // Test for Login purpose
+            await TestResendOtpWithPurpose(OtpPurpose.Login, "Xác thực OTP đăng nhập");
+
+            // Test for Enable2FA purpose  
+            await TestResendOtpWithPurpose(OtpPurpose.Enable2FA, "Bật xác thực 2 yếu tố - EDUVA");
+
+            // Test for Disable2FA purpose
+            await TestResendOtpWithPurpose(OtpPurpose.Disable2FA, "Tắt xác thực 2 yếu tố - EDUVA");
+
+            // Test for default case (any other value)
+            await TestResendOtpWithPurpose((OtpPurpose)999, "Xác thực OTP");
+        }
+
+        private async Task TestResendOtpWithPurpose(OtpPurpose purpose, string expectedSubject)
+        {
+            // Arrange
+            var user = new ApplicationUser { Email = $"test{(int)purpose}@example.com" };
+
+            _userManager.Setup(x => x.FindByEmailAsync(user.Email)).ReturnsAsync(user);
+            _userManager.Setup(x => x.GetClaimsAsync(user)).ReturnsAsync(new List<Claim>());
+            _emailSender.Setup(x => x.SendEmailBrevoHtmlAsync(It.IsAny<string>(), It.IsAny<string>(), It.Is<string>(s => s == expectedSubject), It.IsAny<string>()))
+                .Returns(Task.CompletedTask);
+
+            var dto = new ResendOtpRequestDto
+            {
+                Email = user.Email,
+                Purpose = purpose
+            };
+
+            // Act
+            var result = await _authService.ResendOtpAsync(dto);
+
+            // Assert
+            Assert.That(result, Is.EqualTo(CustomCode.OtpSentSuccessfully));
+            _emailSender.Verify(x => x.SendEmailBrevoHtmlAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                expectedSubject,
+                It.IsAny<string>()), Times.AtLeastOnce);
+        }
+
+        [Test]
+        public async Task LoginAsync_2FAEnabled_WithSchoolId_ShouldNotIncludeSchoolIdInResponse()
+        {
+            // Arrange
+            var schoolId = 999;
+            var user = new ApplicationUser
+            {
+                Id = Guid.NewGuid(),
+                Email = "test@example.com",
+                UserName = "test@example.com",
+                EmailConfirmed = true,
+                TwoFactorEnabled = true,
+                SchoolId = schoolId
+            };
+
+            _userManager.Setup(m => m.FindByEmailAsync("test@example.com")).ReturnsAsync(user);
+            _userManager.Setup(m => m.CheckPasswordAsync(user, "ValidPassword123!")).ReturnsAsync(true);
+            _userManager.Setup(m => m.IsLockedOutAsync(user)).ReturnsAsync(false);
+            _userManager.Setup(m => m.GetTwoFactorEnabledAsync(user)).ReturnsAsync(true);
+            _emailSender.Setup(x => x.SendEmailBrevoHtmlAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .Returns(Task.CompletedTask);
+
+            var dto = new LoginRequestDto
+            {
+                Email = "test@example.com",
+                Password = "ValidPassword123!"
+            };
+
+            // Act
+            var (code, result) = await _authService.LoginAsync(dto);
+
+            // Assert
+            Assert.That(code, Is.EqualTo(CustomCode.RequiresOtpVerification));
+            Assert.That(result.Requires2FA, Is.True);
+            Assert.That(result.AccessToken, Is.Null.Or.Empty);
+        }
+
+        [Test]
+        public async Task ForceClearOtpClaimsAsync_WithOtpClaims_ShouldRemoveOnlyOtpRelatedClaims()
+        {
+            // Arrange
+            var user = new ApplicationUser();
+            var otpClaims = new List<Claim>
+            {
+                new Claim("LastOtpSentTime", DateTime.UtcNow.ToString("o")),
+                new Claim("LastOtpValue", "123456"), // This is the actual OTP claim that gets removed
+                new Claim("SomeOtherClaim", "value")
+            };
+
+            _userManager.Setup(x => x.GetClaimsAsync(user)).ReturnsAsync(otpClaims);
+            _userManager.Setup(x => x.RemoveClaimAsync(user, It.IsAny<Claim>())).ReturnsAsync(IdentityResult.Success);
+
+            var provider = new SixDigitTokenProvider<ApplicationUser>(
+                Options.Create(new SixDigitTokenProviderOptions { TokenLifespan = TimeSpan.FromSeconds(60) }),
+                new Mock<ILogger<SixDigitTokenProvider<ApplicationUser>>>().Object);
+
+            // Act
+            await provider.ForceClearOtpClaimsAsync(_userManager.Object, user);
+
+            // Assert - Based on actual implementation, it only removes specific OTP-related claims
+            _userManager.Verify(x => x.RemoveClaimAsync(user, It.Is<Claim>(c => c.Type == "LastOtpSentTime")), Times.Once);
+            _userManager.Verify(x => x.RemoveClaimAsync(user, It.Is<Claim>(c => c.Type == "LastOtpValue")), Times.Once);
+            _userManager.Verify(x => x.RemoveClaimAsync(user, It.Is<Claim>(c => c.Type == "SomeOtherClaim")), Times.Never);
+        }
+
+        #endregion
+
+        // Helper methods for generating tokens and mocking UserManager
+
         #region Helper Methods
 
         // Tests for GenerateValidExpiredAccessToken method - generates a valid expired JWT token.
@@ -1893,8 +2341,10 @@ namespace Eduva.Infrastructure.Test.Services
             {
                 Subject = new ClaimsIdentity(new[]
                 {
-            new Claim(ClaimTypes.NameIdentifier, userId)
-        }),
+                    new Claim(ClaimTypes.NameIdentifier, userId),
+                    new Claim(ClaimTypes.Name, "test@example.com"),
+                    new Claim(ClaimTypes.Email, "test@example.com")
+                }),
                 Expires = expiry,
                 SigningCredentials = new SigningCredentials(
                     new SymmetricSecurityKey(key),
