@@ -1,5 +1,6 @@
 ﻿using Eduva.API.Controllers.Base;
 using Eduva.API.Models;
+using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Common.Models;
 using Eduva.Application.Features.CreditTransactions.Commands;
 using Eduva.Application.Features.CreditTransactions.Queries;
@@ -27,12 +28,23 @@ namespace Eduva.API.Controllers.CreditTransactions
         }
 
         [HttpGet]
-        [Authorize(Roles = nameof(Role.SystemAdmin))]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)}, {nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}")]
         [ProducesResponseType(typeof(ApiResponse<Pagination<CreditTransactionResponse>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetUserCreditTransactions([FromQuery] CreditTransactionSpecParam specParam)
         {
             return await HandleRequestAsync<Pagination<CreditTransactionResponse>>(async () =>
             {
+                if (!User.IsInRole(nameof(Role.SystemAdmin)))
+                {
+                    var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                    if (!Guid.TryParse(userIdStr, out var userId))
+                    {
+                        throw new AppException(CustomCode.UserIdNotFound);
+                    }
+
+                    specParam.UserId = userId;
+                }
+
                 var result = await _mediator.Send(new GetCreditTransactionQuery(specParam));
                 return (CustomCode.Success, result);
             });
