@@ -11,5 +11,6 @@ namespace Eduva.Application.Features.LessonMaterials.Commands
         [JsonIgnore]
         public Guid ModeratorId { get; set; }
         public LessonMaterialStatus Status { get; set; } = LessonMaterialStatus.Approved;
+        public string Feedback { get; set; } = string.Empty;
     }
 }

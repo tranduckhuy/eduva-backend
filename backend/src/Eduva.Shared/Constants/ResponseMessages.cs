@@ -355,8 +355,9 @@ namespace Eduva.Shared.Constants
             { CustomCode.LessonMaterialAlreadyRejected, new MessageDetail {
                 HttpCode = StatusCodes.Status400BadRequest, Message = "This lesson material has already been rejected."} },
             { CustomCode.LessonMaterialNotApproved, new MessageDetail
-            {
-                HttpCode = StatusCodes.Status400BadRequest, Message = "This lesson material has not been approved yet."} },
+            {   HttpCode = StatusCodes.Status400BadRequest, Message = "This lesson material has not been approved yet."} },
+            { CustomCode.ReasonIsRequiredWhenRejectingLessonMaterial, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "You must enter the reason when refusing to approve the lesson!"} },
 
             // Storage Quota Errors
             { CustomCode.StorageQuotaExceeded, new MessageDetail {
