@@ -111,7 +111,8 @@ namespace Eduva.Application.Features.Users.Commands
 
             if (uniqueRoles.Count == 1)
             {
-                var role = uniqueRoles.First();
+                var role = uniqueRoles[0];
+
                 if (role is not (Role.Teacher or Role.ContentModerator))
                 {
                     throw new AppException(CustomCode.InvalidSingleRole);

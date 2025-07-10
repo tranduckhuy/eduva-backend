@@ -1280,7 +1280,7 @@ namespace Eduva.API.Test.Controllers.Users
             SetupUser(validUserId.ToString(), "SchoolAdmin");
             var request = new AssignUserRolesRequest { Roles = new List<Role> { Role.Teacher } };
 
-            var appException = new AppException(CustomCode.RoleAssignmentFailed, new[] { "Role assignment failed" });
+            var appException = new AppException(CustomCode.RoleAssignmentFailed);
             _mediatorMock.Setup(m => m.Send(It.IsAny<AssignUserRolesCommand>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(appException);
 
