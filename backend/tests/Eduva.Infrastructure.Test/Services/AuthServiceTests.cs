@@ -2266,10 +2266,13 @@ namespace Eduva.Infrastructure.Test.Services
             // Act
             var (code, result) = await _authService.LoginAsync(dto);
 
-            // Assert
-            Assert.That(code, Is.EqualTo(CustomCode.RequiresOtpVerification));
-            Assert.That(result.Requires2FA, Is.True);
-            Assert.That(result.AccessToken, Is.Null.Or.Empty);
+            Assert.Multiple(() =>
+            {
+                // Assert
+                Assert.That(code, Is.EqualTo(CustomCode.RequiresOtpVerification));
+                Assert.That(result.Requires2FA, Is.True);
+                Assert.That(result.AccessToken, Is.Null.Or.Empty);
+            });
         }
 
         [Test]
