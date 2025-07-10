@@ -267,19 +267,13 @@ namespace Eduva.Infrastructure.Services
         {
             try
             {
-                _logger.LogInformation("Starting SaveNotificationToDatabase - Type: {Type}", notificationType);
-
                 // Serialize notification data to JSON
                 var payload = JsonSerializer.Serialize(notificationData, JsonOptions);
-                _logger.LogInformation("JSON serialization completed");
 
                 // Create persistent notification
-                _logger.LogInformation("About to call CreateNotificationAsync");
                 var persistentNotification = await _notificationService.CreateNotificationAsync(notificationType, payload);
-                _logger.LogInformation("CreateNotificationAsync completed - NotificationId: {Id}", persistentNotification.Id);
 
                 // Get users who should receive this notification
-                _logger.LogInformation("About to call GetUsersInLessonAsync");
                 var targetUserIds = await _notificationService.GetUsersInLessonAsync(lessonMaterialId);
                 _logger.LogInformation("GetUsersInLessonAsync completed - Found {Count} users", targetUserIds.Count);
 
@@ -296,9 +290,7 @@ namespace Eduva.Infrastructure.Services
                 // Create user notifications
                 if (targetUserIds.Count != 0)
                 {
-                    _logger.LogInformation("About to call CreateUserNotificationsAsync");
                     await _notificationService.CreateUserNotificationsAsync(persistentNotification.Id, targetUserIds);
-                    _logger.LogInformation("CreateUserNotificationsAsync completed");
                 }
 
                 _logger.LogInformation("Saved persistent notification: {NotificationType}, " +

@@ -4,10 +4,6 @@ namespace Eduva.Application.Common.Helpers
 {
     public static class NotificationPayloadHelper
     {
-        private static readonly JsonSerializerOptions DeserializeOptions = new()
-        {
-            PropertyNameCaseInsensitive = true
-        };
 
         public static object DeserializePayload(string jsonPayload)
         {

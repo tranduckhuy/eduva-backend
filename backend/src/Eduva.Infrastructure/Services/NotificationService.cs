@@ -125,7 +125,7 @@ namespace Eduva.Infrastructure.Services
                 _logger.LogInformation("Added lesson creator: {UserId}", lesson.CreatedByUserId);
 
                 // 2. Add users who have interacted with this lesson (questions, comments)
-                await AddUsersWhoInteractedWithLessonAsync(lessonMaterialId, userIds, cancellationToken);
+                await AddUsersWhoInteractedWithLessonAsync(lessonMaterialId, userIds);
 
                 // 3. Add users with access based on folder structure
                 await AddUsersWithFolderAccessAsync(lessonMaterialId, userIds, cancellationToken);
@@ -133,7 +133,7 @@ namespace Eduva.Infrastructure.Services
                 // 4. For lessons not in folders, add users with access based on visibility
                 if (userIds.Count <= 1) // Only creator found
                 {
-                    await AddUsersBasedOnVisibilityAsync(lesson, userIds, cancellationToken);
+                    await AddUsersBasedOnVisibilityAsync(lesson, userIds);
                 }
 
                 var result = userIds.ToList();
@@ -151,7 +151,7 @@ namespace Eduva.Infrastructure.Services
 
         #region Helper Methods
 
-        private async Task AddUsersWhoInteractedWithLessonAsync(Guid lessonMaterialId, HashSet<Guid> userIds, CancellationToken cancellationToken = default)
+        private async Task AddUsersWhoInteractedWithLessonAsync(Guid lessonMaterialId, HashSet<Guid> userIds)
         {
             try
             {
@@ -224,7 +224,7 @@ namespace Eduva.Infrastructure.Services
                 else if (folder.ClassId.HasValue)
                 {
                     // Class folder - add teacher and students with access
-                    await AddClassUsersWithAccessAsync(folder.ClassId.Value, lessonMaterialId, userIds, cancellationToken);
+                    await AddClassUsersWithAccessAsync(folder.ClassId.Value, lessonMaterialId, userIds);
                 }
             }
             catch (Exception ex)
@@ -233,7 +233,7 @@ namespace Eduva.Infrastructure.Services
             }
         }
 
-        private async Task AddClassUsersWithAccessAsync(Guid classId, Guid lessonMaterialId, HashSet<Guid> userIds, CancellationToken cancellationToken = default)
+        private async Task AddClassUsersWithAccessAsync(Guid classId, Guid lessonMaterialId, HashSet<Guid> userIds)
         {
             try
             {
@@ -281,7 +281,7 @@ namespace Eduva.Infrastructure.Services
             }
         }
 
-        private async Task AddUsersBasedOnVisibilityAsync(LessonMaterial lesson, HashSet<Guid> userIds, CancellationToken cancellationToken = default)
+        private async Task AddUsersBasedOnVisibilityAsync(LessonMaterial lesson, HashSet<Guid> userIds)
         {
             try
             {
