@@ -140,6 +140,32 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status403Forbidden, Message = "You cannot view users from a different school. Please ensure you are viewing users within your own school." } },
             { CustomCode.CannotViewRestrictedUserRoles, new MessageDetail {
                 HttpCode = StatusCodes.Status403Forbidden, Message = "You do not have permission to view restricted user roles." } },
+            { CustomCode.CannotModifyRestrictedUserRoles, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You do not have permission to modify restricted user roles." } },
+            { CustomCode.CannotModifyOwnRoles, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You cannot modify your own roles. Please contact support for assistance." } },
+            { CustomCode.CannotManageUserFromDifferentSchool, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You cannot manage users from a different school. Please ensure you are managing users within your own school." } },
+            { CustomCode.InvalidRoleCombination, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Invalid role combination. Only ContentModerator and Teacher roles can be combined within a school." } },
+            { CustomCode.InsufficientPermissionToManageRoles, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "You do not have sufficient permissions to manage user roles." } },
+            { CustomCode.RoleRemovalFailed, new MessageDetail {
+                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to remove user role. Please try again later." } },
+            { CustomCode.RoleAssignmentFailed, new MessageDetail {
+                HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to assign user role. Please try again later." } },
+             { CustomCode.RoleListEmpty, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "At least one role must be specified for assignment." } },
+            { CustomCode.RestrictedRoleNotAllowed, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "SystemAdmin and SchoolAdmin roles cannot be assigned by School Admin." } },
+            { CustomCode.InvalidSingleRole, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Invalid role specified. Only Student, Teacher, or ContentModerator roles are allowed." } },
+            { CustomCode.InvalidMultipleRoleCombination, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Invalid role combination. Only ContentModerator and Teacher roles can be combined." } },
+            { CustomCode.TooManyRolesAssigned, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Too many roles specified. Maximum 2 roles allowed with specific combinations only." } },
+            { CustomCode.StudentRoleNotAssignable, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Student role cannot be assigned through role management. Students are created through registration or import process." } },
 
             // File Storage Errors
             { CustomCode.InvalidBlobName, new MessageDetail {
