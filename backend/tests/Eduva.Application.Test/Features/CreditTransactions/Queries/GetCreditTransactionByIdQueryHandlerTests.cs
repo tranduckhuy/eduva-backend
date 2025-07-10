@@ -87,7 +87,7 @@ namespace Eduva.Application.Test.Features.CreditTransactions.Queries
             {
                 Assert.That(result, Is.Not.Null);
                 Assert.That(result.Id, Is.EqualTo(id));
-                Assert.That(result.Credits, Is.EqualTo(300));
+                Assert.That(result.TotalCredits, Is.EqualTo(300));
                 Assert.That(result.User, Is.Not.Null);
                 Assert.That(result.User.Email, Is.EqualTo("alice@eduva.vn"));
                 Assert.That(result.AICreditPack, Is.Not.Null);
@@ -148,7 +148,7 @@ namespace Eduva.Application.Test.Features.CreditTransactions.Queries
             Assert.Multiple(() =>
             {
                 Assert.That(result.Id, Is.EqualTo(id));
-                Assert.That(result.Credits, Is.EqualTo(300));
+                Assert.That(result.TotalCredits, Is.EqualTo(300));
             });
         }
 

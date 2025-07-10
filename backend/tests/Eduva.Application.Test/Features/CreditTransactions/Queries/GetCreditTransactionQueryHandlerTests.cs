@@ -101,7 +101,7 @@ namespace Eduva.Application.Test.Features.CreditTransactions.Queries
 
                 Assert.Multiple(() =>
                 {
-                    Assert.That(first.Credits, Is.EqualTo(200));
+                    Assert.That(first.TotalCredits, Is.EqualTo(200));
                     Assert.That(first.User.Email, Is.EqualTo("sang@eduva.vn"));
                     Assert.That(first.AICreditPack.Name, Is.EqualTo("Basic Pack"));
                 });
