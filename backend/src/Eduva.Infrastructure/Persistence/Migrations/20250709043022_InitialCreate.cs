@@ -337,6 +337,35 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Jobs",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Type = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    JobStatus = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Topic = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
+                    SourceBlobNames = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    ContentBlobName = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    ProductBlobName = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    WordCount = table.Column<int>(type: "integer", nullable: true),
+                    FailureReason = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    LastModifiedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    Status = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Jobs", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Jobs_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "LessonMaterials",
                 columns: table => new
                 {
@@ -765,6 +794,21 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Jobs_JobStatus",
+                table: "Jobs",
+                column: "JobStatus");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Jobs_Type",
+                table: "Jobs",
+                column: "Type");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Jobs_UserId",
+                table: "Jobs",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_LessonMaterialApprovals_ApproverId",
                 table: "LessonMaterialApprovals",
                 column: "ApproverId");
@@ -893,6 +937,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "FolderLessonMaterials");
+
+            migrationBuilder.DropTable(
+                name: "Jobs");
 
             migrationBuilder.DropTable(
                 name: "LessonMaterialApprovals");

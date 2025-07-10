@@ -3,6 +3,7 @@ using Azure.Storage.Sas;
 using Eduva.Application.Exceptions.FileStorage;
 using Eduva.Application.Interfaces.Services;
 using Eduva.Infrastructure.Configurations;
+using Microsoft.AspNetCore.Http;
 
 namespace Eduva.Infrastructure.Services
 {
@@ -10,6 +11,7 @@ namespace Eduva.Infrastructure.Services
     {
         private readonly AzureBlobStorageOptions _options;
         private readonly BlobContainerClient _containerClient;
+        private readonly BlobContainerClient _tempContainerClient;
         private readonly IStorageQuotaService _storageQuotaService;
 
         public AzureBlobStorageService(AzureBlobStorageOptions options, IStorageQuotaService storageQuotaService)
@@ -18,6 +20,7 @@ namespace Eduva.Infrastructure.Services
             _storageQuotaService = storageQuotaService;
             var blobServiceClient = new BlobServiceClient(_options.ConnectionString);
             _containerClient = blobServiceClient.GetBlobContainerClient(_options.ContainerName);
+            _tempContainerClient = blobServiceClient.GetBlobContainerClient(_options.TemporaryContainerName);
         }
 
         private string GenerateUploadSasToken(string blobName, DateTimeOffset expiresOn)
@@ -116,6 +119,18 @@ namespace Eduva.Infrastructure.Services
 
             // Generate SAS tokens if quota check passes
             return await GenerateUploadSasTokens(blobNames);
+        }
+
+        public async Task<string> UploadFileToTempContainerAsync(IFormFile file, string blobName)
+        {
+            var blobClient = _tempContainerClient.GetBlobClient(blobName);
+            
+            using (var stream = file.OpenReadStream())
+            {
+                await blobClient.UploadAsync(stream, overwrite: true);
+            }
+            
+            return blobClient.Uri.ToString();
         }
 
         private static string GetBlobNameFromUrl(string blobUrl)

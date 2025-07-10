@@ -1,4 +1,4 @@
-﻿using Eduva.API.Adapters;
+using Eduva.API.Adapters;
 using Eduva.API.Hubs;
 using Eduva.API.Middlewares;
 using Eduva.Application.Contracts.Hubs;
@@ -72,6 +72,22 @@ builder.Services.AddSwaggerGen(setup =>
         { jwtSecurityScheme, Array.Empty<string>() }
     });
 
+    // Add API Key security scheme for worker endpoints
+    var apiKeySecurityScheme = new OpenApiSecurityScheme
+    {
+        Name = "X-API-Key",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Description = "API Key for worker endpoints",
+        Reference = new OpenApiReference
+        {
+            Id = "ApiKey",
+            Type = ReferenceType.SecurityScheme
+        }
+    };
+
+    setup.AddSecurityDefinition(apiKeySecurityScheme.Reference.Id, apiKeySecurityScheme);
+
 });
 
 builder.Services.AddCors(o => o.AddPolicy("AllowAll", builder =>
@@ -119,6 +135,9 @@ app.UseMiddleware<SubscriptionValidationMiddleware>();
 app.MapHub<QuestionCommentHub>("/hubs/question-comment");
 
 app.MapControllers();
+
+// Map SignalR Hub
+app.MapHub<JobStatusHub>("/jobStatusHub");
 
 app.MapHealthChecks("/health", new HealthCheckOptions()
 {

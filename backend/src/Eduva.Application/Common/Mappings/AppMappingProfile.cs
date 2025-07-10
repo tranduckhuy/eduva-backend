@@ -6,6 +6,11 @@ using Eduva.Application.Features.Classes.Commands.UpdateClass;
 using Eduva.Application.Features.Classes.Responses;
 using Eduva.Application.Features.CreditTransactions.Responses;
 using Eduva.Application.Features.Folders.Responses;
+using Eduva.Application.Features.Jobs.Commands.CreateJob;
+using Eduva.Application.Features.Jobs.Commands.ConfirmJob;
+using Eduva.Application.Features.Jobs.Commands.UpdateJob;
+using Eduva.Application.Features.Jobs.Commands.UpdateJobProgress;
+using Eduva.Application.Features.Jobs.DTOs;
 using Eduva.Application.Features.LessonMaterials;
 using Eduva.Application.Features.LessonMaterials.Commands;
 using Eduva.Application.Features.LessonMaterials.Responses;
@@ -244,6 +249,12 @@ namespace Eduva.Application.Common.Mappings
             CreateMap<CreateSystemConfigDto, SystemConfig>();
             CreateMap<SystemConfig, SystemConfigDto>();
             CreateMap<UpdateSystemConfigDto, SystemConfig>();
+
+            // Job mappings
+            CreateMap<Job, JobResponse>();
+            CreateMap<CreateJobRequest, CreateJobCommand>();
+            CreateMap<ConfirmJobRequest, ConfirmJobCommand>();
+            CreateMap<UpdateJobProgressRequest, UpdateJobProgressCommand>();
         }
         private static string GetOwnerName(Folder folder)
         {
