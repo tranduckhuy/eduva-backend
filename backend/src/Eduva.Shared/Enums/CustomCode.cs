@@ -195,5 +195,8 @@ namespace Eduva.Shared.Enums
 
         // Storage Quota Errors
         StorageQuotaExceeded = 4900,
+
+        // Notification Errors
+        NotificationNotFound = 4950,
     }
 }

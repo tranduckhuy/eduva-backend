@@ -362,6 +362,10 @@ namespace Eduva.Shared.Constants
             { CustomCode.StorageQuotaExceeded, new MessageDetail {
                 HttpCode = StatusCodes.Status413PayloadTooLarge, Message = "Storage quota exceeded. Please upgrade your subscription or delete some files" } },
 
+            // Notification Errors
+            { CustomCode.NotificationNotFound, new MessageDetail {
+                HttpCode = StatusCodes.Status404NotFound, Message = "Notification not found" } },
+           
             #endregion
         };
 
