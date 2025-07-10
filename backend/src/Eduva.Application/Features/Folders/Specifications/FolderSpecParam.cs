@@ -9,5 +9,6 @@ namespace Eduva.Application.Features.Folders.Specifications
         public Guid? UserId { get; set; }
         public Guid? ClassId { get; set; }
         public OwnerType? OwnerType { get; set; }
+        public EntityStatus? Status { get; set; }
     }
 }

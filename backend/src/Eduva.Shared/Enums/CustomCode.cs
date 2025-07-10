@@ -78,6 +78,19 @@ namespace Eduva.Shared.Enums
         CannotUnlockDeletedUser = 4065,
         CannotViewUserFromDifferentSchool = 4066,
         CannotViewRestrictedUserRoles = 4067,
+        CannotManageUserFromDifferentSchool = 4068,
+        CannotModifyRestrictedUserRoles = 4069,
+        CannotModifyOwnRoles = 4070,
+        InvalidRoleCombination = 4071,
+        InsufficientPermissionToManageRoles = 4072,
+        RoleRemovalFailed = 4073,
+        RoleAssignmentFailed = 4074,
+        RoleListEmpty = 4075,
+        RestrictedRoleNotAllowed = 4076,
+        InvalidSingleRole = 4077,
+        InvalidMultipleRoleCombination = 4078,
+        TooManyRolesAssigned = 4079,
+        StudentRoleNotAssignable = 4080,
 
         // File Storage Errors
         InvalidBlobName = 4200,
@@ -173,6 +186,12 @@ namespace Eduva.Shared.Enums
         CannotReplyToReply = 4828,
         ParentCommentNotFound = 4829,
         CommentContentRequired = 4830,
+
+        //Lesson Material
+        LessonMaterialAlreadyApproved = 4850,
+        LessonMaterialAlreadyRejected = 4851,
+        LessonMaterialNotApproved = 4852,
+        ReasonIsRequiredWhenRejectingLessonMaterial = 4853,
 
         // Storage Quota Errors
         StorageQuotaExceeded = 4900,

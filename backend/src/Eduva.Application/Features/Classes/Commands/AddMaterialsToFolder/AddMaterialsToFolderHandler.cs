@@ -48,6 +48,11 @@ namespace Eduva.Application.Features.Classes.Commands.AddMaterialsToFolder
                     throw new AppException(CustomCode.LessonMaterialNotFound);
                 }
 
+                if (material.LessonStatus != LessonMaterialStatus.Approved)
+                {
+                    throw new AppException(CustomCode.LessonMaterialNotApproved);
+                }
+
                 // Check if material belongs to the user
                 if (material.CreatedByUserId != request.CurrentUserId)
                 {

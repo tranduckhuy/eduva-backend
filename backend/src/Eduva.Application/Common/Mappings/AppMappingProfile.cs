@@ -139,7 +139,11 @@ namespace Eduva.Application.Common.Mappings
                 Price = src.AICreditPack.Price,
                 Credits = src.AICreditPack.Credits,
                 BonusCredits = src.AICreditPack.BonusCredits
-            }));
+            }))
+            .ForMember(dest => dest.TotalCredits, opt => opt.MapFrom(src => src.Credits))
+            .ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.PaymentTransaction.Amount))
+            .ForMember(dest => dest.PaymentStatus, opt => opt.MapFrom(src => src.PaymentTransaction.PaymentStatus))
+            .ForMember(dest => dest.TransactionCode, opt => opt.MapFrom(src => src.PaymentTransaction.TransactionCode));
 
             CreateMap<Pagination<UserCreditTransaction>, Pagination<CreditTransactionResponse>>();
 

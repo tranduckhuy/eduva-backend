@@ -105,14 +105,30 @@ namespace Eduva.API.Test.Controllers.CreditTransaction
         #region GetUserCreditTransactions Tests
 
         [Test]
-        public async Task GetUserCreditTransactions_ShouldReturnOk_WhenRequestIsValid()
+        public async Task GetUserCreditTransactions_ShouldReturnOk_WhenSystemAdminRequestsAllTransactions()
         {
             // Arrange
+            var userId = Guid.NewGuid().ToString();
+            var claims = new List<Claim>
+            {
+                new(ClaimTypes.NameIdentifier, userId),
+                new(ClaimTypes.Role, nameof(Role.SystemAdmin))
+            };
+            var identity = new ClaimsIdentity(claims);
+            var principal = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = principal }
+            };
+
             var specParam = new CreditTransactionSpecParam
             {
                 PageIndex = 1,
-                PageSize = 10
+                PageSize = 10,
+                UserId = Guid.NewGuid() // SystemAdmin can specify any UserId
             };
+
+            var originalUserId = specParam.UserId;
 
             var expectedResponse = new Pagination<CreditTransactionResponse>
             {
@@ -120,22 +136,25 @@ namespace Eduva.API.Test.Controllers.CreditTransaction
                 PageSize = 10,
                 Count = 1,
                 Data = new List<CreditTransactionResponse>
-        {
-            new()
-            {
-                Id = Guid.NewGuid(),
-                Credits = 100,
-                CreatedAt = DateTimeOffset.UtcNow,
-                User = new UserInfo { Id = Guid.NewGuid(), FullName = "Test User" },
-                AICreditPack = new AICreditPackInfor { Id = 1, Name = "Starter Pack", Price = 50000, Credits = 100, BonusCredits = 10 },
-                PaymentTransactionId = Guid.NewGuid()
-            }
-        }
+                {
+                    new()
+                    {
+                        Id = Guid.NewGuid(),
+                        TotalCredits = 100,
+                        CreatedAt = DateTimeOffset.UtcNow,
+                        User = new UserInfo { Id = Guid.NewGuid(), FullName = "Test User" },
+                        PaymentStatus = PaymentStatus.Paid,
+                        Amount = 50000,
+                        TransactionCode = "1687500000",
+                        AICreditPack = new AICreditPackInfor { Id = 1, Name = "Starter Pack", Price = 50000, Credits = 100, BonusCredits = 10 },
+                        PaymentTransactionId = Guid.NewGuid()
+                    }
+                }
             };
 
             _mediatorMock
-                 .Setup(m => m.Send(It.IsAny<GetCreditTransactionQuery>(), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(expectedResponse);
+                .Setup(m => m.Send(It.IsAny<GetCreditTransactionQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(expectedResponse);
 
             // Act
             var result = await _controller.GetUserCreditTransactions(specParam);
@@ -148,6 +167,214 @@ namespace Eduva.API.Test.Controllers.CreditTransaction
             var response = objectResult.Value as ApiResponse<object>;
             Assert.That(response, Is.Not.Null);
             Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+
+            // Verify that specParam.UserId was NOT overridden for SystemAdmin
+            _mediatorMock.Verify(m => m.Send(
+                It.Is<GetCreditTransactionQuery>(q => q.Param.UserId == originalUserId),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Test]
+        public async Task GetUserCreditTransactions_ShouldOverrideUserId_WhenTeacherMakesRequest()
+        {
+            // Arrange
+            var currentUserId = Guid.NewGuid();
+            var claims = new List<Claim>
+            {
+                new(ClaimTypes.NameIdentifier, currentUserId.ToString()),
+                new(ClaimTypes.Role, nameof(Role.Teacher))
+            };
+            var identity = new ClaimsIdentity(claims);
+            var principal = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = principal }
+            };
+
+            var specParam = new CreditTransactionSpecParam
+            {
+                PageIndex = 1,
+                PageSize = 10,
+                UserId = Guid.NewGuid() // Teacher tries to specify different UserId
+            };
+
+            var expectedResponse = new Pagination<CreditTransactionResponse>
+            {
+                PageIndex = 1,
+                PageSize = 10,
+                Count = 1,
+                Data = new List<CreditTransactionResponse>
+                {
+                    new()
+                    {
+                        Id = Guid.NewGuid(),
+                        TotalCredits = 100,
+                        CreatedAt = DateTimeOffset.UtcNow,
+                        User = new UserInfo { Id = currentUserId, FullName = "Teacher User" },
+                        PaymentStatus = PaymentStatus.Paid,
+                        Amount = 50000,
+                        TransactionCode = "1687500000",
+                        AICreditPack = new AICreditPackInfor { Id = 1, Name = "Starter Pack", Price = 50000, Credits = 100, BonusCredits = 10 },
+                        PaymentTransactionId = Guid.NewGuid()
+                    }
+                }
+            };
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<GetCreditTransactionQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(expectedResponse);
+
+            // Act
+            var result = await _controller.GetUserCreditTransactions(specParam);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(200));
+
+            var response = objectResult.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+
+            // Verify that specParam.UserId was overridden to current user's ID
+            _mediatorMock.Verify(m => m.Send(
+                It.Is<GetCreditTransactionQuery>(q => q.Param.UserId == currentUserId),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Test]
+        public async Task GetUserCreditTransactions_ShouldOverrideUserId_WhenContentModeratorMakesRequest()
+        {
+            // Arrange
+            var currentUserId = Guid.NewGuid();
+            var claims = new List<Claim>
+            {
+                new(ClaimTypes.NameIdentifier, currentUserId.ToString()),
+                new(ClaimTypes.Role, nameof(Role.ContentModerator))
+            };
+            var identity = new ClaimsIdentity(claims);
+            var principal = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = principal }
+            };
+
+            var specParam = new CreditTransactionSpecParam
+            {
+                PageIndex = 1,
+                PageSize = 10,
+                UserId = Guid.NewGuid() // ContentModerator tries to specify different UserId
+            };
+
+            var expectedResponse = new Pagination<CreditTransactionResponse>
+            {
+                PageIndex = 1,
+                PageSize = 10,
+                Count = 1,
+                Data = new List<CreditTransactionResponse>
+                {
+                    new()
+                    {
+                        Id = Guid.NewGuid(),
+                        TotalCredits = 100,
+                        CreatedAt = DateTimeOffset.UtcNow,
+                        PaymentStatus = PaymentStatus.Paid,
+                        Amount = 50000,
+                        TransactionCode = "1687500000",
+                        User = new UserInfo { Id = currentUserId, FullName = "ContentModerator User" },
+                        AICreditPack = new AICreditPackInfor { Id = 1, Name = "Starter Pack", Price = 50000, Credits = 100, BonusCredits = 10 },
+                        PaymentTransactionId = Guid.NewGuid()
+                    }
+                }
+            };
+
+            _mediatorMock
+                .Setup(m => m.Send(It.IsAny<GetCreditTransactionQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(expectedResponse);
+
+            // Act
+            var result = await _controller.GetUserCreditTransactions(specParam);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(200));
+
+            var response = objectResult.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+
+            // Verify that specParam.UserId was overridden to current user's ID
+            _mediatorMock.Verify(m => m.Send(
+                It.Is<GetCreditTransactionQuery>(q => q.Param.UserId == currentUserId),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Test]
+        public async Task GetUserCreditTransactions_ShouldReturnUserIdNotFound_WhenNonSystemAdminUserIsNotAuthenticated()
+        {
+            // Arrange
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext() // no user
+            };
+
+            var specParam = new CreditTransactionSpecParam
+            {
+                PageIndex = 1,
+                PageSize = 10
+            };
+
+            // Act
+            var result = await _controller.GetUserCreditTransactions(specParam);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(401));
+
+            var response = objectResult.Value as ApiResponse<object>;
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+
+            // Verify that mediator was never called
+            _mediatorMock.Verify(m => m.Send(It.IsAny<GetCreditTransactionQuery>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Test]
+        public async Task GetUserCreditTransactions_ShouldReturnUserIdNotFound_WhenTeacherHasInvalidUserId()
+        {
+            // Arrange
+            var claims = new List<Claim>
+            {
+                new(ClaimTypes.NameIdentifier, "invalid-guid"),
+                new(ClaimTypes.Role, nameof(Role.Teacher))
+            };
+            var identity = new ClaimsIdentity(claims);
+            var principal = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = principal }
+            };
+
+            var specParam = new CreditTransactionSpecParam
+            {
+                PageIndex = 1,
+                PageSize = 10
+            };
+
+            // Act
+            var result = await _controller.GetUserCreditTransactions(specParam);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(401));
+
+            var response = objectResult.Value as ApiResponse<object>;
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+
+            // Verify that mediator was never called
+            _mediatorMock.Verify(m => m.Send(It.IsAny<GetCreditTransactionQuery>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         #endregion
@@ -162,7 +389,7 @@ namespace Eduva.API.Test.Controllers.CreditTransaction
             var expectedResponse = new CreditTransactionResponse
             {
                 Id = transactionId,
-                Credits = 300,
+                TotalCredits = 300,
                 CreatedAt = DateTimeOffset.UtcNow,
                 User = new UserInfo
                 {
