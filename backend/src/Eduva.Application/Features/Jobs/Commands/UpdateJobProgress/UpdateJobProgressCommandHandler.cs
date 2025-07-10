@@ -1,4 +1,4 @@
-using Eduva.Application.Exceptions.Job;
+﻿using Eduva.Application.Exceptions.Job;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Application.Interfaces.Services;
@@ -14,7 +14,7 @@ public class UpdateJobProgressCommand : IRequest<Unit>
     public Guid JobId { get; set; }
     public JobStatus JobStatus { get; set; }
     public int? WordCount { get; set; }
-    public int? EstimatedDurationMinutes { get; set; }
+    public string? PreviewContent { get; set; }
     public string? ContentBlobName { get; set; }
     public string? ProductBlobName { get; set; }
     public string? FailureReason { get; set; }
@@ -25,6 +25,7 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
     private readonly IUnitOfWork _unitOfWork;
     private readonly IJobNotificationService _notificationService;
     private readonly ILogger<UpdateJobProgressCommandHandler> _logger;
+    private const int WORDS_PER_MINUTE = 200;
 
     public UpdateJobProgressCommandHandler(
         IUnitOfWork unitOfWork,
@@ -59,14 +60,14 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
         _unitOfWork.GetRepository<Job, Guid>().Update(job);
 
         // Calculate credit costs based on estimated duration
-        var (audioCost, videoCost) = await CalculateCreditCostAsync(request.EstimatedDurationMinutes ?? 0, cancellationToken);
+        var (audioCost, videoCost) = await CalculateCreditCostAsync(request.WordCount ?? 0, cancellationToken);
 
         // Send real-time update via SignalR
         var statusData = new
         {
             JobId = job.Id,
             Status = job.JobStatus,
-            request.EstimatedDurationMinutes,
+            request.PreviewContent,
             AudioCost = audioCost,
             VideoCost = videoCost,
             job.ContentBlobName,
@@ -84,7 +85,7 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
         return Unit.Value;
     }
 
-    private async Task<(int audioCost, int videoCost)> CalculateCreditCostAsync(int estimatedDurationMinutes, CancellationToken cancellationToken = default)
+    private async Task<(int audioCost, int videoCost)> CalculateCreditCostAsync(int wordCount, CancellationToken cancellationToken = default)
     {
         var aiServicePricingRepository = _unitOfWork.GetRepository<AIServicePricing, int>();
 
@@ -103,8 +104,10 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
             throw new InvalidOperationException("Audio or Video pricing not found.");
         }
 
-        var audioCost = (int)Math.Ceiling((estimatedDurationMinutes * audioPricing.PricePerMinuteCredits) / 1000.0m);
-        var videoCost = (int)Math.Ceiling((estimatedDurationMinutes * videoPricing.PricePerMinuteCredits) / 1000.0m);
+        var estimatedDurationMinutes = (decimal)wordCount / WORDS_PER_MINUTE;
+
+        var audioCost = (int)Math.Ceiling(estimatedDurationMinutes * audioPricing.PricePerMinuteCredits);
+        var videoCost = (int)Math.Ceiling(estimatedDurationMinutes * videoPricing.PricePerMinuteCredits);
 
         // Calculate cost based on estimated duration
         return (audioCost, videoCost);

@@ -32,9 +32,14 @@ namespace Eduva.API.Adapters
 
         public async Task SendNotificationToUserAsync(string userId, string eventName, object data)
         {
-            // For user-specific notifications, send to both hubs
-            await _questionCommentHubContext.Clients.User(userId).SendAsync(eventName, data);
-            await _jobStatusHubContext.Clients.User(userId).SendAsync(eventName, data);
+            if (eventName.StartsWith("Job"))
+            {
+                await _jobStatusHubContext.Clients.User(userId).SendAsync(eventName, data);
+            }
+            else
+            {
+                await _questionCommentHubContext.Clients.User(userId).SendAsync(eventName, data);
+            }
         }
 
         public async Task SendNotificationToAllAsync(string eventName, object data)

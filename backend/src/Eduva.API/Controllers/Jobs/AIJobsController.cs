@@ -70,7 +70,7 @@ public class AIJobsController : BaseController<AIJobsController>
             ContentBlobName = request.ContentBlobName,
             ProductBlobName = request.ProductBlobName,
             WordCount = request.WordCount,
-            EstimatedDurationMinutes = request.EstimatedDurationMinutes,
+            PreviewContent = request.PreviewContent,
             FailureReason = request.FailureReason
         };
 

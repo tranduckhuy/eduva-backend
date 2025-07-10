@@ -110,6 +110,13 @@ builder.Services.AddApplicationServices();
 // Register SignalR Hub services
 builder.Services.AddScoped<INotificationHub, SignalRNotificationHub>();
 
+builder.Services.AddSignalR(options =>
+{
+    options.EnableDetailedErrors = true;
+    options.ClientTimeoutInterval = TimeSpan.FromMinutes(1);
+});
+
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -133,11 +140,10 @@ app.UseMiddleware<SubscriptionValidationMiddleware>();
 
 // Add SignalR Hub mapping
 app.MapHub<QuestionCommentHub>("/hubs/question-comment");
+app.MapHub<JobStatusHub>("/hubs/job-status");
 
 app.MapControllers();
 
-// Map SignalR Hub
-app.MapHub<JobStatusHub>("/jobStatusHub");
 
 app.MapHealthChecks("/health", new HealthCheckOptions()
 {

@@ -1,4 +1,4 @@
-using Eduva.Application.Interfaces.Services;
+﻿using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Eduva.Infrastructure.Identity;
 using Eduva.Infrastructure.Identity.Interfaces;
@@ -96,6 +96,23 @@ namespace Eduva.Infrastructure.Extensions
                                 }
                             }
                         }
+                    }
+                };
+
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+                        var path = context.HttpContext.Request.Path;
+
+                        if (!string.IsNullOrEmpty(accessToken) &&
+                            (path.StartsWithSegments("/hubs/job-status") ||
+                             path.StartsWithSegments("/hubs/question-comment")))
+                        {
+                            context.Token = accessToken;
+                        }
+                        return Task.CompletedTask;
                     }
                 };
             });

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Logging;
+using System.Security.Claims;
 
 namespace Eduva.API.Hubs;
 
@@ -16,7 +16,8 @@ public class JobStatusHub : Hub
 
     public override async Task OnConnectedAsync()
     {
-        var userId = Context.UserIdentifier;
+        var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
         _logger.LogInformation("User {UserId} connected to JobStatusHub", userId);
         await base.OnConnectedAsync();
     }
