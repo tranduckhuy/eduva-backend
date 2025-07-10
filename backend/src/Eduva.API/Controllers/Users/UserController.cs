@@ -234,6 +234,33 @@ namespace Eduva.API.Controllers.Users
             return await HandleRequestAsync(() => _mediator.Send(command));
         }
 
+        [HttpPut("{userId:guid}/roles")]
+        [Authorize(Roles = nameof(Role.SchoolAdmin))]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> AssignUserRoles(Guid userId, [FromBody] AssignUserRolesRequest request)
+        {
+            if (request == null)
+            {
+                return Respond(CustomCode.ProvidedInformationIsInValid);
+            }
+
+            var schoolAdminIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(schoolAdminIdStr, out var schoolAdminId))
+            {
+                return Respond(CustomCode.UserIdNotFound);
+            }
+
+            var command = new AssignUserRolesCommand
+            {
+                TargetUserId = userId,
+                Roles = request.Roles,
+                SchoolAdminId = schoolAdminId
+            };
+
+            return await HandleRequestAsync(() => _mediator.Send(command));
+        }
+
         [HttpDelete("{userId:guid}")]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
