@@ -373,6 +373,10 @@ namespace Eduva.Shared.Constants
             // User credit
             { CustomCode.InsufficientUserCredit, new MessageDetail {
                 HttpCode = StatusCodes.Status402PaymentRequired, Message = "User credit is insufficient to perform this operation."} },
+            // Notification Errors
+            { CustomCode.NotificationNotFound, new MessageDetail {
+                HttpCode = StatusCodes.Status404NotFound, Message = "Notification not found" } },
+           
             #endregion
         };
 

@@ -202,5 +202,8 @@ namespace Eduva.Shared.Enums
 
         // User Credit
         InsufficientUserCredit = 5200,
+
+        // Notification Errors
+        NotificationNotFound = 4950,
     }
 }

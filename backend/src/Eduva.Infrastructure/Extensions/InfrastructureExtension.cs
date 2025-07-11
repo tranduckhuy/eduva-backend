@@ -72,6 +72,10 @@ namespace Eduva.Infrastructure.Extensions
             services.AddScoped<IQuestionPermissionService, QuestionPermissionService>();
             services.AddScoped<ISystemConfigHelper, SystemConfigHelper>();
 
+            // Add Notification repositories
+            services.AddScoped<INotificationRepository, NotificationRepository>();
+            services.AddScoped<IUserNotificationRepository, UserNotificationRepository>();
+
             services.AddScoped<PayOS>(provider =>
             {
                 var config = provider.GetRequiredService<IOptions<PayOSConfig>>().Value;
@@ -106,6 +110,7 @@ namespace Eduva.Infrastructure.Extensions
             services.AddSignalR();
 
             // Add SignalR Notification Service
+            services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<IHubNotificationService, HubNotificationService>();
 
             // Add Job Notification Service
