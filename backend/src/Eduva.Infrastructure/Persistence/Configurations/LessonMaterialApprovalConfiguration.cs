@@ -22,9 +22,6 @@ namespace Eduva.Infrastructure.Persistence.Configurations
             builder.Property(lma => lma.Feedback)
                 .HasColumnType("text");
 
-            builder.Property(lma => lma.RequesterNote)
-                .HasColumnType("text");
-
             // Relationships
             builder.HasOne(lma => lma.Approver)
                 .WithMany(u => u.ApprovedLessonMaterials)

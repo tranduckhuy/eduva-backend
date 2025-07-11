@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Eduva.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250709043022_InitialCreate")]
+    [Migration("20250711022058_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -352,6 +352,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<int>("AudioCost")
+                        .HasColumnType("integer");
+
                     b.Property<string>("ContentBlobName")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
@@ -394,6 +397,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
+
+                    b.Property<int>("VideoCost")
+                        .HasColumnType("integer");
 
                     b.Property<int?>("WordCount")
                         .HasColumnType("integer");
@@ -495,9 +501,6 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
                     b.Property<Guid>("LessonMaterialId")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("RequesterNote")
-                        .HasColumnType("text");
 
                     b.Property<string>("StatusChangeTo")
                         .IsRequired()

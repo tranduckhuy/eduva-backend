@@ -57,10 +57,20 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
         if (!string.IsNullOrEmpty(request.FailureReason))
             job.FailureReason = request.FailureReason;
 
-        _unitOfWork.GetRepository<Job, Guid>().Update(job);
+        var audioCost = 0;
+        var videoCost = 0;
 
         // Calculate credit costs based on estimated duration
-        var (audioCost, videoCost) = await CalculateCreditCostAsync(request.WordCount ?? 0, cancellationToken);
+        if (request.JobStatus == JobStatus.ContentGenerated && request.WordCount.HasValue)
+        {
+            (audioCost, videoCost) = await CalculateCreditCostAsync(request.WordCount.Value, cancellationToken);
+
+            job.AudioCost = audioCost;
+            job.VideoCost = videoCost;
+        }
+
+        _unitOfWork.GetRepository<Job, Guid>().Update(job);
+
 
         // Send real-time update via SignalR
         var statusData = new

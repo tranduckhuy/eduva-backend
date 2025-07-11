@@ -198,5 +198,9 @@ namespace Eduva.Shared.Enums
 
         // Job Errors
         JobNotFound = 5100,
+        JobContentNotGenerated = 5101,
+
+        // User Credit
+        InsufficientUserCredit = 5200,
     }
 }

@@ -347,6 +347,8 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     SourceBlobNames = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     ContentBlobName = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     ProductBlobName = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    AudioCost = table.Column<int>(type: "integer", nullable: false),
+                    VideoCost = table.Column<int>(type: "integer", nullable: false),
                     WordCount = table.Column<int>(type: "integer", nullable: true),
                     FailureReason = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
@@ -521,7 +523,6 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     LessonMaterialId = table.Column<Guid>(type: "uuid", nullable: false),
                     ApproverId = table.Column<Guid>(type: "uuid", nullable: false),
                     StatusChangeTo = table.Column<string>(type: "text", nullable: false),
-                    RequesterNote = table.Column<string>(type: "text", nullable: true),
                     Feedback = table.Column<string>(type: "text", nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },

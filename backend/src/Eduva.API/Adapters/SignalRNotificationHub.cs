@@ -46,7 +46,6 @@ namespace Eduva.API.Adapters
         {
             // For broadcast notifications, send to both hubs
             await _questionCommentHubContext.Clients.All.SendAsync(eventName, data);
-            await _jobStatusHubContext.Clients.All.SendAsync(eventName, data);
         }
     }
 }

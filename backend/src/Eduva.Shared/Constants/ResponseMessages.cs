@@ -367,6 +367,12 @@ namespace Eduva.Shared.Constants
             // Job Errors
             { CustomCode.JobNotFound, new MessageDetail {
                 HttpCode = StatusCodes.Status404NotFound, Message = "Job not found" } },
+            { CustomCode.JobContentNotGenerated, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Job content must be generated before confirmation." } },
+
+            // User credit
+            { CustomCode.InsufficientUserCredit, new MessageDetail {
+                HttpCode = StatusCodes.Status402PaymentRequired, Message = "User credit is insufficient to perform this operation."} },
             #endregion
         };
 

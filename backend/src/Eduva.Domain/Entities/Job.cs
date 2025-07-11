@@ -19,6 +19,8 @@ public class Job : BaseTimestampedEntity<Guid>
     public List<string> SourceBlobNames { get; set; } = [];
     public string? ContentBlobName { get; set; }
     public string? ProductBlobName { get; set; }
+    public int AudioCost { get; set; } = 0;
+    public int VideoCost { get; set; } = 0;
     public int? WordCount { get; set; }
     public string? FailureReason { get; set; }
     public Guid UserId { get; set; }
