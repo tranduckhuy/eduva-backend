@@ -25,16 +25,20 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
     private readonly IUnitOfWork _unitOfWork;
     private readonly IJobNotificationService _notificationService;
     private readonly ILogger<UpdateJobProgressCommandHandler> _logger;
+    private readonly IStorageService _storageService;
+
     private const int WORDS_PER_MINUTE = 200;
 
     public UpdateJobProgressCommandHandler(
         IUnitOfWork unitOfWork,
         IJobNotificationService notificationService,
-        ILogger<UpdateJobProgressCommandHandler> logger)
+        ILogger<UpdateJobProgressCommandHandler> logger,
+        IStorageService storageService)
     {
         _unitOfWork = unitOfWork;
         _notificationService = notificationService;
         _logger = logger;
+        _storageService = storageService;
     }
 
     public async Task<Unit> Handle(UpdateJobProgressCommand request, CancellationToken cancellationToken)
@@ -51,8 +55,12 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
         if (!string.IsNullOrEmpty(request.ContentBlobName))
             job.ContentBlobName = request.ContentBlobName;
 
+        var productBlobNameUrl = string.Empty;
         if (!string.IsNullOrEmpty(request.ProductBlobName))
-            job.ProductBlobName = request.ProductBlobName;
+        {
+            (string blobNameUrl, productBlobNameUrl) = _storageService.GetReadableUrlFromBlobName(request.ProductBlobName);
+            job.ProductBlobName = blobNameUrl;
+        }
 
         if (!string.IsNullOrEmpty(request.FailureReason))
             job.FailureReason = request.FailureReason;
@@ -81,7 +89,7 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
             AudioCost = audioCost,
             VideoCost = videoCost,
             job.ContentBlobName,
-            job.ProductBlobName,
+            ProductBlobNameUrl = productBlobNameUrl,
             job.FailureReason,
             job.LastModifiedAt
         };
