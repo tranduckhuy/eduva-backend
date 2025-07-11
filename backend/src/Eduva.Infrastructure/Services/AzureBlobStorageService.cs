@@ -143,8 +143,13 @@ namespace Eduva.Infrastructure.Services
         private static string GetBlobNameFromUrl(string blobUrl)
         {
             var uri = new Uri(blobUrl);
-            var encodedBlobName = uri.Segments[^1];
-            return Uri.UnescapeDataString(encodedBlobName);
+            var containerName = uri.Segments[1].TrimEnd('/');
+
+            // Skip first 2 segments: "/" and "container/"
+            var blobPathSegments = uri.Segments.Skip(2);
+            var blobName = string.Concat(blobPathSegments);
+
+            return Uri.UnescapeDataString(blobName);
         }
     }
 }
