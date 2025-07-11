@@ -11,6 +11,15 @@ namespace Eduva.Infrastructure.Persistence.Repositories
         {
         }
 
+        public async Task<List<UserNotification>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+        {
+            return await _context.UserNotifications
+                .Include(un => un.Notification)
+                .Where(un => un.TargetUserId == userId)
+                .OrderByDescending(un => un.Notification.CreatedAt)
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task<List<UserNotification>> GetUnreadByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
         {
             return await _context.UserNotifications

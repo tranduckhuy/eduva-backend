@@ -63,6 +63,12 @@ namespace Eduva.Infrastructure.Services
                 userNotifications.Count, notificationId);
         }
 
+        public async Task<List<UserNotification>> GetUserNotificationsAsync(Guid userId, CancellationToken cancellationToken = default)
+        {
+            var userNotificationRepo = _unitOfWork.GetCustomRepository<IUserNotificationRepository>();
+            return await userNotificationRepo.GetByUserIdAsync(userId, cancellationToken);
+        }
+
         public async Task<List<UserNotification>> GetUserNotificationsAsync(Guid userId, int skip, int take, CancellationToken cancellationToken = default)
         {
             var userNotificationRepo = _unitOfWork.GetCustomRepository<IUserNotificationRepository>();
