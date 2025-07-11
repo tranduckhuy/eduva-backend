@@ -126,6 +126,29 @@ namespace Eduva.Application.Test.Features.Notifications.Queries
             });
         }
 
+        [Test]
+        public async Task Handle_ShouldReturnAllNotifications_WhenPageSizeIsZero()
+        {
+            // Arrange
+            var request = new GetUserNotificationsQuery { UserId = _userId, PageIndex = 1, PageSize = 0 };
+            var notifications = new List<UserNotification> { /* ...mock data... */ };
+
+            _notificationServiceMock
+                .Setup(s => s.GetUserNotificationsAsync(_userId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(notifications);
+
+            // Act
+            var result = await _handler.Handle(request, CancellationToken.None);
+
+            Assert.Multiple(() =>
+            {
+                // Assert
+                Assert.That(result.Data, Has.Count.EqualTo(notifications.Count));
+                Assert.That(result.Count, Is.EqualTo(notifications.Count));
+            });
+            _notificationServiceMock.Verify(s => s.GetUserNotificationsAsync(_userId, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
         #endregion
 
         #region Pagination Tests

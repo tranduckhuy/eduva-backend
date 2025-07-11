@@ -122,6 +122,39 @@ namespace Eduva.Infrastructure.Test.Services
         }
 
         [Test]
+        public async Task GetUserNotificationsAsync_ShouldReturnAllNotifications_WhenCalledWithUserIdOnly()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var notifications = new List<UserNotification>
+            {
+                new UserNotification { Id = Guid.NewGuid(), Notification = new Notification { /* ... */ } },
+                new UserNotification { Id = Guid.NewGuid(), Notification = new Notification { /* ... */ } }
+            };
+
+            var userNotificationRepoMock = new Mock<IUserNotificationRepository>();
+            userNotificationRepoMock
+                .Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(notifications);
+
+            var unitOfWorkMock = new Mock<IUnitOfWork>();
+            unitOfWorkMock
+                .Setup(u => u.GetCustomRepository<IUserNotificationRepository>())
+                .Returns(userNotificationRepoMock.Object);
+
+            var loggerMock = new Mock<ILogger<NotificationService>>();
+            var service = new NotificationService(unitOfWorkMock.Object, loggerMock.Object);
+
+            // Act
+            var result = await service.GetUserNotificationsAsync(userId);
+
+            // Assert
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result, Has.Count.EqualTo(notifications.Count));
+            userNotificationRepoMock.Verify(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Test]
         public async Task GetUserNotificationsAsync_ShouldReturnFromRepository()
         {
             // Arrange

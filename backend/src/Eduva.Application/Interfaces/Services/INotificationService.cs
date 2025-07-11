@@ -6,6 +6,7 @@ namespace Eduva.Application.Interfaces.Services
     {
         Task<Notification> CreateNotificationAsync(string type, string payload, CancellationToken cancellationToken = default);
         Task CreateUserNotificationsAsync(Guid notificationId, List<Guid> targetUserIds, CancellationToken cancellationToken = default);
+        Task<List<UserNotification>> GetUserNotificationsAsync(Guid userId, CancellationToken cancellationToken = default);
         Task<List<UserNotification>> GetUserNotificationsAsync(Guid userId, int skip, int take, CancellationToken cancellationToken = default);
         Task<List<UserNotification>> GetUnreadNotificationsAsync(Guid userId, CancellationToken cancellationToken = default);
         Task<int> GetUnreadCountAsync(Guid userId, CancellationToken cancellationToken = default);
