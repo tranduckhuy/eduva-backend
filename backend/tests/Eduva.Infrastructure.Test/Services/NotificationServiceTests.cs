@@ -150,7 +150,7 @@ namespace Eduva.Infrastructure.Test.Services
 
             // Assert
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.Count, Is.EqualTo(notifications.Count));
+            Assert.That(result, Has.Count.EqualTo(notifications.Count));
             userNotificationRepoMock.Verify(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>()), Times.Once);
         }
 

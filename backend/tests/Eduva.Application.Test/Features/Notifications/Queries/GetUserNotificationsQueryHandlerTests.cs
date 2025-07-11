@@ -143,7 +143,7 @@ namespace Eduva.Application.Test.Features.Notifications.Queries
             Assert.Multiple(() =>
             {
                 // Assert
-                Assert.That(result.Data.Count, Is.EqualTo(notifications.Count));
+                Assert.That(result.Data, Has.Count.EqualTo(notifications.Count));
                 Assert.That(result.Count, Is.EqualTo(notifications.Count));
             });
             _notificationServiceMock.Verify(s => s.GetUserNotificationsAsync(_userId, It.IsAny<CancellationToken>()), Times.Once);
