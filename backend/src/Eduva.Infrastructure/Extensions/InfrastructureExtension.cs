@@ -68,6 +68,7 @@ namespace Eduva.Infrastructure.Extensions
             services.AddScoped<IAICreditPackRepository, AICreditPackRepository>();
             services.AddScoped<ISystemConfigRepository, SystemConfigRepository>();
             services.AddScoped<ICreditTransactionRepository, CreditTransactionRepository>();
+            services.AddScoped<IJobRepository, JobRepository>();
             services.AddScoped<IQuestionPermissionService, QuestionPermissionService>();
             services.AddScoped<ISystemConfigHelper, SystemConfigHelper>();
 
@@ -97,12 +98,23 @@ namespace Eduva.Infrastructure.Extensions
             services.AddScoped<ISystemConfigService, SystemConfigService>();
             services.AddScoped<SystemConfigHelper>();
 
+            // RabbitMQ Configuration
+            var rabbitMQConfig = configuration.GetSection("RabbitMQ").Get<RabbitMQConfiguration>();
+            services.AddSingleton(rabbitMQConfig ?? new RabbitMQConfiguration());
+            services.AddScoped<IRabbitMQService, RabbitMQService>();
+
+            // Background Services
+            services.AddHostedService<JobMaintenanceService>();
+
             // Add SignalR
             services.AddSignalR();
 
             // Add SignalR Notification Service
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<IHubNotificationService, HubNotificationService>();
+
+            // Add Job Notification Service
+            services.AddScoped<IJobNotificationService, JobNotificationService>();
 
             return services;
         }

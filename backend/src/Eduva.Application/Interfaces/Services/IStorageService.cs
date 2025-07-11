@@ -1,4 +1,6 @@
-﻿namespace Eduva.Application.Interfaces.Services
+﻿using Microsoft.AspNetCore.Http;
+
+namespace Eduva.Application.Interfaces.Services
 {
     public interface IStorageService
     {
@@ -7,5 +9,6 @@
         string GetReadableUrl(string blobUrl);
         Task DeleteFileAsync(string blobName);
         Task DeleteRangeFileAsync(List<string> blobNames);
+        Task<string> UploadFileToTempContainerAsync(IFormFile file, string blobName);
     }
 }

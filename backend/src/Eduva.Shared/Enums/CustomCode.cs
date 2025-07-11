@@ -152,7 +152,6 @@ namespace Eduva.Shared.Enums
         KeyConfigNotFound = 5001,
         KeyConfigAlreadyExist = 5002,
 
-
         // Question Errors
         InsufficientPermissionToCreateQuestion = 4800,
         LessonMaterialNotFound = 4801,
@@ -193,8 +192,16 @@ namespace Eduva.Shared.Enums
         LessonMaterialAlreadyRejected = 4851,
         LessonMaterialNotApproved = 4852,
         ReasonIsRequiredWhenRejectingLessonMaterial = 4853,
+
         // Storage Quota Errors
         StorageQuotaExceeded = 4900,
+
+        // Job Errors
+        JobNotFound = 5100,
+        JobContentNotGenerated = 5101,
+
+        // User Credit
+        InsufficientUserCredit = 5200,
 
         // Notification Errors
         NotificationNotFound = 4950,
