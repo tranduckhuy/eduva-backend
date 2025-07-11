@@ -3,6 +3,7 @@ using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using Eduva.Infrastructure.Persistence.DbContext;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace Eduva.Infrastructure.Persistence.Repositories
 {
@@ -41,6 +42,11 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                 .Include(f => f.FolderLessonMaterials)
                     .ThenInclude(flm => flm.LessonMaterial)
                 .FirstOrDefaultAsync(f => f.Id == folderId);
+        }
+
+        public async Task<IEnumerable<Folder>> ListAsync(Expression<Func<Folder, bool>> predicate, CancellationToken cancellationToken)
+        {
+            return await _context.Folders.Where(predicate).ToListAsync(cancellationToken);
         }
     }
 }

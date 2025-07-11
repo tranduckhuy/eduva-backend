@@ -26,6 +26,7 @@ namespace Eduva.Infrastructure.Test.Services
             {
                 ConnectionString = "UseDevelopmentStorage=true",
                 ContainerName = "test-container",
+                TemporaryContainerName = "test-temp-container",
                 StorageAccountName = "test-account",
                 StorageAccountKey = "test-key"
             };
@@ -319,6 +320,7 @@ namespace Eduva.Infrastructure.Test.Services
             {
                 ConnectionString = "UseDevelopmentStorage=true",
                 ContainerName = "custom-container-name",
+                TemporaryContainerName = "test-temp-container",
                 StorageAccountName = "test-account",
                 StorageAccountKey = "test-key"
             };
@@ -338,6 +340,7 @@ namespace Eduva.Infrastructure.Test.Services
             {
                 ConnectionString = null!,
                 ContainerName = "test-container",
+                TemporaryContainerName = "test-temp-container",
                 StorageAccountName = "test-account",
                 StorageAccountKey = "test-key"
             };

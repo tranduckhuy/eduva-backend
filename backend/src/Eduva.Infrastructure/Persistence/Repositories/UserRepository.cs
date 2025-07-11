@@ -1,4 +1,6 @@
-﻿using Eduva.Application.Interfaces.Repositories;
+﻿using Eduva.Application.Exceptions.Auth;
+using Eduva.Application.Exceptions.UserCredit;
+using Eduva.Application.Interfaces.Repositories;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using Eduva.Infrastructure.Persistence.DbContext;
@@ -42,6 +44,19 @@ namespace Eduva.Infrastructure.Persistence.Repositories
             return await _context.Users
                 .Include(u => u.School)
                 .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+        }
+
+        public async Task UpdateCreditBalanceAsync(Guid userId, int amount, CancellationToken cancellationToken = default)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken)
+                ?? throw new UserNotExistsException(["User with id {userId} does not exist."]);
+
+            if (amount < 0 && user.TotalCredits + amount < 0)
+                throw new InsufficientUserCreditException([$"User has only {user.TotalCredits} credits, but {Math.Abs(amount)} are required."]);
+
+            user.TotalCredits += amount;
+
+            _context.Users.Update(user);
         }
     }
 }

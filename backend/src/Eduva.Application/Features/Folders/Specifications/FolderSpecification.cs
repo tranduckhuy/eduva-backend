@@ -39,6 +39,11 @@ namespace Eduva.Application.Features.Folders.Specifications
                 Criteria = CombineWithAnd(Criteria, f => f.OwnerType == param.OwnerType);
             }
 
+            if (param.Status.HasValue)
+            {
+                Criteria = CombineWithAnd(Criteria, f => f.Status == param.Status);
+            }
+
             ApplySearchTermFilter(param);
             ApplyNameFilter(param);
         }
@@ -56,10 +61,11 @@ namespace Eduva.Application.Features.Folders.Specifications
         {
             if (!string.IsNullOrEmpty(param.Name))
             {
-                Criteria = CombineWithAnd(Criteria, f => 
+                Criteria = CombineWithAnd(Criteria, f =>
                     f.Name.ToLower().Contains(param.Name.ToLower()));
             }
-        }        private void AddIncludes()
+        }
+        private void AddIncludes()
         {
             Includes.Add(f => f.User!);
             Includes.Add(f => f.Class!);
@@ -81,7 +87,8 @@ namespace Eduva.Application.Features.Folders.Specifications
         private static Func<IQueryable<Folder>, IOrderedQueryable<Folder>> GetSortOrderFunction(string sortBy, bool isDescending)
         {
             return sortBy switch
-            {                "name" => GetOrderByFunc(f => f.Name, isDescending),
+            {
+                "name" => GetOrderByFunc(f => f.Name, isDescending),
                 "order" => GetOrderByFunc(f => f.Order, isDescending),
                 "createdat" => GetOrderByFunc(f => f.CreatedAt, isDescending),
                 "lastmodifiedat" => GetOrderByFunc(f => f.LastModifiedAt, isDescending),

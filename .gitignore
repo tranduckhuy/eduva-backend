@@ -194,3 +194,5 @@ certbot/
 
 # Docker volumes
 docker-volumes/
+ai-job-fe/
+docker-compose.dev.yaml

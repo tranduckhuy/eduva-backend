@@ -49,6 +49,11 @@ services:
       - PayOS__PAYOS_API_KEY=${PAYOS_API_KEY}
       - PayOS__PAYOS_CHECKSUM_KEY=${PAYOS_CHECKSUM_KEY}
       - RabbitMQ__ConnectionUri=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@eduva-rabbitmq:5672
+      - RabbitMQ__QueueName=${RABBITMQ_QUEUE_NAME}
+      - RabbitMQ__ExchangeName=${RABBITMQ_EXCHANGE_NAME}
+      - RabbitMQ__RoutingKey=${RABBITMQ_ROUTING_KEY}
+      - RabbitMQ__DeadLetterExchange=${RABBITMQ_DEAD_LETTER_EXCHANGE}
+      - WorkerApiKey=${WORKER_API_KEY}
     depends_on:
       - redis
       - rabbitmq
