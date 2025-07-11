@@ -8,7 +8,6 @@ namespace Eduva.Domain.Entities
         public Guid LessonMaterialId { get; set; }
         public Guid ApproverId { get; set; }
         public LessonMaterialStatus StatusChangeTo { get; set; }
-        public string? RequesterNote { get; set; }
         public string? Feedback { get; set; }
         public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 

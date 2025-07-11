@@ -139,7 +139,7 @@ namespace Eduva.Infrastructure.Extensions
                     EmailConfirmed = true,
                     FullName = "Dung Nguyen Ngoc",
                     PhoneNumber = "0838683864",
-                    TotalCredits = 1000,
+                    TotalCredits = 0,
                 };
 
                 await userManager.CreateAsync(dungAdmin, "Admin11@");
@@ -197,20 +197,21 @@ namespace Eduva.Infrastructure.Extensions
                     new PaymentTransaction
                     {
                         Id = new Guid("1a1a1a1a-1a1a-1a1a-1a1a-1a1a1a1a1a1a"),
-                        UserId = new Guid("1a1a1a1a-1a1a-1a1a-1a1a-1a1a1a1a1a1a"),
+                        UserId = new Guid("2a2a2a2a-2a2a-2a2a-2a2a-2a2a2a2a2a2a"),
                         Amount = 100000m,
                         PaymentPurpose = PaymentPurpose.SchoolSubscription,
                         PaymentMethod = PaymentMethod.PayOS,
                         PaymentStatus = PaymentStatus.Paid,
                         PaymentItemId = 1, // Subscription Plan ID
                         RelatedId = "4a1a1a1a-4a1a-4a1a-4a1a-4a1a1a1a1a1a",
-                        TransactionCode = "TXN-1234567890"
+                        TransactionCode = "TXN-1234567890",
+                        BillingCycle = BillingCycle.Monthly
 
                     },
                     new PaymentTransaction
                     {
                         Id = new Guid("2b2b2b2b-2b2b-2b2b-2b2b-2b2b2b2b2b2b"),
-                        UserId = new Guid("1a1a1a1a-1a1a-1a1a-1a1a-1a1a1a1a1a1a"),
+                        UserId = new Guid("4a4a4a4a-4a4a-4a4a-4a4a-4a4a4a4a4a4a"),
                         Amount = 50000m,
                         PaymentPurpose = PaymentPurpose.CreditPackage,
                         PaymentMethod = PaymentMethod.PayOS,
@@ -230,7 +231,7 @@ namespace Eduva.Infrastructure.Extensions
                 var transaction = new UserCreditTransaction
                 {
                     Id = new Guid("3a1a1a1a-1a1a-1a1a-1a1a-1a1a1a1a1a1a"),
-                    UserId = new Guid("1a1a1a1a-1a1a-1a1a-1a1a-1a1a1a1a1a1a"),
+                    UserId = new Guid("4a4a4a4a-4a4a-4a4a-4a4a-4a4a4a4a4a4a"),
                     PaymentTransactionId = new Guid("2b2b2b2b-2b2b-2b2b-2b2b-2b2b2b2b2b2b"),
                     AICreditPackId = 1,
                     Credits = 1000
@@ -258,12 +259,21 @@ namespace Eduva.Infrastructure.Extensions
 
             if (!await context.AIServicePricings.AnyAsync())
             {
-                var aiServicePricing = new AIServicePricing
+                var aiServicePricings = new List<AIServicePricing>
                 {
-                    ServiceType = AIServiceType.GenAudio,
-                    PricePerMinuteCredits = 10,
+                    new AIServicePricing
+                    {
+                        ServiceType = AIServiceType.GenAudio,
+                        PricePerMinuteCredits = 10,
+                    },
+                    new AIServicePricing
+                    {
+                        ServiceType = AIServiceType.GenVideo,
+                        PricePerMinuteCredits = 20,
+                    },
                 };
-                context.AIServicePricings.Add(aiServicePricing);
+
+                context.AIServicePricings.AddRange(aiServicePricings);
                 await context.SaveChangesAsync();
             }
 
@@ -347,7 +357,6 @@ namespace Eduva.Infrastructure.Extensions
                     LessonMaterialId = new Guid("3c3c3c3c-3c3c-3c3c-3c3c-3c3c3c3c3c3c"), // Giới thiệu về Đại số
                     ApproverId = new Guid("2a2a2a2a-2a2a-2a2a-2a2a-2a2a2a2a2a2a"), // Quy Nguyen Xuan
                     StatusChangeTo = LessonMaterialStatus.Approved,
-                    RequesterNote = "Đây là bài giảng về Đại số.",
                     Feedback = "Bài giảng đã được phê duyệt và sẵn sàng sử dụng.",
                 };
                 context.LessonMaterialApprovals.Add(lessonMaterialApproval);

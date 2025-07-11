@@ -1200,6 +1200,176 @@ namespace Eduva.API.Test.Controllers.Users
 
         #endregion
 
+        #region AssignUserRoles Tests
+
+        [Test]
+        public async Task AssignUserRoles_ShouldReturnUserIdNotFound_WhenUserIdIsInvalid()
+        {
+            // Arrange
+            SetupUser("invalid-guid");
+            var request = new AssignUserRolesRequest { Roles = new List<Role> { Role.Teacher } };
+
+            // Act
+            var result = await _controller.AssignUserRoles(Guid.NewGuid(), request);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task AssignUserRoles_ShouldReturnProvidedInformationIsInvalid_WhenRequestIsNull()
+        {
+            // Arrange
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString(), "SchoolAdmin");
+
+            // Act
+            var result = await _controller.AssignUserRoles(Guid.NewGuid(), null!);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.ProvidedInformationIsInValid));
+        }
+
+        [Test]
+        public async Task AssignUserRoles_ShouldCallMediator_WhenRequestIsValid()
+        {
+            // Arrange
+            var validUserId = Guid.NewGuid();
+            var targetUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString(), "SchoolAdmin");
+            var request = new AssignUserRolesRequest { Roles = new List<Role> { Role.Teacher } };
+
+            _mediatorMock.Setup(m => m.Send(It.IsAny<AssignUserRolesCommand>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(Unit.Value));
+
+            // Act
+            var result = await _controller.AssignUserRoles(targetUserId, request);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+
+            _mediatorMock.Verify(m => m.Send(
+                It.Is<AssignUserRolesCommand>(cmd =>
+                    cmd.TargetUserId == targetUserId &&
+                    cmd.Roles.Contains(Role.Teacher) &&
+                    cmd.SchoolAdminId == validUserId),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Test]
+        public async Task AssignUserRoles_ShouldReturnAppExceptionStatusCode_WhenHandlerThrowsAppException()
+        {
+            // Arrange
+            var validUserId = Guid.NewGuid();
+            var targetUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString(), "SchoolAdmin");
+            var request = new AssignUserRolesRequest { Roles = new List<Role> { Role.Teacher } };
+
+            var appException = new AppException(CustomCode.RoleAssignmentFailed);
+            _mediatorMock.Setup(m => m.Send(It.IsAny<AssignUserRolesCommand>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(appException);
+
+            // Act
+            var result = await _controller.AssignUserRoles(targetUserId, request);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.RoleAssignmentFailed));
+        }
+
+        [Test]
+        public async Task AssignUserRoles_ShouldReturnUserNotExistsExceptionStatusCode_WhenHandlerThrowsUserNotExistsException()
+        {
+            // Arrange
+            var validUserId = Guid.NewGuid();
+            var targetUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString(), "SchoolAdmin");
+            var request = new AssignUserRolesRequest { Roles = new List<Role> { Role.Teacher } };
+
+            var userNotExistsException = new UserNotExistsException();
+            _mediatorMock.Setup(m => m.Send(It.IsAny<AssignUserRolesCommand>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(userNotExistsException);
+
+            // Act
+            var result = await _controller.AssignUserRoles(targetUserId, request);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserNotExists));
+        }
+
+        [Test]
+        public async Task AssignUserRoles_ShouldReturnInternalServerError_WhenUnexpectedExceptionThrown()
+        {
+            // Arrange
+            var validUserId = Guid.NewGuid();
+            var targetUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString(), "SchoolAdmin");
+            var request = new AssignUserRolesRequest { Roles = new List<Role> { Role.Teacher } };
+
+            _mediatorMock.Setup(m => m.Send(It.IsAny<AssignUserRolesCommand>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new Exception("Unexpected error"));
+
+            // Act
+            var result = await _controller.AssignUserRoles(targetUserId, request);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
+        }
+
+        [Test]
+        public async Task AssignUserRoles_ShouldSetCorrectSchoolAdminId_WhenUserIsAuthenticated()
+        {
+            // Arrange
+            var validUserId = Guid.NewGuid();
+            var targetUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString(), "SchoolAdmin");
+            var request = new AssignUserRolesRequest { Roles = new List<Role> { Role.Teacher, Role.ContentModerator } };
+
+            _mediatorMock.Setup(m => m.Send(It.IsAny<AssignUserRolesCommand>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(Unit.Value));
+
+            // Act
+            var result = await _controller.AssignUserRoles(targetUserId, request);
+
+            // Assert
+            _mediatorMock.Verify(m => m.Send(
+                It.Is<AssignUserRolesCommand>(cmd =>
+                    cmd.SchoolAdminId == validUserId &&
+                    cmd.TargetUserId == targetUserId &&
+                    cmd.Roles.Count == 2 &&
+                    cmd.Roles.Contains(Role.Teacher) &&
+                    cmd.Roles.Contains(Role.ContentModerator)),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        #endregion
+
         #region Helper Methods
 
         private void SetupUser(string? userId, string? role = null)

@@ -1,4 +1,5 @@
 ﻿using Eduva.Application.Common.Behaviors;
+using Eduva.Application.Features.Jobs.Services;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +18,9 @@ namespace Eduva.Application.Extensions
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+
+            // Services
+            services.AddScoped<IJobConfirmationService, JobConfirmationService>();
 
             return services;
         }

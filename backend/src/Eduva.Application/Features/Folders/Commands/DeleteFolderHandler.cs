@@ -39,7 +39,7 @@ namespace Eduva.Application.Features.Folders.Commands
             if (folder.Status == EntityStatus.Deleted)
                 return true;
 
-            if (folder.Status != EntityStatus.Archived)
+            if (folder.OwnerType == OwnerType.Personal && folder.Status != EntityStatus.Archived)
                 throw new AppException(CustomCode.FolderShouldBeArchivedBeforeDelete);
 
             try
@@ -63,7 +63,6 @@ namespace Eduva.Application.Features.Folders.Commands
 
                             var isOnlyUsedHere = await folderLessonMaterialRepository
                                 .CountAsync(flm => flm.LessonMaterialId == lessonMaterialId && flm.FolderId != folder.Id, cancellationToken) == 0;
-                            
 
                             if (isOnlyUsedHere)
                             {
@@ -84,7 +83,7 @@ namespace Eduva.Application.Features.Folders.Commands
             }
         }
 
-        private async Task<bool> HasPermissionToUpdateFolder(Folder folder, Guid userId)
+        public async Task<bool> HasPermissionToUpdateFolder(Folder folder, Guid userId)
         {
             // Get user information
             var userRepository = _unitOfWork.GetRepository<ApplicationUser, Guid>();
