@@ -50,6 +50,178 @@ namespace Eduva.API.Test.Hubs
         #region Tests
 
         [Test]
+        public async Task OnDisconnectedAsync_WithUserMissingNameIdentifierClaim_ShouldLogWithNullUserId()
+        {
+            // Arrange
+            var connectionId = "connection-missing-claim";
+            var exception = new Exception("Test exception");
+
+            // Create user with different claims but missing NameIdentifier
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, "testuser"),
+                new Claim(ClaimTypes.Email, "test@example.com")
+            };
+            var identity = new ClaimsIdentity(claims);
+            var principal = new ClaimsPrincipal(identity);
+
+            _mockContext.Setup(x => x.User).Returns(principal);
+            _mockContext.Setup(x => x.ConnectionId).Returns(connectionId);
+
+            // Act
+            await _hub.OnDisconnectedAsync(exception);
+
+            // Assert
+            _mockLogger.Verify(
+                x => x.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("[SignalR] User disconnected with error") &&
+                                                 v.ToString()!.Contains(connectionId) &&
+                                                 v.ToString()!.Contains("Test exception")),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+        }
+
+        [Test]
+        public async Task OnDisconnectedAsync_WithUserMissingNameIdentifierClaim_WithoutException_ShouldLogWithNullUserId()
+        {
+            // Arrange
+            var connectionId = "connection-missing-claim-normal";
+
+            // Create user with different claims but missing NameIdentifier
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, "testuser"),
+                new Claim(ClaimTypes.Email, "test@example.com")
+            };
+            var identity = new ClaimsIdentity(claims);
+            var principal = new ClaimsPrincipal(identity);
+
+            _mockContext.Setup(x => x.User).Returns(principal);
+            _mockContext.Setup(x => x.ConnectionId).Returns(connectionId);
+
+            // Act
+            await _hub.OnDisconnectedAsync(null);
+
+            // Assert
+            _mockLogger.Verify(
+                x => x.Log(
+                    LogLevel.Information,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("[SignalR] User disconnected normally") &&
+                                                 v.ToString()!.Contains(connectionId)),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+        }
+
+        [Test]
+        public async Task JoinLessonGroup_WithUserMissingNameIdentifierClaim_ShouldStillWork()
+        {
+            // Arrange
+            var connectionId = "connection-join-missing-claim";
+            var lessonMaterialId = "lesson-missing-claim";
+            var expectedGroupName = $"Lesson_{lessonMaterialId}";
+
+            // Create user with different claims but missing NameIdentifier
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, "testuser"),
+                new Claim(ClaimTypes.Email, "test@example.com")
+            };
+            var identity = new ClaimsIdentity(claims);
+            var principal = new ClaimsPrincipal(identity);
+
+            _mockContext.Setup(x => x.User).Returns(principal);
+            _mockContext.Setup(x => x.ConnectionId).Returns(connectionId);
+
+            // Act
+            await _hub.JoinLessonGroup(lessonMaterialId);
+
+            // Assert
+            _mockGroups.Verify(x => x.AddToGroupAsync(connectionId, expectedGroupName, default), Times.Once);
+
+            // Verify joining log (userId should be null in the log)
+            _mockLogger.Verify(
+                x => x.Log(
+                    LogLevel.Information,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("[SignalR] User joining group") &&
+                                                 v.ToString()!.Contains(connectionId) &&
+                                                 v.ToString()!.Contains(expectedGroupName) &&
+                                                 v.ToString()!.Contains(lessonMaterialId)),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+
+            // Verify success log
+            _mockLogger.Verify(
+                x => x.Log(
+                    LogLevel.Information,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("[SignalR] User successfully joined group") &&
+                                                 v.ToString()!.Contains(connectionId) &&
+                                                 v.ToString()!.Contains(expectedGroupName)),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+        }
+
+        [Test]
+        public async Task LeaveLessonGroup_WithUserMissingNameIdentifierClaim_ShouldStillWork()
+        {
+            // Arrange
+            var connectionId = "connection-leave-missing-claim";
+            var lessonMaterialId = "lesson-leave-missing-claim";
+            var expectedGroupName = $"Lesson_{lessonMaterialId}";
+
+            // Create user with different claims but missing NameIdentifier
+            var claims = new List<Claim>
+    {
+        new Claim(ClaimTypes.Name, "testuser"),
+        new Claim(ClaimTypes.Email, "test@example.com")
+    };
+            var identity = new ClaimsIdentity(claims);
+            var principal = new ClaimsPrincipal(identity);
+
+            _mockContext.Setup(x => x.User).Returns(principal);
+            _mockContext.Setup(x => x.ConnectionId).Returns(connectionId);
+
+            // Act
+            await _hub.LeaveLessonGroup(lessonMaterialId);
+
+            // Assert
+            _mockGroups.Verify(x => x.RemoveFromGroupAsync(connectionId, expectedGroupName, default), Times.Once);
+
+            // Verify leaving log (userId should be null in the log)
+            _mockLogger.Verify(
+                x => x.Log(
+                    LogLevel.Information,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("[SignalR] User leaving group") &&
+                                                 v.ToString()!.Contains(connectionId) &&
+                                                 v.ToString()!.Contains(expectedGroupName) &&
+                                                 v.ToString()!.Contains(lessonMaterialId)),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+
+            // Verify success log
+            _mockLogger.Verify(
+                x => x.Log(
+                    LogLevel.Information,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("[SignalR] User successfully left group") &&
+                                                 v.ToString()!.Contains(connectionId) &&
+                                                 v.ToString()!.Contains(expectedGroupName)),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+        }
+
+        [Test]
         public void Constructor_ShouldInitializeLogger()
         {
             // Arrange & Act

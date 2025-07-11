@@ -208,6 +208,12 @@ namespace Eduva.Infrastructure.Identity
 
             var roles = await _userManager.GetRolesAsync(user);
             var claims = await _userManager.GetClaimsAsync(user);
+
+            if (user.SchoolId.HasValue)
+            {
+                claims.Add(new Claim("SchoolId", user.SchoolId.Value.ToString()));
+            }
+
             var authResponse = await GenerateToken(user, roles, claims, true);
 
             return (CustomCode.Success, authResponse);

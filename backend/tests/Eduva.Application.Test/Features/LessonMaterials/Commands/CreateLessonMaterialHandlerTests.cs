@@ -171,7 +171,7 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
             Assert.Multiple(() =>
             {
                 Assert.That(capturedLessonMaterial.Id, Is.Not.EqualTo(Guid.Empty));
-                Assert.That(capturedLessonMaterial.LessonStatus, Is.EqualTo(LessonMaterialStatus.Draft));
+                Assert.That(capturedLessonMaterial.LessonStatus, Is.EqualTo(LessonMaterialStatus.Pending));
                 Assert.That(capturedLessonMaterial.Visibility, Is.EqualTo(LessonMaterialVisibility.Private));
                 Assert.That(capturedLessonMaterial.CreatedByUserId, Is.EqualTo(request.CreatedBy));
                 Assert.That(capturedLessonMaterial.SchoolId, Is.EqualTo(request.SchoolId));

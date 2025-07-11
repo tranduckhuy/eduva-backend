@@ -129,8 +129,11 @@ namespace Eduva.API.Controllers.Folders
         [HttpGet("user")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         [ProducesResponseType(typeof(ApiResponse<Pagination<FolderResponse>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<List<FolderResponse>>), StatusCodes.Status200OK)]
         [Authorize]
-        public async Task<IActionResult> GetUserFolders([FromQuery] FolderSpecParam folderSpecParam)
+        public async Task<IActionResult> GetUserFolders(
+            [FromQuery] FolderSpecParam folderSpecParam,
+            [FromQuery] bool isPaging = true)
         {
             var validationResult = CheckModelStateValidity();
             if (validationResult != null)
@@ -142,15 +145,20 @@ namespace Eduva.API.Controllers.Folders
             if (!Guid.TryParse(userId, out var userGuid))
                 return Respond(CustomCode.UserIdNotFound);
 
-            folderSpecParam.UserId = userGuid;
-            folderSpecParam.OwnerType = OwnerType.Personal;
-
-            return await HandleRequestAsync(async () =>
+            if (!isPaging)
             {
+                var query = new GetAllUserFoldersQuery(userGuid);
+                var result = await _mediator.Send(query);
+                return Respond(CustomCode.Success, result);
+            }
+            else
+            {
+                folderSpecParam.UserId = userGuid;
+                folderSpecParam.OwnerType = OwnerType.Personal;
                 var query = new GetFoldersQuery(folderSpecParam);
                 var result = await _mediator.Send(query);
-                return (CustomCode.Success, result);
-            });
+                return Respond(CustomCode.Success, result);
+            }
         }
 
         //Get Folder by ID

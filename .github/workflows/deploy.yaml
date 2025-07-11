@@ -62,6 +62,11 @@ jobs:
           echo "PAYOS_CHECKSUM_KEY=${{ secrets.PAYOS_CHECKSUM_KEY }}" >> .env
           echo "RABBITMQ_DEFAULT_USER=${{ secrets.RABBITMQ_DEFAULT_USER }}" >> .env
           echo "RABBITMQ_DEFAULT_PASS=${{ secrets.RABBITMQ_DEFAULT_PASS }}" >> .env
+          echo "RABBITMQ_QUEUE_NAME=${{ secrets.RABBITMQ_QUEUE_NAME }}" >> .env
+          echo "RABBITMQ_EXCHANGE_NAME=${{ secrets.RABBITMQ_EXCHANGE_NAME }}" >> .env
+          echo "RABBITMQ_ROUTING_KEY=${{ secrets.RABBITMQ_ROUTING_KEY }}" >> .env
+          echo "RABBITMQ_DEAD_LETTER_EXCHANGE=${{ secrets.RABBITMQ_DEAD_LETTER_EXCHANGE }}" >> .env
+          echo "WORKER_API_KEY=${{ secrets.WORKER_API_KEY }}" >> .env
 
       - name: Deploy with Docker Compose
         run: |

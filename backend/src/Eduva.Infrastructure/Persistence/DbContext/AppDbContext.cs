@@ -44,6 +44,7 @@ namespace Eduva.Infrastructure.Persistence.DbContext
         public DbSet<AICreditPack> AICreditPacks { get; set; } = default!;
         public DbSet<AIServicePricing> AIServicePricings { get; set; } = default!;
         public DbSet<SystemConfig> SystemConfigs { get; set; } = default!;
+        public DbSet<Job> Jobs { get; set; } = default!;
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {

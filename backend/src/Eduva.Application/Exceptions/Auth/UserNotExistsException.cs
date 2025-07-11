@@ -5,6 +5,6 @@ namespace Eduva.Application.Exceptions.Auth
 {
     public class UserNotExistsException : AppException
     {
-        public UserNotExistsException() : base(CustomCode.UserNotExists) { }
+        public UserNotExistsException(IEnumerable<string>? errors = null) : base(CustomCode.UserNotExists, errors) { }
     }
 }

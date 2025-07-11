@@ -67,7 +67,7 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Commands
             await transactionRepo.AddAsync(paymentTransaction);
             await _unitOfWork.CommitAsync();
 
-            var paymentRequest = await BuildPaymentRequestAsync(plan, request.BillingCycle, (int)finalAmount, school, long.Parse(transactionCode));
+            var paymentRequest = await BuildPaymentRequestAsync(plan, request.BillingCycle, (int)finalAmount, user, school, long.Parse(transactionCode));
             var result = await _payOSService.CreatePaymentLinkAsync(paymentRequest);
 
             var response = new CreatePaymentLinkResponse
@@ -152,7 +152,7 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Commands
                 || request.BillingCycle == BillingCycle.Yearly && newPlan.PricePerYear < current.Plan.PricePerYear;
         }
 
-        private async Task<PaymentData> BuildPaymentRequestAsync(SubscriptionPlan plan, BillingCycle cycle, int amount, School school, long orderCode)
+        private async Task<PaymentData> BuildPaymentRequestAsync(SubscriptionPlan plan, BillingCycle cycle, int amount, ApplicationUser user, School school, long orderCode)
         {
             var billingCode = cycle == BillingCycle.Monthly ? " Thang" : " Nam";
             var returnUrl = await _systemConfigHelper.GetValueAsync(SystemConfigKeys.PAYOS_RETURN_URL_PLAN);
@@ -167,8 +167,8 @@ namespace Eduva.Application.Features.SchoolSubscriptions.Commands
                 },
                 cancelUrl: returnUrl,
                 returnUrl: returnUrl,
-                buyerName: school.Name,
-                buyerEmail: school.ContactEmail,
+                buyerName: user.FullName ?? "",
+                buyerEmail: user.Email ?? "",
                 buyerPhone: school.ContactPhone
             );
         }
