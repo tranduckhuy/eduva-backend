@@ -114,11 +114,9 @@ public class AIJobsController : BaseController<AIJobsController>
     {
         var query = new GetJobQuery { Id = id };
 
-
         return await HandleRequestAsync(async () =>
         {
-            var (code, response) = await _mediator.Send(query);
-
+            var response = await _mediator.Send(query);
             return (CustomCode.Success, response);
         });
     }

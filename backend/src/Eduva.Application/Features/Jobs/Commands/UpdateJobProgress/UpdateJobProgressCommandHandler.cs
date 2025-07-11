@@ -63,7 +63,7 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
         // Calculate credit costs based on estimated duration
         if (request.JobStatus == JobStatus.ContentGenerated && request.WordCount.HasValue)
         {
-            (audioCost, videoCost) = await CalculateCreditCostAsync(request.WordCount.Value, cancellationToken);
+            (audioCost, videoCost) = await CalculateCreditCostAsync(request.WordCount.Value);
 
             job.AudioCost = audioCost;
             job.VideoCost = videoCost;
@@ -95,7 +95,7 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
         return Unit.Value;
     }
 
-    private async Task<(int audioCost, int videoCost)> CalculateCreditCostAsync(int wordCount, CancellationToken cancellationToken = default)
+    private async Task<(int audioCost, int videoCost)> CalculateCreditCostAsync(int wordCount)
     {
         var aiServicePricingRepository = _unitOfWork.GetRepository<AIServicePricing, int>();
 

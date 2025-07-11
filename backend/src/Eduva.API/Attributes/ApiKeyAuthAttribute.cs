@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace Eduva.API.Attributes
 {
+    [AttributeUsage(AttributeTargets.All)]
     public class ApiKeyAuthAttribute : Attribute, IAuthorizationFilter
     {
         private const string API_KEY_HEADER = "X-API-Key";
@@ -27,7 +28,6 @@ namespace Eduva.API.Attributes
             if (!expectedApiKey.Equals(extractedApiKey))
             {
                 context.Result = new UnauthorizedObjectResult(new { message = "Invalid API Key" });
-                return;
             }
         }
     }

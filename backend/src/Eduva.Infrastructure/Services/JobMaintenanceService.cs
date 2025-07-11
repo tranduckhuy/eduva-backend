@@ -58,7 +58,7 @@ public class JobMaintenanceService : BackgroundService
             var expiredJobs = await jobRepository.GetExpiredJobsAsync(_jobExpirationThreshold, cancellationToken);
             var expiredJobsList = expiredJobs.ToList();
 
-            if (expiredJobsList.Any())
+            if (expiredJobsList.Count != 0)
             {
                 _logger.LogInformation("Found {Count} expired jobs", expiredJobsList.Count);
 
@@ -75,13 +75,13 @@ public class JobMaintenanceService : BackgroundService
                         var blobsToDelete = new List<string>();
 
                         // Add all source blob names to deletion list
-                        if (job.SourceBlobNames != null && job.SourceBlobNames.Any())
+                        if (job.SourceBlobNames != null && job.SourceBlobNames.Count != 0)
                             blobsToDelete.AddRange(job.SourceBlobNames);
 
                         if (!string.IsNullOrEmpty(job.ContentBlobName))
                             blobsToDelete.Add(job.ContentBlobName);
 
-                        if (blobsToDelete.Any())
+                        if (blobsToDelete.Count != 0)
                         {
                             await storageService.DeleteRangeFileAsync(blobsToDelete);
                             _logger.LogInformation("Deleted {Count} blobs for expired job {JobId}", blobsToDelete.Count, job.Id);
