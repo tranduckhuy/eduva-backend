@@ -66,6 +66,13 @@ namespace Eduva.Infrastructure.Services
             return $"{blobUrl}{sasToken}";
         }
 
+        public (string blobNameUrl, string readableUrl) GetReadableUrlFromBlobName(string blobName)
+        {
+            var blobClient = _containerClient.GetBlobClient(blobName);
+            var sasToken = GenerateReadSasToken(blobName, DateTimeOffset.UtcNow.AddHours(1));
+            return ($"{blobClient.Uri}", $"{blobClient.Uri}{sasToken}");
+        }
+
         private string GenerateReadSasToken(string blobName, DateTimeOffset expiresOn)
         {
             var blobClient = _containerClient.GetBlobClient(blobName);
@@ -124,12 +131,12 @@ namespace Eduva.Infrastructure.Services
         public async Task<string> UploadFileToTempContainerAsync(IFormFile file, string blobName)
         {
             var blobClient = _tempContainerClient.GetBlobClient(blobName);
-            
+
             using (var stream = file.OpenReadStream())
             {
                 await blobClient.UploadAsync(stream, overwrite: true);
             }
-            
+
             return blobClient.Uri.ToString();
         }
 

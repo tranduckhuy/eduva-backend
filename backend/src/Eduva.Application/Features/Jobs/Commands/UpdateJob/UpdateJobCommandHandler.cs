@@ -25,15 +25,18 @@ public class UpdateJobCommandHandler : IRequestHandler<UpdateJobCommand, CustomC
     private readonly IUnitOfWork _unitOfWork;
     private readonly IJobNotificationService _notificationService;
     private readonly ILogger<UpdateJobCommandHandler> _logger;
+    private readonly IStorageService _storageService;
 
     public UpdateJobCommandHandler(
         IUnitOfWork unitOfWork,
         IJobNotificationService notificationService,
-        ILogger<UpdateJobCommandHandler> logger)
+        ILogger<UpdateJobCommandHandler> logger,
+        IStorageService storageService)
     {
         _unitOfWork = unitOfWork;
         _notificationService = notificationService;
         _logger = logger;
+        _storageService = storageService;
     }
 
     public async Task<CustomCode> Handle(UpdateJobCommand request, CancellationToken cancellationToken)
@@ -57,9 +60,11 @@ public class UpdateJobCommandHandler : IRequestHandler<UpdateJobCommand, CustomC
             updated = true;
         }
 
+        var productBlobNameUrl = string.Empty;
         if (!string.IsNullOrEmpty(request.ProductBlobName))
         {
-            job.ProductBlobName = request.ProductBlobName;
+            (string blobNameUrl, productBlobNameUrl) = _storageService.GetReadableUrlFromBlobName(request.ProductBlobName);
+            job.ProductBlobName = blobNameUrl;
             updated = true;
         }
 
@@ -85,11 +90,12 @@ public class UpdateJobCommandHandler : IRequestHandler<UpdateJobCommand, CustomC
             {
                 JobId = job.Id,
                 Status = job.JobStatus,
-                ContentBlobName = job.ContentBlobName,
-                ProductBlobName = job.ProductBlobName,
-                WordCount = job.WordCount,
-                FailureReason = job.FailureReason,
-                LastModifiedAt = job.LastModifiedAt
+                job.ContentBlobName,
+                job.ProductBlobName,
+                ProductBlobNameUrl = productBlobNameUrl,
+                job.WordCount,
+                job.FailureReason,
+                job.LastModifiedAt
             };
 
             await _notificationService.NotifyUserAsync(job.UserId, "JobStatusUpdated", statusData, cancellationToken);
