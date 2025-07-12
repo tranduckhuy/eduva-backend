@@ -31,7 +31,7 @@ namespace Eduva.API.Controllers.Folders
 
         [HttpPost]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}")]
         public async Task<IActionResult> CreateFolder([FromBody] CreateFolderCommand command)
         {
             try
@@ -81,7 +81,7 @@ namespace Eduva.API.Controllers.Folders
         [HttpGet]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         [ProducesResponseType(typeof(ApiResponse<Pagination<FolderResponse>>), StatusCodes.Status200OK)]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.ContentModerator)}")]
         public async Task<IActionResult> GetFolders([FromQuery] FolderSpecParam folderSpecParam)
         {
             var validationResult = CheckModelStateValidity();
@@ -105,7 +105,7 @@ namespace Eduva.API.Controllers.Folders
         [HttpGet("class/{classId}")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<FolderResponse>>), StatusCodes.Status200OK)]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}, {nameof(Role.Student)}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}, {nameof(Role.Student)}, {nameof(Role.ContentModerator)}")]
         public async Task<IActionResult> GetFoldersByClassId(Guid classId)
         {
             var validationResult = CheckModelStateValidity();
@@ -165,7 +165,7 @@ namespace Eduva.API.Controllers.Folders
         [HttpGet("{id}")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         [ProducesResponseType(typeof(ApiResponse<FolderResponse>), StatusCodes.Status200OK)]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}, {nameof(Role.Student)}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}, {nameof(Role.Student)}, {nameof(Role.ContentModerator)}")]
         public async Task<IActionResult> GetFolderById(Guid id)
         {
             var validationResult = CheckModelStateValidity();
@@ -186,7 +186,7 @@ namespace Eduva.API.Controllers.Folders
 
         [HttpPut("{id}/rename")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> RenameFolder(Guid id, [FromBody] RenameFolderCommand command)
         {
@@ -207,7 +207,7 @@ namespace Eduva.API.Controllers.Folders
 
         [HttpPut("{id}/order")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateFolderOrder(Guid id, [FromBody] UpdateFolderOrderCommand command)
         {
@@ -227,7 +227,7 @@ namespace Eduva.API.Controllers.Folders
         }
         [HttpPut("{id}/archive")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> ArchiveFolder(Guid id)
         {
@@ -256,7 +256,7 @@ namespace Eduva.API.Controllers.Folders
         }
         [HttpPut("{id}/restore")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> RestoreFolder(Guid id)
         {
@@ -286,7 +286,7 @@ namespace Eduva.API.Controllers.Folders
 
         [HttpDelete("{id}")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}")]
         [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
         public async Task<IActionResult> DeleteFolder(Guid id)
         {
