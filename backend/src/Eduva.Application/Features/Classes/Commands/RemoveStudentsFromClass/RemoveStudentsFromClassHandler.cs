@@ -17,7 +17,6 @@ namespace Eduva.Application.Features.Classes.Commands.RemoveStudentsFromClass
 
         public async Task<Unit> Handle(RemoveStudentsFromClassCommand request, CancellationToken cancellationToken)
         {
-            // Validate class exists
             var classRepository = _unitOfWork.GetRepository<Classroom, Guid>();
             var classroom = await classRepository.GetByIdAsync(request.ClassId);
             if (classroom == null)
@@ -25,20 +24,28 @@ namespace Eduva.Application.Features.Classes.Commands.RemoveStudentsFromClass
                 throw new AppException(CustomCode.ClassNotFound);
             }
 
-            // Check permission
             var hasPermission = await CheckPermission(request, classroom);
             if (!hasPermission)
             {
                 throw new AppException(CustomCode.Unauthorized);
             }
 
-            // Get student classes to remove
             var studentClassRepository = _unitOfWork.GetRepository<StudentClass, Guid>();
-
             var allStudentClasses = await studentClassRepository.GetAllAsync();
-            var studentClasses = allStudentClasses
-                .Where(sc => sc.ClassId == request.ClassId && request.StudentIds.Contains(sc.StudentId))
-                .ToList();
+
+            List<StudentClass> studentClasses;
+            if (request.StudentIds != null && request.StudentIds.Any())
+            {
+                studentClasses = allStudentClasses
+                    .Where(sc => sc.ClassId == request.ClassId && request.StudentIds.Contains(sc.StudentId))
+                    .ToList();
+            }
+            else
+            {
+                studentClasses = allStudentClasses
+                    .Where(sc => sc.ClassId == request.ClassId)
+                    .ToList();
+            }
 
             if (studentClasses.Count == 0)
             {
