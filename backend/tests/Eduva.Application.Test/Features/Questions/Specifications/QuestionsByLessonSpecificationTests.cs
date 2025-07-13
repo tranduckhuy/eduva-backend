@@ -442,7 +442,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
             var filteredQuestions = questions.Where(spec.Criteria.Compile()).ToList();
 
             // Assert
-            Assert.That(filteredQuestions, Has.Count.EqualTo(1)); // Should only show questions not created by current user
+            Assert.That(filteredQuestions, Has.Count.EqualTo(2));
         }
 
         [Test]
@@ -656,7 +656,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
             var filteredQuestions = questions.Where(spec.Criteria.Compile()).ToList();
 
             // Assert
-            Assert.That(filteredQuestions, Has.Count.EqualTo(1)); // Should only show questions not created by current user
+            Assert.That(filteredQuestions, Has.Count.EqualTo(2));
         }
 
         [Test]

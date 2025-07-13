@@ -1,6 +1,5 @@
 ﻿using Eduva.Application.Common.Specifications;
 using Eduva.Domain.Entities;
-using Eduva.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
@@ -35,8 +34,6 @@ namespace Eduva.Application.Features.Questions.Specifications
                 q.LessonMaterialId == lessonMaterialId &&
                 (userSchoolId == null || q.LessonMaterial.SchoolId == userSchoolId) &&
 
-                (userRole == nameof(Role.SchoolAdmin) || userRole == nameof(Role.SystemAdmin) ||
-                 q.CreatedByUserId != currentUserId) &&
                 (string.IsNullOrWhiteSpace(loweredSearch) ||
                     EF.Functions.Like(q.Title.ToLower(), $"%{loweredSearch}%") ||
                     EF.Functions.Like((q.CreatedByUser.FullName ?? "").ToLower(), $"%{loweredSearch}%"));
