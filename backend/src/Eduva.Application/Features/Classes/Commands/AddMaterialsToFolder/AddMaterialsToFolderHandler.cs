@@ -113,8 +113,7 @@ namespace Eduva.Application.Features.Classes.Commands.AddMaterialsToFolder
                     throw new AppException(CustomCode.ClassNotFound);
                 }
 
-                // Teacher of the class
-                if (classroom.TeacherId == userId)
+                if ((roles.Contains(nameof(Role.Teacher)) || roles.Contains(nameof(Role.ContentModerator))) && classroom.TeacherId == userId)
                 {
                     return;
                 }

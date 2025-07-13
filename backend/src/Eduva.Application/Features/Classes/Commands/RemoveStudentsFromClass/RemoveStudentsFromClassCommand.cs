@@ -10,5 +10,7 @@ namespace Eduva.Application.Features.Classes.Commands.RemoveStudentsFromClass
         public bool IsTeacher { get; set; }
         public bool IsSchoolAdmin { get; set; }
         public bool IsSystemAdmin { get; set; }
+        public bool IsContentModerator { get; set; }
+
     }
 }

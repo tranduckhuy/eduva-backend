@@ -42,7 +42,7 @@ namespace Eduva.API.Controllers.Classes
         [HttpPost]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
         [ProducesResponseType(typeof(ApiResponse<ClassResponse>), StatusCodes.Status201Created)]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)}, {nameof(Role.Teacher)}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)}, {nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}")]
         public async Task<IActionResult> CreateClass([FromBody] CreateClassCommand command)
         {
             var validationResult = CheckModelStateValidity();
@@ -99,7 +99,7 @@ namespace Eduva.API.Controllers.Classes
         [HttpGet("teaching")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         [ProducesResponseType(typeof(ApiResponse<Pagination<ClassResponse>>), StatusCodes.Status200OK)]
-        [Authorize(Roles = $"{nameof(Role.Teacher)}")]
+        [Authorize(Roles = $"{nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}")]
         public async Task<IActionResult> GetTeacherClasses([FromQuery] ClassSpecParam classSpecParam)
         {
             var validationResult = CheckModelStateValidity();
@@ -150,7 +150,7 @@ namespace Eduva.API.Controllers.Classes
         [HttpGet("{id}")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         [ProducesResponseType(typeof(ApiResponse<ClassResponse>), StatusCodes.Status200OK)]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}, {nameof(Role.Student)}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}, {nameof(Role.Student)}, {nameof(Role.ContentModerator)}")]
         public async Task<IActionResult> GetClassById(Guid id)
         {
             var validationResult = CheckModelStateValidity();
@@ -172,7 +172,7 @@ namespace Eduva.API.Controllers.Classes
         [HttpGet("{id}/students")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         [ProducesResponseType(typeof(ApiResponse<Pagination<StudentClassResponse>>), StatusCodes.Status200OK)]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}")]
         public async Task<IActionResult> GetAllStudentsInClass(Guid id, [FromQuery] StudentClassSpecParam studentClassSpecParam)
         {
             var validationResult = CheckModelStateValidity();
@@ -196,7 +196,7 @@ namespace Eduva.API.Controllers.Classes
         [HttpGet("students/{id}")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         [ProducesResponseType(typeof(ApiResponse<StudentClassResponse>), StatusCodes.Status200OK)]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}")]
         public async Task<IActionResult> GetStudentById(Guid id)
         {
             var validationResult = CheckModelStateValidity();
@@ -218,7 +218,7 @@ namespace Eduva.API.Controllers.Classes
         [HttpPut("{id}")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}")]
         public async Task<IActionResult> UpdateClass(Guid id, [FromBody] UpdateClassCommand command)
         {
             var validationResult = CheckModelStateValidity();
@@ -240,7 +240,7 @@ namespace Eduva.API.Controllers.Classes
         [HttpPut("{id}/archive")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}")]
         public async Task<IActionResult> ArchiveClass(Guid id)
         {
             var validationResult = CheckModelStateValidity();
@@ -275,7 +275,7 @@ namespace Eduva.API.Controllers.Classes
         [HttpPut("{id}/restore")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}")]
         public async Task<IActionResult> RestoreClass(Guid id)
         {
             var validationResult = CheckModelStateValidity();
@@ -310,7 +310,7 @@ namespace Eduva.API.Controllers.Classes
         [HttpPost("{id}/reset-code")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
         [ProducesResponseType(typeof(ApiResponse<ClassResponse>), StatusCodes.Status200OK)]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}")]
         public async Task<IActionResult> ResetClassCode(Guid id)
         {
             var validationResult = CheckModelStateValidity();
@@ -372,7 +372,7 @@ namespace Eduva.API.Controllers.Classes
         [HttpDelete("{classId}/students")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}")]
         public async Task<IActionResult> RemoveStudentsFromClass(Guid classId, [FromBody] List<Guid> studentIds)
         {
             var validationResult = CheckModelStateValidity();
@@ -389,6 +389,7 @@ namespace Eduva.API.Controllers.Classes
             bool isTeacher = User.IsInRole(nameof(Role.Teacher));
             bool isSchoolAdmin = User.IsInRole(nameof(Role.SchoolAdmin));
             bool isSystemAdmin = User.IsInRole(nameof(Role.SystemAdmin));
+            bool isContentModerator = User.IsInRole(nameof(Role.ContentModerator));
 
             var command = new RemoveStudentsFromClassCommand
             {
@@ -397,7 +398,8 @@ namespace Eduva.API.Controllers.Classes
                 RequestUserId = currentUserId,
                 IsTeacher = isTeacher,
                 IsSchoolAdmin = isSchoolAdmin,
-                IsSystemAdmin = isSystemAdmin
+                IsSystemAdmin = isSystemAdmin,
+                IsContentModerator = isContentModerator
             };
 
             try
@@ -418,7 +420,7 @@ namespace Eduva.API.Controllers.Classes
         [HttpPost("{classId}/folders/{folderId}/lesson-materials")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
         [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}")]
         public async Task<IActionResult> AddMaterialsToFolder(Guid classId, Guid folderId, [FromBody] List<Guid> materialIds)
         {
             var validationResult = CheckModelStateValidity();
@@ -449,7 +451,7 @@ namespace Eduva.API.Controllers.Classes
         [HttpDelete("{classId}/folders/{folderId}/lesson-materials")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
         [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)},{nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}")]
         public async Task<IActionResult> RemoveMaterialsFromFolder(Guid classId, Guid folderId, [FromBody] List<Guid> materialIds)
         {
             var validationResult = CheckModelStateValidity();

@@ -5,6 +5,7 @@ using Eduva.Application.Interfaces.Repositories;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
+using Microsoft.AspNetCore.Identity;
 using Moq;
 
 namespace Eduva.Application.Test.Features.Folders.Queries
@@ -17,6 +18,7 @@ namespace Eduva.Application.Test.Features.Folders.Queries
         private Mock<IUserRepository> _userRepoMock = null!;
         private Mock<IClassroomRepository> _classRepoMock = null!;
         private Mock<ILessonMaterialRepository> _lessonMaterialRepoMock = null!;
+        private Mock<UserManager<ApplicationUser>> _userManagerMock = default!;
         private GetFolderByIdHandler _handler = null!;
 
         [SetUp]
@@ -36,8 +38,9 @@ namespace Eduva.Application.Test.Features.Folders.Queries
                 .Returns(_classRepoMock.Object);
             _unitOfWorkMock.Setup(u => u.GetCustomRepository<ILessonMaterialRepository>())
                 .Returns(_lessonMaterialRepoMock.Object);
-
-            _handler = new GetFolderByIdHandler(_unitOfWorkMock.Object);
+            _userManagerMock = new Mock<UserManager<ApplicationUser>>(
+          Mock.Of<IUserStore<ApplicationUser>>(), null!, null!, null!, null!, null!, null!, null!, null!);
+            _handler = new GetFolderByIdHandler(_unitOfWorkMock.Object, _userManagerMock.Object);
         }
 
         [Test]
@@ -153,11 +156,15 @@ namespace Eduva.Application.Test.Features.Folders.Queries
             _classRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
             _userRepoMock.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(user);
 
+            _userManagerMock.Setup(u => u.GetRolesAsync(It.IsAny<ApplicationUser>()))
+                .ReturnsAsync(new List<string>());
+
             var query = new GetFolderByIdQuery(folderId, userId);
 
             var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(query, CancellationToken.None));
             Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.Forbidden));
         }
+
 
         [Test]
         public void Handle_Should_Throw_When_OwnerType_Invalid()
@@ -224,6 +231,10 @@ namespace Eduva.Application.Test.Features.Folders.Queries
             _lessonMaterialRepoMock.Setup(r => r.GetApprovedMaterialCountsByFolderAsync(
                 It.IsAny<List<Guid>>(), It.IsAny<CancellationToken>())).ReturnsAsync(new Dictionary<Guid, int> { { folderId, 2 } });
 
+            // THÊM DÒNG NÀY
+            _userManagerMock.Setup(u => u.GetRolesAsync(It.IsAny<ApplicationUser>()))
+                .ReturnsAsync(new List<string> { nameof(Role.Teacher) });
+
             var query = new GetFolderByIdQuery(folderId, userId);
 
             var result = await _handler.Handle(query, CancellationToken.None);
@@ -255,6 +266,9 @@ namespace Eduva.Application.Test.Features.Folders.Queries
             _userRepoMock.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(user);
             _lessonMaterialRepoMock.Setup(r => r.GetApprovedMaterialCountsByFolderAsync(
                 It.IsAny<List<Guid>>(), It.IsAny<CancellationToken>())).ReturnsAsync(new Dictionary<Guid, int> { { folderId, 1 } });
+
+            _userManagerMock.Setup(u => u.GetRolesAsync(It.IsAny<ApplicationUser>()))
+                .ReturnsAsync(new List<string> { nameof(Role.SchoolAdmin) });
 
             var query = new GetFolderByIdQuery(folderId, userId);
 
@@ -288,6 +302,10 @@ namespace Eduva.Application.Test.Features.Folders.Queries
             _lessonMaterialRepoMock.Setup(r => r.GetApprovedMaterialCountsByFolderAsync(
                 It.IsAny<List<Guid>>(), It.IsAny<CancellationToken>())).ReturnsAsync(new Dictionary<Guid, int>());
 
+            _classRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(new Classroom { Id = classId, TeacherId = userId, SchoolId = 1 });
+            _userManagerMock.Setup(u => u.GetRolesAsync(It.IsAny<ApplicationUser>()))
+                .ReturnsAsync(new List<string> { nameof(Role.Teacher) });
+
             var query = new GetFolderByIdQuery(folderId, userId);
 
             var result = await _handler.Handle(query, CancellationToken.None);
@@ -299,5 +317,6 @@ namespace Eduva.Application.Test.Features.Folders.Queries
                 Assert.That(result.CountLessonMaterial, Is.EqualTo(0));
             });
         }
+
     }
 }
