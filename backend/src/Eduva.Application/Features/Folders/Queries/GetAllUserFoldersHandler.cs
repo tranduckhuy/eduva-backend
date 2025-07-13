@@ -26,9 +26,11 @@ namespace Eduva.Application.Features.Folders.Queries
         public async Task<List<FolderResponse>> Handle(GetAllUserFoldersQuery request, CancellationToken cancellationToken)
         {
             var folders = await _folderRepository.ListAsync(
-                f => f.OwnerType == OwnerType.Personal && f.UserId == request.UserId,
-                cancellationToken
-            );
+               f => f.OwnerType == OwnerType.Personal
+                   && f.UserId == request.FolderSpecParam.UserId
+                   && (!request.FolderSpecParam.Status.HasValue || f.Status == request.FolderSpecParam.Status),
+               cancellationToken
+             );
 
             var data = _mapper.Map<List<FolderResponse>>(folders);
 
