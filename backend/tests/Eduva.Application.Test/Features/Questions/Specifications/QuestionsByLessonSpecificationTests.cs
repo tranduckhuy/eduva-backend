@@ -11,7 +11,6 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
         private Guid _lessonMaterialId;
         private Guid _currentUserId;
         private int? _userSchoolId;
-        private string _userRole;
         private QuestionsByLessonSpecParam _param;
 
         [SetUp]
@@ -20,7 +19,6 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
             _lessonMaterialId = Guid.NewGuid();
             _currentUserId = Guid.NewGuid();
             _userSchoolId = 1;
-            _userRole = "Student";
             _param = new QuestionsByLessonSpecParam
             {
                 PageIndex = 1,
@@ -185,7 +183,6 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
         public void BuildCriteria_ShouldAllowAllQuestions_WhenUserIsSchoolAdmin()
         {
             // Arrange
-            _userRole = "SchoolAdmin";
             var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
@@ -199,7 +196,6 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
         public void BuildCriteria_ShouldAllowAllQuestions_WhenUserIsSystemAdmin()
         {
             // Arrange
-            _userRole = "SystemAdmin";
             var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
@@ -213,7 +209,6 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
         public void BuildCriteria_ShouldFilterOwnQuestions_WhenUserIsStudent()
         {
             // Arrange
-            _userRole = "Student";
             var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
@@ -555,7 +550,6 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
         public void Specification_ShouldShowAllQuestions_WhenUserIsSchoolAdmin()
         {
             // Arrange
-            _userRole = "SchoolAdmin";
             var questions = new List<LessonMaterialQuestion>
             {
                 new()
@@ -591,7 +585,6 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
         public void Specification_ShouldShowAllQuestions_WhenUserIsSystemAdmin()
         {
             // Arrange
-            _userRole = "SystemAdmin";
             var questions = new List<LessonMaterialQuestion>
             {
                 new()
@@ -627,7 +620,6 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
         public void Specification_ShouldFilterOwnQuestions_WhenUserIsStudent()
         {
             // Arrange
-            _userRole = "Student";
             var questions = new List<LessonMaterialQuestion>
             {
                 new()
