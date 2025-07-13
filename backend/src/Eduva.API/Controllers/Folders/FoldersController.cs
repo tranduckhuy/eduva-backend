@@ -147,7 +147,9 @@ namespace Eduva.API.Controllers.Folders
 
             if (!isPaging)
             {
-                var query = new GetAllUserFoldersQuery(userGuid);
+                folderSpecParam.UserId = userGuid;
+                folderSpecParam.OwnerType = OwnerType.Personal;
+                var query = new GetAllUserFoldersQuery(folderSpecParam);
                 var result = await _mediator.Send(query);
                 return Respond(CustomCode.Success, result);
             }
