@@ -38,7 +38,7 @@ namespace Eduva.Application.Features.Classes.Commands.RemoveMaterialsFromFolder
             var allFolderMaterials = await folderLessonMaterialRepo.GetAllAsync();
 
             List<FolderLessonMaterial> folderMaterials;
-            if (request.MaterialIds != null && request.MaterialIds.Any())
+            if (request.MaterialIds != null && request.MaterialIds.Count > 0)
             {
                 folderMaterials = allFolderMaterials
                     .Where(flm => flm.FolderId == request.FolderId && request.MaterialIds.Contains(flm.LessonMaterialId))

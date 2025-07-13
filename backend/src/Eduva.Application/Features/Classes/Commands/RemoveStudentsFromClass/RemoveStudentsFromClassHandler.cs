@@ -34,7 +34,7 @@ namespace Eduva.Application.Features.Classes.Commands.RemoveStudentsFromClass
             var allStudentClasses = await studentClassRepository.GetAllAsync();
 
             List<StudentClass> studentClasses;
-            if (request.StudentIds != null && request.StudentIds.Any())
+            if (request.StudentIds != null && request.StudentIds.Count > 0)
             {
                 studentClasses = allStudentClasses
                     .Where(sc => sc.ClassId == request.ClassId && request.StudentIds.Contains(sc.StudentId))
