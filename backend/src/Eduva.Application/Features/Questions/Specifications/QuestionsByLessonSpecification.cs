@@ -14,9 +14,9 @@ namespace Eduva.Application.Features.Questions.Specifications
         public int Skip { get; private set; }
         public int Take { get; private set; }
 
-        public QuestionsByLessonSpecification(QuestionsByLessonSpecParam param, Guid lessonMaterialId, Guid currentUserId, int? userSchoolId, string userRole)
+        public QuestionsByLessonSpecification(QuestionsByLessonSpecParam param, Guid lessonMaterialId, int? userSchoolId)
         {
-            Criteria = BuildCriteria(param, lessonMaterialId, currentUserId, userSchoolId, userRole);
+            Criteria = BuildCriteria(param, lessonMaterialId, userSchoolId);
             OrderBy = BuildOrderBy(param);
             Skip = (param.PageIndex - 1) * param.PageSize;
             Take = param.PageSize;
@@ -26,7 +26,7 @@ namespace Eduva.Application.Features.Questions.Specifications
             Includes.Add(q => q.Comments);
         }
 
-        private static Expression<Func<LessonMaterialQuestion, bool>> BuildCriteria(QuestionsByLessonSpecParam param, Guid lessonMaterialId, Guid currentUserId, int? userSchoolId, string userRole)
+        private static Expression<Func<LessonMaterialQuestion, bool>> BuildCriteria(QuestionsByLessonSpecParam param, Guid lessonMaterialId, int? userSchoolId)
         {
             var loweredSearch = param.SearchTerm?.ToLower() ?? string.Empty;
 
