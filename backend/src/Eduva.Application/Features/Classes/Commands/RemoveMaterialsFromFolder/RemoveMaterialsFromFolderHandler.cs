@@ -82,7 +82,6 @@ namespace Eduva.Application.Features.Classes.Commands.RemoveMaterialsFromFolder
                 return;
             }
 
-            // Check if folder belongs to class
             if (folder.OwnerType == OwnerType.Class && folder.ClassId.HasValue)
             {
                 var classRepository = _unitOfWork.GetRepository<Classroom, Guid>();
@@ -93,13 +92,11 @@ namespace Eduva.Application.Features.Classes.Commands.RemoveMaterialsFromFolder
                     throw new AppException(CustomCode.ClassNotFound);
                 }
 
-                // Teacher of the class
-                if (classroom.TeacherId == userId)
+                if ((roles.Contains(nameof(Role.Teacher)) || roles.Contains(nameof(Role.ContentModerator))) && classroom.TeacherId == userId)
                 {
                     return;
                 }
 
-                // School admin of the same school
                 if (roles.Contains(nameof(Role.SchoolAdmin)) && classroom.SchoolId == user.SchoolId)
                 {
                     return;

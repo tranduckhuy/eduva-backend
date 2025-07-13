@@ -65,19 +65,16 @@ namespace Eduva.Application.Features.Classes.Commands.RemoveStudentsFromClass
 
         private async Task<bool> CheckPermission(RemoveStudentsFromClassCommand request, Classroom classroom)
         {
-            // System admin can do anything
             if (request.IsSystemAdmin)
             {
                 return true;
             }
 
-            // Teacher can only remove students from their own classes
-            if (request.IsTeacher)
+            if (request.IsTeacher || request.IsContentModerator)
             {
                 return classroom.TeacherId == request.RequestUserId;
             }
 
-            // School admin can only remove students from classes in their school
             if (request.IsSchoolAdmin)
             {
                 var userRepository = _unitOfWork.GetRepository<ApplicationUser, Guid>();

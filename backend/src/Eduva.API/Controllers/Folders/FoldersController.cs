@@ -81,7 +81,7 @@ namespace Eduva.API.Controllers.Folders
         [HttpGet]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         [ProducesResponseType(typeof(ApiResponse<Pagination<FolderResponse>>), StatusCodes.Status200OK)]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.ContentModerator)}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
         public async Task<IActionResult> GetFolders([FromQuery] FolderSpecParam folderSpecParam)
         {
             var validationResult = CheckModelStateValidity();

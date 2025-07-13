@@ -89,7 +89,7 @@ namespace Eduva.Application.Features.Folders.Queries
                 return;
             }
 
-            if (roles.Contains(nameof(Role.Teacher)) && classroom.TeacherId == userId)
+            if ((roles.Contains(nameof(Role.Teacher)) || roles.Contains(nameof(Role.ContentModerator))) && classroom.TeacherId == userId)
             {
                 return;
             }

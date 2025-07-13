@@ -3,6 +3,7 @@ using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -16,6 +17,7 @@ namespace Eduva.Application.Test.Features.Folders.Commands
         private Mock<ILogger<UpdateFolderOrderHandler>> _loggerMock = default!;
         private Mock<IGenericRepository<Classroom, Guid>> _classroomRepoMock = default!;
         private Mock<IGenericRepository<ApplicationUser, Guid>> _userRepoMock = default!;
+        private Mock<UserManager<ApplicationUser>> _userManagerMock = default!;
         private UpdateFolderOrderHandler _handler = default!;
 
         #region UpdateFolderOrderHandler Setup
@@ -30,7 +32,9 @@ namespace Eduva.Application.Test.Features.Folders.Commands
             _unitOfWorkMock.Setup(u => u.GetRepository<Folder, Guid>()).Returns(_folderRepoMock.Object);
             _unitOfWorkMock.Setup(u => u.GetRepository<Classroom, Guid>()).Returns(_classroomRepoMock.Object);
             _unitOfWorkMock.Setup(u => u.GetRepository<ApplicationUser, Guid>()).Returns(_userRepoMock.Object);
-            _handler = new UpdateFolderOrderHandler(_unitOfWorkMock.Object, _loggerMock.Object);
+            _userManagerMock = new Mock<UserManager<ApplicationUser>>(
+            Mock.Of<IUserStore<ApplicationUser>>(), null!, null!, null!, null!, null!, null!, null!, null!);
+            _handler = new UpdateFolderOrderHandler(_unitOfWorkMock.Object, _loggerMock.Object, _userManagerMock.Object);
         }
         #endregion
 
@@ -283,9 +287,16 @@ namespace Eduva.Application.Test.Features.Folders.Commands
             _folderRepoMock.Setup(r => r.Update(It.IsAny<Folder>()));
             _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
 
+            _userRepoMock.Setup(r => r.GetByIdAsync(teacherId))
+                .ReturnsAsync(new ApplicationUser { Id = teacherId });
+            _unitOfWorkMock.Setup(u => u.GetRepository<ApplicationUser, Guid>()).Returns(_userRepoMock.Object);
+            _userManagerMock.Setup(u => u.GetRolesAsync(It.IsAny<ApplicationUser>()))
+                .ReturnsAsync(new List<string> { nameof(Role.Teacher) });
+
             await _handler.Handle(cmd, CancellationToken.None);
             _folderRepoMock.Verify(r => r.Update(It.Is<Folder>(f => f.Id == folderId && f.Order == 2)), Times.Once);
         }
+
 
         [Test]
         public void Handle_Throws_When_Classroom_Not_Found_For_ClassFolder()
@@ -335,9 +346,13 @@ namespace Eduva.Application.Test.Features.Folders.Commands
             _folderRepoMock.Setup(r => r.Update(It.IsAny<Folder>()));
             _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
 
+            _userManagerMock.Setup(u => u.GetRolesAsync(It.IsAny<ApplicationUser>()))
+                .ReturnsAsync(new List<string> { nameof(Role.SchoolAdmin) });
+
             await _handler.Handle(cmd, CancellationToken.None);
             _folderRepoMock.Verify(r => r.Update(It.Is<Folder>(f => f.Id == folderId && f.Order == 2)), Times.Once);
         }
+
 
         [Test]
         public async Task Handle_Only_Updates_Folders_With_Different_Id_And_Affected_Order()
@@ -544,11 +559,17 @@ namespace Eduva.Application.Test.Features.Folders.Commands
             _folderRepoMock.Setup(r => r.Update(It.IsAny<Folder>()));
             _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
 
+            _userRepoMock.Setup(r => r.GetByIdAsync(teacherId)).ReturnsAsync(new ApplicationUser { Id = teacherId });
+            _unitOfWorkMock.Setup(u => u.GetRepository<ApplicationUser, Guid>()).Returns(_userRepoMock.Object);
+            _userManagerMock.Setup(u => u.GetRolesAsync(It.IsAny<ApplicationUser>()))
+                .ReturnsAsync(new List<string> { nameof(Role.Teacher) });
+
             await _handler.Handle(cmd, CancellationToken.None);
 
             _folderRepoMock.Verify(r => r.Update(It.Is<Folder>(f => f.Id == folder.Id && f.Order == 2)), Times.Once);
             _classroomRepoMock.Verify(r => r.GetByIdAsync(classId), Times.Once);
         }
+
 
         #endregion
 
@@ -595,7 +616,10 @@ namespace Eduva.Application.Test.Features.Folders.Commands
             unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
 
             var loggerMock = new Mock<ILogger<UpdateFolderOrderHandler>>();
-            var handler = new UpdateFolderOrderHandler(unitOfWorkMock.Object, loggerMock.Object);
+            var userManagerMock = new Mock<UserManager<ApplicationUser>>(
+            Mock.Of<IUserStore<ApplicationUser>>(), null!, null!, null!, null!, null!, null!, null!, null!);
+
+            var handler = new UpdateFolderOrderHandler(unitOfWorkMock.Object, loggerMock.Object, userManagerMock.Object);
 
             var command = new UpdateFolderOrderCommand
             {
@@ -628,7 +652,9 @@ namespace Eduva.Application.Test.Features.Folders.Commands
 
             var unitOfWorkMock = new Mock<IUnitOfWork>();
             var loggerMock = new Mock<ILogger<UpdateFolderOrderHandler>>();
-            var handler = new UpdateFolderOrderHandler(unitOfWorkMock.Object, loggerMock.Object);
+            var userManagerMock = new Mock<UserManager<ApplicationUser>>(
+                Mock.Of<IUserStore<ApplicationUser>>(), null!, null!, null!, null!, null!, null!, null!, null!);
+            var handler = new UpdateFolderOrderHandler(unitOfWorkMock.Object, loggerMock.Object, userManagerMock.Object);
 
             var result = handler.GetType()
             .GetMethod("HasPermissionToUpdateFolder", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
@@ -660,15 +686,26 @@ namespace Eduva.Application.Test.Features.Folders.Commands
             var classRepoMock = new Mock<IGenericRepository<Classroom, Guid>>();
             classRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
 
+            // MOCK UserRepo + UserManager
+            var userRepoMock = new Mock<IGenericRepository<ApplicationUser, Guid>>();
+            userRepoMock.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(new ApplicationUser { Id = userId });
+
             var unitOfWorkMock = new Mock<IUnitOfWork>();
             unitOfWorkMock.Setup(u => u.GetRepository<Classroom, Guid>()).Returns(classRepoMock.Object);
+            unitOfWorkMock.Setup(u => u.GetRepository<ApplicationUser, Guid>()).Returns(userRepoMock.Object);
 
             var loggerMock = new Mock<ILogger<UpdateFolderOrderHandler>>();
-            var handler = new UpdateFolderOrderHandler(unitOfWorkMock.Object, loggerMock.Object);
+            var userManagerMock = new Mock<UserManager<ApplicationUser>>(
+                Mock.Of<IUserStore<ApplicationUser>>(), null!, null!, null!, null!, null!, null!, null!, null!);
+
+            userManagerMock.Setup(m => m.GetRolesAsync(It.IsAny<ApplicationUser>()))
+                .ReturnsAsync(new List<string> { nameof(Role.Teacher) });
+
+            var handler = new UpdateFolderOrderHandler(unitOfWorkMock.Object, loggerMock.Object, userManagerMock.Object);
 
             var result = handler.GetType()
-            .GetMethod("HasPermissionToUpdateFolder", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
-            .Invoke(handler, new object[] { folder, userId });
+                .GetMethod("HasPermissionToUpdateFolder", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+                .Invoke(handler, new object[] { folder, userId });
 
             Assert.That(await (Task<bool>)result!, Is.True);
         }

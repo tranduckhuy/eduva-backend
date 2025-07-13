@@ -40,8 +40,9 @@ namespace Eduva.Application.Features.Classes.Queries.GetAllStudentsInClass
             bool isSystemAdmin = userRoles.Contains(nameof(Role.SystemAdmin));
             bool isSchoolAdmin = userRoles.Contains(nameof(Role.SchoolAdmin));
             bool isTeacher = userRoles.Contains(nameof(Role.Teacher));
+            bool isContentModerator = userRoles.Contains(nameof(Role.ContentModerator));
 
-            if (!isSystemAdmin && !isSchoolAdmin && !isTeacher)
+            if (!isSystemAdmin && !isSchoolAdmin && !isTeacher && !isContentModerator)
             {
                 throw new AppException(CustomCode.Forbidden);
             }
@@ -71,7 +72,7 @@ namespace Eduva.Application.Features.Classes.Queries.GetAllStudentsInClass
                 };
             }
 
-            if (isTeacher && !isSystemAdmin && !isSchoolAdmin)
+            if ((isTeacher || isContentModerator) && !isSystemAdmin && !isSchoolAdmin)
             {
                 if (classroom.TeacherId != request.RequesterId)
                 {

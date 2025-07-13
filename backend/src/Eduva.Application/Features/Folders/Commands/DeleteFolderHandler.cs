@@ -120,8 +120,8 @@ namespace Eduva.Application.Features.Folders.Commands
                     return false;
                 }
 
-                // Teacher of the class
-                if (classroom.TeacherId == userId)
+                if ((userRoles.Contains(Role.Teacher.ToString()) || userRoles.Contains(Role.ContentModerator.ToString()))
+                    && classroom.TeacherId == userId)
                 {
                     return true;
                 }
