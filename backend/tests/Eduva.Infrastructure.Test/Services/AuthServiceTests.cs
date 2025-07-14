@@ -1270,6 +1270,128 @@ namespace Eduva.Infrastructure.Test.Services
             Assert.That(result, Is.EqualTo(CustomCode.ConfirmationEmailSent));
         }
 
+        [Test]
+        public async Task ResendConfirmationEmailAsync_WithWebPlatform_Success_ReturnsCode()
+        {
+            // Arrange
+            var user = new ApplicationUser { EmailConfirmed = false, Email = "test@example.com" };
+            var template = "<html><body>{{verify_link}} {{current_year}}</body></html>";
+
+            CreateEmailTemplate("verify-email.html", template);
+
+            _userManager.Setup(x => x.FindByEmailAsync("test@example.com")).ReturnsAsync(user);
+            _userManager.Setup(x => x.GenerateEmailConfirmationTokenAsync(user)).ReturnsAsync("test-token");
+
+            var emailSent = new TaskCompletionSource<bool>();
+            _emailSender.Setup(x => x.SendEmailBrevoHtmlAsync(
+                "test@example.com",
+                It.IsAny<string>(),
+                "Xác Minh Địa Chỉ Email",
+                It.IsAny<string>()))
+                .Returns(Task.CompletedTask)
+                .Callback(() => emailSent.SetResult(true));
+
+            var dto = new ResendConfirmationEmailRequestDto
+            {
+                Email = "test@example.com",
+                ClientUrl = ValidClientUrl,
+                Platform = Platform.Web
+            };
+
+            // Act
+            var result = await _authService.ResendConfirmationEmailAsync(dto);
+
+            await Task.Delay(100);
+
+            // Assert
+            Assert.That(result, Is.EqualTo(CustomCode.ConfirmationEmailSent));
+
+            _emailSender.Verify(x => x.SendEmailBrevoHtmlAsync(
+                "test@example.com",
+                It.IsAny<string>(),
+                "Xác Minh Địa Chỉ Email",
+                It.Is<string>(content => content.Contains("&platform=web"))),
+                Times.Once);
+        }
+
+        [Test]
+        public async Task ResendConfirmationEmailAsync_WithMobilePlatform_Success_ReturnsCode()
+        {
+            // Arrange
+            var user = new ApplicationUser { EmailConfirmed = false, Email = "test@example.com" };
+            var template = "<html><body>{{verify_link}} {{current_year}}</body></html>";
+
+            CreateEmailTemplate("verify-email.html", template);
+
+            _userManager.Setup(x => x.FindByEmailAsync("test@example.com")).ReturnsAsync(user);
+            _userManager.Setup(x => x.GenerateEmailConfirmationTokenAsync(user)).ReturnsAsync("test-token");
+
+            _emailSender.Setup(x => x.SendEmailBrevoHtmlAsync(
+                "test@example.com",
+                It.IsAny<string>(),
+                "Xác Minh Địa Chỉ Email",
+                It.IsAny<string>()))
+                .Returns(Task.CompletedTask);
+
+            var dto = new ResendConfirmationEmailRequestDto
+            {
+                Email = "test@example.com",
+                ClientUrl = ValidClientUrl,
+                Platform = Platform.Mobile
+            };
+
+            // Act
+            var result = await _authService.ResendConfirmationEmailAsync(dto);
+
+            await Task.Delay(100);
+
+            // Assert
+            Assert.That(result, Is.EqualTo(CustomCode.ConfirmationEmailSent));
+
+            _emailSender.Verify(x => x.SendEmailBrevoHtmlAsync(
+                "test@example.com",
+                It.IsAny<string>(),
+                "Xác Minh Địa Chỉ Email",
+                It.Is<string>(content => content.Contains("&platform=mobile"))),
+                Times.Once);
+        }
+
+        [Test]
+        public async Task ResendConfirmationEmailAsync_WithNullPlatform_Success_ReturnsCode()
+        {
+            // Arrange
+            var user = new ApplicationUser { EmailConfirmed = false, Email = "test@example.com" };
+            var template = "<html><body>{{verify_link}} {{current_year}}</body></html>";
+
+            CreateEmailTemplate("verify-email.html", template);
+
+            _userManager.Setup(x => x.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync(user);
+            _userManager.Setup(x => x.GenerateEmailConfirmationTokenAsync(user)).ReturnsAsync("test-token");
+            _emailSender.Setup(x => x.SendEmailBrevoHtmlAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .Returns(Task.CompletedTask);
+
+            var dto = new ResendConfirmationEmailRequestDto
+            {
+                Email = "test@example.com",
+                ClientUrl = ValidClientUrl,
+                Platform = null // Null platform
+            };
+
+            // Act
+            var result = await _authService.ResendConfirmationEmailAsync(dto);
+
+            await Task.Delay(100);
+
+            // Assert
+            Assert.That(result, Is.EqualTo(CustomCode.ConfirmationEmailSent));
+            _emailSender.Verify(x => x.SendEmailBrevoHtmlAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.Is<string>(content => !content.Contains("&platform="))),
+                Times.Once);
+        }
+
         #endregion
 
         // Tests for LogoutAsync method - user not found, expired token, valid token.
@@ -1730,7 +1852,7 @@ namespace Eduva.Infrastructure.Test.Services
             var ex = Assert.ThrowsAsync<FileNotFoundException>(() =>
             {
                 var method = typeof(AuthService).GetMethod("SendConfirmEmailMessage", BindingFlags.NonPublic | BindingFlags.Instance);
-                return (Task)method!.Invoke(_authService, new object[] { ValidClientUrl, user })!;
+                return (Task)method!.Invoke(_authService, new object[] { ValidClientUrl, user, null! })!;
             });
 
             Assert.That(ex!.Message, Contains.Substring("Template file not found"));
