@@ -71,6 +71,7 @@ namespace Eduva.Infrastructure.Extensions
             services.AddScoped<IJobRepository, JobRepository>();
             services.AddScoped<IQuestionPermissionService, QuestionPermissionService>();
             services.AddScoped<ISystemConfigHelper, SystemConfigHelper>();
+            services.AddScoped<IDashboardRepository, DashboardRepository>();
 
             // Add Notification repositories
             services.AddScoped<INotificationRepository, NotificationRepository>();

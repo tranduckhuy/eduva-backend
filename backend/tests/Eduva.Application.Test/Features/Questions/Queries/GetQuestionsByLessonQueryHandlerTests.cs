@@ -492,8 +492,8 @@ namespace Eduva.Application.Test.Features.Questions.Queries
             var studentUser = new ApplicationUser { Id = Guid.NewGuid() };
             var questions = new List<LessonMaterialQuestion>
             {
-                new() { Id = Guid.NewGuid(), CreatedByUser = teacherUser },
-                new() { Id = Guid.NewGuid(), CreatedByUser = studentUser }
+                new() { Id = Guid.NewGuid(), CreatedByUser = teacherUser, CreatedByUserId = Guid.NewGuid() }, // Other teacher's question
+                new() { Id = Guid.NewGuid(), CreatedByUser = studentUser, CreatedByUserId = Guid.NewGuid() } // Student's question
             };
             var pagination = new Pagination<LessonMaterialQuestion> { Data = questions };
 
@@ -522,8 +522,65 @@ namespace Eduva.Application.Test.Features.Questions.Queries
             var result = await _handler.Handle(query, CancellationToken.None);
 
             // Assert
-            Assert.That(result.Data, Has.Count.EqualTo(1));
+            Assert.That(result.Data, Has.Count.EqualTo(1)); // Only student question, not other teacher's question
             Assert.That(result.Data.First().CreatedByRole, Is.EqualTo("Student"));
+        }
+
+        [Test]
+        public async Task Handle_ShouldReturnOwnQuestions_WhenUserIsTeacher()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var lessonId = Guid.NewGuid();
+            var param = new QuestionsByLessonSpecParam();
+            var query = new GetQuestionsByLessonQuery(param, lessonId, userId);
+            var user = new ApplicationUser { Id = userId, SchoolId = 1 };
+            var lesson = new LessonMaterial
+            {
+                Id = lessonId,
+                Status = EntityStatus.Active,
+                LessonStatus = LessonMaterialStatus.Approved,
+                SchoolId = 1
+            };
+            var teacherUser = new ApplicationUser { Id = Guid.NewGuid() };
+            var studentUser = new ApplicationUser { Id = Guid.NewGuid() };
+            var questions = new List<LessonMaterialQuestion>
+            {
+                new() { Id = Guid.NewGuid(), CreatedByUser = user, CreatedByUserId = userId }, // Own question
+                new() { Id = Guid.NewGuid(), CreatedByUser = teacherUser, CreatedByUserId = Guid.NewGuid() }, // Other teacher's question
+                new() { Id = Guid.NewGuid(), CreatedByUser = studentUser, CreatedByUserId = Guid.NewGuid() } // Student's question
+            };
+            var pagination = new Pagination<LessonMaterialQuestion> { Data = questions };
+
+            _userRepositoryMock.Setup(x => x.GetByIdAsync(userId))
+                .ReturnsAsync(user);
+            _lessonRepositoryMock.Setup(x => x.GetByIdAsync(lessonId))
+                .ReturnsAsync(lesson);
+            _userManagerMock.Setup(x => x.GetRolesAsync(user))
+                .ReturnsAsync(["Teacher"]);
+            _permissionServiceMock.Setup(x => x.GetHighestPriorityRole(It.IsAny<IList<string>>()))
+                .Returns("Teacher");
+            _studentClassRepositoryMock.Setup(x => x.TeacherHasAccessToMaterialAsync(userId, lessonId))
+                .ReturnsAsync(true);
+            _userManagerMock.Setup(x => x.GetRolesAsync(user))
+                .ReturnsAsync(["Teacher"]);
+            _userManagerMock.Setup(x => x.GetRolesAsync(teacherUser))
+                .ReturnsAsync(["Teacher"]);
+            _userManagerMock.Setup(x => x.GetRolesAsync(studentUser))
+                .ReturnsAsync(["Student"]);
+            _permissionServiceMock.Setup(x => x.GetHighestPriorityRole(It.Is<IList<string>>(roles => roles.Contains("Teacher"))))
+                .Returns("Teacher");
+            _permissionServiceMock.Setup(x => x.GetHighestPriorityRole(It.Is<IList<string>>(roles => roles.Contains("Student"))))
+                .Returns("Student");
+            _repositoryMock.Setup(x => x.GetWithSpecAsync(It.IsAny<QuestionsByLessonSpecification>()))
+                .ReturnsAsync(pagination);
+
+            // Act
+            var result = await _handler.Handle(query, CancellationToken.None);
+
+            // Assert
+            Assert.That(result.Data, Has.Count.EqualTo(2)); // Own question + student question
+            Assert.That(result.Data.Any(q => q.CreatedByUserId == userId), Is.True); // Should contain own question
         }
 
         [Test]
