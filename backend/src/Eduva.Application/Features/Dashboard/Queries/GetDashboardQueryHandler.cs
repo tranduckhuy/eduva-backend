@@ -19,7 +19,6 @@ namespace Eduva.Application.Features.Dashboard.Queries
             var endDate = request.EndDate ?? DateTimeOffset.UtcNow;
             var startDate = request.StartDate ?? endDate.AddDays(-30);
 
-            // Execute operations sequentially to avoid DbContext threading issues
             var systemOverview = await _dashboardRepository.GetSystemOverviewAsync(cancellationToken);
 
             var lessonActivity = await _dashboardRepository.GetLessonCreationActivityAsync(

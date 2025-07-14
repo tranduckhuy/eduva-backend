@@ -37,6 +37,7 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                 .Include(sc => sc.Class)
                 .FirstOrDefaultAsync(sc => sc.StudentId == studentId && sc.ClassId == classId);
         }
+
         public async Task<StudentClass?> GetStudentClassByIdAsync(Guid studentClassId)
         {
             return await _context.StudentClasses

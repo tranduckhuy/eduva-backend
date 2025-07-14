@@ -47,11 +47,11 @@ namespace Eduva.Infrastructure.Persistence.Repositories
 
             var creditPackRevenue = await _context.PaymentTransactions
                 .Where(pt => pt.PaymentStatus == PaymentStatus.Paid && pt.PaymentPurpose == PaymentPurpose.CreditPackage)
-                .SumAsync(pt => pt.Amount, cancellationToken);
+                .SumAsync(pt => (decimal?)pt.Amount, cancellationToken) ?? 0;
 
             var subscriptionPlanRevenue = await _context.PaymentTransactions
                 .Where(pt => pt.PaymentStatus == PaymentStatus.Paid && pt.PaymentPurpose == PaymentPurpose.SchoolSubscription)
-                .SumAsync(pt => pt.Amount, cancellationToken);
+                .SumAsync(pt => (decimal?)pt.Amount, cancellationToken) ?? 0;
 
             return new SystemOverviewDto
             {
@@ -96,9 +96,7 @@ namespace Eduva.Infrastructure.Persistence.Repositories
             return grouped;
         }
 
-        public async Task<List<TopSchoolItem>> GetTopSchoolsAsync(
-            int topCount,
-            CancellationToken cancellationToken = default)
+        public async Task<List<TopSchoolItem>> GetTopSchoolsAsync(int topCount, CancellationToken cancellationToken = default)
         {
             var topSchools = await _context.Schools
                 .Where(s => s.Status == EntityStatus.Active)
@@ -108,8 +106,7 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                     SchoolName = s.Name,
                     LessonCount = s.LessonMaterials.Count(lm => lm.Status == EntityStatus.Active),
                     UserCount = s.Users.Count(u => u.Status == EntityStatus.Active),
-                    HasActiveSubscription = s.SchoolSubscriptions
-                        .Any(sub => sub.SubscriptionStatus == SubscriptionStatus.Active)
+                    HasActiveSubscription = s.SchoolSubscriptions.Any(sub => sub.SubscriptionStatus == SubscriptionStatus.Active)
                 })
                 .OrderByDescending(s => s.LessonCount)
                 .Take(topCount)
