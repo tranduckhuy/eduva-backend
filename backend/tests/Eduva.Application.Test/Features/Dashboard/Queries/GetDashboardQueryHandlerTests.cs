@@ -47,11 +47,14 @@ namespace Eduva.Application.Test.Features.Dashboard.Queries
             // Assert
             VerifyAllRepositoryCalls(request);
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.SystemOverview, Is.Not.Null);
-            Assert.That(result.LessonActivity, Is.Not.Null);
-            Assert.That(result.TopSchools, Is.Not.Null);
-            Assert.That(result.UserRegistrations, Is.Not.Null);
-            Assert.That(result.RevenueStats, Is.Not.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.SystemOverview, Is.Not.Null);
+                Assert.That(result.LessonActivity, Is.Not.Null);
+                Assert.That(result.TopSchools, Is.Not.Null);
+                Assert.That(result.UserRegistrations, Is.Not.Null);
+                Assert.That(result.RevenueStats, Is.Not.Null);
+            });
         }
 
         [Test]
