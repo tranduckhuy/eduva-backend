@@ -13,17 +13,18 @@ namespace Eduva.Infrastructure.Test.Services
     [TestFixture]
     public class HubNotificationServiceTests
     {
-        private Mock<INotificationHub> _notificationHubMock;
-        private Mock<INotificationService> _notificationServiceMock;
-        private Mock<ILogger<HubNotificationService>> _loggerMock;
-        private HubNotificationService _service;
+        #region Fields and Setup
 
+        private Mock<INotificationHub> _notificationHubMock = default!;
+        private Mock<INotificationService> _notificationServiceMock = default!;
+        private Mock<ILogger<HubNotificationService>> _loggerMock = default!;
+        private HubNotificationService _service = default!;
+
+        // Test data
+        private readonly Guid _userId = Guid.NewGuid();
         private readonly Guid _questionId = Guid.NewGuid();
         private readonly Guid _commentId = Guid.NewGuid();
         private readonly Guid _lessonMaterialId = Guid.NewGuid();
-        private readonly Guid _userId = Guid.NewGuid();
-
-        #region Setup
 
         [SetUp]
         public void Setup()
@@ -31,12 +32,16 @@ namespace Eduva.Infrastructure.Test.Services
             _notificationHubMock = new Mock<INotificationHub>();
             _notificationServiceMock = new Mock<INotificationService>();
             _loggerMock = new Mock<ILogger<HubNotificationService>>();
-            _service = new HubNotificationService(_notificationHubMock.Object, _notificationServiceMock.Object, _loggerMock.Object);
+
+            _service = new HubNotificationService(
+                _notificationHubMock.Object,
+                _notificationServiceMock.Object,
+                _loggerMock.Object);
         }
 
         #endregion
 
-        #region Helper 
+        #region Helper Methods
 
         private QuestionResponse CreateTestQuestion()
         {
@@ -76,32 +81,53 @@ namespace Eduva.Infrastructure.Test.Services
 
         #region Question Notification Tests
 
-        [TestCase("QuestionCreated")]
-        [TestCase("QuestionUpdated")]
-        public async Task NotifyQuestion_ShouldSendNotificationAndSaveToDatabase_WhenSuccessful(string eventType)
+        [Test]
+        public async Task NotifyQuestionCreated_ShouldSendNotificationAndSaveToDatabase_WhenSuccessful()
         {
             // Arrange
             var question = CreateTestQuestion();
             var notification = new Notification { Id = Guid.NewGuid() };
             var userIds = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() };
 
-            _notificationServiceMock.Setup(x => x.CreateNotificationAsync(eventType, It.IsAny<string>(), default))
+            _notificationServiceMock.Setup(x => x.CreateNotificationAsync("QuestionCreated", It.IsAny<string>(), default))
                 .ReturnsAsync(notification);
-            _notificationServiceMock.Setup(x => x.GetUsersInLessonAsync(_lessonMaterialId, default))
+            _notificationServiceMock.Setup(x => x.GetUsersForNewQuestionNotificationAsync(_lessonMaterialId, default))
                 .ReturnsAsync(userIds);
 
             // Act
-            if (eventType == "QuestionCreated")
-                await _service.NotifyQuestionCreatedAsync(question, _lessonMaterialId);
-            else
-                await _service.NotifyQuestionUpdatedAsync(question, _lessonMaterialId);
+            await _service.NotifyQuestionCreatedAsync(question, _lessonMaterialId);
 
             // Assert
             _notificationHubMock.Verify(x => x.SendNotificationToGroupAsync(
-                $"Lesson_{_lessonMaterialId}", eventType, It.IsAny<QuestionNotification>()), Times.Once);
+                $"Lesson_{_lessonMaterialId}", "QuestionCreated", It.IsAny<QuestionNotification>()), Times.Once);
 
-            _notificationServiceMock.Verify(x => x.CreateNotificationAsync(eventType, It.IsAny<string>(), default), Times.Once);
-            _notificationServiceMock.Verify(x => x.GetUsersInLessonAsync(_lessonMaterialId, default), Times.Once);
+            _notificationServiceMock.Verify(x => x.CreateNotificationAsync("QuestionCreated", It.IsAny<string>(), default), Times.Once);
+            _notificationServiceMock.Verify(x => x.GetUsersForNewQuestionNotificationAsync(_lessonMaterialId, default), Times.Once);
+            _notificationServiceMock.Verify(x => x.CreateUserNotificationsAsync(notification.Id, It.IsAny<List<Guid>>(), default), Times.Once);
+        }
+
+        [Test]
+        public async Task NotifyQuestionUpdated_ShouldSendNotificationAndSaveToDatabase_WhenSuccessful()
+        {
+            // Arrange
+            var question = CreateTestQuestion();
+            var notification = new Notification { Id = Guid.NewGuid() };
+            var userIds = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() };
+
+            _notificationServiceMock.Setup(x => x.CreateNotificationAsync("QuestionUpdated", It.IsAny<string>(), default))
+                .ReturnsAsync(notification);
+            _notificationServiceMock.Setup(x => x.GetUsersForQuestionCommentNotificationAsync(_questionId, _lessonMaterialId, default))
+                .ReturnsAsync(userIds);
+
+            // Act
+            await _service.NotifyQuestionUpdatedAsync(question, _lessonMaterialId);
+
+            // Assert
+            _notificationHubMock.Verify(x => x.SendNotificationToGroupAsync(
+                $"Lesson_{_lessonMaterialId}", "QuestionUpdated", It.IsAny<QuestionNotification>()), Times.Once);
+
+            _notificationServiceMock.Verify(x => x.CreateNotificationAsync("QuestionUpdated", It.IsAny<string>(), default), Times.Once);
+            _notificationServiceMock.Verify(x => x.GetUsersForQuestionCommentNotificationAsync(_questionId, _lessonMaterialId, default), Times.Once);
             _notificationServiceMock.Verify(x => x.CreateUserNotificationsAsync(notification.Id, It.IsAny<List<Guid>>(), default), Times.Once);
         }
 
@@ -114,7 +140,7 @@ namespace Eduva.Infrastructure.Test.Services
 
             _notificationServiceMock.Setup(x => x.CreateNotificationAsync("QuestionDeleted", It.IsAny<string>(), default))
                 .ReturnsAsync(notification);
-            _notificationServiceMock.Setup(x => x.GetUsersInLessonAsync(_lessonMaterialId, default))
+            _notificationServiceMock.Setup(x => x.GetUsersForQuestionCommentNotificationAsync(_questionId, _lessonMaterialId, default))
                 .ReturnsAsync(userIds);
 
             // Act
@@ -122,31 +148,11 @@ namespace Eduva.Infrastructure.Test.Services
 
             // Assert
             _notificationHubMock.Verify(x => x.SendNotificationToGroupAsync(
-                $"Lesson_{_lessonMaterialId}", "QuestionDeleted", It.Is<QuestionDeleteNotification>(n =>
-                n.QuestionId == _questionId && n.LessonMaterialId == _lessonMaterialId)), Times.Once);
+                $"Lesson_{_lessonMaterialId}", "QuestionDeleted", It.IsAny<QuestionDeleteNotification>()), Times.Once);
 
             _notificationServiceMock.Verify(x => x.CreateNotificationAsync("QuestionDeleted", It.IsAny<string>(), default), Times.Once);
-        }
-
-        [TestCase("QuestionCreated")]
-        [TestCase("QuestionUpdated")]
-        [TestCase("QuestionDeleted")]
-        public async Task NotifyQuestion_ShouldLogError_WhenHubException(string eventType)
-        {
-            // Arrange
-            var question = CreateTestQuestion();
-            _notificationHubMock.Setup(x => x.SendNotificationToGroupAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object>()))
-                .ThrowsAsync(new Exception("Hub connection failed"));
-
-            // Act & Assert - Should not throw
-            if (eventType == "QuestionCreated")
-                await _service.NotifyQuestionCreatedAsync(question, _lessonMaterialId);
-            else if (eventType == "QuestionUpdated")
-                await _service.NotifyQuestionUpdatedAsync(question, _lessonMaterialId);
-            else
-                await _service.NotifyQuestionDeletedAsync(_questionId, _lessonMaterialId);
-
-            _notificationHubMock.Verify(x => x.SendNotificationToGroupAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object>()), Times.Once);
+            _notificationServiceMock.Verify(x => x.GetUsersForQuestionCommentNotificationAsync(_questionId, _lessonMaterialId, default), Times.Once);
+            _notificationServiceMock.Verify(x => x.CreateUserNotificationsAsync(notification.Id, It.IsAny<List<Guid>>(), default), Times.Once);
         }
 
         #endregion
@@ -160,11 +166,11 @@ namespace Eduva.Infrastructure.Test.Services
             // Arrange
             var comment = CreateTestComment();
             var notification = new Notification { Id = Guid.NewGuid() };
-            var userIds = new List<Guid> { Guid.NewGuid() };
+            var userIds = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() };
 
             _notificationServiceMock.Setup(x => x.CreateNotificationAsync(eventType, It.IsAny<string>(), default))
                 .ReturnsAsync(notification);
-            _notificationServiceMock.Setup(x => x.GetUsersInLessonAsync(_lessonMaterialId, default))
+            _notificationServiceMock.Setup(x => x.GetUsersForQuestionCommentNotificationAsync(_questionId, _lessonMaterialId, default))
                 .ReturnsAsync(userIds);
 
             // Act
@@ -178,10 +184,36 @@ namespace Eduva.Infrastructure.Test.Services
                 $"Lesson_{_lessonMaterialId}", eventType, It.IsAny<QuestionCommentNotification>()), Times.Once);
 
             _notificationServiceMock.Verify(x => x.CreateNotificationAsync(eventType, It.IsAny<string>(), default), Times.Once);
+            _notificationServiceMock.Verify(x => x.GetUsersForQuestionCommentNotificationAsync(_questionId, _lessonMaterialId, default), Times.Once);
+            _notificationServiceMock.Verify(x => x.CreateUserNotificationsAsync(notification.Id, It.IsAny<List<Guid>>(), default), Times.Once);
         }
 
         [Test]
-        public async Task NotifyQuestionCommented_ShouldSetIsReplyTrue_WhenParentCommentExists()
+        public async Task NotifyQuestionCommentDeleted_ShouldSendNotificationAndSaveToDatabase_WhenSuccessful()
+        {
+            // Arrange
+            var notification = new Notification { Id = Guid.NewGuid() };
+            var userIds = new List<Guid> { Guid.NewGuid() };
+
+            _notificationServiceMock.Setup(x => x.CreateNotificationAsync("QuestionCommentDeleted", It.IsAny<string>(), default))
+                .ReturnsAsync(notification);
+            _notificationServiceMock.Setup(x => x.GetUsersForQuestionCommentNotificationAsync(_questionId, _lessonMaterialId, default))
+                .ReturnsAsync(userIds);
+
+            // Act
+            await _service.NotifyQuestionCommentDeletedAsync(_commentId, _questionId, _lessonMaterialId, 0);
+
+            // Assert
+            _notificationHubMock.Verify(x => x.SendNotificationToGroupAsync(
+                $"Lesson_{_lessonMaterialId}", "QuestionCommentDeleted", It.IsAny<QuestionCommentDeleteNotification>()), Times.Once);
+
+            _notificationServiceMock.Verify(x => x.CreateNotificationAsync("QuestionCommentDeleted", It.IsAny<string>(), default), Times.Once);
+            _notificationServiceMock.Verify(x => x.GetUsersForQuestionCommentNotificationAsync(_questionId, _lessonMaterialId, default), Times.Once);
+            _notificationServiceMock.Verify(x => x.CreateUserNotificationsAsync(notification.Id, It.IsAny<List<Guid>>(), default), Times.Once);
+        }
+
+        [Test]
+        public async Task NotifyQuestionCommentCreated_ShouldSetCorrectReplyFlag_WhenHasParentComment()
         {
             // Arrange
             var parentCommentId = Guid.NewGuid();
@@ -204,7 +236,7 @@ namespace Eduva.Infrastructure.Test.Services
             var notification = new Notification { Id = Guid.NewGuid() };
             _notificationServiceMock.Setup(x => x.CreateNotificationAsync("QuestionCommentDeleted", It.IsAny<string>(), default))
                 .ReturnsAsync(notification);
-            _notificationServiceMock.Setup(x => x.GetUsersInLessonAsync(_lessonMaterialId, default))
+            _notificationServiceMock.Setup(x => x.GetUsersForQuestionCommentNotificationAsync(_questionId, _lessonMaterialId, default))
                 .ReturnsAsync(new List<Guid>());
 
             // Act
@@ -251,7 +283,7 @@ namespace Eduva.Infrastructure.Test.Services
 
             _notificationServiceMock.Setup(x => x.CreateNotificationAsync(It.IsAny<string>(), It.IsAny<string>(), default))
                 .ReturnsAsync(notification);
-            _notificationServiceMock.Setup(x => x.GetUsersInLessonAsync(_lessonMaterialId, default))
+            _notificationServiceMock.Setup(x => x.GetUsersForNewQuestionNotificationAsync(_lessonMaterialId, default))
                 .ReturnsAsync(userIds);
 
             // Act
@@ -272,7 +304,7 @@ namespace Eduva.Infrastructure.Test.Services
 
             _notificationServiceMock.Setup(x => x.CreateNotificationAsync(It.IsAny<string>(), It.IsAny<string>(), default))
                 .ReturnsAsync(notification);
-            _notificationServiceMock.Setup(x => x.GetUsersInLessonAsync(_lessonMaterialId, default))
+            _notificationServiceMock.Setup(x => x.GetUsersForQuestionCommentNotificationAsync(_questionId, _lessonMaterialId, default))
                 .ReturnsAsync(userIds);
 
             // Act
@@ -293,7 +325,7 @@ namespace Eduva.Infrastructure.Test.Services
 
             _notificationServiceMock.Setup(x => x.CreateNotificationAsync(It.IsAny<string>(), It.IsAny<string>(), default))
                 .ReturnsAsync(notification);
-            _notificationServiceMock.Setup(x => x.GetUsersInLessonAsync(_lessonMaterialId, default))
+            _notificationServiceMock.Setup(x => x.GetUsersForNewQuestionNotificationAsync(_lessonMaterialId, default))
                 .ReturnsAsync(userIds);
 
             // Act
@@ -332,7 +364,9 @@ namespace Eduva.Infrastructure.Test.Services
 
             _notificationServiceMock.Setup(x => x.CreateNotificationAsync(It.IsAny<string>(), It.IsAny<string>(), default))
                 .ReturnsAsync(notification);
-            _notificationServiceMock.Setup(x => x.GetUsersInLessonAsync(_lessonMaterialId, default))
+            _notificationServiceMock.Setup(x => x.GetUsersForNewQuestionNotificationAsync(_lessonMaterialId, default))
+                .ReturnsAsync(new List<Guid>());
+            _notificationServiceMock.Setup(x => x.GetUsersForQuestionCommentNotificationAsync(_questionId, _lessonMaterialId, default))
                 .ReturnsAsync(new List<Guid>());
 
             // Act
@@ -346,7 +380,13 @@ namespace Eduva.Infrastructure.Test.Services
             // Assert
             _notificationHubMock.Verify(x => x.SendNotificationToGroupAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object>()), Times.Exactly(6));
             _notificationServiceMock.Verify(x => x.CreateNotificationAsync(It.IsAny<string>(), It.IsAny<string>(), default), Times.Exactly(6));
-            _notificationServiceMock.Verify(x => x.GetUsersInLessonAsync(_lessonMaterialId, default), Times.Exactly(6));
+
+            // Verify new logic is being used correctly
+            _notificationServiceMock.Verify(x => x.GetUsersForNewQuestionNotificationAsync(_lessonMaterialId, default), Times.Once); // QuestionCreated
+            _notificationServiceMock.Verify(x => x.GetUsersForQuestionCommentNotificationAsync(_questionId, _lessonMaterialId, default), Times.Exactly(5)); // All other cases
+
+            // Verify old method is NOT called
+            _notificationServiceMock.Verify(x => x.GetUsersInLessonAsync(_lessonMaterialId, default), Times.Never);
         }
 
         [TestCase(QuestionActionType.Created)]

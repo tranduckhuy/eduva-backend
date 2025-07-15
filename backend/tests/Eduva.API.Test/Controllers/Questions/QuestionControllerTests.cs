@@ -1,4 +1,5 @@
 ﻿using Eduva.API.Controllers.Questions;
+using Eduva.API.Models;
 using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Common.Models;
 using Eduva.Application.Features.Questions.Commands.CreateQuestion;
@@ -254,6 +255,28 @@ namespace Eduva.API.Test.Controllers.Questions
         #region CreateQuestion Tests
 
         [Test]
+        public async Task CreateQuestion_ShouldReturnModelInvalid_WhenCommandIsNull()
+        {
+            // Arrange
+            CreateQuestionCommand? command = null;
+
+            // Act
+            var result = await _controller.CreateQuestion(command!);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status400BadRequest));
+
+            var response = objectResult.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.ModelInvalid));
+
+            // Verify mediator was never called
+            _mediatorMock.Verify(m => m.Send(It.IsAny<CreateQuestionCommand>(), default), Times.Never);
+        }
+
+        [Test]
         public async Task CreateQuestion_ShouldReturnCreated_WhenValidRequest()
         {
             // Arrange
@@ -413,6 +436,56 @@ namespace Eduva.API.Test.Controllers.Questions
         #endregion
 
         #region CreateQuestionComment Tests
+
+        [Test]
+        public async Task CreateQuestionComment_ShouldReturnModelInvalid_WhenCommandIsNull()
+        {
+            // Arrange
+            CreateQuestionCommentCommand? command = null;
+
+            // Act
+            var result = await _controller.CreateQuestionComment(command!);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status400BadRequest));
+
+            var response = objectResult.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.ModelInvalid));
+
+            // Verify mediator was never called
+            _mediatorMock.Verify(m => m.Send(It.IsAny<CreateQuestionCommentCommand>(), default), Times.Never);
+        }
+
+        [Test]
+        public async Task CreateQuestionComment_ShouldReturnAppValidationException_WhenValidationFails()
+        {
+            // Arrange
+            var command = new CreateQuestionCommentCommand
+            {
+                QuestionId = Guid.Empty, // Invalid
+                Content = string.Empty,  // Invalid
+                CreatedByUserId = Guid.Empty // Invalid  
+            };
+
+            _mediatorMock.Setup(m => m.Send(It.IsAny<CreateQuestionCommentCommand>(), default))
+                .ThrowsAsync(new AppValidationException(new List<FluentValidation.Results.ValidationFailure>
+                {
+            new("QuestionId", "Invalid Question ID format"),
+            new("Content", "Content is required"),
+            new("CreatedByUserId", "Invalid User ID format")
+                }));
+
+            // Act
+            var result = await _controller.CreateQuestionComment(command);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status400BadRequest));
+        }
 
         [Test]
         public async Task CreateQuestionComment_ShouldReturnCreated_WhenValidRequest()

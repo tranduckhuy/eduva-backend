@@ -35,7 +35,26 @@ namespace Eduva.Application.Test.Features.Questions.Commands.CreateQuestionComme
             var result = _validator.TestValidate(model);
 
             // Assert
-            result.ShouldHaveValidationErrorFor(x => x.QuestionId);
+            result.ShouldHaveValidationErrorFor(x => x.QuestionId)
+                  .WithErrorMessage("Invalid Question ID format");
+        }
+
+        [Test]
+        public void Should_NotHaveError_When_QuestionIdIsValid()
+        {
+            // Arrange
+            var model = new CreateQuestionCommentCommand
+            {
+                QuestionId = Guid.NewGuid(),
+                Content = "Valid content",
+                CreatedByUserId = Guid.NewGuid()
+            };
+
+            // Act
+            var result = _validator.TestValidate(model);
+
+            // Assert
+            result.ShouldNotHaveValidationErrorFor(x => x.QuestionId);
         }
 
         #endregion
@@ -49,7 +68,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.CreateQuestionComme
             var model = new CreateQuestionCommentCommand
             {
                 QuestionId = Guid.NewGuid(),
-                Content = "",
+                Content = string.Empty,
                 CreatedByUserId = Guid.NewGuid()
             };
 
@@ -57,7 +76,8 @@ namespace Eduva.Application.Test.Features.Questions.Commands.CreateQuestionComme
             var result = _validator.TestValidate(model);
 
             // Assert
-            result.ShouldHaveValidationErrorFor(x => x.Content);
+            result.ShouldHaveValidationErrorFor(x => x.Content)
+                  .WithErrorMessage("Content is required");
         }
 
         [Test]
@@ -75,17 +95,18 @@ namespace Eduva.Application.Test.Features.Questions.Commands.CreateQuestionComme
             var result = _validator.TestValidate(model);
 
             // Assert
-            result.ShouldHaveValidationErrorFor(x => x.Content);
+            result.ShouldHaveValidationErrorFor(x => x.Content)
+                  .WithErrorMessage("Content is required");
         }
 
         [Test]
-        public void Should_HaveError_When_ContentIsWhitespace()
+        public void Should_NotHaveError_When_ContentIsValid()
         {
             // Arrange
             var model = new CreateQuestionCommentCommand
             {
                 QuestionId = Guid.NewGuid(),
-                Content = "   ",
+                Content = "Valid content",
                 CreatedByUserId = Guid.NewGuid()
             };
 
@@ -93,7 +114,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.CreateQuestionComme
             var result = _validator.TestValidate(model);
 
             // Assert
-            result.ShouldHaveValidationErrorFor(x => x.Content);
+            result.ShouldNotHaveValidationErrorFor(x => x.Content);
         }
 
         #endregion
@@ -115,51 +136,116 @@ namespace Eduva.Application.Test.Features.Questions.Commands.CreateQuestionComme
             var result = _validator.TestValidate(model);
 
             // Assert
+            result.ShouldHaveValidationErrorFor(x => x.CreatedByUserId)
+                  .WithErrorMessage("Invalid User ID format");
+        }
+
+        [Test]
+        public void Should_NotHaveError_When_CreatedByUserIdIsValid()
+        {
+            // Arrange
+            var model = new CreateQuestionCommentCommand
+            {
+                QuestionId = Guid.NewGuid(),
+                Content = "Valid content",
+                CreatedByUserId = Guid.NewGuid()
+            };
+
+            // Act
+            var result = _validator.TestValidate(model);
+
+            // Assert
+            result.ShouldNotHaveValidationErrorFor(x => x.CreatedByUserId);
+        }
+
+        #endregion
+
+        #region ParentCommentId Validation Tests
+
+        [Test]
+        public void Should_HaveError_When_ParentCommentIdIsEmpty()
+        {
+            // Arrange
+            var model = new CreateQuestionCommentCommand
+            {
+                QuestionId = Guid.NewGuid(),
+                Content = "Valid content",
+                CreatedByUserId = Guid.NewGuid(),
+                ParentCommentId = Guid.Empty
+            };
+
+            // Act
+            var result = _validator.TestValidate(model);
+
+            // Assert
+            result.ShouldHaveValidationErrorFor(x => x.ParentCommentId)
+                  .WithErrorMessage("Parent Comment ID must be valid when provided");
+        }
+
+        [Test]
+        public void Should_NotHaveError_When_ParentCommentIdIsNull()
+        {
+            // Arrange
+            var model = new CreateQuestionCommentCommand
+            {
+                QuestionId = Guid.NewGuid(),
+                Content = "Valid content",
+                CreatedByUserId = Guid.NewGuid(),
+                ParentCommentId = null
+            };
+
+            // Act
+            var result = _validator.TestValidate(model);
+
+            // Assert
+            result.ShouldNotHaveValidationErrorFor(x => x.ParentCommentId);
+        }
+
+        [Test]
+        public void Should_NotHaveError_When_ParentCommentIdIsValid()
+        {
+            // Arrange
+            var model = new CreateQuestionCommentCommand
+            {
+                QuestionId = Guid.NewGuid(),
+                Content = "Valid content",
+                CreatedByUserId = Guid.NewGuid(),
+                ParentCommentId = Guid.NewGuid()
+            };
+
+            // Act
+            var result = _validator.TestValidate(model);
+
+            // Assert
+            result.ShouldNotHaveValidationErrorFor(x => x.ParentCommentId);
+        }
+
+        #endregion
+
+        #region Multiple Validation Errors Tests
+
+        [Test]
+        public void Should_HaveMultipleErrors_When_AllFieldsAreInvalid()
+        {
+            // Arrange
+            var model = new CreateQuestionCommentCommand
+            {
+                QuestionId = Guid.Empty,
+                Content = string.Empty,
+                CreatedByUserId = Guid.Empty,
+                ParentCommentId = Guid.Empty
+            };
+
+            // Act
+            var result = _validator.TestValidate(model);
+
+            // Assert
+            result.ShouldHaveValidationErrorFor(x => x.QuestionId);
+            result.ShouldHaveValidationErrorFor(x => x.Content);
             result.ShouldHaveValidationErrorFor(x => x.CreatedByUserId);
+            result.ShouldHaveValidationErrorFor(x => x.ParentCommentId);
         }
 
         #endregion
-
-        #region Valid Request Tests
-
-        [Test]
-        public void Should_NotHaveAnyErrors_When_RequestIsValid()
-        {
-            // Arrange
-            var model = new CreateQuestionCommentCommand
-            {
-                QuestionId = Guid.NewGuid(),
-                Content = "Valid comment content",
-                CreatedByUserId = Guid.NewGuid()
-            };
-
-            // Act
-            var result = _validator.TestValidate(model);
-
-            // Assert
-            result.ShouldNotHaveAnyValidationErrors();
-        }
-
-        [Test]
-        public void Should_NotHaveAnyErrors_When_RequestIsValidWithParentComment()
-        {
-            // Arrange
-            var model = new CreateQuestionCommentCommand
-            {
-                QuestionId = Guid.NewGuid(),
-                Content = "Valid reply content",
-                ParentCommentId = Guid.NewGuid(),
-                CreatedByUserId = Guid.NewGuid()
-            };
-
-            // Act
-            var result = _validator.TestValidate(model);
-
-            // Assert
-            result.ShouldNotHaveAnyValidationErrors();
-        }
-
-        #endregion
-
     }
 }

@@ -273,9 +273,26 @@ namespace Eduva.Infrastructure.Services
                 // Create persistent notification
                 var persistentNotification = await _notificationService.CreateNotificationAsync(notificationType, payload);
 
-                // Get users who should receive this notification
-                var targetUserIds = await _notificationService.GetUsersInLessonAsync(lessonMaterialId);
-                _logger.LogInformation("GetUsersInLessonAsync completed - Found {Count} users", targetUserIds.Count);
+                List<Guid> targetUserIds;
+
+                // CASE 1: New question - only notify teachers + users with access to the lesson
+                if (notificationType == "QuestionCreated")
+                {
+                    targetUserIds = await _notificationService.GetUsersForNewQuestionNotificationAsync(lessonMaterialId);
+                }
+                else if (IsQuestionSpecificNotification(notificationType, notificationData, out var questionId))
+                {
+                    // CASE 2: All other operations related to the specific question
+                    targetUserIds = await _notificationService.GetUsersForQuestionCommentNotificationAsync(questionId, lessonMaterialId);
+                }
+                else
+                {
+                    // CASE 3: Keep the old logic for other cases - ensure safety
+                    targetUserIds = await _notificationService.GetUsersInLessonAsync(lessonMaterialId);
+                }
+
+                _logger.LogInformation("Notification target users determined - Found {Count} users for {NotificationType}",
+                    targetUserIds.Count, notificationType);
 
                 // Exclude the creator from receiving their own notification
                 if (notificationData is QuestionNotification qn)
@@ -303,5 +320,43 @@ namespace Eduva.Infrastructure.Services
                     notificationType, ex.Message, ex.StackTrace);
             }
         }
+
+        #region Helper Methods
+
+        private static bool IsQuestionSpecificNotification(string notificationType, object notificationData, out Guid questionId)
+        {
+            questionId = Guid.Empty;
+
+            return notificationType switch
+            {
+                // Question operations related to specific questions
+                "QuestionUpdated" when notificationData is QuestionNotification qn =>
+                    SetQuestionId(out questionId, qn.QuestionId),
+
+                "QuestionDeleted" when notificationData is QuestionDeleteNotification qdn =>
+                    SetQuestionId(out questionId, qdn.QuestionId),
+
+                // Comment operation - always related to specific question
+                "QuestionCommented" when notificationData is QuestionCommentNotification qcn =>
+                    SetQuestionId(out questionId, qcn.QuestionId),
+
+                "QuestionCommentUpdated" when notificationData is QuestionCommentNotification qcu =>
+                    SetQuestionId(out questionId, qcu.QuestionId),
+
+                "QuestionCommentDeleted" when notificationData is QuestionCommentDeleteNotification qcdn =>
+                    SetQuestionId(out questionId, qcdn.QuestionId),
+
+                _ => false
+            };
+        }
+
+        private static bool SetQuestionId(out Guid questionId, Guid id)
+        {
+            questionId = id;
+            return true;
+        }
+
+        #endregion
+
     }
 }

@@ -45,9 +45,13 @@ namespace Eduva.Application.Features.Questions.Commands.CreateQuestionComment
 
             await ValidateQuestionAccessPermissions(user, userRole, question);
 
+            Guid? flattenedParentCommentId = null;
+
             if (request.ParentCommentId.HasValue)
             {
-                await ValidateParentComment(request.ParentCommentId.Value, request.QuestionId);
+                var parentComment = await ValidateAndGetFlattenedParent(request.ParentCommentId.Value, request.QuestionId);
+
+                flattenedParentCommentId = parentComment.ParentCommentId ?? parentComment.Id;
             }
 
             var comment = new QuestionComment
@@ -55,7 +59,7 @@ namespace Eduva.Application.Features.Questions.Commands.CreateQuestionComment
                 Id = Guid.NewGuid(),
                 QuestionId = request.QuestionId,
                 Content = request.Content.Trim(),
-                ParentCommentId = request.ParentCommentId,
+                ParentCommentId = flattenedParentCommentId,
                 CreatedByUserId = request.CreatedByUserId,
                 Status = EntityStatus.Active
             };
@@ -133,7 +137,7 @@ namespace Eduva.Application.Features.Questions.Commands.CreateQuestionComment
             }
         }
 
-        private async Task<QuestionComment> ValidateParentComment(Guid parentCommentId, Guid questionId)
+        private async Task<QuestionComment> ValidateAndGetFlattenedParent(Guid parentCommentId, Guid questionId)
         {
             var commentRepo = _unitOfWork.GetRepository<QuestionComment, Guid>();
             var parentComment = await commentRepo.GetByIdAsync(parentCommentId) ?? throw new AppException(CustomCode.ParentCommentNotFound);
@@ -146,11 +150,6 @@ namespace Eduva.Application.Features.Questions.Commands.CreateQuestionComment
             if (parentComment.Status != EntityStatus.Active)
             {
                 throw new AppException(CustomCode.CommentNotActive);
-            }
-
-            if (parentComment.ParentCommentId.HasValue)
-            {
-                throw new AppException(CustomCode.CannotReplyToReply);
             }
 
             return parentComment;

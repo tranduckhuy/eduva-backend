@@ -87,6 +87,11 @@ namespace Eduva.API.Controllers.Questions
         [Authorize(Roles = $"{nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}, {nameof(Role.Student)}")]
         public async Task<IActionResult> CreateQuestion([FromBody] CreateQuestionCommand command)
         {
+            if (command == null)
+            {
+                return Respond(CustomCode.ModelInvalid);
+            }
+
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(userId, out var userGuid))
                 return Respond(CustomCode.UserIdNotFound);
@@ -148,6 +153,11 @@ namespace Eduva.API.Controllers.Questions
         [Authorize(Roles = $"{nameof(Role.Student)}, {nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}, {nameof(Role.SchoolAdmin)}, {nameof(Role.SystemAdmin)}")]
         public async Task<IActionResult> CreateQuestionComment([FromBody] CreateQuestionCommentCommand command)
         {
+            if (command == null)
+            {
+                return Respond(CustomCode.ModelInvalid);
+            }
+
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(userId, out var userGuid))
                 return Respond(CustomCode.UserIdNotFound);
