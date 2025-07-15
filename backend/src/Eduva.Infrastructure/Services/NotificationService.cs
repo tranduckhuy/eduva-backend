@@ -111,6 +111,8 @@ namespace Eduva.Infrastructure.Services
             _logger.LogInformation("Marked all notifications as read for user: {UserId}", userId);
         }
 
+        #region FALLBACK LOGIC OLD
+
         public async Task<List<Guid>> GetUsersInLessonAsync(Guid lessonMaterialId, CancellationToken cancellationToken = default)
         {
             try
@@ -152,6 +154,99 @@ namespace Eduva.Infrastructure.Services
             {
                 _logger.LogError(ex, "Error getting users for lesson: {LessonMaterialId}", lessonMaterialId);
                 return new List<Guid>();
+            }
+        }
+
+        #endregion
+
+        public async Task<List<Guid>> GetUsersForNewQuestionNotificationAsync(Guid lessonMaterialId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var lessonRepo = _unitOfWork.GetRepository<LessonMaterial, Guid>();
+                var lesson = await lessonRepo.GetByIdAsync(lessonMaterialId);
+
+                if (lesson == null)
+                {
+                    _logger.LogWarning("Lesson material not found: {LessonMaterialId}", lessonMaterialId);
+                    return [];
+                }
+
+                var userIds = new HashSet<Guid>();
+
+                // 1. Add lesson creator (usually teacher)
+                userIds.Add(lesson.CreatedByUserId);
+                _logger.LogInformation("Added lesson creator for new question: {UserId}", lesson.CreatedByUserId);
+
+                // 2. Add users with access based on folder structure (students/teachers in class)
+                await AddUsersWithFolderAccessAsync(lessonMaterialId, userIds, cancellationToken);
+
+                // 3. For lessons not in folders, add users with access based on visibility
+                if (userIds.Count <= 1) // Only creator found
+                {
+                    await AddUsersBasedOnVisibilityAsync(lesson, userIds);
+                }
+
+                var result = userIds.ToList();
+                _logger.LogInformation("Total users found for new question notification {LessonMaterialId}: {UserCount}",
+                    lessonMaterialId, result.Count);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting users for new question notification: {LessonMaterialId}, falling back to original logic", lessonMaterialId);
+                // FALLBACK OLD LOGIC IF ERROR
+                return await GetUsersInLessonAsync(lessonMaterialId, cancellationToken);
+            }
+        }
+
+        public async Task<List<Guid>> GetUsersForQuestionCommentNotificationAsync(Guid questionId, Guid lessonMaterialId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var userIds = new HashSet<Guid>();
+
+                // 1. Add question creator
+                var questionRepo = _unitOfWork.GetRepository<LessonMaterialQuestion, Guid>();
+                var question = await questionRepo.GetByIdAsync(questionId);
+                if (question != null)
+                {
+                    userIds.Add(question.CreatedByUserId);
+                    _logger.LogInformation("Added question creator for comment notification: {UserId}", question.CreatedByUserId);
+                }
+
+                // 2. Add lesson creator (teacher)
+                var lessonRepo = _unitOfWork.GetRepository<LessonMaterial, Guid>();
+                var lesson = await lessonRepo.GetByIdAsync(lessonMaterialId);
+                if (lesson != null)
+                {
+                    userIds.Add(lesson.CreatedByUserId);
+                    _logger.LogInformation("Added lesson creator for comment notification: {UserId}", lesson.CreatedByUserId);
+                }
+
+                // 3. Add users who have commented on THIS specific question only
+                var commentRepo = _unitOfWork.GetRepository<QuestionComment, Guid>();
+                var allComments = await commentRepo.GetAllAsync();
+                var questionComments = allComments.Where(c => c.QuestionId == questionId && c.Status == EntityStatus.Active).ToList();
+
+                foreach (var comment in questionComments)
+                {
+                    userIds.Add(comment.CreatedByUserId);
+                }
+
+                var result = userIds.ToList();
+                _logger.LogInformation("Total users found for question comment notification {QuestionId}: {UserCount} " +
+                    "(Question creator + Lesson creator + {CommentCount} commenters)",
+                    questionId, result.Count, questionComments.Count);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting users for question comment notification: {QuestionId}, falling back to original logic", questionId);
+                // FALLBACK OLD LOGIC IF ERROR
+                return await GetUsersInLessonAsync(lessonMaterialId, cancellationToken);
             }
         }
 
