@@ -87,16 +87,13 @@ namespace Eduva.API.Controllers.Questions
         [Authorize(Roles = $"{nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}, {nameof(Role.Student)}")]
         public async Task<IActionResult> CreateQuestion([FromBody] CreateQuestionCommand command)
         {
-            if (command == null)
+            var validationResult = ValidateCreateCommand(command, out var userId);
+            if (validationResult != null)
             {
-                return Respond(CustomCode.ModelInvalid);
+                return validationResult;
             }
 
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!Guid.TryParse(userId, out var userGuid))
-                return Respond(CustomCode.UserIdNotFound);
-
-            command.CreatedByUserId = userGuid;
+            command.CreatedByUserId = userId;
 
             return await HandleRequestAsync(async () =>
             {
@@ -153,16 +150,13 @@ namespace Eduva.API.Controllers.Questions
         [Authorize(Roles = $"{nameof(Role.Student)}, {nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}, {nameof(Role.SchoolAdmin)}, {nameof(Role.SystemAdmin)}")]
         public async Task<IActionResult> CreateQuestionComment([FromBody] CreateQuestionCommentCommand command)
         {
-            if (command == null)
+            var validationResult = ValidateCreateCommand(command, out var userId);
+            if (validationResult != null)
             {
-                return Respond(CustomCode.ModelInvalid);
+                return validationResult;
             }
 
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!Guid.TryParse(userId, out var userGuid))
-                return Respond(CustomCode.UserIdNotFound);
-
-            command.CreatedByUserId = userGuid;
+            command.CreatedByUserId = userId;
 
             return await HandleRequestAsync(async () =>
             {
@@ -212,5 +206,26 @@ namespace Eduva.API.Controllers.Questions
                 await _mediator.Send(command);
             }, CustomCode.Success);
         }
+
+        #region Validation Helpers
+
+        private IActionResult? ValidateCreateCommand<TCommand>(TCommand command, out Guid userId) where TCommand : class
+        {
+            userId = Guid.Empty;
+
+            if (command == null)
+            {
+                return Respond(CustomCode.ModelInvalid);
+            }
+
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userIdStr, out userId))
+                return Respond(CustomCode.UserIdNotFound);
+
+            return null;
+        }
+
+        #endregion
+
     }
 }
