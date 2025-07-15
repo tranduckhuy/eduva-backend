@@ -815,5 +815,626 @@ namespace Eduva.Infrastructure.Test.Services
         }
 
         #endregion
+
+        #region GetUsersForNewQuestionNotificationAsync Tests
+
+        [Test]
+        public async Task GetUsersForNewQuestionNotificationAsync_ShouldReturnTeacherAndAccessUsers_WhenLessonExists()
+        {
+            // Arrange
+            var lessonId = Guid.NewGuid();
+            var lessonCreatorId = Guid.NewGuid();
+            var classTeacherId = Guid.NewGuid();
+            var student1Id = Guid.NewGuid();
+            var student2Id = Guid.NewGuid();
+            var folderId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
+
+            var lesson = new LessonMaterial
+            {
+                Id = lessonId,
+                CreatedByUserId = lessonCreatorId,
+                Status = EntityStatus.Active,
+                Visibility = LessonMaterialVisibility.Private,
+                SchoolId = 1,
+                Title = "Test Lesson",
+                Description = "Test Description",
+                ContentType = ContentType.DOCX,
+                Tag = "test",
+                LessonStatus = LessonMaterialStatus.Approved,
+                Duration = 60,
+                FileSize = 1024,
+                IsAIContent = false,
+                SourceUrl = "test.pdf",
+                CreatedAt = DateTimeOffset.UtcNow,
+                LastModifiedAt = DateTimeOffset.UtcNow
+            };
+
+            var folderLesson = new FolderLessonMaterial
+            {
+                Id = Guid.NewGuid(),
+                LessonMaterialId = lessonId,
+                FolderId = folderId
+            };
+
+            var folder = new Folder
+            {
+                Id = folderId,
+                ClassId = classId,
+                UserId = null,
+                OwnerType = OwnerType.Class,
+                Name = "Test Folder",
+                Order = 1,
+                Status = EntityStatus.Active,
+                CreatedAt = DateTimeOffset.UtcNow,
+                LastModifiedAt = DateTimeOffset.UtcNow
+            };
+
+            var classroom = new Classroom
+            {
+                Id = classId,
+                TeacherId = classTeacherId,
+                Name = "Test Class",
+                ClassCode = "TEST123",
+                SchoolId = 1,
+                BackgroundImageUrl = "",
+                Status = EntityStatus.Active,
+                CreatedAt = DateTimeOffset.UtcNow,
+                LastModifiedAt = DateTimeOffset.UtcNow
+            };
+
+            var studentClasses = new List<StudentClass>
+            {
+                new StudentClass
+                {
+                    Id = Guid.NewGuid(),
+                    StudentId = student1Id,
+                    ClassId = classId,
+                    EnrolledAt = DateTimeOffset.UtcNow
+                },
+                new StudentClass
+                {
+                    Id = Guid.NewGuid(),
+                    StudentId = student2Id,
+                    ClassId = classId,
+                    EnrolledAt = DateTimeOffset.UtcNow
+                }
+            };
+
+            _lessonRepoMock.Setup(x => x.GetByIdAsync(lessonId)).ReturnsAsync(lesson);
+            _folderLessonRepoMock.Setup(x => x.FirstOrDefaultAsync(
+                It.IsAny<Expression<Func<FolderLessonMaterial, bool>>>(),
+                null,
+                It.IsAny<CancellationToken>())).ReturnsAsync(folderLesson);
+            _folderRepoMock.Setup(x => x.GetByIdAsync(folderId)).ReturnsAsync(folder);
+            _classRepoMock.Setup(x => x.GetByIdAsync(classId)).ReturnsAsync(classroom);
+            _studentClassRepoMock.Setup(x => x.GetAllAsync()).ReturnsAsync(studentClasses);
+
+            _studentClassCustomRepoMock.Setup(x => x.HasAccessToMaterialAsync(student1Id, lessonId))
+                .ReturnsAsync(true);
+            _studentClassCustomRepoMock.Setup(x => x.HasAccessToMaterialAsync(student2Id, lessonId))
+                .ReturnsAsync(true);
+
+            // Act
+            var result = await _service.GetUsersForNewQuestionNotificationAsync(lessonId);
+
+            // Assert
+            Assert.Multiple(() =>
+            {
+                Assert.That(result, Has.Count.EqualTo(4));
+                Assert.That(result, Contains.Item(lessonCreatorId));
+                Assert.That(result, Contains.Item(classTeacherId));
+                Assert.That(result, Contains.Item(student1Id));
+                Assert.That(result, Contains.Item(student2Id));
+                Assert.That(result, Does.Not.Contain(Guid.Empty));
+            });
+        }
+
+        [Test]
+        public async Task GetUsersForNewQuestionNotificationAsync_ShouldDeduplicateTeacher_WhenSameTeacher()
+        {
+            // Arrange
+            var lessonId = Guid.NewGuid();
+            var teacherId = Guid.NewGuid();
+            var student1Id = Guid.NewGuid();
+            var folderId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
+
+            var lesson = new LessonMaterial
+            {
+                Id = lessonId,
+                CreatedByUserId = teacherId,
+                Status = EntityStatus.Active,
+                Visibility = LessonMaterialVisibility.Private,
+                SchoolId = 1,
+                Title = "Test Lesson",
+                Description = "Test Description",
+                ContentType = ContentType.DOCX,
+                Tag = "test",
+                LessonStatus = LessonMaterialStatus.Approved,
+                Duration = 60,
+                FileSize = 1024,
+                IsAIContent = false,
+                SourceUrl = "test.pdf",
+                CreatedAt = DateTimeOffset.UtcNow,
+                LastModifiedAt = DateTimeOffset.UtcNow
+            };
+
+            var folderLesson = new FolderLessonMaterial
+            {
+                Id = Guid.NewGuid(),
+                LessonMaterialId = lessonId,
+                FolderId = folderId
+            };
+
+            var folder = new Folder
+            {
+                Id = folderId,
+                ClassId = classId,
+                UserId = null,
+                OwnerType = OwnerType.Class,
+                Name = "Test Folder",
+                Order = 1,
+                Status = EntityStatus.Active,
+                CreatedAt = DateTimeOffset.UtcNow,
+                LastModifiedAt = DateTimeOffset.UtcNow
+            };
+
+            var classroom = new Classroom
+            {
+                Id = classId,
+                TeacherId = teacherId,
+                Name = "Test Class",
+                ClassCode = "TEST123",
+                SchoolId = 1,
+                BackgroundImageUrl = "",
+                Status = EntityStatus.Active,
+                CreatedAt = DateTimeOffset.UtcNow,
+                LastModifiedAt = DateTimeOffset.UtcNow
+            };
+
+            var studentClasses = new List<StudentClass>
+            {
+                new StudentClass
+                {
+                    Id = Guid.NewGuid(),
+                    StudentId = student1Id,
+                    ClassId = classId,
+                    EnrolledAt = DateTimeOffset.UtcNow
+                }
+            };
+
+            _lessonRepoMock.Setup(x => x.GetByIdAsync(lessonId)).ReturnsAsync(lesson);
+            _folderLessonRepoMock.Setup(x => x.FirstOrDefaultAsync(
+                It.IsAny<Expression<Func<FolderLessonMaterial, bool>>>(),
+                null,
+                It.IsAny<CancellationToken>())).ReturnsAsync(folderLesson);
+            _folderRepoMock.Setup(x => x.GetByIdAsync(folderId)).ReturnsAsync(folder);
+            _classRepoMock.Setup(x => x.GetByIdAsync(classId)).ReturnsAsync(classroom);
+            _studentClassRepoMock.Setup(x => x.GetAllAsync()).ReturnsAsync(studentClasses);
+
+            _studentClassCustomRepoMock.Setup(x => x.HasAccessToMaterialAsync(student1Id, lessonId))
+                .ReturnsAsync(true);
+
+            // Act
+            var result = await _service.GetUsersForNewQuestionNotificationAsync(lessonId);
+
+            // Assert
+            Assert.Multiple(() =>
+            {
+                Assert.That(result, Has.Count.EqualTo(2));
+                Assert.That(result, Contains.Item(teacherId));
+                Assert.That(result, Contains.Item(student1Id));
+                Assert.That(result, Does.Not.Contain(Guid.Empty));
+            });
+        }
+
+        [Test]
+        public async Task GetUsersForNewQuestionNotificationAsync_ShouldReturnOnlyTeacher_WhenStudentsHaveNoAccess()
+        {
+            // Arrange
+            var lessonId = Guid.NewGuid();
+            var teacherId = Guid.NewGuid();
+            var student1Id = Guid.NewGuid();
+            var folderId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
+
+            var lesson = new LessonMaterial
+            {
+                Id = lessonId,
+                CreatedByUserId = teacherId,
+                Status = EntityStatus.Active,
+                Visibility = LessonMaterialVisibility.Private,
+                SchoolId = 1,
+                Title = "Test Lesson",
+                Description = "Test Description",
+                ContentType = ContentType.DOCX,
+                Tag = "test",
+                LessonStatus = LessonMaterialStatus.Approved,
+                Duration = 60,
+                FileSize = 1024,
+                IsAIContent = false,
+                SourceUrl = "test.pdf",
+                CreatedAt = DateTimeOffset.UtcNow,
+                LastModifiedAt = DateTimeOffset.UtcNow
+            };
+
+            var folderLesson = new FolderLessonMaterial
+            {
+                Id = Guid.NewGuid(),
+                LessonMaterialId = lessonId,
+                FolderId = folderId
+            };
+
+            var folder = new Folder
+            {
+                Id = folderId,
+                ClassId = classId,
+                UserId = null,
+                OwnerType = OwnerType.Class,
+                Name = "Test Folder",
+                Order = 1,
+                Status = EntityStatus.Active,
+                CreatedAt = DateTimeOffset.UtcNow,
+                LastModifiedAt = DateTimeOffset.UtcNow
+            };
+
+            var classroom = new Classroom
+            {
+                Id = classId,
+                TeacherId = teacherId,
+                Name = "Test Class",
+                ClassCode = "TEST123",
+                SchoolId = 1,
+                BackgroundImageUrl = "",
+                Status = EntityStatus.Active,
+                CreatedAt = DateTimeOffset.UtcNow,
+                LastModifiedAt = DateTimeOffset.UtcNow
+            };
+
+            var studentClasses = new List<StudentClass>
+            {
+                new StudentClass
+                {
+                    Id = Guid.NewGuid(),
+                    StudentId = student1Id,
+                    ClassId = classId,
+                    EnrolledAt = DateTimeOffset.UtcNow
+                }
+            };
+
+            _lessonRepoMock.Setup(x => x.GetByIdAsync(lessonId)).ReturnsAsync(lesson);
+            _folderLessonRepoMock.Setup(x => x.FirstOrDefaultAsync(
+                It.IsAny<Expression<Func<FolderLessonMaterial, bool>>>(),
+                null,
+                It.IsAny<CancellationToken>())).ReturnsAsync(folderLesson);
+            _folderRepoMock.Setup(x => x.GetByIdAsync(folderId)).ReturnsAsync(folder);
+            _classRepoMock.Setup(x => x.GetByIdAsync(classId)).ReturnsAsync(classroom);
+            _studentClassRepoMock.Setup(x => x.GetAllAsync()).ReturnsAsync(studentClasses);
+
+            _studentClassCustomRepoMock.Setup(x => x.HasAccessToMaterialAsync(student1Id, lessonId))
+                .ReturnsAsync(false);
+
+            // Act
+            var result = await _service.GetUsersForNewQuestionNotificationAsync(lessonId);
+
+            // Assert
+            Assert.Multiple(() =>
+            {
+                Assert.That(result, Has.Count.EqualTo(1));
+                Assert.That(result, Contains.Item(teacherId));
+                Assert.That(result, Does.Not.Contain(student1Id));
+                Assert.That(result, Does.Not.Contain(Guid.Empty));
+            });
+        }
+
+        [Test]
+        public async Task GetUsersForNewQuestionNotificationAsync_ShouldReturnOnlyLessonCreator_WhenNotInFolder()
+        {
+            // Arrange
+            var lessonId = Guid.NewGuid();
+            var teacherId = Guid.NewGuid();
+
+            var lesson = new LessonMaterial
+            {
+                Id = lessonId,
+                CreatedByUserId = teacherId,
+                Status = EntityStatus.Active,
+                Visibility = LessonMaterialVisibility.Private,
+                SchoolId = 1,
+                Title = "Test Lesson",
+                Description = "Test Description",
+                ContentType = ContentType.DOCX,
+                Tag = "test",
+                LessonStatus = LessonMaterialStatus.Approved,
+                Duration = 60,
+                FileSize = 1024,
+                IsAIContent = false,
+                SourceUrl = "test.pdf",
+                CreatedAt = DateTimeOffset.UtcNow,
+                LastModifiedAt = DateTimeOffset.UtcNow
+            };
+
+            _lessonRepoMock.Setup(x => x.GetByIdAsync(lessonId)).ReturnsAsync(lesson);
+            _folderLessonRepoMock.Setup(x => x.FirstOrDefaultAsync(
+                It.IsAny<Expression<Func<FolderLessonMaterial, bool>>>(),
+                null,
+                It.IsAny<CancellationToken>())).ReturnsAsync((FolderLessonMaterial?)null);
+
+            // Act
+            var result = await _service.GetUsersForNewQuestionNotificationAsync(lessonId);
+
+            // Assert
+            Assert.Multiple(() =>
+            {
+                Assert.That(result, Has.Count.EqualTo(1));
+                Assert.That(result, Contains.Item(teacherId));
+                Assert.That(result, Does.Not.Contain(Guid.Empty));
+            });
+        }
+
+        [Test]
+        public async Task GetUsersForNewQuestionNotificationAsync_ShouldAddSchoolUsers_WhenNotInFolderAndSchoolVisibility()
+        {
+            // Arrange
+            var lessonId = Guid.NewGuid();
+            var teacherId = Guid.NewGuid();
+            var user1Id = Guid.NewGuid();
+            var user2Id = Guid.NewGuid();
+
+            var lesson = new LessonMaterial
+            {
+                Id = lessonId,
+                CreatedByUserId = teacherId,
+                Status = EntityStatus.Active,
+                Visibility = LessonMaterialVisibility.School,
+                SchoolId = 1,
+                Title = "Test Lesson",
+                Description = "Test Description",
+                ContentType = ContentType.DOCX,
+                Tag = "test",
+                LessonStatus = LessonMaterialStatus.Approved,
+                Duration = 60,
+                FileSize = 1024,
+                IsAIContent = false,
+                SourceUrl = "test.pdf",
+                CreatedAt = DateTimeOffset.UtcNow,
+                LastModifiedAt = DateTimeOffset.UtcNow
+            };
+
+            List<ApplicationUser> schoolUsers = [
+                new() { Id = teacherId, SchoolId = 1, Status = EntityStatus.Active, UserName = "teacher@test.com", Email = "teacher@test.com" },
+                new() { Id = user1Id, SchoolId = 1, Status = EntityStatus.Active, UserName = "user1@test.com", Email = "user1@test.com" },
+                new() { Id = user2Id, SchoolId = 1, Status = EntityStatus.Active, UserName = "user2@test.com", Email = "user2@test.com" },
+                new() { Id = Guid.NewGuid(), SchoolId = 2, Status = EntityStatus.Active, UserName = "other@test.com", Email = "other@test.com" },
+                new() { Id = Guid.NewGuid(), SchoolId = 1, Status = EntityStatus.Deleted, UserName = "deleted@test.com", Email = "deleted@test.com" }
+            ];
+
+            _lessonRepoMock.Setup(x => x.GetByIdAsync(lessonId)).ReturnsAsync(lesson);
+            _folderLessonRepoMock.Setup(x => x.FirstOrDefaultAsync(
+                It.IsAny<Expression<Func<FolderLessonMaterial, bool>>>(),
+                null,
+                It.IsAny<CancellationToken>())).ReturnsAsync((FolderLessonMaterial?)null);
+            _userRepoMock.Setup(x => x.GetAllAsync()).ReturnsAsync(schoolUsers);
+
+            // Act
+            var result = await _service.GetUsersForNewQuestionNotificationAsync(lessonId);
+
+            // Assert
+            Assert.Multiple(() =>
+            {
+                Assert.That(result, Has.Count.EqualTo(3));
+                Assert.That(result, Contains.Item(teacherId));
+                Assert.That(result, Contains.Item(user1Id));
+                Assert.That(result, Contains.Item(user2Id));
+                Assert.That(result, Does.Not.Contain(Guid.Empty));
+            });
+        }
+
+        [Test]
+        public async Task GetUsersForNewQuestionNotificationAsync_ShouldReturnEmpty_WhenLessonNotFound()
+        {
+            // Arrange
+            var lessonId = Guid.NewGuid();
+
+            _lessonRepoMock.Setup(x => x.GetByIdAsync(lessonId)).ReturnsAsync((LessonMaterial?)null);
+
+            // Act
+            var result = await _service.GetUsersForNewQuestionNotificationAsync(lessonId);
+
+            // Assert
+            Assert.That(result, Is.Empty);
+        }
+
+        [Test]
+        public async Task GetUsersForNewQuestionNotificationAsync_ShouldFallbackToOldLogic_WhenExceptionThrown()
+        {
+            // Arrange
+            var lessonId = Guid.NewGuid();
+
+            _lessonRepoMock.Setup(x => x.GetByIdAsync(lessonId)).ThrowsAsync(new Exception("Database error"));
+
+            // Act
+            var result = await _service.GetUsersForNewQuestionNotificationAsync(lessonId);
+
+            // Assert
+            Assert.That(result, Is.Not.Null);
+        }
+
+        #endregion
+
+        #region GetUsersForQuestionCommentNotificationAsync Tests
+
+        [Test]
+        public async Task GetUsersForQuestionCommentNotificationAsync_ShouldReturnQuestionCreatorAndTeacherAndCommenters()
+        {
+            // Arrange
+            var questionId = Guid.NewGuid();
+            var lessonId = Guid.NewGuid();
+            var questionCreatorId = Guid.NewGuid();
+            var teacherId = Guid.NewGuid();
+            var commenter1Id = Guid.NewGuid();
+            var commenter2Id = Guid.NewGuid();
+
+            var question = new LessonMaterialQuestion
+            {
+                Id = questionId,
+                LessonMaterialId = lessonId,
+                CreatedByUserId = questionCreatorId
+            };
+
+            var lesson = new LessonMaterial
+            {
+                Id = lessonId,
+                CreatedByUserId = teacherId
+            };
+
+            var comments = new List<QuestionComment>
+            {
+                new() { Id = Guid.NewGuid(), QuestionId = questionId, CreatedByUserId = commenter1Id, Status = EntityStatus.Active },
+                new() { Id = Guid.NewGuid(), QuestionId = questionId, CreatedByUserId = commenter2Id, Status = EntityStatus.Active },
+                new() { Id = Guid.NewGuid(), QuestionId = Guid.NewGuid(), CreatedByUserId = Guid.NewGuid(), Status = EntityStatus.Active } // Different question
+            };
+
+            _questionRepoMock.Setup(x => x.GetByIdAsync(questionId)).ReturnsAsync(question);
+            _lessonRepoMock.Setup(x => x.GetByIdAsync(lessonId)).ReturnsAsync(lesson);
+            _commentRepoMock.Setup(x => x.GetAllAsync()).ReturnsAsync(comments);
+
+            // Act
+            var result = await _service.GetUsersForQuestionCommentNotificationAsync(questionId, lessonId);
+
+            // Assert
+            Assert.That(result, Has.Count.EqualTo(4));
+            Assert.That(result, Contains.Item(questionCreatorId)); // Question creator
+            Assert.That(result, Contains.Item(teacherId)); // Lesson creator
+            Assert.That(result, Contains.Item(commenter1Id)); // Commenter 1
+            Assert.That(result, Contains.Item(commenter2Id)); // Commenter 2
+        }
+
+        [Test]
+        public async Task GetUsersForQuestionCommentNotificationAsync_ShouldReturnOnlyTeacher_WhenQuestionNotFoundButLessonExists()
+        {
+            // Arrange
+            var questionId = Guid.NewGuid();
+            var lessonId = Guid.NewGuid();
+            var teacherId = Guid.NewGuid();
+
+            var lesson = new LessonMaterial
+            {
+                Id = lessonId,
+                CreatedByUserId = teacherId
+            };
+
+            _questionRepoMock.Setup(x => x.GetByIdAsync(questionId)).ReturnsAsync((LessonMaterialQuestion?)null);
+            _lessonRepoMock.Setup(x => x.GetByIdAsync(lessonId)).ReturnsAsync(lesson);
+            _commentRepoMock.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<QuestionComment>());
+
+            // Act
+            var result = await _service.GetUsersForQuestionCommentNotificationAsync(questionId, lessonId);
+
+            // Assert
+            Assert.That(result, Has.Count.EqualTo(1));
+            Assert.That(result, Contains.Item(teacherId));
+        }
+
+        [Test]
+        public async Task GetUsersForQuestionCommentNotificationAsync_ShouldExcludeInactiveComments()
+        {
+            // Arrange
+            var questionId = Guid.NewGuid();
+            var lessonId = Guid.NewGuid();
+            var questionCreatorId = Guid.NewGuid();
+            var teacherId = Guid.NewGuid();
+            var activeCommenterId = Guid.NewGuid();
+            var inactiveCommenterId = Guid.NewGuid();
+
+            var question = new LessonMaterialQuestion
+            {
+                Id = questionId,
+                CreatedByUserId = questionCreatorId
+            };
+
+            var lesson = new LessonMaterial
+            {
+                Id = lessonId,
+                CreatedByUserId = teacherId
+            };
+
+            var comments = new List<QuestionComment>
+            {
+                new() { Id = Guid.NewGuid(), QuestionId = questionId, CreatedByUserId = activeCommenterId, Status = EntityStatus.Active },
+                new() { Id = Guid.NewGuid(), QuestionId = questionId, CreatedByUserId = inactiveCommenterId, Status = EntityStatus.Deleted }
+            };
+
+            _questionRepoMock.Setup(x => x.GetByIdAsync(questionId)).ReturnsAsync(question);
+            _lessonRepoMock.Setup(x => x.GetByIdAsync(lessonId)).ReturnsAsync(lesson);
+            _commentRepoMock.Setup(x => x.GetAllAsync()).ReturnsAsync(comments);
+
+            // Act
+            var result = await _service.GetUsersForQuestionCommentNotificationAsync(questionId, lessonId);
+
+            // Assert
+            Assert.That(result, Has.Count.EqualTo(3));
+            Assert.That(result, Contains.Item(questionCreatorId));
+            Assert.That(result, Contains.Item(teacherId));
+            Assert.That(result, Contains.Item(activeCommenterId));
+            Assert.That(result, Does.Not.Contain(inactiveCommenterId)); // Should exclude inactive comment
+        }
+
+        [Test]
+        public async Task GetUsersForQuestionCommentNotificationAsync_ShouldFallbackToOldLogic_WhenExceptionThrown()
+        {
+            // Arrange
+            var questionId = Guid.NewGuid();
+            var lessonId = Guid.NewGuid();
+
+            _questionRepoMock.Setup(x => x.GetByIdAsync(questionId)).ThrowsAsync(new Exception("Database error"));
+
+            // Act
+            var result = await _service.GetUsersForQuestionCommentNotificationAsync(questionId, lessonId);
+
+            // Assert - Should call old logic as fallback
+            Assert.That(result, Is.Not.Null);
+        }
+
+        [Test]
+        public async Task GetUsersForQuestionCommentNotificationAsync_ShouldHandleDuplicateUsers()
+        {
+            // Arrange
+            var questionId = Guid.NewGuid();
+            var lessonId = Guid.NewGuid();
+            var teacherId = Guid.NewGuid(); // Same user is both question creator and lesson creator
+
+            var question = new LessonMaterialQuestion
+            {
+                Id = questionId,
+                CreatedByUserId = teacherId // Teacher created the question
+            };
+
+            var lesson = new LessonMaterial
+            {
+                Id = lessonId,
+                CreatedByUserId = teacherId // Same teacher created the lesson
+            };
+
+            var comments = new List<QuestionComment>
+            {
+                new() { Id = Guid.NewGuid(), QuestionId = questionId, CreatedByUserId = teacherId, Status = EntityStatus.Active } // Teacher also commented
+            };
+
+            _questionRepoMock.Setup(x => x.GetByIdAsync(questionId)).ReturnsAsync(question);
+            _lessonRepoMock.Setup(x => x.GetByIdAsync(lessonId)).ReturnsAsync(lesson);
+            _commentRepoMock.Setup(x => x.GetAllAsync()).ReturnsAsync(comments);
+
+            // Act
+            var result = await _service.GetUsersForQuestionCommentNotificationAsync(questionId, lessonId);
+
+            // Assert - Should have only 1 user (deduplication)
+            Assert.That(result, Has.Count.EqualTo(1));
+            Assert.That(result, Contains.Item(teacherId));
+        }
+
+        #endregion
+
     }
 }
