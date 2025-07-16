@@ -125,7 +125,7 @@ namespace Eduva.Infrastructure.Extensions
                     EmailConfirmed = true,
                     FullName = "Huy Dinh Trong",
                     PhoneNumber = "0838683865",
-                    TotalCredits = 1000,
+                    TotalCredits = 40,
                 };
 
                 await userManager.CreateAsync(huyAdmin2, "Admin11@");
@@ -166,12 +166,12 @@ namespace Eduva.Infrastructure.Extensions
             {
                 var plan = new SubscriptionPlan
                 {
-                    Name = "Basic Plan",
-                    Description = "Basic plan for small schools with limited features.",
-                    MaxUsers = 100,
-                    StorageLimitGB = 10,
-                    PriceMonthly = 100000m, // 100,000 VND
-                    PricePerYear = 1100000m, // 1,000,000 VND
+                    Name = "Gói Cơ Bản",
+                    Description = "Trường nhỏ (≤ 300 người).",
+                    MaxUsers = 300,
+                    StorageLimitGB = 100,
+                    PriceMonthly = 300000m, // 300,000 VND
+                    PricePerYear = 3420000m, // 3,420,000 VND
                 };
                 context.SubscriptionPlans.Add(plan);
                 await context.SaveChangesAsync();
@@ -181,10 +181,10 @@ namespace Eduva.Infrastructure.Extensions
             {
                 var creditPack = new AICreditPack
                 {
-                    Name = "Basic AI Credit Pack",
-                    Credits = 1000,
-                    Price = 50000m, // 50,000 VND
-                    BonusCredits = 100,
+                    Name = "Gói AI Dùng Thử",
+                    Credits = 40,
+                    Price = 10000m, // 10,000 VND
+                    BonusCredits = 0,
                 };
                 context.AICreditPacks.Add(creditPack);
                 await context.SaveChangesAsync();
@@ -198,7 +198,7 @@ namespace Eduva.Infrastructure.Extensions
                     {
                         Id = new Guid("1a1a1a1a-1a1a-1a1a-1a1a-1a1a1a1a1a1a"),
                         UserId = new Guid("2a2a2a2a-2a2a-2a2a-2a2a-2a2a2a2a2a2a"),
-                        Amount = 100000m,
+                        Amount = 300000m,
                         PaymentPurpose = PaymentPurpose.SchoolSubscription,
                         PaymentMethod = PaymentMethod.PayOS,
                         PaymentStatus = PaymentStatus.Paid,
@@ -212,7 +212,7 @@ namespace Eduva.Infrastructure.Extensions
                     {
                         Id = new Guid("2b2b2b2b-2b2b-2b2b-2b2b-2b2b2b2b2b2b"),
                         UserId = new Guid("4a4a4a4a-4a4a-4a4a-4a4a-4a4a4a4a4a4a"),
-                        Amount = 50000m,
+                        Amount = 10000m,
                         PaymentPurpose = PaymentPurpose.CreditPackage,
                         PaymentMethod = PaymentMethod.PayOS,
                         PaymentStatus = PaymentStatus.Paid,
@@ -234,7 +234,7 @@ namespace Eduva.Infrastructure.Extensions
                     UserId = new Guid("4a4a4a4a-4a4a-4a4a-4a4a-4a4a4a4a4a4a"),
                     PaymentTransactionId = new Guid("2b2b2b2b-2b2b-2b2b-2b2b-2b2b2b2b2b2b"),
                     AICreditPackId = 1,
-                    Credits = 1000
+                    Credits = 40
                 };
                 context.UserCreditTransactions.Add(transaction);
                 await context.SaveChangesAsync();
@@ -440,7 +440,7 @@ namespace Eduva.Infrastructure.Extensions
                     new SystemConfig
                     {
                         Key = SystemConfigKeys.PAYOS_RETURN_URL_PACK,
-                        Value = "https://school.eduva.tech/teacher",
+                        Value = "https://school.eduva.tech/teacher/credit-pack",
                         Description = "Default return URL payment pack for users."
                     },
 

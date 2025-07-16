@@ -342,8 +342,6 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status403Forbidden, Message = "You don't have permission to delete this comment" } },
             { CustomCode.CannotDeleteCommentWithReplies, new MessageDetail {
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Cannot delete comment that has replies" } },
-            { CustomCode.CannotReplyToReply, new MessageDetail {
-                HttpCode = StatusCodes.Status400BadRequest, Message = "Cannot reply to a reply. Only top-level comments can have replies" } },
             { CustomCode.ParentCommentNotFound, new MessageDetail {
                 HttpCode = StatusCodes.Status404NotFound, Message = "Parent comment not found or is not a top-level comment" } },
             { CustomCode.CommentContentRequired, new MessageDetail {

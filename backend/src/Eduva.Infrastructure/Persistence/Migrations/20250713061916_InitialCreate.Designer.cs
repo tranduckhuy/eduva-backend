@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Eduva.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250711022058_InitialCreate")]
+    [Migration("20250713061916_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

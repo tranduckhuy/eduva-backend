@@ -11,7 +11,6 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
         private Guid _lessonMaterialId;
         private Guid _currentUserId;
         private int? _userSchoolId;
-        private string _userRole;
         private QuestionsByLessonSpecParam _param;
 
         [SetUp]
@@ -20,7 +19,6 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
             _lessonMaterialId = Guid.NewGuid();
             _currentUserId = Guid.NewGuid();
             _userSchoolId = 1;
-            _userRole = "Student";
             _param = new QuestionsByLessonSpecParam
             {
                 PageIndex = 1,
@@ -39,7 +37,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
         public void Constructor_ShouldSetPropertiesCorrectly()
         {
             // Act
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Assert
             Assert.Multiple(() =>
@@ -60,7 +58,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
             _param.PageSize = 20;
 
             // Act
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Assert
             Assert.Multiple(() =>
@@ -74,7 +72,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
         public void Constructor_ShouldIncludeRequiredEntities()
         {
             // Act
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Assert
             Assert.That(spec.Includes, Has.Count.EqualTo(3));
@@ -88,7 +86,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
         public void BuildCriteria_ShouldFilterByLessonMaterialId()
         {
             // Arrange
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
             var criteria = spec.Criteria;
@@ -102,7 +100,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
         {
             // Arrange
             _userSchoolId = 1;
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
             var criteria = spec.Criteria;
@@ -116,7 +114,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
         {
             // Arrange
             _userSchoolId = null;
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
             var criteria = spec.Criteria;
@@ -130,7 +128,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
         {
             // Arrange
             _param.SearchTerm = "test question";
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
             var criteria = spec.Criteria;
@@ -144,7 +142,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
         {
             // Arrange
             _param.SearchTerm = null;
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
             var criteria = spec.Criteria;
@@ -158,7 +156,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
         {
             // Arrange
             _param.SearchTerm = "";
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
             var criteria = spec.Criteria;
@@ -172,7 +170,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
         {
             // Arrange
             _param.SearchTerm = "   ";
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
             var criteria = spec.Criteria;
@@ -185,8 +183,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
         public void BuildCriteria_ShouldAllowAllQuestions_WhenUserIsSchoolAdmin()
         {
             // Arrange
-            _userRole = "SchoolAdmin";
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
             var criteria = spec.Criteria;
@@ -199,8 +196,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
         public void BuildCriteria_ShouldAllowAllQuestions_WhenUserIsSystemAdmin()
         {
             // Arrange
-            _userRole = "SystemAdmin";
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
             var criteria = spec.Criteria;
@@ -213,8 +209,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
         public void BuildCriteria_ShouldFilterOwnQuestions_WhenUserIsStudent()
         {
             // Arrange
-            _userRole = "Student";
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
             var criteria = spec.Criteria;
@@ -232,7 +227,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
         {
             // Arrange
             _param.SortBy = null;
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
             var orderBy = spec.OrderBy;
@@ -246,7 +241,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
         {
             // Arrange
             _param.SortBy = "";
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
             var orderBy = spec.OrderBy;
@@ -260,7 +255,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
         {
             // Arrange
             _param.SortBy = "   ";
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
             var orderBy = spec.OrderBy;
@@ -275,7 +270,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
             // Arrange
             _param.SortBy = "title";
             _param.SortDirection = "asc";
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
             var orderBy = spec.OrderBy;
@@ -290,7 +285,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
             // Arrange
             _param.SortBy = "title";
             _param.SortDirection = "desc";
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
             var orderBy = spec.OrderBy;
@@ -305,7 +300,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
             // Arrange
             _param.SortBy = "name";
             _param.SortDirection = "asc";
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
             var orderBy = spec.OrderBy;
@@ -320,7 +315,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
             // Arrange
             _param.SortBy = "name";
             _param.SortDirection = "desc";
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
             var orderBy = spec.OrderBy;
@@ -335,7 +330,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
             // Arrange
             _param.SortBy = "createdat";
             _param.SortDirection = "asc";
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
             var orderBy = spec.OrderBy;
@@ -350,7 +345,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
             // Arrange
             _param.SortBy = "createdat";
             _param.SortDirection = "desc";
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
             var orderBy = spec.OrderBy;
@@ -365,7 +360,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
             // Arrange
             _param.SortBy = "invalid";
             _param.SortDirection = "asc";
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
             var orderBy = spec.OrderBy;
@@ -380,7 +375,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
             // Arrange
             _param.SortBy = "title";
             _param.SortDirection = "DESC";
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
             var orderBy = spec.OrderBy;
@@ -395,7 +390,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
             // Arrange
             _param.SortBy = "TITLE";
             _param.SortDirection = "asc";
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
             var orderBy = spec.OrderBy;
@@ -436,13 +431,13 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
                 }
             }.AsQueryable();
 
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
             var filteredQuestions = questions.Where(spec.Criteria.Compile()).ToList();
 
             // Assert
-            Assert.That(filteredQuestions, Has.Count.EqualTo(1)); // Should only show questions not created by current user
+            Assert.That(filteredQuestions, Has.Count.EqualTo(2));
         }
 
         [Test]
@@ -471,7 +466,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
                 }
             }.AsQueryable();
 
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
             var filteredQuestions = questions.Where(spec.Criteria.Compile()).ToList();
@@ -506,7 +501,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
                 }
             }.AsQueryable();
 
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
             var filteredQuestions = questions.Where(spec.Criteria.Compile()).ToList();
@@ -542,7 +537,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
                 }
             }.AsQueryable();
 
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
             var filteredQuestions = questions.Where(spec.Criteria.Compile()).ToList();
@@ -555,7 +550,6 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
         public void Specification_ShouldShowAllQuestions_WhenUserIsSchoolAdmin()
         {
             // Arrange
-            _userRole = "SchoolAdmin";
             var questions = new List<LessonMaterialQuestion>
             {
                 new()
@@ -578,7 +572,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
                 }
             }.AsQueryable();
 
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
             var filteredQuestions = questions.Where(spec.Criteria.Compile()).ToList();
@@ -591,7 +585,6 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
         public void Specification_ShouldShowAllQuestions_WhenUserIsSystemAdmin()
         {
             // Arrange
-            _userRole = "SystemAdmin";
             var questions = new List<LessonMaterialQuestion>
             {
                 new()
@@ -614,7 +607,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
                 }
             }.AsQueryable();
 
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
             var filteredQuestions = questions.Where(spec.Criteria.Compile()).ToList();
@@ -627,7 +620,6 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
         public void Specification_ShouldFilterOwnQuestions_WhenUserIsStudent()
         {
             // Arrange
-            _userRole = "Student";
             var questions = new List<LessonMaterialQuestion>
             {
                 new()
@@ -650,13 +642,13 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
                 }
             }.AsQueryable();
 
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
             var filteredQuestions = questions.Where(spec.Criteria.Compile()).ToList();
 
             // Assert
-            Assert.That(filteredQuestions, Has.Count.EqualTo(1)); // Should only show questions not created by current user
+            Assert.That(filteredQuestions, Has.Count.EqualTo(2));
         }
 
         [Test]
@@ -686,7 +678,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
                 }
             }.AsQueryable();
 
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
             var filteredQuestions = questions.Where(spec.Criteria.Compile()).ToList();
@@ -722,7 +714,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
                 }
             }.AsQueryable();
 
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
             var filteredQuestions = questions.Where(spec.Criteria.Compile()).ToList();
@@ -758,7 +750,7 @@ namespace Eduva.Application.Test.Features.Questions.Specifications
                 }
             }.AsQueryable();
 
-            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _currentUserId, _userSchoolId, _userRole);
+            var spec = new QuestionsByLessonSpecification(_param, _lessonMaterialId, _userSchoolId);
 
             // Act
             var filteredQuestions = questions.Where(spec.Criteria.Compile()).ToList();

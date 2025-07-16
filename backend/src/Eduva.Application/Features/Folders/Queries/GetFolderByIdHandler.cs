@@ -3,18 +3,22 @@ using Eduva.Application.Common.Mappings;
 using Eduva.Application.Features.Folders.Responses;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
+using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
+using Microsoft.AspNetCore.Identity;
 
 namespace Eduva.Application.Features.Folders.Queries
 {
     public class GetFolderByIdHandler : IRequestHandler<GetFolderByIdQuery, FolderResponse>
     {
         private readonly IUnitOfWork _unitOfWork;
-        public GetFolderByIdHandler(IUnitOfWork unitOfWork)
+        private readonly UserManager<ApplicationUser> _userManager;
+        public GetFolderByIdHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
         {
             _unitOfWork = unitOfWork;
+            _userManager = userManager;
         }
         public async Task<FolderResponse> Handle(GetFolderByIdQuery request, CancellationToken cancellationToken)
         {
@@ -41,15 +45,18 @@ namespace Eduva.Application.Features.Folders.Queries
                 var user = await userRepository.GetByIdAsync(request.UserId);
                 if (user == null)
                     throw new AppException(CustomCode.UserNotExists);
-                if (classroom.TeacherId == user.Id)
+
+                var roles = await _userManager.GetRolesAsync(user);
+
+                if ((roles.Contains(nameof(Role.Teacher)) || roles.Contains(nameof(Role.ContentModerator))) && classroom.TeacherId == user.Id)
                 {
                     // OK
                 }
-                else if (user.SchoolId != null && classroom.SchoolId == user.SchoolId)
+                else if (roles.Contains(nameof(Role.SchoolAdmin)) && user.SchoolId != null && classroom.SchoolId == user.SchoolId)
                 {
                     // OK
                 }
-                else if (user.SchoolId == null)
+                else if (roles.Contains(nameof(Role.SystemAdmin)))
                 {
                     // OK
                 }

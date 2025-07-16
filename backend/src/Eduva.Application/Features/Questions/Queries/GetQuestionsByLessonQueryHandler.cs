@@ -58,7 +58,7 @@ namespace Eduva.Application.Features.Questions.Queries
 
             await ValidateUserAccessToMaterial(request.CurrentUserId, request.LessonMaterialId, userRole);
 
-            var spec = new QuestionsByLessonSpecification(request.Param, request.LessonMaterialId, request.CurrentUserId, user.SchoolId, userRole);
+            var spec = new QuestionsByLessonSpecification(request.Param, request.LessonMaterialId, user.SchoolId);
             var result = await _repository.GetWithSpecAsync(spec);
             var response = AppMapper<AppMappingProfile>.Mapper.Map<Pagination<QuestionResponse>>(result);
 
@@ -74,7 +74,7 @@ namespace Eduva.Application.Features.Questions.Queries
 
                     if (userRole == nameof(Role.Teacher) || userRole == nameof(Role.ContentModerator))
                     {
-                        if (roles.Contains(nameof(Role.Student)))
+                        if (roles.Contains(nameof(Role.Student)) || question.CreatedByUserId == request.CurrentUserId)
                         {
                             filteredData.Add(question);
                         }

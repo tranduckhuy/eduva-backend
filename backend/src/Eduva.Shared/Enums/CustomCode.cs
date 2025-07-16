@@ -183,7 +183,6 @@ namespace Eduva.Shared.Enums
         InsufficientPermissionToUpdateComment = 4825,
         InsufficientPermissionToDeleteComment = 4826,
         CannotDeleteCommentWithReplies = 4827,
-        CannotReplyToReply = 4828,
         ParentCommentNotFound = 4829,
         CommentContentRequired = 4830,
 

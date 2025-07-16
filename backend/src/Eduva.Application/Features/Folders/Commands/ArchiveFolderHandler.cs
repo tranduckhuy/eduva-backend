@@ -88,13 +88,11 @@ namespace Eduva.Application.Features.Folders.Commands
                 return true;
             }
 
-            // Personal folder - only the owner can update
             if (folder.OwnerType == OwnerType.Personal)
             {
                 return folder.UserId == userId;
             }
 
-            // Class folder - check if user is teacher of the class or school admin
             if (folder.OwnerType == OwnerType.Class && folder.ClassId.HasValue)
             {
                 var classRepository = _unitOfWork.GetRepository<Classroom, Guid>();
@@ -105,13 +103,12 @@ namespace Eduva.Application.Features.Folders.Commands
                     return false;
                 }
 
-                // Teacher of the class
-                if (classroom.TeacherId == userId)
+                if ((userRoles.Contains(Role.Teacher.ToString()) || userRoles.Contains(Role.ContentModerator.ToString()))
+                    && classroom.TeacherId == userId)
                 {
                     return true;
                 }
 
-                // School Admin can archive any folder from their school
                 if (userRoles.Contains(Role.SchoolAdmin.ToString()) && user.SchoolId == classroom.SchoolId)
                 {
                     return true;

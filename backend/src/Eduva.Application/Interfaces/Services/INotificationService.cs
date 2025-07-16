@@ -13,6 +13,12 @@ namespace Eduva.Application.Interfaces.Services
         Task<int> GetTotalCountAsync(Guid userId, CancellationToken cancellationToken = default);
         Task MarkAsReadAsync(Guid userNotificationId, CancellationToken cancellationToken = default);
         Task MarkAllAsReadAsync(Guid userId, CancellationToken cancellationToken = default);
+
+        // backward compatibility
         Task<List<Guid>> GetUsersInLessonAsync(Guid lessonMaterialId, CancellationToken cancellationToken = default);
+
+        // new notification logic
+        Task<List<Guid>> GetUsersForNewQuestionNotificationAsync(Guid lessonMaterialId, CancellationToken cancellationToken = default);
+        Task<List<Guid>> GetUsersForQuestionCommentNotificationAsync(Guid questionId, Guid lessonMaterialId, CancellationToken cancellationToken = default);
     }
 }

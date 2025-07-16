@@ -649,21 +649,24 @@ namespace Eduva.Application.Test.Features.Questions.Commands.CreateQuestionComme
         }
 
         [Test]
-        public void Handle_ShouldThrowCannotReplyToReply_WhenParentCommentHasParentComment()
+        public async Task Handle_ShouldFlattenReply_WhenReplyingToReply()
         {
             // Arrange
             var userId = Guid.NewGuid();
             var questionId = Guid.NewGuid();
             var lessonId = Guid.NewGuid();
-            var parentCommentId = Guid.NewGuid();
+            var topLevelCommentId = Guid.NewGuid();
+            var secondLevelCommentId = Guid.NewGuid();
+
             var command = new CreateQuestionCommentCommand
             {
                 QuestionId = questionId,
-                Content = "Test reply",
-                ParentCommentId = parentCommentId,
+                Content = "Reply to a reply",
+                ParentCommentId = secondLevelCommentId,
                 CreatedByUserId = userId
             };
-            var user = new ApplicationUser { Id = userId, SchoolId = 1 };
+
+            var user = new ApplicationUser { Id = userId, SchoolId = 1, FullName = "Test User", AvatarUrl = "avatar.jpg" };
             var question = new LessonMaterialQuestion
             {
                 Id = questionId,
@@ -677,33 +680,44 @@ namespace Eduva.Application.Test.Features.Questions.Commands.CreateQuestionComme
                 LessonStatus = LessonMaterialStatus.Approved,
                 SchoolId = 1
             };
-            var parentComment = new QuestionComment
+
+            var secondLevelComment = new QuestionComment
             {
-                Id = parentCommentId,
+                Id = secondLevelCommentId,
                 QuestionId = questionId,
                 Status = EntityStatus.Active,
-                ParentCommentId = Guid.NewGuid()
+                ParentCommentId = topLevelCommentId
             };
 
-            _userRepositoryMock.Setup(x => x.GetByIdAsync(userId))
-                .ReturnsAsync(user);
-            _userManagerMock.Setup(x => x.GetRolesAsync(user))
-                .ReturnsAsync(["Student"]);
-            _permissionServiceMock.Setup(x => x.GetHighestPriorityRole(It.IsAny<IList<string>>()))
-                .Returns("Student");
-            _questionRepositoryMock.Setup(x => x.GetByIdAsync(questionId))
-                .ReturnsAsync(question);
-            _lessonRepositoryMock.Setup(x => x.GetByIdAsync(lessonId))
-                .ReturnsAsync(lesson);
-            _studentClassRepositoryMock.Setup(x => x.HasAccessToMaterialAsync(userId, lessonId))
-                .ReturnsAsync(true);
-            _commentRepositoryMock.Setup(x => x.GetByIdAsync(parentCommentId))
-                .ReturnsAsync(parentComment);
+            _userRepositoryMock.Setup(x => x.GetByIdAsync(userId)).ReturnsAsync(user);
+            _userManagerMock.Setup(x => x.GetRolesAsync(user)).ReturnsAsync(new List<string> { "Student" });
+            _permissionServiceMock.Setup(x => x.GetHighestPriorityRole(It.IsAny<IList<string>>())).Returns("Student");
+            _questionRepositoryMock.Setup(x => x.GetByIdAsync(questionId)).ReturnsAsync(question);
+            _lessonRepositoryMock.Setup(x => x.GetByIdAsync(lessonId)).ReturnsAsync(lesson);
+            _commentRepositoryMock.Setup(x => x.GetByIdAsync(secondLevelCommentId)).ReturnsAsync(secondLevelComment);
 
-            // Act & Assert
-            var ex = Assert.ThrowsAsync<AppException>(async () =>
-                await _handler.Handle(command, CancellationToken.None));
-            Assert.That(ex.StatusCode, Is.EqualTo(CustomCode.CannotReplyToReply));
+            var studentClassRepoMock = new Mock<IStudentClassRepository>();
+            studentClassRepoMock.Setup(x => x.HasAccessToMaterialAsync(userId, lessonId))
+                .ReturnsAsync(true);
+            studentClassRepoMock.Setup(x => x.IsEnrolledInAnyClassAsync(userId))
+                .ReturnsAsync(true);
+
+            _unitOfWorkMock.Setup(x => x.GetCustomRepository<IStudentClassRepository>())
+                .Returns(studentClassRepoMock.Object);
+
+            _commentRepositoryMock.Setup(x => x.AddAsync(It.IsAny<QuestionComment>())).Returns(Task.CompletedTask);
+            _unitOfWorkMock.Setup(x => x.CommitAsync()).ReturnsAsync(1);
+            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionCommentedAsync(It.IsAny<QuestionCommentResponse>(), lessonId)).Returns(Task.CompletedTask);
+
+            // Act
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.Content, Is.EqualTo("Reply to a reply"));
+
+            _commentRepositoryMock.Verify(x => x.AddAsync(It.Is<QuestionComment>(c =>
+                c.ParentCommentId == topLevelCommentId)), Times.Once);
         }
 
         #endregion

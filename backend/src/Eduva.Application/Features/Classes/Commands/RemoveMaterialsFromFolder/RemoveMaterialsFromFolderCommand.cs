@@ -6,7 +6,7 @@ namespace Eduva.Application.Features.Classes.Commands.RemoveMaterialsFromFolder
     {
         public Guid ClassId { get; set; }
         public Guid FolderId { get; set; }
-        public List<Guid> MaterialIds { get; set; } = new List<Guid>();
+        public List<Guid>? MaterialIds { get; set; }
         public Guid CurrentUserId { get; set; }
     }
 }

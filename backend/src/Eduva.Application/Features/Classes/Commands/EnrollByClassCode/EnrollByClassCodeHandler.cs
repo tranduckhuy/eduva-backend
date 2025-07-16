@@ -20,6 +20,7 @@ namespace Eduva.Application.Features.Classes.Commands.EnrollByClassCode
             _unitOfWork = unitOfWork;
             _userManager = userManager;
         }
+
         public async Task<StudentClassResponse> Handle(EnrollByClassCodeCommand request, CancellationToken cancellationToken)
         {
             // Check if student exists
@@ -44,6 +45,17 @@ namespace Eduva.Application.Features.Classes.Commands.EnrollByClassCode
             {
                 throw new AppException(CustomCode.ClassNotActive);
             }
+
+            // Check student's school
+            if (student.SchoolId == null)
+            {
+                throw new AppException(CustomCode.SchoolNotFound);
+            }
+            if (student.SchoolId != classroom.SchoolId)
+            {
+                throw new AppException(CustomCode.StudentCannotEnrollDifferentSchool);
+            }
+
             // Use specialized StudentClassRepository
             var studentClassRepository = _unitOfWork.GetCustomRepository<IStudentClassRepository>();
 
@@ -53,20 +65,6 @@ namespace Eduva.Application.Features.Classes.Commands.EnrollByClassCode
             {
                 throw new AppException(CustomCode.StudentAlreadyEnrolled);
             }
-            // Use StudentClassRepository to get classes the student has enrolled in
-            var existingClasses = await studentClassRepository.GetClassesForStudentAsync(request.StudentId);
-
-            if (existingClasses.Count > 0)
-            {
-                // Get the school of the first class the student has enrolled in
-                var firstClass = existingClasses[0];
-
-                // Compare school ID with the current class
-                if (firstClass.SchoolId != classroom.SchoolId)
-                {
-                    throw new AppException(CustomCode.StudentCannotEnrollDifferentSchool);
-                }
-            }
 
             // Create new StudentClass record
             var studentClass = new StudentClass
@@ -74,7 +72,7 @@ namespace Eduva.Application.Features.Classes.Commands.EnrollByClassCode
                 StudentId = request.StudentId,
                 ClassId = classroom.Id,
                 EnrolledAt = DateTimeOffset.UtcNow
-            };            // Use specialized repository to add data
+            };
             await _unitOfWork.GetRepository<StudentClass, Guid>().AddAsync(studentClass);
 
             try

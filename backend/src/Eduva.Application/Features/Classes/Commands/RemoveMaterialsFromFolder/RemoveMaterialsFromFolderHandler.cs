@@ -25,29 +25,34 @@ namespace Eduva.Application.Features.Classes.Commands.RemoveMaterialsFromFolder
             var folderRepository = _unitOfWork.GetRepository<Folder, Guid>();
             var folder = await folderRepository.GetByIdAsync(request.FolderId);
             if (folder == null)
-            {
                 throw new AppException(CustomCode.FolderNotFound);
-            }
 
             // Validate folder belongs to the specified class
             if (folder.OwnerType != OwnerType.Class || folder.ClassId != request.ClassId)
-            {
                 throw new AppException(CustomCode.Unauthorized);
-            }
 
             // Check access permission
             await CheckFolderAccessAsync(folder, request.CurrentUserId);
 
             var folderLessonMaterialRepo = _unitOfWork.GetRepository<FolderLessonMaterial, int>();
             var allFolderMaterials = await folderLessonMaterialRepo.GetAllAsync();
-            var folderMaterials = allFolderMaterials
-                .Where(flm => flm.FolderId == request.FolderId && request.MaterialIds.Contains(flm.LessonMaterialId))
-                .ToList();
+
+            List<FolderLessonMaterial> folderMaterials;
+            if (request.MaterialIds != null && request.MaterialIds.Count > 0)
+            {
+                folderMaterials = allFolderMaterials
+                    .Where(flm => flm.FolderId == request.FolderId && request.MaterialIds.Contains(flm.LessonMaterialId))
+                    .ToList();
+            }
+            else
+            {
+                folderMaterials = allFolderMaterials
+                    .Where(flm => flm.FolderId == request.FolderId)
+                    .ToList();
+            }
 
             if (folderMaterials.Count == 0)
-            {
                 throw new AppException(CustomCode.LessonMaterialNotFoundInFolder);
-            }
 
             // Remove materials from folder
             foreach (var folderMaterial in folderMaterials)
@@ -77,7 +82,6 @@ namespace Eduva.Application.Features.Classes.Commands.RemoveMaterialsFromFolder
                 return;
             }
 
-            // Check if folder belongs to class
             if (folder.OwnerType == OwnerType.Class && folder.ClassId.HasValue)
             {
                 var classRepository = _unitOfWork.GetRepository<Classroom, Guid>();
@@ -88,13 +92,11 @@ namespace Eduva.Application.Features.Classes.Commands.RemoveMaterialsFromFolder
                     throw new AppException(CustomCode.ClassNotFound);
                 }
 
-                // Teacher of the class
-                if (classroom.TeacherId == userId)
+                if ((roles.Contains(nameof(Role.Teacher)) || roles.Contains(nameof(Role.ContentModerator))) && classroom.TeacherId == userId)
                 {
                     return;
                 }
 
-                // School admin of the same school
                 if (roles.Contains(nameof(Role.SchoolAdmin)) && classroom.SchoolId == user.SchoolId)
                 {
                     return;

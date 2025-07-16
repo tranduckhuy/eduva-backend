@@ -75,11 +75,16 @@ namespace Eduva.Infrastructure.Identity
             return CustomCode.ConfirmationEmailSent;
         }
 
-        private async Task SendConfirmEmailMessage(string clientUrl, ApplicationUser newUser)
+        private async Task SendConfirmEmailMessage(string clientUrl, ApplicationUser newUser, Platform? platform = null)
         {
             var token = await _userManager.GenerateEmailConfirmationTokenAsync(newUser);
 
             var verifyLink = $"{clientUrl}?email={Uri.EscapeDataString(newUser.Email!)}&token={Uri.EscapeDataString(token)}&action={AuthEmailAction.ConfirmEmail.ToString().ToLowerInvariant()}";
+
+            if (platform.HasValue)
+            {
+                verifyLink += $"&platform={platform.Value.ToString().ToLowerInvariant()}";
+            }
 
             var basePath = AppContext.BaseDirectory;
             var templatePath = Path.Combine(basePath, "email-templates", "verify-email.html");
@@ -106,7 +111,9 @@ namespace Eduva.Infrastructure.Identity
 
             _logger.LogInformation("Sending email to '{Email}' to confirm email.", newUser.Email);
 
+            /* _ = _emailSender.SendEmailAsync(message);*/
             _ = _emailSender.SendEmailBrevoHtmlAsync(newUser.Email!, newUser.FullName ?? newUser.Email!, message.Subject, message.Content);
+
         }
 
         public async Task<(CustomCode, AuthResultDto)> LoginAsync(LoginRequestDto request)
@@ -410,7 +417,7 @@ namespace Eduva.Infrastructure.Identity
                 throw new UserAlreadyConfirmedException();
             }
 
-            _ = SendConfirmEmailMessage(request.ClientUrl, user);
+            _ = SendConfirmEmailMessage(request.ClientUrl, user, request.Platform);
 
             return CustomCode.ConfirmationEmailSent;
         }

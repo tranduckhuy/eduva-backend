@@ -301,6 +301,210 @@ namespace Eduva.Infrastructure.Test.Services
             Assert.That(result, Is.True);
         }
 
+        [Test]
+        public async Task CanUserDeleteQuestionAsync_ShouldReturnFalse_WhenSchoolAdminNoSchoolId()
+        {
+            // Arrange
+            var question = new LessonMaterialQuestion { CreatedByUserId = Guid.NewGuid() };
+            var currentUser = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = null };
+            var originalCreator = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = 1 };
+            var userRole = "SchoolAdmin";
+
+            _userRepositoryMock.Setup(x => x.GetByIdAsync(question.CreatedByUserId))
+                .ReturnsAsync(originalCreator);
+            _userManagerMock.Setup(x => x.GetRolesAsync(originalCreator))
+                .ReturnsAsync(new List<string> { "Student" });
+
+            // Act
+            var result = await _service.CanUserDeleteQuestionAsync(question, currentUser, userRole);
+
+            // Assert
+            Assert.That(result, Is.False);
+        }
+
+        [Test]
+        public async Task CanUserDeleteQuestionAsync_ShouldReturnFalse_WhenSchoolAdminDifferentSchool()
+        {
+            // Arrange
+            var question = new LessonMaterialQuestion { CreatedByUserId = Guid.NewGuid() };
+            var currentUser = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = 1 };
+            var originalCreator = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = 2 };
+            var userRole = "SchoolAdmin";
+
+            _userRepositoryMock.Setup(x => x.GetByIdAsync(question.CreatedByUserId))
+                .ReturnsAsync(originalCreator);
+            _userManagerMock.Setup(x => x.GetRolesAsync(originalCreator))
+                .ReturnsAsync(new List<string> { "Student" });
+
+            // Act
+            var result = await _service.CanUserDeleteQuestionAsync(question, currentUser, userRole);
+
+            // Assert
+            Assert.That(result, Is.False);
+        }
+
+        [Test]
+        public async Task CanUserDeleteQuestionAsync_ShouldReturnTrue_WhenTeacherWithStudentRelationship()
+        {
+            // Arrange
+            var question = new LessonMaterialQuestion { CreatedByUserId = Guid.NewGuid() };
+            var currentUser = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = 1 };
+            var originalCreator = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = 1 };
+            var userRole = "Teacher";
+
+            _userRepositoryMock.Setup(x => x.GetByIdAsync(question.CreatedByUserId))
+                .ReturnsAsync(originalCreator);
+            _userManagerMock.Setup(x => x.GetRolesAsync(originalCreator))
+                .ReturnsAsync(new List<string> { "Student" });
+
+            // Mock ValidateTeacherStudentRelationshipAsync to return true
+            var classId = Guid.NewGuid();
+            var classes = new List<Classroom>
+            {
+                new() { Id = classId, TeacherId = currentUser.Id, Status = EntityStatus.Active }
+            };
+            var studentClasses = new List<Classroom>
+            {
+                new() { Id = classId }
+            };
+
+            _classroomRepositoryMock.Setup(x => x.GetAllAsync())
+                .ReturnsAsync(classes);
+            _studentClassRepositoryMock.Setup(x => x.GetClassesForStudentAsync(originalCreator.Id))
+                .ReturnsAsync(studentClasses);
+
+            // Act
+            var result = await _service.CanUserDeleteQuestionAsync(question, currentUser, userRole);
+
+            // Assert
+            Assert.That(result, Is.True);
+        }
+
+        [Test]
+        public async Task CanUserDeleteQuestionAsync_ShouldReturnFalse_WhenTeacherNoStudentRelationship()
+        {
+            // Arrange
+            var question = new LessonMaterialQuestion { CreatedByUserId = Guid.NewGuid() };
+            var currentUser = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = 1 };
+            var originalCreator = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = 1 };
+            var userRole = "Teacher";
+
+            _userRepositoryMock.Setup(x => x.GetByIdAsync(question.CreatedByUserId))
+                .ReturnsAsync(originalCreator);
+            _userManagerMock.Setup(x => x.GetRolesAsync(originalCreator))
+                .ReturnsAsync(new List<string> { "Student" });
+
+            // Mock ValidateTeacherStudentRelationshipAsync to return false
+            _classroomRepositoryMock.Setup(x => x.GetAllAsync())
+                .ReturnsAsync([]);
+
+            // Act
+            var result = await _service.CanUserDeleteQuestionAsync(question, currentUser, userRole);
+
+            // Assert
+            Assert.That(result, Is.False);
+        }
+
+        [Test]
+        public async Task CanUserDeleteQuestionAsync_ShouldReturnTrue_WhenContentModeratorWithStudentRelationship()
+        {
+            // Arrange
+            var question = new LessonMaterialQuestion { CreatedByUserId = Guid.NewGuid() };
+            var currentUser = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = 1 };
+            var originalCreator = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = 1 };
+            var userRole = "ContentModerator";
+
+            _userRepositoryMock.Setup(x => x.GetByIdAsync(question.CreatedByUserId))
+                .ReturnsAsync(originalCreator);
+            _userManagerMock.Setup(x => x.GetRolesAsync(originalCreator))
+                .ReturnsAsync(new List<string> { "Student" });
+
+            // Mock ValidateTeacherStudentRelationshipAsync to return true
+            var classId = Guid.NewGuid();
+            var classes = new List<Classroom>
+            {
+                new() { Id = classId, TeacherId = currentUser.Id, Status = EntityStatus.Active }
+            };
+            var studentClasses = new List<Classroom>
+            {
+                new() { Id = classId }
+            };
+
+            _classroomRepositoryMock.Setup(x => x.GetAllAsync())
+                .ReturnsAsync(classes);
+            _studentClassRepositoryMock.Setup(x => x.GetClassesForStudentAsync(originalCreator.Id))
+                .ReturnsAsync(studentClasses);
+
+            // Act
+            var result = await _service.CanUserDeleteQuestionAsync(question, currentUser, userRole);
+
+            // Assert
+            Assert.That(result, Is.True);
+        }
+
+        [Test]
+        public async Task CanUserDeleteQuestionAsync_ShouldReturnFalse_WhenTeacherNoSchoolId()
+        {
+            // Arrange
+            var question = new LessonMaterialQuestion { CreatedByUserId = Guid.NewGuid() };
+            var currentUser = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = null };
+            var originalCreator = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = 1 };
+            var userRole = "Teacher";
+
+            _userRepositoryMock.Setup(x => x.GetByIdAsync(question.CreatedByUserId))
+                .ReturnsAsync(originalCreator);
+            _userManagerMock.Setup(x => x.GetRolesAsync(originalCreator))
+                .ReturnsAsync(new List<string> { "Student" });
+
+            // Act
+            var result = await _service.CanUserDeleteQuestionAsync(question, currentUser, userRole);
+
+            // Assert
+            Assert.That(result, Is.False);
+        }
+
+        [Test]
+        public async Task CanUserDeleteQuestionAsync_ShouldReturnFalse_WhenTeacherDifferentSchool()
+        {
+            // Arrange
+            var question = new LessonMaterialQuestion { CreatedByUserId = Guid.NewGuid() };
+            var currentUser = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = 1 };
+            var originalCreator = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = 2 };
+            var userRole = "Teacher";
+
+            _userRepositoryMock.Setup(x => x.GetByIdAsync(question.CreatedByUserId))
+                .ReturnsAsync(originalCreator);
+            _userManagerMock.Setup(x => x.GetRolesAsync(originalCreator))
+                .ReturnsAsync(new List<string> { "Student" });
+
+            // Act
+            var result = await _service.CanUserDeleteQuestionAsync(question, currentUser, userRole);
+
+            // Assert
+            Assert.That(result, Is.False);
+        }
+
+        [Test]
+        public async Task CanUserDeleteQuestionAsync_ShouldReturnFalse_WhenOriginalCreatorNotStudent()
+        {
+            // Arrange
+            var question = new LessonMaterialQuestion { CreatedByUserId = Guid.NewGuid() };
+            var currentUser = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = 1 };
+            var originalCreator = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = 1 };
+            var userRole = "Teacher";
+
+            _userRepositoryMock.Setup(x => x.GetByIdAsync(question.CreatedByUserId))
+                .ReturnsAsync(originalCreator);
+            _userManagerMock.Setup(x => x.GetRolesAsync(originalCreator))
+                .ReturnsAsync(new List<string> { "Teacher" });
+
+            // Act
+            var result = await _service.CanUserDeleteQuestionAsync(question, currentUser, userRole);
+
+            // Assert
+            Assert.That(result, Is.False);
+        }
+
         #endregion
 
         #region CanUserUpdateComment Tests
@@ -405,9 +609,270 @@ namespace Eduva.Infrastructure.Test.Services
             Assert.That(result, Is.True);
         }
 
+        [Test]
+        public async Task CanUserDeleteCommentAsync_ShouldReturnFalse_WhenCommentCreatorNotFound()
+        {
+            // Arrange
+            var comment = new QuestionComment { CreatedByUserId = Guid.NewGuid() };
+            var currentUser = new ApplicationUser { Id = Guid.NewGuid() };
+            var userRole = "SchoolAdmin";
+
+            _userRepositoryMock.Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync((ApplicationUser?)null);
+
+            // Act
+            var result = await _service.CanUserDeleteCommentAsync(comment, currentUser, userRole);
+
+            // Assert
+            Assert.That(result, Is.False);
+        }
+
+        [Test]
+        public async Task CanUserDeleteCommentAsync_ShouldReturnTrue_WhenSchoolAdminSameSchool()
+        {
+            // Arrange
+            var schoolId = 1;
+            var comment = new QuestionComment { CreatedByUserId = Guid.NewGuid() };
+            var currentUser = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = schoolId };
+            var commentCreator = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = schoolId };
+            var userRole = "SchoolAdmin";
+
+            _userRepositoryMock.Setup(x => x.GetByIdAsync(comment.CreatedByUserId))
+                .ReturnsAsync(commentCreator);
+            _userManagerMock.Setup(x => x.GetRolesAsync(commentCreator))
+                .ReturnsAsync(new List<string> { "Student" });
+
+            // Act
+            var result = await _service.CanUserDeleteCommentAsync(comment, currentUser, userRole);
+
+            // Assert
+            Assert.That(result, Is.True);
+        }
+
+        [Test]
+        public async Task CanUserDeleteCommentAsync_ShouldReturnFalse_WhenSchoolAdminNoSchoolId()
+        {
+            // Arrange
+            var comment = new QuestionComment { CreatedByUserId = Guid.NewGuid() };
+            var currentUser = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = null };
+            var commentCreator = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = 1 };
+            var userRole = "SchoolAdmin";
+
+            _userRepositoryMock.Setup(x => x.GetByIdAsync(comment.CreatedByUserId))
+                .ReturnsAsync(commentCreator);
+            _userManagerMock.Setup(x => x.GetRolesAsync(commentCreator))
+                .ReturnsAsync(new List<string> { "Student" });
+
+            // Act
+            var result = await _service.CanUserDeleteCommentAsync(comment, currentUser, userRole);
+
+            // Assert
+            Assert.That(result, Is.False);
+        }
+
+        [Test]
+        public async Task CanUserDeleteCommentAsync_ShouldReturnFalse_WhenSchoolAdminDifferentSchool()
+        {
+            // Arrange
+            var comment = new QuestionComment { CreatedByUserId = Guid.NewGuid() };
+            var currentUser = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = 1 };
+            var commentCreator = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = 2 };
+            var userRole = "SchoolAdmin";
+
+            _userRepositoryMock.Setup(x => x.GetByIdAsync(comment.CreatedByUserId))
+                .ReturnsAsync(commentCreator);
+            _userManagerMock.Setup(x => x.GetRolesAsync(commentCreator))
+                .ReturnsAsync(new List<string> { "Student" });
+
+            // Act
+            var result = await _service.CanUserDeleteCommentAsync(comment, currentUser, userRole);
+
+            // Assert
+            Assert.That(result, Is.False);
+        }
+
+        [Test]
+        public async Task CanUserDeleteCommentAsync_ShouldReturnTrue_WhenTeacherWithStudentRelationship()
+        {
+            // Arrange
+            var comment = new QuestionComment { CreatedByUserId = Guid.NewGuid() };
+            var currentUser = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = 1 };
+            var commentCreator = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = 1 };
+            var userRole = "Teacher";
+
+            _userRepositoryMock.Setup(x => x.GetByIdAsync(comment.CreatedByUserId))
+                .ReturnsAsync(commentCreator);
+            _userManagerMock.Setup(x => x.GetRolesAsync(commentCreator))
+                .ReturnsAsync(new List<string> { "Student" });
+
+            // Mock ValidateTeacherStudentRelationshipAsync to return true
+            var classId = Guid.NewGuid();
+            var classes = new List<Classroom>
+            {
+                new() { Id = classId, TeacherId = currentUser.Id, Status = EntityStatus.Active }
+            };
+            var studentClasses = new List<Classroom>
+            {
+                new() { Id = classId }
+            };
+
+            _classroomRepositoryMock.Setup(x => x.GetAllAsync())
+                .ReturnsAsync(classes);
+            _studentClassRepositoryMock.Setup(x => x.GetClassesForStudentAsync(commentCreator.Id))
+                .ReturnsAsync(studentClasses);
+
+            // Act
+            var result = await _service.CanUserDeleteCommentAsync(comment, currentUser, userRole);
+
+            // Assert
+            Assert.That(result, Is.True);
+        }
+
+        [Test]
+        public async Task CanUserDeleteCommentAsync_ShouldReturnFalse_WhenTeacherNoStudentRelationship()
+        {
+            // Arrange
+            var comment = new QuestionComment { CreatedByUserId = Guid.NewGuid() };
+            var currentUser = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = 1 };
+            var commentCreator = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = 1 };
+            var userRole = "Teacher";
+
+            _userRepositoryMock.Setup(x => x.GetByIdAsync(comment.CreatedByUserId))
+                .ReturnsAsync(commentCreator);
+            _userManagerMock.Setup(x => x.GetRolesAsync(commentCreator))
+                .ReturnsAsync(new List<string> { "Student" });
+
+            // Mock ValidateTeacherStudentRelationshipAsync to return false
+            _classroomRepositoryMock.Setup(x => x.GetAllAsync())
+                .ReturnsAsync([]);
+
+            // Act
+            var result = await _service.CanUserDeleteCommentAsync(comment, currentUser, userRole);
+
+            // Assert
+            Assert.That(result, Is.False);
+        }
+
+        [Test]
+        public async Task CanUserDeleteCommentAsync_ShouldReturnTrue_WhenContentModeratorWithStudentRelationship()
+        {
+            // Arrange
+            var comment = new QuestionComment { CreatedByUserId = Guid.NewGuid() };
+            var currentUser = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = 1 };
+            var commentCreator = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = 1 };
+            var userRole = "ContentModerator";
+
+            _userRepositoryMock.Setup(x => x.GetByIdAsync(comment.CreatedByUserId))
+                .ReturnsAsync(commentCreator);
+            _userManagerMock.Setup(x => x.GetRolesAsync(commentCreator))
+                .ReturnsAsync(new List<string> { "Student" });
+
+            // Mock ValidateTeacherStudentRelationshipAsync to return true
+            var classId = Guid.NewGuid();
+            var classes = new List<Classroom>
+            {
+                new() { Id = classId, TeacherId = currentUser.Id, Status = EntityStatus.Active }
+            };
+            var studentClasses = new List<Classroom>
+            {
+                new() { Id = classId }
+            };
+
+            _classroomRepositoryMock.Setup(x => x.GetAllAsync())
+                .ReturnsAsync(classes);
+            _studentClassRepositoryMock.Setup(x => x.GetClassesForStudentAsync(commentCreator.Id))
+                .ReturnsAsync(studentClasses);
+
+            // Act
+            var result = await _service.CanUserDeleteCommentAsync(comment, currentUser, userRole);
+
+            // Assert
+            Assert.That(result, Is.True);
+        }
+
+        [Test]
+        public async Task CanUserDeleteCommentAsync_ShouldReturnFalse_WhenTeacherNoSchoolId()
+        {
+            // Arrange
+            var comment = new QuestionComment { CreatedByUserId = Guid.NewGuid() };
+            var currentUser = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = null };
+            var commentCreator = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = 1 };
+            var userRole = "Teacher";
+
+            _userRepositoryMock.Setup(x => x.GetByIdAsync(comment.CreatedByUserId))
+                .ReturnsAsync(commentCreator);
+            _userManagerMock.Setup(x => x.GetRolesAsync(commentCreator))
+                .ReturnsAsync(new List<string> { "Student" });
+
+            // Act
+            var result = await _service.CanUserDeleteCommentAsync(comment, currentUser, userRole);
+
+            // Assert
+            Assert.That(result, Is.False);
+        }
+
+        [Test]
+        public async Task CanUserDeleteCommentAsync_ShouldReturnFalse_WhenTeacherDifferentSchool()
+        {
+            // Arrange
+            var comment = new QuestionComment { CreatedByUserId = Guid.NewGuid() };
+            var currentUser = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = 1 };
+            var commentCreator = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = 2 };
+            var userRole = "Teacher";
+
+            _userRepositoryMock.Setup(x => x.GetByIdAsync(comment.CreatedByUserId))
+                .ReturnsAsync(commentCreator);
+            _userManagerMock.Setup(x => x.GetRolesAsync(commentCreator))
+                .ReturnsAsync(new List<string> { "Student" });
+
+            // Act
+            var result = await _service.CanUserDeleteCommentAsync(comment, currentUser, userRole);
+
+            // Assert
+            Assert.That(result, Is.False);
+        }
+
+        [Test]
+        public async Task CanUserDeleteCommentAsync_ShouldReturnFalse_WhenCommentCreatorNotStudent()
+        {
+            // Arrange
+            var comment = new QuestionComment { CreatedByUserId = Guid.NewGuid() };
+            var currentUser = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = 1 };
+            var commentCreator = new ApplicationUser { Id = Guid.NewGuid(), SchoolId = 1 };
+            var userRole = "Teacher";
+
+            _userRepositoryMock.Setup(x => x.GetByIdAsync(comment.CreatedByUserId))
+                .ReturnsAsync(commentCreator);
+            _userManagerMock.Setup(x => x.GetRolesAsync(commentCreator))
+                .ReturnsAsync(new List<string> { "Teacher" });
+
+            // Act
+            var result = await _service.CanUserDeleteCommentAsync(comment, currentUser, userRole);
+
+            // Assert
+            Assert.That(result, Is.False);
+        }
+
         #endregion
 
         #region ValidateTeacherStudentRelationshipAsync Tests
+
+        [Test]
+        public async Task ValidateTeacherStudentRelationshipAsync_ShouldReturnFalse_WhenTeacherHasNoClasses()
+        {
+            // Arrange
+            var teacherId = Guid.NewGuid();
+            var studentId = Guid.NewGuid();
+
+            _classroomRepositoryMock.Setup(x => x.GetAllAsync())
+                .ReturnsAsync([]);
+
+            // Act
+            var result = await _service.ValidateTeacherStudentRelationshipAsync(teacherId, studentId);
+
+            // Assert
+            Assert.That(result, Is.False);
+        }
 
         [Test]
         public async Task ValidateTeacherStudentRelationshipAsync_ShouldReturnFalse_WhenTeacherHasNoActiveClasses()
@@ -416,8 +881,13 @@ namespace Eduva.Infrastructure.Test.Services
             var teacherId = Guid.NewGuid();
             var studentId = Guid.NewGuid();
 
+            var classes = new List<Classroom>
+            {
+                new() { Id = Guid.NewGuid(), TeacherId = teacherId, Status = EntityStatus.Inactive }
+            };
+
             _classroomRepositoryMock.Setup(x => x.GetAllAsync())
-                .ReturnsAsync([]);
+                .ReturnsAsync(classes);
 
             // Act
             var result = await _service.ValidateTeacherStudentRelationshipAsync(teacherId, studentId);
@@ -483,6 +953,40 @@ namespace Eduva.Infrastructure.Test.Services
 
             // Assert
             Assert.That(result, Is.False);
+        }
+
+        [Test]
+        public async Task ValidateTeacherStudentRelationshipAsync_ShouldReturnTrue_WhenMultipleClassesWithOneMatch()
+        {
+            // Arrange
+            var teacherId = Guid.NewGuid();
+            var studentId = Guid.NewGuid();
+            var class1Id = Guid.NewGuid();
+            var class2Id = Guid.NewGuid();
+            var class3Id = Guid.NewGuid();
+
+            var classes = new List<Classroom>
+            {
+                new() { Id = class1Id, TeacherId = teacherId, Status = EntityStatus.Active },
+                new() { Id = class2Id, TeacherId = teacherId, Status = EntityStatus.Active }
+            };
+
+            var studentClasses = new List<Classroom>
+            {
+                new() { Id = class2Id },
+                new() { Id = class3Id }
+            };
+
+            _classroomRepositoryMock.Setup(x => x.GetAllAsync())
+                .ReturnsAsync(classes);
+            _studentClassRepositoryMock.Setup(x => x.GetClassesForStudentAsync(studentId))
+                .ReturnsAsync(studentClasses);
+
+            // Act
+            var result = await _service.ValidateTeacherStudentRelationshipAsync(teacherId, studentId);
+
+            // Assert
+            Assert.That(result, Is.True);
         }
 
         #endregion
@@ -563,6 +1067,34 @@ namespace Eduva.Infrastructure.Test.Services
 
             // Assert
             Assert.That(result, Is.EqualTo(3));
+        }
+
+        [Test]
+        public void CalculateTotalCommentCount_ShouldReturnCorrectCount_WithComplexMix()
+        {
+            // Arrange
+            var parentId1 = Guid.NewGuid();
+            var parentId2 = Guid.NewGuid();
+            var comments = new List<QuestionComment>
+            {
+                new() { Id = Guid.NewGuid(), ParentCommentId = null }, // Top level
+                new() { Id = Guid.NewGuid(), ParentCommentId = null }, // Top level
+                new() { Id = Guid.NewGuid(), ParentCommentId = parentId1 }, // Reply to first
+                new() { Id = Guid.NewGuid(), ParentCommentId = parentId1 }, // Reply to first
+                new() { Id = Guid.NewGuid(), ParentCommentId = parentId2 }, // Reply to second
+                new() { Id = Guid.NewGuid(), ParentCommentId = null }, // Top level
+            };
+
+            // Act
+            var result = _service.CalculateTotalCommentCount(comments);
+
+            // Assert
+            Assert.Multiple(() =>
+            {
+                Assert.That(result, Is.EqualTo(6));
+                Assert.That(comments.Count(c => c.ParentCommentId == null), Is.EqualTo(3));
+                Assert.That(comments.Count(c => c.ParentCommentId != null), Is.EqualTo(3));
+            });
         }
 
         #endregion
