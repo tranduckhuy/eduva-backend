@@ -8,7 +8,6 @@ namespace Eduva.Application.Features.LessonMaterials.Queries
     public record GetPendingLessonMaterialsQuery(
         LessonMaterialSpecParam LessonMaterialSpecParam,
         Guid UserId,
-        int SchoolId,
         IList<string> UserRoles
     ) : IRequest<Pagination<LessonMaterialResponse>>;
 }

@@ -17,7 +17,7 @@ namespace Eduva.Application.Features.LessonMaterials.Queries
             RuleFor(x => x.UserId)
                 .NotEmpty().WithMessage("User ID is required.");
 
-            RuleFor(x => x.SchoolId)
+            RuleFor(x => x.LessonMaterialSpecParam.SchoolId)
                 .GreaterThan(0).WithMessage("Valid School ID is required.");
 
             RuleFor(x => x.UserRoles)
@@ -45,7 +45,7 @@ namespace Eduva.Application.Features.LessonMaterials.Queries
         private async Task<bool> ValidateUserAccess(GetPendingLessonMaterialsQuery query, CancellationToken cancellationToken)
         {
             var user = await _userManager.FindByIdAsync(query.UserId.ToString());
-            if (user == null || user.SchoolId != query.SchoolId)
+            if (user == null || user.SchoolId != query.LessonMaterialSpecParam.SchoolId)
             {
                 return false;
             }
