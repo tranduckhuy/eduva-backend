@@ -52,8 +52,7 @@ namespace Eduva.Application.Test.Features.Classes.Commands.EnrollByClassCode
             var classId = Guid.NewGuid();
             var schoolId = 1;
             var command = new EnrollByClassCodeCommand { StudentId = studentId, ClassCode = "ABC123" };
-
-            var student = new ApplicationUser { Id = studentId };
+            var student = new ApplicationUser { Id = studentId, SchoolId = schoolId };
             var classroom = new Classroom
             {
                 Id = classId,
@@ -153,9 +152,10 @@ namespace Eduva.Application.Test.Features.Classes.Commands.EnrollByClassCode
         {
             var studentId = Guid.NewGuid();
             var classId = Guid.NewGuid();
+            var schoolId = 1;
             var command = new EnrollByClassCodeCommand { StudentId = studentId, ClassCode = "ABC123" };
-            var student = new ApplicationUser { Id = studentId };
-            var classroom = new Classroom { Id = classId, Status = EntityStatus.Active };
+            var student = new ApplicationUser { Id = studentId, SchoolId = schoolId };
+            var classroom = new Classroom { Id = classId, Status = EntityStatus.Active, SchoolId = schoolId };
 
             _userRepoMock.Setup(r => r.GetByIdAsync(studentId)).ReturnsAsync(student);
             _userManagerMock.Setup(m => m.GetRolesAsync(student)).ReturnsAsync(new List<string> { nameof(Role.Student) });
@@ -166,13 +166,14 @@ namespace Eduva.Application.Test.Features.Classes.Commands.EnrollByClassCode
             Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.StudentAlreadyEnrolled));
         }
 
+
         [Test]
         public void Handle_Should_Throw_When_Enroll_Different_School()
         {
             var studentId = Guid.NewGuid();
             var classId = Guid.NewGuid();
             var command = new EnrollByClassCodeCommand { StudentId = studentId, ClassCode = "ABC123" };
-            var student = new ApplicationUser { Id = studentId };
+            var student = new ApplicationUser { Id = studentId, SchoolId = 1 };
             var classroom = new Classroom { Id = classId, Status = EntityStatus.Active, SchoolId = 2 };
             var existingClass = new Classroom { Id = Guid.NewGuid(), SchoolId = 1 };
 
@@ -193,8 +194,7 @@ namespace Eduva.Application.Test.Features.Classes.Commands.EnrollByClassCode
             var classId = Guid.NewGuid();
             var schoolId = 1;
             var command = new EnrollByClassCodeCommand { StudentId = studentId, ClassCode = "ABC123" };
-
-            var student = new ApplicationUser { Id = studentId };
+            var student = new ApplicationUser { Id = studentId, SchoolId = schoolId };
             var classroom = new Classroom
             {
                 Id = classId,
