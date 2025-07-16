@@ -26,14 +26,14 @@ namespace Eduva.Application.Features.LessonMaterials.Queries
             pendingSpecParam.LessonStatus = LessonMaterialStatus.Pending;
 
             // For Teachers, only show their own pending materials
-            if (request.UserRoles.HasTeacherRole() && 
-                !request.UserRoles.HasSchoolAdminRole() && 
+            if (request.UserRoles.HasTeacherRole() &&
+                !request.UserRoles.HasSchoolAdminRole() &&
                 !request.UserRoles.HasContentModeratorRole())
             {
                 pendingSpecParam.CreatedByUserId = request.UserId;
             }
 
-            var spec = new PendingLessonMaterialSpecification(pendingSpecParam, request.SchoolId);
+            var spec = new PendingLessonMaterialSpecification(pendingSpecParam);
 
             var result = await _unitOfWork.GetCustomRepository<ILessonMaterialRepository>()
                 .GetWithSpecAsync(spec);

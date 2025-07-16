@@ -12,6 +12,7 @@ namespace Eduva.Application.Features.LessonMaterials.Specifications
         public LessonMaterialVisibility? Visibility { get; set; }
         public Guid? ClassId { get; set; }
         public Guid? FolderId { get; set; }
+        public int SchoolId { get; set; }
         public EntityStatus EntityStatus { get; set; } = EntityStatus.Active;
     }
 }

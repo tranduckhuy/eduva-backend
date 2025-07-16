@@ -97,10 +97,10 @@ namespace Eduva.API.Controllers.LessonMaterials
                 return Respond(CustomCode.SchoolNotFound);
             }
 
-
             var lessonMaterialSpecParam = AppMapper<ModelMappingProfile>.Mapper.Map<LessonMaterialSpecParam>(request);
+            lessonMaterialSpecParam.SchoolId = schoolIdInt;
 
-            var query = new GetSchoolPublicLessonMaterialsQuery(lessonMaterialSpecParam, Guid.Parse(userId), schoolIdInt);
+            var query = new GetSchoolPublicLessonMaterialsQuery(lessonMaterialSpecParam, Guid.Parse(userId));
 
             return await HandleRequestAsync(async () =>
             {
@@ -162,8 +162,9 @@ namespace Eduva.API.Controllers.LessonMaterials
                 .ToList();
 
             var lessonMaterialSpecParam = AppMapper<ModelMappingProfile>.Mapper.Map<LessonMaterialSpecParam>(request);
+            lessonMaterialSpecParam.SchoolId = schoolIdInt;
 
-            var query = new GetPendingLessonMaterialsQuery(lessonMaterialSpecParam, Guid.Parse(userId), schoolIdInt, userRoles);
+            var query = new GetPendingLessonMaterialsQuery(lessonMaterialSpecParam, Guid.Parse(userId), userRoles);
 
             return await HandleRequestAsync(async () =>
             {

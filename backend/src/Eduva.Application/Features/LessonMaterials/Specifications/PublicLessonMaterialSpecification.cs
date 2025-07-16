@@ -22,6 +22,7 @@ namespace Eduva.Application.Features.LessonMaterials.Specifications
         public PublicLessonMaterialSpecification(LessonMaterialSpecParam param)
         {
             Criteria = lm =>
+                (lm.SchoolId == param.SchoolId) &&
                 (!param.CreatedByUserId.HasValue || lm.CreatedByUserId == param.CreatedByUserId) &&
                 (string.IsNullOrEmpty(param.SearchTerm) || lm.Title.ToLower().Contains(param.SearchTerm.ToLower())) &&
                 (string.IsNullOrEmpty(param.Tag) || lm.Tag == param.Tag) &&

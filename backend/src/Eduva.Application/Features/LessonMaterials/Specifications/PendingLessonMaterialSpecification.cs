@@ -14,10 +14,10 @@ namespace Eduva.Application.Features.LessonMaterials.Specifications
         public int Skip { get; private set; }
         public int Take { get; private set; }
 
-        public PendingLessonMaterialSpecification(LessonMaterialSpecParam param, int schoolId)
+        public PendingLessonMaterialSpecification(LessonMaterialSpecParam param)
         {
             Criteria = lm =>
-                lm.SchoolId == schoolId &&
+                lm.SchoolId == param.SchoolId &&
                 lm.LessonStatus == LessonMaterialStatus.Pending &&
                 lm.Status == EntityStatus.Active &&
                 (!param.CreatedByUserId.HasValue || lm.CreatedByUserId == param.CreatedByUserId) &&
