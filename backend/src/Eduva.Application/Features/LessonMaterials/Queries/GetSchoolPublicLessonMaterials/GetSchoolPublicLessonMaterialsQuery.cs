@@ -3,7 +3,7 @@ using Eduva.Application.Features.LessonMaterials.Responses;
 using Eduva.Application.Features.LessonMaterials.Specifications;
 using MediatR;
 
-namespace Eduva.Application.Features.LessonMaterials.Queries
+namespace Eduva.Application.Features.LessonMaterials.Queries.GetSchoolPublicLessonMaterials
 {
     public record GetSchoolPublicLessonMaterialsQuery(
         LessonMaterialSpecParam LessonMaterialSpecParam,

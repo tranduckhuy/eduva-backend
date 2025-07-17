@@ -4,7 +4,7 @@ using Eduva.Domain.Entities;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 
-namespace Eduva.Application.Features.LessonMaterials.Queries
+namespace Eduva.Application.Features.LessonMaterials.Queries.GetLessonMaterialById
 {
     public class GetLessonMaterialByIdValidator : AbstractValidator<GetLessonMaterialByIdQuery>
     {

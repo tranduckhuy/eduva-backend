@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace Eduva.Application.Features.LessonMaterials.Queries
+namespace Eduva.Application.Features.LessonMaterials.Queries.GetLessonMaterialsByFolder
 {
     public class GetLessonMaterialsByFolderValidator : AbstractValidator<GetLessonMaterialsByFolderQuery>
     {

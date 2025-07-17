@@ -5,7 +5,10 @@ using Eduva.API.Models;
 using Eduva.API.Models.LessonMaterials;
 using Eduva.Application.Common.Mappings;
 using Eduva.Application.Features.LessonMaterials.Commands;
-using Eduva.Application.Features.LessonMaterials.Queries;
+using Eduva.Application.Features.LessonMaterials.Queries.GetAllLessonMaterials;
+using Eduva.Application.Features.LessonMaterials.Queries.GetLessonMaterialById;
+using Eduva.Application.Features.LessonMaterials.Queries.GetPendingLessonMaterials;
+using Eduva.Application.Features.LessonMaterials.Queries.GetSchoolPublicLessonMaterials;
 using Eduva.Application.Features.LessonMaterials.Specifications;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
@@ -69,6 +72,7 @@ namespace Eduva.API.Controllers.LessonMaterials
 
             // Get schoolID from claims or context if needed
             var schoolId = int.Parse(User.FindFirstValue(SCHOOL_ID_CLAIM) ?? "0");
+
             command.SchoolId = schoolId > 0 ? schoolId : null;
 
             command.CreatedBy = Guid.Parse(userId);

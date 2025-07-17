@@ -4,13 +4,13 @@ using Eduva.Domain.Enums;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 
-namespace Eduva.Application.Features.LessonMaterials.Queries
+namespace Eduva.Application.Features.LessonMaterials.Queries.GetPendingLessonMaterials
 {
-    public class GetPendingLessonMaterialsQueryValidator : AbstractValidator<GetPendingLessonMaterialsQuery>
+    public class GetPendingLessonMaterialsValidator : AbstractValidator<GetPendingLessonMaterialsQuery>
     {
         private readonly UserManager<ApplicationUser> _userManager;
 
-        public GetPendingLessonMaterialsQueryValidator(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
+        public GetPendingLessonMaterialsValidator(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
         {
             _userManager = userManager;
 

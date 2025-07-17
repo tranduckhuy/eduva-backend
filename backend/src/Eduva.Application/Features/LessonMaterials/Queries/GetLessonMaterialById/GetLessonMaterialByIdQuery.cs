@@ -1,7 +1,7 @@
 ﻿using Eduva.Application.Features.LessonMaterials.Responses;
 using MediatR;
 
-namespace Eduva.Application.Features.LessonMaterials.Queries
+namespace Eduva.Application.Features.LessonMaterials.Queries.GetLessonMaterialById
 {
     public class GetLessonMaterialByIdQuery : IRequest<LessonMaterialResponse>
     {

@@ -4,7 +4,7 @@ using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using MediatR;
 
-namespace Eduva.Application.Features.LessonMaterials.Queries
+namespace Eduva.Application.Features.LessonMaterials.Queries.GetAllLessonMaterials
 {
     public class GetAllLessonMaterialsHandler : IRequestHandler<GetAllLessonMaterialsQuery, IReadOnlyList<LessonMaterialResponse>>
     {
