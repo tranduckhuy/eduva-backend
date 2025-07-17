@@ -23,22 +23,9 @@ namespace Eduva.API.Controllers.FileStorage
             _storageQuotaService = storageQuotaService;
         }
 
-        [HttpPost("upload-tokens")]
-        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
-        public async Task<IActionResult> GenerateUploadSasToken([FromBody] List<string> blobNames)
-        {
-            return await HandleRequestAsync(async () =>
-            {
-                var sasTokens = await _storageService.GenerateUploadSasTokens(blobNames);
-
-                return (CustomCode.Success, new { UploadTokens = sasTokens });
-            });
-        }
-
         [HttpPost("upload-tokens-with-quota")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
+        [Authorize(Policy = "EducatorOnly")]
         public async Task<IActionResult> GenerateUploadSasTokenWithQuota([FromBody] GenerateUploadTokensRequest request)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -78,7 +65,7 @@ namespace Eduva.API.Controllers.FileStorage
         }
 
         [HttpDelete("{blobName}")]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
+        [Authorize(Roles = $"{nameof(Role.SystemAdmin)}")]
         public async Task<IActionResult> DeleteFileAsync(string blobName)
         {
             return await HandleRequestAsync(async () => await _storageService.DeleteFileAsync(blobName));
@@ -86,7 +73,7 @@ namespace Eduva.API.Controllers.FileStorage
 
         [HttpGet("storage-quota")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
+        [Authorize(Policy = "EducatorOnly")]
         public async Task<IActionResult> GetStorageQuota()
         {
             var schoolIdClaim = User.FindFirstValue(SCHOOL_ID_CLAIM);

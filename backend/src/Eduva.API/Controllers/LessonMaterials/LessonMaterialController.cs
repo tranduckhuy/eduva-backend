@@ -58,7 +58,7 @@ namespace Eduva.API.Controllers.LessonMaterials
         [HttpPost]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}, {nameof(Role.Teacher)}")]
+        [Authorize(Policy = "EducatorOnly")]
         public async Task<IActionResult> CreateLessonMaterial([FromBody] CreateLessonMaterialCommand command)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
