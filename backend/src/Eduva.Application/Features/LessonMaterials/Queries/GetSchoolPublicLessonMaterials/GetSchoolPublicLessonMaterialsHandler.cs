@@ -6,7 +6,7 @@ using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using MediatR;
 
-namespace Eduva.Application.Features.LessonMaterials.Queries
+namespace Eduva.Application.Features.LessonMaterials.Queries.GetSchoolPublicLessonMaterials
 {
     public class GetSchoolPublicLessonMaterialsHandler : IRequestHandler<GetSchoolPublicLessonMaterialsQuery, Pagination<LessonMaterialResponse>>
     {

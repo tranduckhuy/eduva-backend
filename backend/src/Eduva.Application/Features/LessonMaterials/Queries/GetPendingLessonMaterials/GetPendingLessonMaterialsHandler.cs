@@ -8,7 +8,7 @@ using Eduva.Application.Interfaces.Repositories;
 using Eduva.Domain.Enums;
 using MediatR;
 
-namespace Eduva.Application.Features.LessonMaterials.Queries
+namespace Eduva.Application.Features.LessonMaterials.Queries.GetPendingLessonMaterials
 {
     public class GetPendingLessonMaterialsHandler : IRequestHandler<GetPendingLessonMaterialsQuery, Pagination<LessonMaterialResponse>>
     {

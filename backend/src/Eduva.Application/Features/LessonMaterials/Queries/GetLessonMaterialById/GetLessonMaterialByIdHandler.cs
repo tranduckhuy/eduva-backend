@@ -8,7 +8,7 @@ using Eduva.Application.Interfaces.Services;
 using Eduva.Shared.Enums;
 using MediatR;
 
-namespace Eduva.Application.Features.LessonMaterials.Queries
+namespace Eduva.Application.Features.LessonMaterials.Queries.GetLessonMaterialById
 {
     public class GetLessonMaterialByIdHandler : IRequestHandler<GetLessonMaterialByIdQuery, LessonMaterialResponse>
     {

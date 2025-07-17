@@ -8,7 +8,7 @@ using Eduva.Application.Features.Folders.Queries;
 using Eduva.Application.Features.Folders.Responses;
 using Eduva.Application.Features.Folders.Specifications;
 using Eduva.Application.Features.LessonMaterials.DTOs;
-using Eduva.Application.Features.LessonMaterials.Queries;
+using Eduva.Application.Features.LessonMaterials.Queries.GetLessonMaterialsByFolder;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
