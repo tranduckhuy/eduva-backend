@@ -21,6 +21,8 @@ namespace Eduva.Application.Test.Features.Folders.Commands
         private Mock<IGenericRepository<FolderLessonMaterial, int>> _folderLessonMaterialRepoMock = null!;
         private Mock<IGenericRepository<ApplicationUser, Guid>> _userRepoMock = null!;
         private Mock<IGenericRepository<Classroom, Guid>> _classroomRepoMock = null!;
+        private Mock<IGenericRepository<LessonMaterialQuestion, int>> _lessonMaterialQuestionsRepoMock = null!;
+        private Mock<IGenericRepository<LessonMaterialApproval, int>> _lessonMaterialsApproveRepoMock = null!;
         private DeleteFolderHandler _handler = null!;
 
         [SetUp]
@@ -34,6 +36,9 @@ namespace Eduva.Application.Test.Features.Folders.Commands
             _folderLessonMaterialRepoMock = new Mock<IGenericRepository<FolderLessonMaterial, int>>();
             _userRepoMock = new Mock<IGenericRepository<ApplicationUser, Guid>>();
             _classroomRepoMock = new Mock<IGenericRepository<Classroom, Guid>>();
+            _lessonMaterialQuestionsRepoMock = new Mock<IGenericRepository<LessonMaterialQuestion, int>>();
+            _lessonMaterialsApproveRepoMock = new Mock<IGenericRepository<LessonMaterialApproval, int>>();
+
 
             _unitOfWorkMock.Setup(u => u.GetCustomRepository<IFolderRepository>())
                 .Returns(_folderRepoMock.Object);
@@ -45,6 +50,10 @@ namespace Eduva.Application.Test.Features.Folders.Commands
                 .Returns(_userRepoMock.Object);
             _unitOfWorkMock.Setup(u => u.GetRepository<Classroom, Guid>())
                 .Returns(_classroomRepoMock.Object);
+            _unitOfWorkMock.Setup(u => u.GetRepository<LessonMaterialQuestion, int>())
+                .Returns(_lessonMaterialQuestionsRepoMock.Object);
+            _unitOfWorkMock.Setup(u => u.GetRepository<LessonMaterialApproval, int>())
+                .Returns(_lessonMaterialsApproveRepoMock.Object);
 
             _handler = new DeleteFolderHandler(_unitOfWorkMock.Object, _userManagerMock.Object);
         }
@@ -163,6 +172,8 @@ namespace Eduva.Application.Test.Features.Folders.Commands
             .ReturnsAsync(0); // hoặc 1, tùy logic test
             _lessonMaterialRepoMock.Setup(r => r.Remove(lessonMaterial));
             _folderRepoMock.Setup(r => r.Remove(folder));
+            _lessonMaterialQuestionsRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<LessonMaterialQuestion>());
+            _lessonMaterialsApproveRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<LessonMaterialApproval>());
             _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
 
             var result = await _handler.Handle(command, CancellationToken.None);
