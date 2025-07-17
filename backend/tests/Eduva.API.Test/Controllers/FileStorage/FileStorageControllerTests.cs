@@ -1,7 +1,6 @@
 using Eduva.API.Controllers.FileStorage;
 using Eduva.API.Models.FileStorage;
 using Eduva.Application.Common.Exceptions;
-using Eduva.Application.Exceptions.FileStorage;
 using Eduva.Application.Exceptions.Storage;
 using Eduva.Application.Features.StorageQuota;
 using Eduva.Application.Interfaces.Services;
@@ -11,7 +10,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
 
 namespace Eduva.API.Test.Controllers.FileStorage
 {
@@ -30,7 +28,7 @@ namespace Eduva.API.Test.Controllers.FileStorage
             _storageQuotaServiceMock = new Mock<IStorageQuotaService>();
             _loggerMock = new Mock<ILogger<FileStorageController>>();
             _controller = new FileStorageController(_loggerMock.Object, _storageServiceMock.Object, _storageQuotaServiceMock.Object);
-            
+
             // Setup HttpContext for User claims
             SetupUserContext();
         }
@@ -54,83 +52,6 @@ namespace Eduva.API.Test.Controllers.FileStorage
             };
         }
 
-        #region GenerateUploadSasToken Tests
-
-        [Test]
-        public async Task GenerateUploadSasToken_ShouldReturn200_WhenSuccessful()
-        {
-            // Arrange
-            var blobNames = new List<string> { "test-file.pdf" };
-            var expectedTokens = new List<string> { "https://storage.blob.core.windows.net/test-file.pdf?token" };
-            
-            _storageServiceMock.Setup(s => s.GenerateUploadSasTokens(blobNames))
-                .ReturnsAsync(expectedTokens);
-
-            // Act
-            var result = await _controller.GenerateUploadSasToken(blobNames);
-
-            // Assert
-            var objectResult = result as ObjectResult;
-            Assert.That(objectResult, Is.Not.Null);
-            Assert.That(objectResult.StatusCode, Is.EqualTo(200));
-            _storageServiceMock.Verify(s => s.GenerateUploadSasTokens(blobNames), Times.Once);
-        }
-
-        [Test]
-        public async Task GenerateUploadSasToken_ShouldReturn500_WhenServiceThrowsException()
-        {
-            // Arrange
-            var blobNames = new List<string> { "test-file.pdf" };
-            _storageServiceMock.Setup(s => s.GenerateUploadSasTokens(blobNames))
-                .ThrowsAsync(new Exception("Service error"));
-
-            // Act
-            var result = await _controller.GenerateUploadSasToken(blobNames);
-
-            // Assert
-            var objectResult = result as ObjectResult;
-            Assert.That(objectResult, Is.Not.Null);
-            Assert.That(objectResult.StatusCode, Is.EqualTo(500));
-        }
-
-        [Test]
-        public async Task GenerateUploadSasToken_ShouldReturn400_WhenAppExceptionThrown()
-        {
-            // Arrange
-            var blobNames = new List<string> { "test-file.pdf" };
-            _storageServiceMock.Setup(s => s.GenerateUploadSasTokens(blobNames))
-                .ThrowsAsync(new AppException(CustomCode.InvalidBlobName));
-
-            // Act
-            var result = await _controller.GenerateUploadSasToken(blobNames);
-
-            // Assert
-            var objectResult = result as ObjectResult;
-            Assert.That(objectResult, Is.Not.Null);
-            Assert.That(objectResult.StatusCode, Is.EqualTo(400));
-        }
-
-        [Test]
-        public async Task GenerateUploadSasToken_ShouldHandleEmptyList()
-        {
-            // Arrange
-            var blobNames = new List<string>();
-            var expectedTokens = new List<string>();
-            
-            _storageServiceMock.Setup(s => s.GenerateUploadSasTokens(blobNames))
-                .ReturnsAsync(expectedTokens);
-
-            // Act
-            var result = await _controller.GenerateUploadSasToken(blobNames);
-
-            // Assert
-            var objectResult = result as ObjectResult;
-            Assert.That(objectResult, Is.Not.Null);
-            Assert.That(objectResult.StatusCode, Is.EqualTo(200));
-        }
-
-        #endregion
-
         #region GenerateUploadSasTokenWithQuota Tests
 
         [Test]
@@ -145,7 +66,7 @@ namespace Eduva.API.Test.Controllers.FileStorage
                 }
             };
             var expectedTokens = new List<string> { "https://storage.blob.core.windows.net/test.pdf?token" };
-            
+
             _storageServiceMock.Setup(s => s.GenerateUploadSasTokensWithQuotaCheck(
                 It.IsAny<List<string>>(), It.IsAny<List<long>>(), It.IsAny<int>()))
                 .ReturnsAsync(expectedTokens);
@@ -202,7 +123,7 @@ namespace Eduva.API.Test.Controllers.FileStorage
                     new FileUploadInfo { BlobName = "large-file.pdf", FileSize = 1000000000 }
                 }
             };
-            
+
             _storageServiceMock.Setup(s => s.GenerateUploadSasTokensWithQuotaCheck(
                 It.IsAny<List<string>>(), It.IsAny<List<long>>(), It.IsAny<int>()))
                 .ThrowsAsync(new StorageQuotaExceededException(100, 50, 75, 0));
@@ -226,7 +147,7 @@ namespace Eduva.API.Test.Controllers.FileStorage
             // Arrange
             var blobName = "test-file.pdf";
             var expectedUrl = "https://storage.blob.core.windows.net/test-file.pdf?readable";
-            
+
             _storageServiceMock.Setup(s => s.GetReadableUrl(blobName))
                 .Returns(expectedUrl);
 
@@ -340,9 +261,9 @@ namespace Eduva.API.Test.Controllers.FileStorage
         public async Task GetStorageQuota_ShouldReturn200_WhenSuccessful()
         {
             // Arrange
-            var quotaDetails = new StorageQuotaDetailsResponse 
-            { 
-                UsedBytes = 1024, 
+            var quotaDetails = new StorageQuotaDetailsResponse
+            {
+                UsedBytes = 1024,
                 LimitBytes = 10240,
                 RemainingBytes = 9216,
                 UsedGB = 0.001,

@@ -1,4 +1,5 @@
 using Eduva.API.Adapters;
+using Eduva.API.Extensions;
 using Eduva.API.Hubs;
 using Eduva.API.Middlewares;
 using Eduva.Application.Contracts.Hubs;
@@ -103,7 +104,7 @@ builder.Services.AddCors(o => o.AddPolicy("AllowAll", builder =>
 builder.Services.AddApplicationIdentity<ApplicationUser>();
 builder.Services.AddJwtAuthentication(builder.Configuration);
 
-builder.Services.AddAuthorization();
+builder.Services.AddCustomAuthorizationPolicies();
 
 builder.Services.Configure<DataProtectionTokenProviderOptions>(opt =>
 {
