@@ -474,6 +474,5 @@ namespace Eduva.API.Controllers.Classes
                 return (CustomCode.Success, result);
             });
         }
-
     }
 }
