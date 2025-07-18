@@ -139,7 +139,7 @@ namespace Eduva.Application.Test.Features.Folders.Commands
 
             var result = await _handler.Handle(command, CancellationToken.None);
 
-            _folderLessonMaterialRepoMock.Verify(r => r.Remove(It.IsAny<FolderLessonMaterial>()), Times.Exactly(2));
+            _folderLessonMaterialRepoMock.Verify(r => r.RemoveRange(It.IsAny<IEnumerable<FolderLessonMaterial>>()), Times.Once);
             _folderRepoMock.Verify(r => r.Remove(folder), Times.Once);
             _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Once);
             Assert.That(result, Is.True);
@@ -169,7 +169,7 @@ namespace Eduva.Application.Test.Features.Folders.Commands
             _folderLessonMaterialRepoMock.Setup(r => r.Remove(It.IsAny<FolderLessonMaterial>()));
             _folderLessonMaterialRepoMock
             .Setup(r => r.CountAsync(It.IsAny<Expression<Func<FolderLessonMaterial, bool>>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(0); // hoặc 1, tùy logic test
+            .ReturnsAsync(0);
             _lessonMaterialRepoMock.Setup(r => r.Remove(lessonMaterial));
             _folderRepoMock.Setup(r => r.Remove(folder));
             _lessonMaterialQuestionsRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<LessonMaterialQuestion>());
@@ -178,8 +178,8 @@ namespace Eduva.Application.Test.Features.Folders.Commands
 
             var result = await _handler.Handle(command, CancellationToken.None);
 
-            _folderLessonMaterialRepoMock.Verify(r => r.Remove(It.IsAny<FolderLessonMaterial>()), Times.Once);
-            _lessonMaterialRepoMock.Verify(r => r.Remove(lessonMaterial), Times.Once);
+            _folderLessonMaterialRepoMock.Verify(r => r.RemoveRange(It.IsAny<IEnumerable<FolderLessonMaterial>>()), Times.Once);
+            _lessonMaterialRepoMock.Verify(r => r.Update(lessonMaterial), Times.Once);
             _folderRepoMock.Verify(r => r.Remove(folder), Times.Once);
             _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Once);
             Assert.That(result, Is.True);
@@ -213,7 +213,7 @@ namespace Eduva.Application.Test.Features.Folders.Commands
 
             var result = await _handler.Handle(command, CancellationToken.None);
 
-            _folderLessonMaterialRepoMock.Verify(r => r.Remove(It.IsAny<FolderLessonMaterial>()), Times.Once);
+            _folderLessonMaterialRepoMock.Verify(r => r.RemoveRange(It.IsAny<IEnumerable<FolderLessonMaterial>>()), Times.Once);
             _lessonMaterialRepoMock.Verify(r => r.Remove(It.IsAny<LessonMaterial>()), Times.Never);
             _folderRepoMock.Verify(r => r.Remove(folder), Times.Once);
             _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Once);
@@ -239,8 +239,7 @@ namespace Eduva.Application.Test.Features.Folders.Commands
             _folderRepoMock.Setup(r => r.GetFolderWithMaterialsAsync(folderId)).ReturnsAsync(folder);
             _userRepoMock.Setup(r => r.GetByIdAsync(command.CurrentUserId)).ReturnsAsync(new ApplicationUser { Id = command.CurrentUserId });
             _userManagerMock.Setup(m => m.GetRolesAsync(It.IsAny<ApplicationUser>())).ReturnsAsync(new List<string> { nameof(Role.SystemAdmin) });
-            _folderLessonMaterialRepoMock.Setup(r => r.Remove(It.IsAny<FolderLessonMaterial>())).Throws(new Exception("DB error"));
-
+            _folderLessonMaterialRepoMock.Setup(r => r.RemoveRange(It.IsAny<IEnumerable<FolderLessonMaterial>>())).Throws(new Exception("DB error"));
             var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, CancellationToken.None));
             Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.FolderDeleteFailed));
         }

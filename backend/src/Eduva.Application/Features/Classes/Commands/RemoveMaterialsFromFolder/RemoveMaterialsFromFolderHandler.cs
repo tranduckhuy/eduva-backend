@@ -27,14 +27,14 @@ namespace Eduva.Application.Features.Classes.Commands.RemoveMaterialsFromFolder
             if (folder == null)
                 throw new AppException(CustomCode.FolderNotFound);
 
-            // Validate folder belongs to the specified class
-            if (folder.OwnerType != OwnerType.Class || folder.ClassId != request.ClassId)
-                throw new AppException(CustomCode.Unauthorized);
-
             // Check access permission
             await CheckFolderAccessAsync(folder, request.CurrentUserId);
 
             var folderLessonMaterialRepo = _unitOfWork.GetRepository<FolderLessonMaterial, int>();
+            var lessonMaterialRepo = _unitOfWork.GetRepository<LessonMaterial, Guid>();
+            var lessonMaterialQuestionsRepo = _unitOfWork.GetRepository<LessonMaterialQuestion, int>();
+            var lessonMaterialsApproveRepo = _unitOfWork.GetRepository<LessonMaterialApproval, int>();
+
             var allFolderMaterials = await folderLessonMaterialRepo.GetAllAsync();
 
             List<FolderLessonMaterial> folderMaterials;
@@ -54,15 +54,44 @@ namespace Eduva.Application.Features.Classes.Commands.RemoveMaterialsFromFolder
             if (folderMaterials.Count == 0)
                 throw new AppException(CustomCode.LessonMaterialNotFoundInFolder);
 
-            // Remove materials from folder
             foreach (var folderMaterial in folderMaterials)
             {
-                folderLessonMaterialRepo.Remove(folderMaterial);
+                if (folder.OwnerType == OwnerType.Class)
+                {
+                    folderLessonMaterialRepo.Remove(folderMaterial);
+
+                    var isOnlyUsedHere = !allFolderMaterials.Any(flm => flm.LessonMaterialId == folderMaterial.LessonMaterialId && flm.FolderId != folder.Id);
+
+                    if (isOnlyUsedHere)
+                    {
+                        var allQuestions = await lessonMaterialQuestionsRepo.GetAllAsync();
+                        var questions = allQuestions.Where(q => q.LessonMaterialId == folderMaterial.LessonMaterialId).ToList();
+                        lessonMaterialQuestionsRepo.RemoveRange(questions);
+
+                        var allApproves = await lessonMaterialsApproveRepo.GetAllAsync();
+                        var approves = allApproves.Where(a => a.LessonMaterialId == folderMaterial.LessonMaterialId).ToList();
+                        lessonMaterialsApproveRepo.RemoveRange(approves);
+
+                        var lessonMaterial = await lessonMaterialRepo.GetByIdAsync(folderMaterial.LessonMaterialId);
+                        if (lessonMaterial != null)
+                        {
+                            lessonMaterialRepo.Remove(lessonMaterial);
+                        }
+                    }
+                }
+                else if (folder.OwnerType == OwnerType.Personal)
+                {
+                    var lessonMaterial = await lessonMaterialRepo.GetByIdAsync(folderMaterial.LessonMaterialId);
+                    if (lessonMaterial != null && lessonMaterial.Status != EntityStatus.Deleted)
+                    {
+                        lessonMaterial.Status = EntityStatus.Deleted;
+                        lessonMaterialRepo.Update(lessonMaterial);
+                    }
+                    folderLessonMaterialRepo.Remove(folderMaterial);
+                }
             }
 
-            // Save changes
             await _unitOfWork.CommitAsync();
-
             return true;
         }
 
@@ -78,6 +107,11 @@ namespace Eduva.Application.Features.Classes.Commands.RemoveMaterialsFromFolder
 
             // System admin can access any folder
             if (roles.Contains(nameof(Role.SystemAdmin)))
+            {
+                return;
+            }
+
+            if (folder.OwnerType == OwnerType.Personal && folder.UserId == userId)
             {
                 return;
             }

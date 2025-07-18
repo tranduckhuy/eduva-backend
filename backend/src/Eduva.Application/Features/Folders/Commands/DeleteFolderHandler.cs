@@ -46,20 +46,32 @@ namespace Eduva.Application.Features.Folders.Commands
             {
                 if (folder.OwnerType == OwnerType.Class)
                 {
-                    foreach (var link in folder.FolderLessonMaterials.ToList())
-                    {
-                        folderLessonMaterialRepository.Remove(link);
-                    }
+                    var folderLessonMaterials = folder.FolderLessonMaterials.ToList();
+                    folderLessonMaterialRepository.RemoveRange(folderLessonMaterials);
                 }
                 else if (folder.OwnerType == OwnerType.Personal)
                 {
                     var lessonMaterialQuestionsRepo = _unitOfWork.GetRepository<LessonMaterialQuestion, int>();
                     var lessonMaterialsApproveRepo = _unitOfWork.GetRepository<LessonMaterialApproval, int>();
 
-                    foreach (var link in folder.FolderLessonMaterials.ToList())
-                    {
-                        folderLessonMaterialRepository.Remove(link);
+                    // Update lesson materials to Deleted status
+                    var lessonMaterialsToUpdate = folder.FolderLessonMaterials
+                        .Select(link => link.LessonMaterial)
+                        .Where(material => material != null && material.Status != EntityStatus.Deleted)
+                        .ToList();
 
+                    foreach (var lessonMaterial in lessonMaterialsToUpdate)
+                    {
+                        lessonMaterial.Status = EntityStatus.Deleted;
+                        lessonMaterialRepository.Update(lessonMaterial);
+                    }
+
+                    // Remove folder lesson materials and associated entities
+                    var folderLessonMaterials = folder.FolderLessonMaterials.ToList();
+                    folderLessonMaterialRepository.RemoveRange(folderLessonMaterials);
+
+                    foreach (var link in folderLessonMaterials)
+                    {
                         if (link.LessonMaterial != null)
                         {
                             var lessonMaterialId = link.LessonMaterial.Id;
@@ -69,15 +81,15 @@ namespace Eduva.Application.Features.Folders.Commands
 
                             if (isOnlyUsedHere)
                             {
-                                var allQuestions = await lessonMaterialQuestionsRepo.GetAllAsync();
-                                var questions = allQuestions.Where(q => q.LessonMaterialId == lessonMaterialId).ToList();
+                                var questions = (await lessonMaterialQuestionsRepo.GetAllAsync())
+                                    .Where(q => q.LessonMaterialId == lessonMaterialId)
+                                    .ToList();
                                 lessonMaterialQuestionsRepo.RemoveRange(questions);
 
-                                var allApproves = await lessonMaterialsApproveRepo.GetAllAsync();
-                                var approves = allApproves.Where(a => a.LessonMaterialId == lessonMaterialId).ToList();
+                                var approves = (await lessonMaterialsApproveRepo.GetAllAsync())
+                                    .Where(a => a.LessonMaterialId == lessonMaterialId)
+                                    .ToList();
                                 lessonMaterialsApproveRepo.RemoveRange(approves);
-
-                                lessonMaterialRepository.Remove(link.LessonMaterial);
                             }
                         }
                     }
