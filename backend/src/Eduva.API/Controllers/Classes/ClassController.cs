@@ -474,33 +474,5 @@ namespace Eduva.API.Controllers.Classes
                 return (CustomCode.Success, result);
             });
         }
-
-        [HttpDelete("folders/{folderId}/lesson-materials")]
-        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
-        [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
-        [Authorize(Policy = "EducatorOnly")]
-        public async Task<IActionResult> RemoveMaterialsFromFolderPerson(Guid folderId, [FromBody] List<Guid> materialIds)
-        {
-            var validationResult = CheckModelStateValidity();
-            if (validationResult != null)
-            {
-                return validationResult;
-            }
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!Guid.TryParse(userId, out var currentUserId))
-                return Respond(CustomCode.UserIdNotFound);
-
-            var command = new RemoveMaterialsFromFolderCommand
-            {
-                FolderId = folderId,
-                MaterialIds = materialIds,
-                CurrentUserId = currentUserId
-            };
-            return await HandleRequestAsync<object>(async () =>
-            {
-                var result = await _mediator.Send(command);
-                return (CustomCode.Success, result);
-            });
-        }
     }
 }
