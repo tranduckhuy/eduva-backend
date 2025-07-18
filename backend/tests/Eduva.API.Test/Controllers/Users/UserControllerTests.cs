@@ -1370,6 +1370,90 @@ namespace Eduva.API.Test.Controllers.Users
 
         #endregion
 
+        #region ExportUsers
+
+        private static ClaimsPrincipal CreateUserWithId(Guid? id = null)
+        {
+            var claims = id.HasValue
+                ? new[] { new Claim(ClaimTypes.NameIdentifier, id.Value.ToString()) }
+                : Array.Empty<Claim>();
+            var identity = new ClaimsIdentity(claims, "mock");
+            return new ClaimsPrincipal(identity);
+        }
+
+        [Test]
+        public async Task ExportUsers_ReturnsFile_WhenSuccess()
+        {
+            var userId = Guid.NewGuid();
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            };
+            _controller.ControllerContext.HttpContext.User = CreateUserWithId(userId);
+
+            var request = new ExportUsersRequest { Role = Role.Student };
+            var fileBytes = new byte[] { 1, 2, 3 };
+            _mediatorMock.Setup(m => m.Send(It.IsAny<ExportUsersQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(fileBytes);
+
+            var result = await _controller.ExportUsers(request);
+
+            var fileResult = result as FileContentResult;
+            Assert.That(fileResult, Is.Not.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(fileResult!.ContentType, Is.EqualTo("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+                Assert.That(fileResult.FileContents, Is.EqualTo(fileBytes));
+                Assert.That(fileResult.FileDownloadName, Does.Contain("users_export_student"));
+            });
+        }
+
+        [Test]
+        public async Task ExportUsers_ReturnsError_WhenUserIdInvalid()
+        {
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            };
+            _controller.ControllerContext.HttpContext.User = CreateUserWithId(null);
+
+            var result = await _controller.ExportUsers(new ExportUsersRequest());
+
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.Value, Is.Not.Null);
+
+            var response = objectResult.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task ExportUsers_ReturnsError_WhenAppException()
+        {
+            var userId = Guid.NewGuid();
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            };
+            _controller.ControllerContext.HttpContext.User = CreateUserWithId(userId);
+
+            _mediatorMock.Setup(m => m.Send(It.IsAny<ExportUsersQuery>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new Eduva.Application.Common.Exceptions.AppException(Eduva.Shared.Enums.CustomCode.SystemError));
+
+            var result = await _controller.ExportUsers(new ExportUsersRequest());
+
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.Value, Is.Not.Null);
+
+            var response = objectResult.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.SystemError));
+        }
+
+        #endregion
+
         #region Helper Methods
 
         private void SetupUser(string? userId, string? role = null)
