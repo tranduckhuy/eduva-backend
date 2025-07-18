@@ -66,31 +66,31 @@ namespace Eduva.Application.Features.Folders.Commands
                         lessonMaterialRepository.Update(lessonMaterial);
                     }
 
-                    // Remove folder lesson materials and associated entities
                     var folderLessonMaterials = folder.FolderLessonMaterials.ToList();
                     folderLessonMaterialRepository.RemoveRange(folderLessonMaterials);
 
-                    foreach (var link in folderLessonMaterials)
+                    var linksWithMaterial = folderLessonMaterials
+                    .Where(link => link.LessonMaterial != null)
+                    .ToList();
+
+                    foreach (var link in linksWithMaterial)
                     {
-                        if (link.LessonMaterial != null)
+                        var lessonMaterialId = link.LessonMaterial!.Id;
+
+                        var isOnlyUsedHere = await folderLessonMaterialRepository
+                            .CountAsync(flm => flm.LessonMaterialId == lessonMaterialId && flm.FolderId != folder.Id, cancellationToken) == 0;
+
+                        if (isOnlyUsedHere)
                         {
-                            var lessonMaterialId = link.LessonMaterial.Id;
+                            var questions = (await lessonMaterialQuestionsRepo.GetAllAsync())
+                                .Where(q => q.LessonMaterialId == lessonMaterialId)
+                                .ToList();
+                            lessonMaterialQuestionsRepo.RemoveRange(questions);
 
-                            var isOnlyUsedHere = await folderLessonMaterialRepository
-                                .CountAsync(flm => flm.LessonMaterialId == lessonMaterialId && flm.FolderId != folder.Id, cancellationToken) == 0;
-
-                            if (isOnlyUsedHere)
-                            {
-                                var questions = (await lessonMaterialQuestionsRepo.GetAllAsync())
-                                    .Where(q => q.LessonMaterialId == lessonMaterialId)
-                                    .ToList();
-                                lessonMaterialQuestionsRepo.RemoveRange(questions);
-
-                                var approves = (await lessonMaterialsApproveRepo.GetAllAsync())
-                                    .Where(a => a.LessonMaterialId == lessonMaterialId)
-                                    .ToList();
-                                lessonMaterialsApproveRepo.RemoveRange(approves);
-                            }
+                            var approves = (await lessonMaterialsApproveRepo.GetAllAsync())
+                                .Where(a => a.LessonMaterialId == lessonMaterialId)
+                                .ToList();
+                            lessonMaterialsApproveRepo.RemoveRange(approves);
                         }
                     }
                 }
