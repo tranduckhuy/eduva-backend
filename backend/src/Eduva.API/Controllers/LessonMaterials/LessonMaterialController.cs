@@ -198,5 +198,33 @@ namespace Eduva.API.Controllers.LessonMaterials
                 await _mediator.Send(command);
             });
         }
+
+        [HttpPut("{personalFolderId:guid}/restore")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
+        [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+        [Authorize(Roles = $"{nameof(Role.Teacher)},{nameof(Role.ContentModerator)},{nameof(Role.SchoolAdmin)},{nameof(Role.SystemAdmin)}")]
+        public async Task<IActionResult> RestoreLessonMaterials(Guid personalFolderId, [FromBody] List<Guid> materialIds)
+        {
+            var validationResult = CheckModelStateValidity();
+            if (validationResult != null)
+                return validationResult;
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return Respond(CustomCode.UserIdNotFound);
+
+            var command = new RestoreLessonMaterialCommand
+            {
+                PersonalFolderId = personalFolderId,
+                LessonMaterialIds = materialIds,
+                CurrentUserId = Guid.Parse(userId)
+            };
+
+            return await HandleRequestAsync<object>(async () =>
+            {
+                var result = await _mediator.Send(command);
+                return (CustomCode.Success, result);
+            });
+        }
     }
 }
