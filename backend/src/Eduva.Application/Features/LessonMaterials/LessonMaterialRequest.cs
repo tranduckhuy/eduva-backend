@@ -4,10 +4,9 @@ namespace Eduva.Application.Features.LessonMaterials
 {
     public class LessonMaterialRequest
     {
-        public string Title { get; set; } = string.Empty;
+        public string? Title { get; set; } = string.Empty;
         public string? Description { get; set; }
         public ContentType ContentType { get; set; }
-        public string? Tag { get; set; }
         public int? Duration { get; set; }
         public int FileSize { get; set; } // Size in bytes
         public bool IsAIContent { get; set; }

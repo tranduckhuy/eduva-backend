@@ -15,7 +15,8 @@ public class UpdateJobCommand : IRequest<CustomCode>
     public Guid Id { get; set; }
     public JobStatus? Status { get; set; }
     public string? ContentBlobName { get; set; }
-    public string? ProductBlobName { get; set; }
+    public string? VideoOutputBlobName { get; set; }
+    public string? AudioOutputBlobName { get; set; }
     public int? WordCount { get; set; }
     public string? FailureReason { get; set; }
 }
@@ -60,11 +61,19 @@ public class UpdateJobCommandHandler : IRequestHandler<UpdateJobCommand, CustomC
             updated = true;
         }
 
-        var productBlobNameUrl = string.Empty;
-        if (!string.IsNullOrEmpty(request.ProductBlobName))
+        var videoOutputBlobNameUrl = string.Empty;
+        if (!string.IsNullOrEmpty(request.VideoOutputBlobName))
         {
-            (string blobNameUrl, productBlobNameUrl) = _storageService.GetReadableUrlFromBlobName(request.ProductBlobName);
-            job.ProductBlobName = blobNameUrl;
+            (string blobNameUrl, videoOutputBlobNameUrl) = _storageService.GetReadableUrlFromBlobName(request.VideoOutputBlobName);
+            job.VideoOutputBlobName = blobNameUrl;
+            updated = true;
+        }
+
+        var audioOutputBlobNameUrl = string.Empty;
+        if (!string.IsNullOrEmpty(request.AudioOutputBlobName))
+        {
+            (string blobNameUrl, videoOutputBlobNameUrl) = _storageService.GetReadableUrlFromBlobName(request.AudioOutputBlobName);
+            job.AudioOutputBlobName = blobNameUrl;
             updated = true;
         }
 
@@ -91,8 +100,9 @@ public class UpdateJobCommandHandler : IRequestHandler<UpdateJobCommand, CustomC
                 JobId = job.Id,
                 Status = job.JobStatus,
                 job.ContentBlobName,
-                job.ProductBlobName,
-                ProductBlobNameUrl = productBlobNameUrl,
+                VideoOutputBlobNameUrl = videoOutputBlobNameUrl,
+                job.AudioOutputBlobName,
+                AudioOutputBlobNameUrl = audioOutputBlobNameUrl,
                 job.WordCount,
                 job.FailureReason,
                 job.LastModifiedAt

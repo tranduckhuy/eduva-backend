@@ -14,9 +14,11 @@ public class UpdateJobProgressCommand : IRequest<Unit>
     public Guid JobId { get; set; }
     public JobStatus JobStatus { get; set; }
     public int? WordCount { get; set; }
+    public decimal? ActualDuration { get; set; }
     public string? PreviewContent { get; set; }
     public string? ContentBlobName { get; set; }
-    public string? ProductBlobName { get; set; }
+    public string? VideoOutputBlobName { get; set; }
+    public string? AudioOutputBlobName { get; set; }
     public string? FailureReason { get; set; }
 }
 
@@ -27,7 +29,7 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
     private readonly ILogger<UpdateJobProgressCommandHandler> _logger;
     private readonly IStorageService _storageService;
 
-    private const int WORDS_PER_MINUTE = 200;
+    private const int WORDS_PER_MINUTE = 250;
 
     public UpdateJobProgressCommandHandler(
         IUnitOfWork unitOfWork,
@@ -55,11 +57,18 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
         if (!string.IsNullOrEmpty(request.ContentBlobName))
             job.ContentBlobName = request.ContentBlobName;
 
-        var productBlobNameUrl = string.Empty;
-        if (!string.IsNullOrEmpty(request.ProductBlobName))
+        var videoOutputBlobNameUrl = string.Empty;
+        if (!string.IsNullOrEmpty(request.VideoOutputBlobName))
         {
-            (string blobNameUrl, productBlobNameUrl) = _storageService.GetReadableUrlFromBlobName(request.ProductBlobName);
-            job.ProductBlobName = blobNameUrl;
+            (string blobNameUrl, videoOutputBlobNameUrl) = _storageService.GetReadableUrlFromBlobName(request.VideoOutputBlobName);
+            job.VideoOutputBlobName = blobNameUrl;
+        }
+
+        var audioOutputBlobNameUrl = string.Empty;
+        if (!string.IsNullOrEmpty(request.AudioOutputBlobName))
+        {
+            (string blobNameUrl, videoOutputBlobNameUrl) = _storageService.GetReadableUrlFromBlobName(request.AudioOutputBlobName);
+            job.AudioOutputBlobName = blobNameUrl;
         }
 
         if (!string.IsNullOrEmpty(request.FailureReason))
@@ -67,11 +76,12 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
 
         var audioCost = 0;
         var videoCost = 0;
+        var estimatedDurationMinutes = 0m;
 
         // Calculate credit costs based on estimated duration
         if (request.JobStatus == JobStatus.ContentGenerated && request.WordCount.HasValue)
         {
-            (audioCost, videoCost) = await CalculateCreditCostAsync(request.WordCount.Value);
+            (estimatedDurationMinutes, audioCost, videoCost) = await CalculateCreditCostAsync(request.WordCount.Value);
 
             job.AudioCost = audioCost;
             job.VideoCost = videoCost;
@@ -88,8 +98,11 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
             request.PreviewContent,
             AudioCost = audioCost,
             VideoCost = videoCost,
+            EstimatedDurationMinutes = estimatedDurationMinutes,
+            ActualDurationSeconds = request.ActualDuration,
             job.ContentBlobName,
-            ProductBlobNameUrl = productBlobNameUrl,
+            VideoOutputBlobNameUrl = videoOutputBlobNameUrl,
+            AudioOutputBlobNameUrl = audioOutputBlobNameUrl,
             job.FailureReason,
             job.LastModifiedAt
         };
@@ -103,7 +116,7 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
         return Unit.Value;
     }
 
-    private async Task<(int audioCost, int videoCost)> CalculateCreditCostAsync(int wordCount)
+    private async Task<(decimal estimatedDurationMinutes, int audioCost, int videoCost)> CalculateCreditCostAsync(int wordCount)
     {
         var aiServicePricingRepository = _unitOfWork.GetRepository<AIServicePricing, int>();
 
@@ -128,6 +141,6 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
         var videoCost = (int)Math.Ceiling(estimatedDurationMinutes * videoPricing.PricePerMinuteCredits);
 
         // Calculate cost based on estimated duration
-        return (audioCost, videoCost);
+        return (estimatedDurationMinutes, audioCost, videoCost);
     }
 }

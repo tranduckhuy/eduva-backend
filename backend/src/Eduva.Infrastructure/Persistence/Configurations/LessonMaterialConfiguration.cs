@@ -22,9 +22,6 @@ namespace Eduva.Infrastructure.Persistence.Configurations
                 .HasConversion<string>()
                 .IsRequired();
 
-            builder.Property(lm => lm.Tag)
-                .HasMaxLength(100);
-
             builder.Property(lm => lm.LessonStatus)
                 .HasConversion<string>()
                 .IsRequired();

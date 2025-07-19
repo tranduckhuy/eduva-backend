@@ -68,8 +68,8 @@ namespace Eduva.Application.Features.LessonMaterials.Commands
         public LessonMaterialRequestValidator()
         {
             RuleFor(x => x.Title)
-                .NotEmpty().WithMessage("Title is required.")
-                .MaximumLength(255).WithMessage("Title must not exceed 255 characters.");
+                .MaximumLength(255).WithMessage("Title must not exceed 255 characters.")
+                .When(x => !string.IsNullOrEmpty(x.Title));
 
             RuleFor(x => x.Description)
                 .MaximumLength(1000).WithMessage("Description must not exceed 1000 characters.")
@@ -77,10 +77,6 @@ namespace Eduva.Application.Features.LessonMaterials.Commands
 
             RuleFor(x => x.ContentType)
                 .IsInEnum().WithMessage("Invalid content type specified.");
-
-            RuleFor(x => x.Tag)
-                .MaximumLength(100).WithMessage("Tag must not exceed 100 characters.")
-                .When(x => !string.IsNullOrEmpty(x.Tag));
 
             RuleFor(x => x.FileSize)
                 .GreaterThan(0).WithMessage("File size must be greater than zero.")
