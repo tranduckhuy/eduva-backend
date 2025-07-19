@@ -352,6 +352,10 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.Property<int>("AudioCost")
                         .HasColumnType("integer");
 
+                    b.Property<string>("AudioOutputBlobName")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<string>("ContentBlobName")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
@@ -371,10 +375,6 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset?>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("ProductBlobName")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
                     b.Property<string>("SourceBlobNames")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -388,15 +388,15 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
-                    b.Property<string>("Type")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("VideoCost")
                         .HasColumnType("integer");
+
+                    b.Property<string>("VideoOutputBlobName")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<int?>("WordCount")
                         .HasColumnType("integer");
@@ -404,8 +404,6 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("JobStatus");
-
-                    b.HasIndex("Type");
 
                     b.HasIndex("UserId");
 
@@ -458,10 +456,6 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
-
-                    b.Property<string>("Tag")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("Title")
                         .IsRequired()

@@ -68,8 +68,10 @@ public class AIJobsController : BaseController<AIJobsController>
             JobId = id,
             JobStatus = request.JobStatus,
             ContentBlobName = request.ContentBlobName,
-            ProductBlobName = request.ProductBlobName,
+            VideoOutputBlobName = request.VideoOutputBlobName,
+            AudioOutputBlobName = request.AudioOutputBlobName,
             WordCount = request.WordCount,
+            ActualDuration = request.ActualDuration,
             PreviewContent = request.PreviewContent,
             FailureReason = request.FailureReason
         };

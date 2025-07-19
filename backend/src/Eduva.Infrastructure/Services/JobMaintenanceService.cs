@@ -83,7 +83,7 @@ public class JobMaintenanceService : BackgroundService
 
                         if (blobsToDelete.Count != 0)
                         {
-                            await storageService.DeleteRangeFileAsync(blobsToDelete);
+                            await storageService.DeleteRangeTempFileAsync(blobsToDelete);
                             _logger.LogInformation("Deleted {Count} blobs for expired job {JobId}", blobsToDelete.Count, job.Id);
                         }
 

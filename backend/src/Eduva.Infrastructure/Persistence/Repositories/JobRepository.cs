@@ -24,7 +24,7 @@ public class JobRepository : GenericRepository<Job, Guid>, IJobRepository
         var cutoffTime = DateTimeOffset.UtcNow.Subtract(expiredAfter);
 
         return await _context.Jobs
-            .Where(j => j.JobStatus == JobStatus.ContentGenerated && j.LastModifiedAt <= cutoffTime)
+            .Where(j => (j.JobStatus != JobStatus.Completed && j.LastModifiedAt <= cutoffTime))
             .ToListAsync(cancellationToken);
     }
 }

@@ -341,12 +341,12 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Type = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     JobStatus = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     Topic = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
                     SourceBlobNames = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     ContentBlobName = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    ProductBlobName = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    VideoOutputBlobName = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    AudioOutputBlobName = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     AudioCost = table.Column<int>(type: "integer", nullable: false),
                     VideoCost = table.Column<int>(type: "integer", nullable: false),
                     WordCount = table.Column<int>(type: "integer", nullable: true),
@@ -376,7 +376,6 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     Title = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     Description = table.Column<string>(type: "text", nullable: true),
                     ContentType = table.Column<string>(type: "text", nullable: false),
-                    Tag = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     LessonStatus = table.Column<string>(type: "text", nullable: false),
                     Duration = table.Column<int>(type: "integer", nullable: false),
                     FileSize = table.Column<int>(type: "integer", nullable: false),
@@ -798,11 +797,6 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 name: "IX_Jobs_JobStatus",
                 table: "Jobs",
                 column: "JobStatus");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Jobs_Type",
-                table: "Jobs",
-                column: "Type");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Jobs_UserId",

@@ -50,8 +50,10 @@ public class UpdateJobProgressRequest
 {
     public JobStatus JobStatus { get; set; }
     public int? WordCount { get; set; }
+    public decimal? ActualDuration { get; set; }
     public string? ContentBlobName { get; set; }
     public string? PreviewContent { get; set; }
-    public string? ProductBlobName { get; set; }
+    public string? VideoOutputBlobName { get; set; }
+    public string? AudioOutputBlobName { get; set; }
     public string? FailureReason { get; set; }
 }

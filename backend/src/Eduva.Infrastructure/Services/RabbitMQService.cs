@@ -35,33 +35,51 @@ public class RabbitMQService : IRabbitMQService, IDisposable
             durable: true,
             autoDelete: false);
 
-        // Declare dead letter exchange if configured
-        if (!string.IsNullOrEmpty(_configuration.DeadLetterExchange))
+        // Declare DLX and DLQ if configured
+        Dictionary<string, object>? queueArguments = null;
+
+        if (!string.IsNullOrEmpty(_configuration.DeadLetterExchange) &&
+            !string.IsNullOrEmpty(_configuration.DeadLetterQueueName) &&
+            !string.IsNullOrEmpty(_configuration.DeadLetterRoutingKey))
         {
+            // Declare Dead Letter Exchange
             _channel.ExchangeDeclare(
                 exchange: _configuration.DeadLetterExchange,
                 type: ExchangeType.Direct,
                 durable: true,
                 autoDelete: false);
+
+            // Setup DLQ queue
+            _channel.QueueDeclare(
+                queue: _configuration.DeadLetterQueueName,
+                durable: true,
+                exclusive: false,
+                autoDelete: false,
+                arguments: null);
+
+            // Bind DLQ to DLX with routing key
+            _channel.QueueBind(
+                queue: _configuration.DeadLetterQueueName,
+                exchange: _configuration.DeadLetterExchange,
+                routingKey: _configuration.DeadLetterRoutingKey);
+
+            // Set queue arguments to point to DLX
+            queueArguments = new Dictionary<string, object>
+            {
+                { "x-dead-letter-exchange", _configuration.DeadLetterExchange },
+                { "x-dead-letter-routing-key", _configuration.DeadLetterRoutingKey }
+            };
         }
 
-        // Create queue arguments for dead letter exchange if configured
-        Dictionary<string, object>? arguments = null;
-        if (!string.IsNullOrEmpty(_configuration.DeadLetterExchange))
-        {
-            arguments = new Dictionary<string, object>
-                {
-                    { "x-dead-letter-exchange", _configuration.DeadLetterExchange }
-                };
-        }
-
+        // Declare main queue with optional DLX arguments
         _channel.QueueDeclare(
             queue: _configuration.QueueName,
             durable: true,
             exclusive: false,
             autoDelete: false,
-            arguments: arguments);
+            arguments: queueArguments);
 
+        // Bind the queue to the exchange with the routing key
         _channel.QueueBind(
             queue: _configuration.QueueName,
             exchange: _configuration.ExchangeName,
