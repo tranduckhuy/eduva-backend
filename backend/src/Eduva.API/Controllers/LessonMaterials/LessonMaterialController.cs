@@ -5,7 +5,6 @@ using Eduva.API.Models;
 using Eduva.API.Models.LessonMaterials;
 using Eduva.Application.Common.Mappings;
 using Eduva.Application.Features.LessonMaterials.Commands;
-using Eduva.Application.Features.LessonMaterials.Commands.RestoreLessonMaterial;
 using Eduva.Application.Features.LessonMaterials.Queries.GetAllLessonMaterials;
 using Eduva.Application.Features.LessonMaterials.Queries.GetLessonMaterialById;
 using Eduva.Application.Features.LessonMaterials.Queries.GetPendingLessonMaterials;
