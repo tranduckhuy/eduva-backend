@@ -356,6 +356,10 @@ namespace Eduva.Shared.Constants
             {   HttpCode = StatusCodes.Status400BadRequest, Message = "This lesson material has not been approved yet."} },
             { CustomCode.ReasonIsRequiredWhenRejectingLessonMaterial, new MessageDetail {
                 HttpCode = StatusCodes.Status400BadRequest, Message = "You must enter the reason when refusing to approve the lesson!"} },
+            { CustomCode.LessonMaterialRestoreFailed, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Failed to restore the lesson material!" }},
+            { CustomCode.InvalidPersonalFolder, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "The folder must be a personal folder and in Active status." }},
 
             // Storage Quota Errors
             { CustomCode.StorageQuotaExceeded, new MessageDetail {
