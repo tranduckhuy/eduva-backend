@@ -195,10 +195,10 @@ namespace Eduva.Application.Test.Features.Dashboard.Queries
         {
             // Arrange
             var request = new GetDashboardQuery();
-            var systemOverview = new SystemOverviewDto { TotalUsers = 100, SchoolAdmins = 10, ContentModerators = 10, Teachers = 10, Students = 70, TotalLessons = 100, UploadedLessons = 50, AIGeneratedLessons = 50, TotalSchools = 12, CreditPackRevenue = 10000, SubscriptionPlanRevenue = 300000, TotalStorageUsedBytes = 52428800, TotalStorageUsedGB = 0.05 };
+            var systemOverview = new SystemOverviewDto { TotalUsers = 100, SystemAdmins = 1, SchoolAdmins = 9, ContentModerators = 10, Teachers = 10, Students = 70, TotalLessons = 100, UploadedLessons = 50, AIGeneratedLessons = 50, TotalSchools = 12, CreditPackRevenue = 10000, SubscriptionPlanRevenue = 300000, TotalStorageUsedBytes = 52428800, TotalStorageUsedGB = 0.05 };
             var lessonActivity = new List<LessonActivityDataPoint> { new() { Period = "2025-01", TotalCount = 50, UploadedCount = 25, AIGeneratedCount = 25 } };
             var topSchools = new List<TopSchoolItem> { new() { SchoolId = 1, SchoolName = "Test School", LessonCount = 20, UserCount = 30, HasActiveSubscription = true } };
-            var userRegistrations = new List<UserRegistrationDataPoint> { new() { Period = "2025-01", TotalRegistrations = 20, ContentModerators = 5, Teachers = 5, Students = 9 } };
+            var userRegistrations = new List<UserRegistrationDataPoint> { new() { Period = "2025-01", TotalRegistrations = 20, ContentModerators = 5, Teachers = 5, Students = 9, SchoolAdmins = 1 } };
             var revenueStats = new List<RevenueDataPoint> { new() { Period = "2025-01", TotalRevenue = 1000000, CreditPackRevenue = 500000, SubscriptionRevenue = 5000000 } };
 
             _dashboardRepositoryMock.Setup(x => x.GetSystemOverviewAsync(It.IsAny<CancellationToken>()))

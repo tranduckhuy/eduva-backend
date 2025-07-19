@@ -3,6 +3,7 @@
     public class SystemOverviewDto
     {
         public int TotalUsers { get; set; }
+        public int SystemAdmins { get; set; }
         public int SchoolAdmins { get; set; }
         public int ContentModerators { get; set; }
         public int Teachers { get; set; }
@@ -43,6 +44,7 @@
     {
         public string Period { get; set; } = string.Empty;
         public int TotalRegistrations { get; set; }
+        public int SchoolAdmins { get; set; }
         public int ContentModerators { get; set; }
         public int Teachers { get; set; }
         public int Students { get; set; }

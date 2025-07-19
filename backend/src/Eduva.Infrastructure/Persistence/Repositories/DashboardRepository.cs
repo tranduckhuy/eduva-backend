@@ -28,6 +28,7 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                 .Select(g => new { RoleName = g.Key, Count = g.Count() })
                 .ToListAsync(cancellationToken);
 
+            var systemAdmins = usersByRole.FirstOrDefault(x => x.RoleName == nameof(Role.SystemAdmin))?.Count ?? 0;
             var schoolAdmins = usersByRole.FirstOrDefault(x => x.RoleName == nameof(Role.SchoolAdmin))?.Count ?? 0;
             var contentModerators = usersByRole.FirstOrDefault(x => x.RoleName == nameof(Role.ContentModerator))?.Count ?? 0;
             var teachers = usersByRole.FirstOrDefault(x => x.RoleName == nameof(Role.Teacher))?.Count ?? 0;
@@ -64,6 +65,7 @@ namespace Eduva.Infrastructure.Persistence.Repositories
             return new SystemOverviewDto
             {
                 TotalUsers = totalUsers,
+                SystemAdmins = systemAdmins,
                 SchoolAdmins = schoolAdmins,
                 ContentModerators = contentModerators,
                 Teachers = teachers,
@@ -135,6 +137,7 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                 .Where(u => u.CreatedAt >= startDate && u.CreatedAt <= endDate)
                 .Join(_context.UserRoles, u => u.Id, ur => ur.UserId, (u, ur) => new { u, ur })
                 .Join(_context.Roles, x => x.ur.RoleId, r => r.Id, (x, r) => new { x.u.CreatedAt, r.Name })
+                .Where(x => x.Name != nameof(Role.SystemAdmin))
                 .ToListAsync(cancellationToken);
 
             var grouped = users.GroupBy(u => GetPeriodKey(u.CreatedAt, period))
@@ -142,6 +145,7 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                 {
                     Period = g.Key,
                     TotalRegistrations = g.Count(),
+                    SchoolAdmins = g.Count(x => x.Name == nameof(Role.SchoolAdmin)),
                     ContentModerators = g.Count(x => x.Name == nameof(Role.ContentModerator)),
                     Teachers = g.Count(x => x.Name == nameof(Role.Teacher)),
                     Students = g.Count(x => x.Name == nameof(Role.Student))
