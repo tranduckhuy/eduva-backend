@@ -187,6 +187,18 @@ namespace Eduva.Application.Test.Features.Dashboard.Queries
         #region Date Validation Tests
 
         [Test]
+        public void Should_Not_Have_Error_When_StartDate_And_EndDate_Both_Have_Values_And_StartDate_Less_Than_EndDate()
+        {
+            var query = new GetDashboardQuery
+            {
+                StartDate = DateTimeOffset.UtcNow.AddDays(-1),
+                EndDate = DateTimeOffset.UtcNow
+            };
+            var result = _validator.TestValidate(query);
+            result.ShouldNotHaveValidationErrorFor(x => x);
+        }
+
+        [Test]
         public void Should_Have_Error_When_StartDate_Is_Greater_Than_EndDate()
         {
             var query = new GetDashboardQuery

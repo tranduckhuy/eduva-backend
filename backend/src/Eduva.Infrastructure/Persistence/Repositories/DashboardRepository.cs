@@ -53,6 +53,14 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                 .Where(pt => pt.PaymentStatus == PaymentStatus.Paid && pt.PaymentPurpose == PaymentPurpose.SchoolSubscription)
                 .SumAsync(pt => (decimal?)pt.Amount, cancellationToken) ?? 0;
 
+            const double bytesToGB = 1024.0 * 1024.0 * 1024.0;
+
+            var totalStorageUsedBytes = await _context.LessonMaterials
+                .Where(lm => lm.Status == EntityStatus.Active)
+                .SumAsync(lm => (long)lm.FileSize, cancellationToken);
+
+            var totalStorageUsedGB = Math.Round(totalStorageUsedBytes / bytesToGB, 2);
+
             return new SystemOverviewDto
             {
                 TotalUsers = totalUsers,
@@ -65,7 +73,9 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                 AIGeneratedLessons = aiGeneratedLessons,
                 TotalSchools = totalSchools,
                 CreditPackRevenue = creditPackRevenue,
-                SubscriptionPlanRevenue = subscriptionPlanRevenue
+                SubscriptionPlanRevenue = subscriptionPlanRevenue,
+                TotalStorageUsedBytes = totalStorageUsedBytes,
+                TotalStorageUsedGB = totalStorageUsedGB
             };
         }
 

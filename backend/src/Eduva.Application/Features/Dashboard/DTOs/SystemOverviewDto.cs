@@ -16,6 +16,10 @@
         public decimal CreditPackRevenue { get; set; }
         public decimal SubscriptionPlanRevenue { get; set; }
         public decimal TotalRevenue => CreditPackRevenue + SubscriptionPlanRevenue;
+
+        // Storage usage
+        public long TotalStorageUsedBytes { get; set; }
+        public double TotalStorageUsedGB { get; set; }
     }
 
     public class LessonActivityDataPoint
