@@ -52,7 +52,9 @@ services:
       - RabbitMQ__QueueName=${RABBITMQ_QUEUE_NAME}
       - RabbitMQ__ExchangeName=${RABBITMQ_EXCHANGE_NAME}
       - RabbitMQ__RoutingKey=${RABBITMQ_ROUTING_KEY}
+      - RabbitMQ__DeadLetterQueueName=${RABBITMQ_DLQ_NAME}
       - RabbitMQ__DeadLetterExchange=${RABBITMQ_DEAD_LETTER_EXCHANGE}
+      - RabbitMQ__DeadLetterRoutingKey=${RABBITMQ_DLQ_ROUTING_KEY}
       - WorkerApiKey=${WORKER_API_KEY}
     depends_on:
       - redis

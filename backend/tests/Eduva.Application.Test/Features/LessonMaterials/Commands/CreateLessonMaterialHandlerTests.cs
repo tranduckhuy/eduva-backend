@@ -62,7 +62,6 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
                         ContentType = ContentType.PDF,
                         FileSize = 1024,
                         SourceUrl = "http://test.com",
-                        Tag = "math",
                         Duration = 120,
                         IsAIContent = false
                     }

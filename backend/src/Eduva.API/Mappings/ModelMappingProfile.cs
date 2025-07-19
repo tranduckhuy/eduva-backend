@@ -10,6 +10,7 @@ namespace Eduva.API.Mappings
         {
             CreateMap<GetSchoolPublicLessonMaterialsRequest, LessonMaterialSpecParam>();
             CreateMap<GetPendingLessonMaterialsRequest, LessonMaterialSpecParam>();
+            CreateMap<GetOwnLessonMaterialsRequest, LessonMaterialSpecParam>();
         }
     }
 }

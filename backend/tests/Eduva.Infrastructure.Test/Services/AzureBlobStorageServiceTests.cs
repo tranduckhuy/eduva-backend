@@ -70,7 +70,7 @@ namespace Eduva.Infrastructure.Test.Services
         #region GenerateUploadSasTokens Tests
 
         [Test]
-        public async Task GenerateUploadSasTokens_ShouldReturnTokens_WhenValidBlobNamesProvided()
+        public void GenerateUploadSasTokens_ShouldReturnTokens_WhenValidBlobNamesProvided()
         {
             // Arrange
             var blobNames = new List<string> { "file1.pdf", "file2.jpg" };
@@ -80,7 +80,7 @@ namespace Eduva.Infrastructure.Test.Services
                 .Returns(expectedSasUri);
 
             // Act
-            var result = await _service.GenerateUploadSasTokens(blobNames);
+            var result = _service.GenerateUploadSasTokens(blobNames, 1);
 
             // Assert
             Assert.That(result, Has.Count.EqualTo(2));
@@ -88,13 +88,13 @@ namespace Eduva.Infrastructure.Test.Services
         }
 
         [Test]
-        public async Task GenerateUploadSasTokens_ShouldReturnEmpty_WhenEmptyListProvided()
+        public void GenerateUploadSasTokens_ShouldReturnEmpty_WhenEmptyListProvided()
         {
             // Arrange
             var blobNames = new List<string>();
 
             // Act
-            var result = await _service.GenerateUploadSasTokens(blobNames);
+            var result = _service.GenerateUploadSasTokens(blobNames, 1);
 
             // Assert
             Assert.That(result, Is.Empty);
@@ -357,7 +357,7 @@ namespace Eduva.Infrastructure.Test.Services
         #region Performance and Behavior Tests
 
         [Test]
-        public async Task GenerateUploadSasTokens_ShouldHandleMultipleBlobNames()
+        public void GenerateUploadSasTokens_ShouldHandleMultipleBlobNames()
         {
             // Arrange
             var blobNames = new List<string> { "file1.pdf", "file2.jpg", "file3.docx" };
@@ -367,7 +367,7 @@ namespace Eduva.Infrastructure.Test.Services
                 .Returns(expectedSasUri);
 
             // Act
-            var result = await _service.GenerateUploadSasTokens(blobNames);
+            var result = _service.GenerateUploadSasTokens(blobNames, 1);
 
             // Assert
             Assert.That(result, Has.Count.EqualTo(3));

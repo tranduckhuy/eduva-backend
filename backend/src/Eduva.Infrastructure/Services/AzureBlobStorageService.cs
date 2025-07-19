@@ -23,14 +23,17 @@ namespace Eduva.Infrastructure.Services
             _tempContainerClient = blobServiceClient.GetBlobContainerClient(_options.TemporaryContainerName);
         }
 
-        private string GenerateUploadSasToken(string blobName, DateTimeOffset expiresOn)
+        private string GenerateUploadSasToken(string blobName, string folder, DateTimeOffset expiresOn)
         {
-            var blobClient = _containerClient.GetBlobClient(blobName);
+            // Concatenate school ID to blob name to separate files for different schools
+            var blobNameWithFolder = $"{folder}/{blobName}";
+
+            var blobClient = _containerClient.GetBlobClient(blobNameWithFolder);
 
             var sasBuilder = new BlobSasBuilder
             {
                 BlobContainerName = _options.ContainerName,
-                BlobName = blobName,
+                BlobName = blobNameWithFolder,
                 Resource = "b",
                 ExpiresOn = expiresOn
             };
@@ -39,7 +42,7 @@ namespace Eduva.Infrastructure.Services
 
             var sasUri = blobClient.GenerateSasUri(sasBuilder);
 
-            var encodedBlobName = Uri.EscapeDataString(blobName);
+            var encodedBlobName = $"{folder}/{Uri.EscapeDataString(blobName)}";
 
             var baseUri = $"{sasUri.Scheme}://{sasUri.Host}";
             var finalUri = $"{baseUri}/{_options.ContainerName}/{encodedBlobName}{sasUri.Query}";
@@ -47,16 +50,16 @@ namespace Eduva.Infrastructure.Services
             return finalUri;
         }
 
-        public async Task<ICollection<string>> GenerateUploadSasTokens(List<string> blobNames)
+        public ICollection<string> GenerateUploadSasTokens(List<string> blobNames, int schoolId)
         {
             var sasTokens = new List<string>();
             var expiresOn = DateTimeOffset.UtcNow.AddHours(1);
             foreach (var blobName in blobNames)
             {
-                var sasToken = GenerateUploadSasToken(blobName, expiresOn);
+                var sasToken = GenerateUploadSasToken(blobName, $"school{schoolId}", expiresOn);
                 sasTokens.Add(sasToken);
             }
-            return await Task.FromResult(sasTokens);
+            return sasTokens;
         }
 
         public string GetReadableUrl(string blobUrl)
@@ -113,6 +116,19 @@ namespace Eduva.Infrastructure.Services
             }
         }
 
+        public async Task DeleteRangeTempFileAsync(List<string> blobNames)
+        {
+            foreach (var blobName in blobNames)
+            {
+                var blobClient = _tempContainerClient.GetBlobClient(blobName);
+                var response = await blobClient.DeleteIfExistsAsync();
+                if (!response.Value)
+                {
+                    throw new BlobNotFoundException();
+                }
+            }
+        }
+
         public async Task<ICollection<string>> GenerateUploadSasTokensWithQuotaCheck(List<string> blobNames, List<long> fileSizes, int schoolId)
         {
             // Validate file sizes match blob names
@@ -125,7 +141,7 @@ namespace Eduva.Infrastructure.Services
             await _storageQuotaService.ValidateUploadQuotaAsync(schoolId, fileSizes);
 
             // Generate SAS tokens if quota check passes
-            return await GenerateUploadSasTokens(blobNames);
+            return GenerateUploadSasTokens(blobNames, schoolId);
         }
 
         public async Task<string> UploadFileToTempContainerAsync(IFormFile file, string blobName)

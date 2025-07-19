@@ -1,11 +1,10 @@
-using Eduva.Application.Common.Specifications;
+﻿using Eduva.Application.Common.Specifications;
 using Eduva.Domain.Entities;
-using Eduva.Domain.Enums;
 using System.Linq.Expressions;
 
 namespace Eduva.Application.Features.LessonMaterials.Specifications
 {
-    public class PendingLessonMaterialSpecification : ISpecification<LessonMaterial>
+    public class GetOwnLessonMaterialsQuerySpecification : ISpecification<LessonMaterial>
     {
         public Expression<Func<LessonMaterial, bool>> Criteria { get; private set; }
         public Func<IQueryable<LessonMaterial>, IOrderedQueryable<LessonMaterial>>? OrderBy { get; private set; }
@@ -14,18 +13,15 @@ namespace Eduva.Application.Features.LessonMaterials.Specifications
         public int Skip { get; private set; }
         public int Take { get; private set; }
 
-        public PendingLessonMaterialSpecification(LessonMaterialSpecParam param)
+        public GetOwnLessonMaterialsQuerySpecification(LessonMaterialSpecParam param, Guid userId)
         {
             Criteria = lm =>
-                lm.SchoolId == param.SchoolId &&
-                lm.LessonStatus == LessonMaterialStatus.Pending &&
-                lm.Status == EntityStatus.Active &&
-                (!param.CreatedByUserId.HasValue || lm.CreatedByUserId == param.CreatedByUserId) &&
+                (lm.CreatedByUserId == userId) &&
                 (string.IsNullOrEmpty(param.SearchTerm) || lm.Title.ToLower().Contains(param.SearchTerm.ToLower())) &&
                 (!param.ContentType.HasValue || lm.ContentType == param.ContentType) &&
-                (!param.ClassId.HasValue || lm.FolderLessonMaterials.Any(flm => flm.Folder.ClassId == param.ClassId)) &&
-                (!param.FolderId.HasValue || lm.FolderLessonMaterials.Any(flm => flm.FolderId == param.FolderId)) &&
-                (lm.Status == EntityStatus.Active);
+                (!param.LessonStatus.HasValue || lm.LessonStatus == param.LessonStatus) &&
+                (!param.Visibility.HasValue || lm.Visibility == param.Visibility) &&
+                (lm.Status == param.EntityStatus);
 
             Includes.Add(lm => lm.CreatedByUser);
             Includes.Add(lm => lm.FolderLessonMaterials);

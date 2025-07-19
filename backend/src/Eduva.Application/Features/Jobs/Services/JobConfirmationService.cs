@@ -17,6 +17,8 @@ namespace Eduva.Application.Features.Jobs.Services
         private readonly IJobNotificationService _notificationService;
         private readonly ILogger<JobConfirmationService> _logger;
 
+        private const int WORDS_PER_MINUTE = 250;
+
         public JobConfirmationService(
             IUnitOfWork unitOfWork,
             IRabbitMQService rabbitMQService,
@@ -41,7 +43,6 @@ namespace Eduva.Application.Features.Jobs.Services
                 ]);
             }
 
-            job.Type = request.Type;
             job.JobStatus = JobStatus.CreatingProduct;
             job.LastModifiedAt = DateTimeOffset.UtcNow;
             _unitOfWork.GetRepository<Job, Guid>().Update(job);
@@ -68,7 +69,8 @@ namespace Eduva.Application.Features.Jobs.Services
             {
                 UserId = job.UserId,
                 AIServiceType = type,
-                CreditsCharged = type == AIServiceType.GenAudio ? job.AudioCost : job.VideoCost,
+                DurationMinutes = job.WordCount.HasValue ? (decimal)job.WordCount / WORDS_PER_MINUTE : 0,
+                CreditsCharged = creditsToCharge,
             };
 
             await aiUsageLogRepository.AddAsync(usage);

@@ -14,11 +14,6 @@ public class JobConfiguration : IEntityTypeConfiguration<Job>
 
         builder.HasKey(j => j.Id);
 
-        builder.Property(j => j.Type)
-            .HasConversion<string>()
-            .IsRequired(false)
-            .HasMaxLength(100);
-
         builder.Property(j => j.JobStatus)
             .HasConversion<string>()
             .IsRequired()
@@ -41,7 +36,10 @@ public class JobConfiguration : IEntityTypeConfiguration<Job>
         builder.Property(j => j.ContentBlobName)
             .HasMaxLength(500);
 
-        builder.Property(j => j.ProductBlobName)
+        builder.Property(j => j.VideoOutputBlobName)
+            .HasMaxLength(500);
+
+        builder.Property(j => j.AudioOutputBlobName)
             .HasMaxLength(500);
 
         builder.Property(j => j.FailureReason)
@@ -51,7 +49,6 @@ public class JobConfiguration : IEntityTypeConfiguration<Job>
             .IsRequired();
 
         builder.HasIndex(j => j.JobStatus);
-        builder.HasIndex(j => j.Type);
         builder.HasIndex(j => j.UserId);
 
         builder.HasOne(j => j.User)
