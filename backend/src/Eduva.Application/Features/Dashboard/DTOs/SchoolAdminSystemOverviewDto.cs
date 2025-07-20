@@ -24,6 +24,7 @@ namespace Eduva.Application.Features.Dashboard.DTOs
         public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public decimal Price { get; set; }
+        public decimal AmountPaid { get; set; }
         public long MaxStorageBytes { get; set; }
         public double MaxStorageGB { get; set; }
         public BillingCycle BillingCycle { get; set; }
