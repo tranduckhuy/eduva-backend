@@ -539,7 +539,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                         column: x => x.LessonMaterialId,
                         principalTable: "LessonMaterials",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -665,7 +665,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                         column: x => x.LessonMaterialId,
                         principalTable: "LessonMaterials",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(

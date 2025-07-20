@@ -1105,7 +1105,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.HasOne("Eduva.Domain.Entities.LessonMaterial", "LessonMaterial")
                         .WithMany("FolderLessonMaterials")
                         .HasForeignKey("LessonMaterialId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Folder");
@@ -1153,7 +1153,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.HasOne("Eduva.Domain.Entities.LessonMaterial", "LessonMaterial")
                         .WithMany("LessonMaterialApprovals")
                         .HasForeignKey("LessonMaterialId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Approver");
