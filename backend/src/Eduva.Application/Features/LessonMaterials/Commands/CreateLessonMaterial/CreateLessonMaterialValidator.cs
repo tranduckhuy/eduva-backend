@@ -2,7 +2,7 @@
 using Eduva.Domain.Entities;
 using FluentValidation;
 
-namespace Eduva.Application.Features.LessonMaterials.Commands
+namespace Eduva.Application.Features.LessonMaterials.Commands.CreateLessonMaterial
 {
     public class CreateLessonMaterialValidator : AbstractValidator<CreateLessonMaterialCommand>
     {
