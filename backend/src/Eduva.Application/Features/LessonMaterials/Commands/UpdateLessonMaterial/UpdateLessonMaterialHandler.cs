@@ -4,7 +4,7 @@ using Eduva.Application.Interfaces;
 using Eduva.Domain.Entities;
 using MediatR;
 
-namespace Eduva.Application.Features.LessonMaterials.Commands
+namespace Eduva.Application.Features.LessonMaterials.Commands.UpdateLessonMaterial
 {
     public class UpdateLessonMaterialHandler : IRequestHandler<UpdateLessonMaterialCommand, Unit>
     {

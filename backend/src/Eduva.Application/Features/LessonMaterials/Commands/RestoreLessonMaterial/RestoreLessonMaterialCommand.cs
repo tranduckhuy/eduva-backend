@@ -1,6 +1,6 @@
 ﻿using MediatR;
 
-namespace Eduva.Application.Features.LessonMaterials.Commands
+namespace Eduva.Application.Features.LessonMaterials.Commands.RestoreLessonMaterial
 {
     public class RestoreLessonMaterialCommand : IRequest<bool>
     {

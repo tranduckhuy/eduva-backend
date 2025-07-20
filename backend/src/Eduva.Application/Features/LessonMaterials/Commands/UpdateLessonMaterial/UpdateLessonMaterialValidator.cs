@@ -2,7 +2,7 @@
 using Eduva.Domain.Entities;
 using FluentValidation;
 
-namespace Eduva.Application.Features.LessonMaterials.Commands
+namespace Eduva.Application.Features.LessonMaterials.Commands.UpdateLessonMaterial
 {
     public class UpdateLessonMaterialValidator : AbstractValidator<UpdateLessonMaterialCommand>
     {
@@ -19,9 +19,6 @@ namespace Eduva.Application.Features.LessonMaterials.Commands
             RuleFor(x => x.Title)
                 .NotEmpty().WithMessage("Title is required.")
                 .MaximumLength(255).WithMessage("Title cannot exceed 255 characters.");
-
-            RuleFor(x => x.Description)
-                .MaximumLength(1000).WithMessage("Description cannot exceed 1000 characters.");
 
             RuleFor(x => x.Duration)
                 .GreaterThanOrEqualTo(0).WithMessage("Duration must be a non-negative integer.");

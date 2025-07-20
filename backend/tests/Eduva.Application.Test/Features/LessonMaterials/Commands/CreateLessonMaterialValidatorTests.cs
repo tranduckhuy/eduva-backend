@@ -1,5 +1,5 @@
 using Eduva.Application.Features.LessonMaterials;
-using Eduva.Application.Features.LessonMaterials.Commands;
+using Eduva.Application.Features.LessonMaterials.Commands.CreateLessonMaterial;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Domain.Entities;

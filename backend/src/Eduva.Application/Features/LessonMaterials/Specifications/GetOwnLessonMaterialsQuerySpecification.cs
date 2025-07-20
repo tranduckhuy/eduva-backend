@@ -58,8 +58,17 @@ namespace Eduva.Application.Features.LessonMaterials.Specifications
                 OrderBy = q => q.OrderByDescending(lm => lm.CreatedAt);
             }
 
-            Skip = (param.PageIndex - 1) * param.PageSize;
-            Take = param.PageSize;
+
+            if (param.IsPagingEnabled)
+            {
+                Skip = (param.PageIndex - 1) * param.PageSize;
+                Take = param.PageSize;
+            }
+            else
+            {
+                Skip = 0;
+                Take = int.MaxValue;
+            }
         }
     }
 }

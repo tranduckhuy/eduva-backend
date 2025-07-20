@@ -2,7 +2,7 @@
 using MediatR;
 using System.Text.Json.Serialization;
 
-namespace Eduva.Application.Features.LessonMaterials.Commands
+namespace Eduva.Application.Features.LessonMaterials.Commands.UpdateLessonMaterial
 {
     public class UpdateLessonMaterialCommand : IRequest<Unit>
     {
