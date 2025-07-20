@@ -1,18 +1,18 @@
 ﻿using AutoMapper;
 using Eduva.Application.Common.Models;
 using Eduva.Application.Features.AICreditPacks.Responses;
+using Eduva.Application.Features.AIUsageLogs;
 using Eduva.Application.Features.Classes.Commands.CreateClass;
 using Eduva.Application.Features.Classes.Commands.UpdateClass;
 using Eduva.Application.Features.Classes.Responses;
 using Eduva.Application.Features.CreditTransactions.Responses;
 using Eduva.Application.Features.Folders.Responses;
-using Eduva.Application.Features.Jobs.Commands.CreateJob;
 using Eduva.Application.Features.Jobs.Commands.ConfirmJob;
-using Eduva.Application.Features.Jobs.Commands.UpdateJob;
+using Eduva.Application.Features.Jobs.Commands.CreateJob;
 using Eduva.Application.Features.Jobs.Commands.UpdateJobProgress;
 using Eduva.Application.Features.Jobs.DTOs;
 using Eduva.Application.Features.LessonMaterials;
-using Eduva.Application.Features.LessonMaterials.Commands;
+using Eduva.Application.Features.LessonMaterials.Commands.CreateLessonMaterial;
 using Eduva.Application.Features.LessonMaterials.Responses;
 using Eduva.Application.Features.Payments.Responses;
 using Eduva.Application.Features.Questions.Commands.CreateQuestionComment;
@@ -256,9 +256,14 @@ namespace Eduva.Application.Common.Mappings
 
             // Job mappings
             CreateMap<Job, JobResponse>();
+            CreateMap<Pagination<Job>, Pagination<JobResponse>>();
             CreateMap<CreateJobRequest, CreateJobCommand>();
             CreateMap<ConfirmJobRequest, ConfirmJobCommand>();
             CreateMap<UpdateJobProgressRequest, UpdateJobProgressCommand>();
+
+            // AIUsageLogs mappings
+            CreateMap<AIUsageLog, AIUsageLogResponse>();
+            CreateMap<Pagination<AIUsageLog>, Pagination<AIUsageLogResponse>>();
         }
         private static string GetOwnerName(Folder folder)
         {

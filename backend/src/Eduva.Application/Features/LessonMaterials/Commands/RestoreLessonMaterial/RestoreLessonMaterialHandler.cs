@@ -6,7 +6,7 @@ using Eduva.Shared.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 
-namespace Eduva.Application.Features.LessonMaterials.Commands
+namespace Eduva.Application.Features.LessonMaterials.Commands.RestoreLessonMaterial
 {
     public class RestoreLessonMaterialHandler : IRequestHandler<RestoreLessonMaterialCommand, bool>
     {
