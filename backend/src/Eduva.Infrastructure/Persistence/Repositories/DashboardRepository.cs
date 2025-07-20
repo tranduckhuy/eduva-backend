@@ -347,21 +347,46 @@ namespace Eduva.Infrastructure.Persistence.Repositories
         }
 
         public async Task<List<ContentTypeStatsDto>> GetSchoolAdminContentTypeStatsAsync(
-            int schoolId,
-            PeriodType period,
-            DateTimeOffset startDate,
-            DateTimeOffset endDate,
-            CancellationToken cancellationToken)
+              int schoolId,
+              CancellationToken cancellationToken,
+              PeriodType? period = null,
+              DateTimeOffset? startDate = null,
+              DateTimeOffset? endDate = null)
         {
-            var lessons = await _context.LessonMaterials
-                .Where(lm => lm.SchoolId == schoolId &&
-                             lm.Status == EntityStatus.Active &&
-                             lm.CreatedAt >= startDate &&
-                             lm.CreatedAt <= endDate)
+            var query = _context.LessonMaterials
+                .Where(lm => lm.SchoolId == schoolId && lm.Status == EntityStatus.Active);
+
+            if (startDate.HasValue)
+                query = query.Where(lm => lm.CreatedAt >= startDate.Value);
+            if (endDate.HasValue)
+                query = query.Where(lm => lm.CreatedAt <= endDate.Value);
+
+            var lessons = await query
                 .Select(lm => new { lm.CreatedAt, lm.ContentType })
                 .ToListAsync(cancellationToken);
 
-            var grouped = lessons.GroupBy(l => GetPeriodKey(l.CreatedAt, period))
+            if (!period.HasValue)
+            {
+                var total = lessons.Count;
+                return new List<ContentTypeStatsDto>
+        {
+            new ContentTypeStatsDto
+            {
+                Period = "all-time",
+                Pdf = lessons.Count(x => x.ContentType == ContentType.PDF),
+                Doc = lessons.Count(x => x.ContentType == ContentType.DOCX),
+                Video = lessons.Count(x => x.ContentType == ContentType.Video),
+                Audio = lessons.Count(x => x.ContentType == ContentType.Audio),
+                Total = total,
+                PdfPercentage = total > 0 ? Math.Round((double)lessons.Count(x => x.ContentType == ContentType.PDF) / total * 100, 2) : 0,
+                DocPercentage = total > 0 ? Math.Round((double)lessons.Count(x => x.ContentType == ContentType.DOCX) / total * 100, 2) : 0,
+                VideoPercentage = total > 0 ? Math.Round((double)lessons.Count(x => x.ContentType == ContentType.Video) / total * 100, 2) : 0,
+                AudioPercentage = total > 0 ? Math.Round((double)lessons.Count(x => x.ContentType == ContentType.Audio) / total * 100, 2) : 0
+            }
+        };
+            }
+
+            var grouped = lessons.GroupBy(l => GetPeriodKey(l.CreatedAt, period.Value))
                 .Select(g => new ContentTypeStatsDto
                 {
                     Period = g.Key,
@@ -608,26 +633,52 @@ namespace Eduva.Infrastructure.Persistence.Repositories
 
         public async Task<List<ContentTypeStatsDto>> GetTeacherContentTypeStatsAsync(
             Guid teacherId,
-            PeriodType period,
-            DateTimeOffset startDate,
-            DateTimeOffset endDate,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            PeriodType? period = null,
+            DateTimeOffset? startDate = null,
+            DateTimeOffset? endDate = null)
         {
             var teacherSchoolId = await _context.Users
                 .Where(u => u.Id == teacherId)
                 .Select(u => u.SchoolId)
                 .FirstOrDefaultAsync(cancellationToken);
 
-            var lessons = await _context.LessonMaterials
+            var query = _context.LessonMaterials
                 .Where(lm => lm.CreatedByUserId == teacherId &&
                              lm.SchoolId == teacherSchoolId &&
-                             lm.Status == EntityStatus.Active &&
-                             lm.CreatedAt >= startDate &&
-                             lm.CreatedAt <= endDate)
+                             lm.Status == EntityStatus.Active);
+
+            if (startDate.HasValue)
+                query = query.Where(lm => lm.CreatedAt >= startDate.Value);
+            if (endDate.HasValue)
+                query = query.Where(lm => lm.CreatedAt <= endDate.Value);
+
+            var lessons = await query
                 .Select(lm => new { lm.CreatedAt, lm.ContentType })
                 .ToListAsync(cancellationToken);
 
-            var grouped = lessons.GroupBy(l => GetPeriodKey(l.CreatedAt, period))
+            if (!period.HasValue)
+            {
+                var total = lessons.Count;
+                return new List<ContentTypeStatsDto>
+        {
+            new ContentTypeStatsDto
+            {
+                Period = "all-time",
+                Pdf = lessons.Count(x => x.ContentType == ContentType.PDF),
+                Doc = lessons.Count(x => x.ContentType == ContentType.DOCX),
+                Video = lessons.Count(x => x.ContentType == ContentType.Video),
+                Audio = lessons.Count(x => x.ContentType == ContentType.Audio),
+                Total = total,
+                PdfPercentage = total > 0 ? Math.Round((double)lessons.Count(x => x.ContentType == ContentType.PDF) / total * 100, 2) : 0,
+                DocPercentage = total > 0 ? Math.Round((double)lessons.Count(x => x.ContentType == ContentType.DOCX) / total * 100, 2) : 0,
+                VideoPercentage = total > 0 ? Math.Round((double)lessons.Count(x => x.ContentType == ContentType.Video) / total * 100, 2) : 0,
+                AudioPercentage = total > 0 ? Math.Round((double)lessons.Count(x => x.ContentType == ContentType.Audio) / total * 100, 2) : 0
+            }
+        };
+            }
+
+            var grouped = lessons.GroupBy(l => GetPeriodKey(l.CreatedAt, period.Value))
                 .Select(g => new ContentTypeStatsDto
                 {
                     Period = g.Key,

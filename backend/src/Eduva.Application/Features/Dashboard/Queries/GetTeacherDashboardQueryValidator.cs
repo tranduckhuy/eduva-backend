@@ -20,8 +20,8 @@ namespace Eduva.Application.Features.Dashboard.Queries
                 .WithMessage("Question volume period must be 'Week' or 'Month'");
 
             RuleFor(x => x.ContentTypePeriod)
-                .Must(period => period == PeriodType.Week || period == PeriodType.Month)
-                .WithMessage("Content type period must be 'Week' or 'Month'");
+               .Must(period => !period.HasValue || period == PeriodType.Week || period == PeriodType.Month)
+               .WithMessage("Content type period must be all-time, 'Week' or 'Month'");
 
             RuleFor(x => x.ReviewLessonsLimit)
                 .GreaterThan(0)

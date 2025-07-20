@@ -29,7 +29,7 @@ namespace Eduva.Application.Features.Dashboard.Queries
             var systemOverview = await _dashboardRepository.GetSchoolAdminSystemOverviewAsync(schoolId.Value, cancellationToken);
             var lessonActivity = await _dashboardRepository.GetSchoolAdminLessonActivityAsync(schoolId.Value, request.LessonActivityPeriod, startDate, endDate, cancellationToken);
             var lessonStatusStats = await _dashboardRepository.GetSchoolAdminLessonStatusStatsAsync(schoolId.Value, request.LessonStatusPeriod, startDate, endDate, cancellationToken);
-            var contentTypeStats = await _dashboardRepository.GetSchoolAdminContentTypeStatsAsync(schoolId.Value, request.ContentTypePeriod, startDate, endDate, cancellationToken);
+            var contentTypeStats = await _dashboardRepository.GetSchoolAdminContentTypeStatsAsync(schoolId.Value, cancellationToken, request.ContentTypePeriod, startDate, endDate);
             var topTeachers = await _dashboardRepository.GetSchoolAdminTopTeachersAsync(schoolId.Value, request.TopTeachersLimit, cancellationToken);
             var reviewLessons = await _dashboardRepository.GetSchoolAdminReviewLessonsAsync(schoolId.Value, request.ReviewLessonsLimit, cancellationToken);
 

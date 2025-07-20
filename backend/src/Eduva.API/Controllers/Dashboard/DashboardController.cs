@@ -57,7 +57,7 @@ namespace Eduva.API.Controllers.Dashboard
             [FromQuery] DateTimeOffset? endDate = null,
             [FromQuery] PeriodType lessonActivityPeriod = PeriodType.Week,
             [FromQuery] PeriodType lessonStatusPeriod = PeriodType.Month,
-            [FromQuery] PeriodType contentTypePeriod = PeriodType.Month,
+            [FromQuery] PeriodType? contentTypePeriod = null,
             [FromQuery] int reviewLessonsLimit = 7,
             [FromQuery] int topTeachersLimit = 5)
         {
@@ -94,7 +94,7 @@ namespace Eduva.API.Controllers.Dashboard
             [FromQuery] DateTimeOffset? endDate = null,
             [FromQuery] PeriodType lessonActivityPeriod = PeriodType.Week,
             [FromQuery] PeriodType questionVolumePeriod = PeriodType.Week,
-            [FromQuery] PeriodType contentTypePeriod = PeriodType.Month,
+            [FromQuery] PeriodType? contentTypePeriod = null,
             [FromQuery] int reviewLessonsLimit = 7,
             [FromQuery] int recentLessonsLimit = 7,
             [FromQuery] int unAnswerQuestionsLimit = 7)

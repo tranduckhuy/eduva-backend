@@ -11,7 +11,7 @@ namespace Eduva.Application.Features.Dashboard.Queries
         public DateTimeOffset? EndDate { get; set; }
         public PeriodType LessonActivityPeriod { get; set; } = PeriodType.Week;
         public PeriodType LessonStatusPeriod { get; set; } = PeriodType.Month;
-        public PeriodType ContentTypePeriod { get; set; } = PeriodType.Month;
+        public PeriodType? ContentTypePeriod { get; set; } = null;
         public int ReviewLessonsLimit { get; set; } = 7;
         public int TopTeachersLimit { get; set; } = 5;
     }
