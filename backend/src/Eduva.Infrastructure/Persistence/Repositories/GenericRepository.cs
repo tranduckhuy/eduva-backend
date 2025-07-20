@@ -124,7 +124,15 @@ namespace Eduva.Infrastructure.Persistence.Repositories
 
             var count = await query.CountAsync();
 
-            var data = await query.Skip(spec.Skip).Take(spec.Take).AsNoTracking().ToListAsync();
+
+            var data = new List<TEntity>();
+            if (spec.Skip == 0 && spec.Take == int.MaxValue)
+            {
+                data = await query.AsNoTracking().ToListAsync();
+                return new Pagination<TEntity>(1, count, count, data);
+            }
+
+            data = await query.Skip(spec.Skip).Take(spec.Take).AsNoTracking().ToListAsync();
 
             var pageNumber = spec.Take > 0 ? (spec.Skip / spec.Take) + 1 : 1;
 

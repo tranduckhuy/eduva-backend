@@ -6,7 +6,7 @@ using Eduva.Shared.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 
-namespace Eduva.Application.Features.LessonMaterials.Commands
+namespace Eduva.Application.Features.LessonMaterials.Commands.ApproveLessonMaterial
 {
     public class ApproveLessonMaterialHandler : IRequestHandler<ApproveLessonMaterialCommand, Unit>
     {
@@ -23,11 +23,11 @@ namespace Eduva.Application.Features.LessonMaterials.Commands
 
         public async Task<Unit> Handle(ApproveLessonMaterialCommand request, CancellationToken cancellationToken)
         {
-            var repo = _unitOfWork.GetRepository<Domain.Entities.LessonMaterial, Guid>();
+            var repo = _unitOfWork.GetRepository<LessonMaterial, Guid>();
             var lesson = await repo.GetByIdAsync(request.Id)
                 ?? throw new AppException(CustomCode.LessonMaterialNotFound);
 
-            var userRepo = _unitOfWork.GetRepository<Domain.Entities.ApplicationUser, Guid>();
+            var userRepo = _unitOfWork.GetRepository<ApplicationUser, Guid>();
             var moderator = await userRepo.GetByIdAsync(request.ModeratorId)
                 ?? throw new AppException(CustomCode.UserNotExists);
 

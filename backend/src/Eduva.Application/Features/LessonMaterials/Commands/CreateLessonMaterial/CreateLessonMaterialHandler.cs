@@ -7,7 +7,7 @@ using Eduva.Domain.Enums;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace Eduva.Application.Features.LessonMaterials.Commands
+namespace Eduva.Application.Features.LessonMaterials.Commands.CreateLessonMaterial
 {
     public class CreateLessonMaterialHandler : IRequestHandler<CreateLessonMaterialCommand, Unit>
     {
