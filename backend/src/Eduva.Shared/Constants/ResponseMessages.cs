@@ -282,6 +282,8 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Folder must be archived before it can be permanently deleted" } },
             {CustomCode.LessonMaterialNotFoundInFolder, new MessageDetail{
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Lesson Material not found in this folder"} },
+            { CustomCode.FolderMustBePersonal, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Folder must be personal" }},
 
               // Question Error
             { CustomCode.InsufficientPermissionToCreateQuestion, new MessageDetail {

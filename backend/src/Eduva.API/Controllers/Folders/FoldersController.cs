@@ -396,5 +396,48 @@ namespace Eduva.API.Controllers.Folders
                 return (CustomCode.Success, result);
             });
         }
+
+        [HttpDelete("user")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
+        [Authorize(Policy = "EducatorOnly")]
+        [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> DeletePersonFolder([FromBody] List<Guid>? folderIds = null)
+        {
+            var validationResult = CheckModelStateValidity();
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var currentUserId))
+            {
+                return Respond(CustomCode.UserIdNotFound);
+            }
+
+            var command = new DeletePersonFolderCommand
+            {
+                FolderIds = folderIds ?? new List<Guid>(),
+                CurrentUserId = currentUserId
+            };
+
+            try
+            {
+                var result = await _mediator.Send(command);
+                if (result)
+                {
+                    return Respond(CustomCode.Deleted);
+                }
+                return Respond(CustomCode.FolderDeleteFailed);
+            }
+            catch (AppException ex)
+            {
+                return Respond(ex.StatusCode, ex.Errors);
+            }
+            catch (Exception)
+            {
+                return Respond(CustomCode.FolderDeleteFailed);
+            }
+        }
     }
 }
