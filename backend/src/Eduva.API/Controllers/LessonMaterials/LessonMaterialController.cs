@@ -6,6 +6,7 @@ using Eduva.API.Models.LessonMaterials;
 using Eduva.Application.Common.Mappings;
 using Eduva.Application.Features.LessonMaterials.Commands.ApproveLessonMaterial;
 using Eduva.Application.Features.LessonMaterials.Commands.CreateLessonMaterial;
+using Eduva.Application.Features.LessonMaterials.Commands.DeleteLessonMaterial;
 using Eduva.Application.Features.LessonMaterials.Commands.RestoreLessonMaterial;
 using Eduva.Application.Features.LessonMaterials.Commands.UpdateLessonMaterial;
 using Eduva.Application.Features.LessonMaterials.Queries.GetAllLessonMaterials;
@@ -278,6 +279,39 @@ namespace Eduva.API.Controllers.LessonMaterials
             {
                 var response = await _mediator.Send(query);
                 return (CustomCode.Success, response);
+            });
+        }
+
+        // Delete lesson material by id
+        [HttpDelete("{id:guid}")]
+        [Authorize(Policy = "EducatorOnly")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> DeleteLessonMaterial(Guid id, [FromQuery] bool permanent = false)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Respond(CustomCode.UserIdNotFound);
+            }
+
+            int schoolIdInt = int.TryParse(User.FindFirstValue(SCHOOL_ID_CLAIM), out var parsedSchoolId) ? parsedSchoolId : 0;
+            if (schoolIdInt <= 0)
+            {
+                return Respond(CustomCode.SchoolNotFound);
+            }
+
+            var command = new DeleteLessonMaterialCommand
+            {
+                Id = id,
+                UserId = Guid.Parse(userId),
+                SchoolId = schoolIdInt,
+                Permanent = permanent
+            };
+
+            return await HandleRequestAsync(async () =>
+            {
+                await _mediator.Send(command);
             });
         }
     }

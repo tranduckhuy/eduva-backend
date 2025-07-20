@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Eduva.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250719164228_InitialCreate")]
+    [Migration("20250720160424_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -1108,7 +1108,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.HasOne("Eduva.Domain.Entities.LessonMaterial", "LessonMaterial")
                         .WithMany("FolderLessonMaterials")
                         .HasForeignKey("LessonMaterialId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Folder");
@@ -1156,7 +1156,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.HasOne("Eduva.Domain.Entities.LessonMaterial", "LessonMaterial")
                         .WithMany("LessonMaterialApprovals")
                         .HasForeignKey("LessonMaterialId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Approver");

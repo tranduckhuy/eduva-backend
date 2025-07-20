@@ -27,11 +27,6 @@ namespace Eduva.Infrastructure.Persistence.Configurations
                 .WithMany(u => u.ApprovedLessonMaterials)
                 .HasForeignKey(lma => lma.ApproverId)
                 .OnDelete(DeleteBehavior.Restrict);
-
-            builder.HasOne(lma => lma.LessonMaterial)
-                .WithMany(lm => lm.LessonMaterialApprovals)
-                .HasForeignKey(lma => lma.LessonMaterialId)
-                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

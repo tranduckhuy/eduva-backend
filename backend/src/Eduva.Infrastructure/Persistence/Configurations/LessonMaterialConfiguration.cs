@@ -63,17 +63,17 @@ namespace Eduva.Infrastructure.Persistence.Configurations
             builder.HasMany(lm => lm.FolderLessonMaterials)
                 .WithOne(flm => flm.LessonMaterial)
                 .HasForeignKey(flm => flm.LessonMaterialId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasMany(lm => lm.LessonMaterialApprovals)
                 .WithOne(lma => lma.LessonMaterial)
                 .HasForeignKey(lma => lma.LessonMaterialId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasMany(lm => lm.LessonMaterialQuestions)
                 .WithOne(lmq => lmq.LessonMaterial)
                 .HasForeignKey(lmq => lmq.LessonMaterialId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
