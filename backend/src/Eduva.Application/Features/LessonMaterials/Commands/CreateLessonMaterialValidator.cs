@@ -78,10 +78,6 @@ namespace Eduva.Application.Features.LessonMaterials.Commands
             RuleFor(x => x.ContentType)
                 .IsInEnum().WithMessage("Invalid content type specified.");
 
-            RuleFor(x => x.Tag)
-                .MaximumLength(100).WithMessage("Tag must not exceed 100 characters.")
-                .When(x => !string.IsNullOrEmpty(x.Tag));
-
             RuleFor(x => x.FileSize)
                 .GreaterThan(0).WithMessage("File size must be greater than zero.")
                 .LessThanOrEqualTo(1073741824).WithMessage("File size must not exceed 1GB (1073741824 bytes).");

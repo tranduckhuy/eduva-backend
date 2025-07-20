@@ -29,9 +29,14 @@ public class GetJobQueryHandler : IRequestHandler<GetJobQuery, JobResponse>
         var jobRepository = _unitOfWork.GetRepository<Job, Guid>();
         var job = await jobRepository.GetByIdAsync(request.Id) ?? throw new JobNotFoundException();
 
-        if (job.ProductBlobName != null)
+        if (job.VideoOutputBlobName != null)
         {
-            job.ProductBlobName = _storageService.GetReadableUrl(job.ProductBlobName);
+            job.VideoOutputBlobName = _storageService.GetReadableUrl(job.VideoOutputBlobName);
+        }
+
+        if (job.AudioOutputBlobName != null)
+        {
+            job.AudioOutputBlobName = _storageService.GetReadableUrl(job.AudioOutputBlobName);
         }
 
         var response = AppMapper<AppMappingProfile>.Mapper.Map<JobResponse>(job);

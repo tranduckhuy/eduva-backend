@@ -15,6 +15,5 @@ namespace Eduva.Application.Common.Specifications
         public string? SortBy { get; set; }
         public string SortDirection { get; set; } = "asc";
         public string? SearchTerm { get; set; }
-
     }
 }

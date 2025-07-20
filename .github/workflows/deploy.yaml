@@ -65,7 +65,9 @@ jobs:
           echo "RABBITMQ_QUEUE_NAME=${{ secrets.RABBITMQ_QUEUE_NAME }}" >> .env
           echo "RABBITMQ_EXCHANGE_NAME=${{ secrets.RABBITMQ_EXCHANGE_NAME }}" >> .env
           echo "RABBITMQ_ROUTING_KEY=${{ secrets.RABBITMQ_ROUTING_KEY }}" >> .env
+          echo "RABBITMQ_DLQ_NAME=${{ secrets.RABBITMQ_DLQ_NAME }}" >> .env
           echo "RABBITMQ_DEAD_LETTER_EXCHANGE=${{ secrets.RABBITMQ_DEAD_LETTER_EXCHANGE }}" >> .env
+          echo "RABBITMQ_DLQ_ROUTING_KEY=${{ secrets.RABBITMQ_DLQ_ROUTING_KEY }}" >> .env
           echo "WORKER_API_KEY=${{ secrets.WORKER_API_KEY }}" >> .env
 
       - name: Deploy with Docker Compose
