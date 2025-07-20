@@ -30,9 +30,6 @@ namespace Eduva.Application.Features.LessonMaterials.Queries.GetPendingLessonMat
             RuleFor(x => x.LessonMaterialSpecParam.SearchTerm)
                 .MaximumLength(255).WithMessage("Search term must not exceed 255 characters.");
 
-            RuleFor(x => x.LessonMaterialSpecParam.Tag)
-                .MaximumLength(100).WithMessage("Tag must not exceed 100 characters.");
-
             RuleFor(x => x.LessonMaterialSpecParam.ContentType)
                 .IsInEnum().When(x => x.LessonMaterialSpecParam.ContentType.HasValue)
                 .WithMessage("Invalid content type specified.");

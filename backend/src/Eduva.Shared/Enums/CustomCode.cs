@@ -128,6 +128,8 @@ namespace Eduva.Shared.Enums
         FolderAlreadyActive = 4608,
         FolderShouldBeArchivedBeforeDelete = 4609,
         LessonMaterialNotFoundInFolder = 4610,
+        InvalidPersonalFolder = 4611,
+        FolderMustBePersonal = 4612,
 
         // Class Errors - All consolidated in 4700 range
         ClassNotFound = 4700,
@@ -191,6 +193,7 @@ namespace Eduva.Shared.Enums
         LessonMaterialAlreadyRejected = 4851,
         LessonMaterialNotApproved = 4852,
         ReasonIsRequiredWhenRejectingLessonMaterial = 4853,
+        LessonMaterialRestoreFailed = 4854,
 
         // Storage Quota Errors
         StorageQuotaExceeded = 4900,

@@ -282,6 +282,8 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Folder must be archived before it can be permanently deleted" } },
             {CustomCode.LessonMaterialNotFoundInFolder, new MessageDetail{
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Lesson Material not found in this folder"} },
+            { CustomCode.FolderMustBePersonal, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Folder must be personal" }},
 
               // Question Error
             { CustomCode.InsufficientPermissionToCreateQuestion, new MessageDetail {
@@ -356,6 +358,10 @@ namespace Eduva.Shared.Constants
             {   HttpCode = StatusCodes.Status400BadRequest, Message = "This lesson material has not been approved yet."} },
             { CustomCode.ReasonIsRequiredWhenRejectingLessonMaterial, new MessageDetail {
                 HttpCode = StatusCodes.Status400BadRequest, Message = "You must enter the reason when refusing to approve the lesson!"} },
+            { CustomCode.LessonMaterialRestoreFailed, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "Failed to restore the lesson material!" }},
+            { CustomCode.InvalidPersonalFolder, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "The folder must be a personal folder and in Active status." }},
 
             // Storage Quota Errors
             { CustomCode.StorageQuotaExceeded, new MessageDetail {

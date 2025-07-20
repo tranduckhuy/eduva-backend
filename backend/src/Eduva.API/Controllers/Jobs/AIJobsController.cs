@@ -1,10 +1,15 @@
 using Eduva.API.Attributes;
 using Eduva.API.Controllers.Base;
+using Eduva.API.Mappings;
+using Eduva.API.Models.Jobs;
+using Eduva.Application.Common.Mappings;
 using Eduva.Application.Features.Jobs.Commands.ConfirmJob;
 using Eduva.Application.Features.Jobs.Commands.CreateJob;
 using Eduva.Application.Features.Jobs.Commands.UpdateJobProgress;
 using Eduva.Application.Features.Jobs.DTOs;
+using Eduva.Application.Features.Jobs.Queries.GetCompletedJobs;
 using Eduva.Application.Features.Jobs.Queries.GetJob;
+using Eduva.Application.Features.Jobs.Specifications;
 using Eduva.Shared.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -68,8 +73,10 @@ public class AIJobsController : BaseController<AIJobsController>
             JobId = id,
             JobStatus = request.JobStatus,
             ContentBlobName = request.ContentBlobName,
-            ProductBlobName = request.ProductBlobName,
+            VideoOutputBlobName = request.VideoOutputBlobName,
+            AudioOutputBlobName = request.AudioOutputBlobName,
             WordCount = request.WordCount,
+            ActualDuration = request.ActualDuration,
             PreviewContent = request.PreviewContent,
             FailureReason = request.FailureReason
         };
@@ -113,6 +120,28 @@ public class AIJobsController : BaseController<AIJobsController>
     public async Task<IActionResult> GetJob(Guid id)
     {
         var query = new GetJobQuery { Id = id };
+
+        return await HandleRequestAsync(async () =>
+        {
+            var response = await _mediator.Send(query);
+            return (CustomCode.Success, response);
+        });
+    }
+
+    // Get all completed jobs for the authenticated user
+    [HttpGet("completed")]
+    [Authorize]
+    public async Task<IActionResult> GetCompletedJobs([FromQuery] GetCompletedJobsRequest request)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userId, out var id))
+        {
+            return Respond(CustomCode.UserIdNotFound);
+        }
+
+        var jobSpecParams = AppMapper<ModelMappingProfile>.Mapper.Map<JobSpecParam>(request);
+
+        var query = new GetCompletedJobsQuery(jobSpecParams, id);
 
         return await HandleRequestAsync(async () =>
         {

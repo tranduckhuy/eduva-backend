@@ -13,12 +13,12 @@ public class Job : BaseTimestampedEntity<Guid>
         LastModifiedAt = DateTimeOffset.UtcNow;
     }
 
-    public AIServiceType? Type { get; set; }
     public JobStatus JobStatus { get; set; }
     public string Topic { get; set; } = string.Empty;
     public List<string> SourceBlobNames { get; set; } = [];
     public string? ContentBlobName { get; set; }
-    public string? ProductBlobName { get; set; }
+    public string? VideoOutputBlobName { get; set; }
+    public string? AudioOutputBlobName { get; set; }
     public int AudioCost { get; set; } = 0;
     public int VideoCost { get; set; } = 0;
     public int? WordCount { get; set; }

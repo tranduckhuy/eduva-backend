@@ -1,5 +1,5 @@
 using Eduva.Application.Features.LessonMaterials;
-using Eduva.Application.Features.LessonMaterials.Commands;
+using Eduva.Application.Features.LessonMaterials.Commands.CreateLessonMaterial;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Domain.Entities;
@@ -402,24 +402,6 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
         }
 
         [Test]
-        public void Should_Have_Error_When_Tag_Too_Long()
-        {
-            // Arrange
-            var request = new LessonMaterialRequest
-            {
-                Title = "Test Material",
-                Tag = new string('a', 101), // 101 characters, exceeds 100 limit
-                ContentType = ContentType.PDF,
-                FileSize = 1024,
-                SourceUrl = "http://test.com"
-            };
-
-            // Act & Assert
-            var result = _validator.TestValidate(request);
-            result.ShouldHaveValidationErrorFor(x => x.Tag);
-        }
-
-        [Test]
         public void Should_Have_Error_When_FileSize_Too_Large()
         {
             // Arrange
@@ -452,24 +434,6 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
             // Act & Assert
             var result = _validator.TestValidate(request);
             result.ShouldNotHaveValidationErrorFor(x => x.Description);
-        }
-
-        [Test]
-        public void Should_Not_Have_Error_When_Tag_Is_Null()
-        {
-            // Arrange
-            var request = new LessonMaterialRequest
-            {
-                Title = "Test Material",
-                Tag = null,
-                ContentType = ContentType.PDF,
-                FileSize = 1024,
-                SourceUrl = "http://test.com"
-            };
-
-            // Act & Assert
-            var result = _validator.TestValidate(request);
-            result.ShouldNotHaveValidationErrorFor(x => x.Tag);
         }
     }
 }

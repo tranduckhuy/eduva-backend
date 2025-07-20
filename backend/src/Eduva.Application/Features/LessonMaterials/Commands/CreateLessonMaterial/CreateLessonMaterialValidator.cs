@@ -2,7 +2,7 @@
 using Eduva.Domain.Entities;
 using FluentValidation;
 
-namespace Eduva.Application.Features.LessonMaterials.Commands
+namespace Eduva.Application.Features.LessonMaterials.Commands.CreateLessonMaterial
 {
     public class CreateLessonMaterialValidator : AbstractValidator<CreateLessonMaterialCommand>
     {
@@ -77,10 +77,6 @@ namespace Eduva.Application.Features.LessonMaterials.Commands
 
             RuleFor(x => x.ContentType)
                 .IsInEnum().WithMessage("Invalid content type specified.");
-
-            RuleFor(x => x.Tag)
-                .MaximumLength(100).WithMessage("Tag must not exceed 100 characters.")
-                .When(x => !string.IsNullOrEmpty(x.Tag));
 
             RuleFor(x => x.FileSize)
                 .GreaterThan(0).WithMessage("File size must be greater than zero.")

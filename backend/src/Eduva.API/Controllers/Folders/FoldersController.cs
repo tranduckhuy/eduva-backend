@@ -3,6 +3,7 @@ using Eduva.API.Controllers.Base;
 using Eduva.API.Models;
 using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Common.Models;
+using Eduva.Application.Features.Classes.Commands.RemoveMaterialsFromFolder;
 using Eduva.Application.Features.Folders.Commands;
 using Eduva.Application.Features.Folders.Queries;
 using Eduva.Application.Features.Folders.Responses;
@@ -366,6 +367,77 @@ namespace Eduva.API.Controllers.Folders
                 var response = await _mediator.Send(query);
                 return (CustomCode.Success, response);
             });
+        }
+
+        [HttpDelete("{folderId}/lesson-materials")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
+        [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+        [Authorize(Policy = "EducatorOnly")]
+        public async Task<IActionResult> RemoveMaterialsFromFolderPerson(Guid folderId, [FromBody] List<Guid> materialIds)
+        {
+            var validationResult = CheckModelStateValidity();
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userId, out var currentUserId))
+                return Respond(CustomCode.UserIdNotFound);
+
+            var command = new RemoveMaterialsFromFolderCommand
+            {
+                FolderId = folderId,
+                MaterialIds = materialIds,
+                CurrentUserId = currentUserId
+            };
+            return await HandleRequestAsync<object>(async () =>
+            {
+                var result = await _mediator.Send(command);
+                return (CustomCode.Success, result);
+            });
+        }
+
+        [HttpDelete("user")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
+        [Authorize(Policy = "EducatorOnly")]
+        [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> DeletePersonFolder([FromBody] List<Guid>? folderIds = null)
+        {
+            var validationResult = CheckModelStateValidity();
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var currentUserId))
+            {
+                return Respond(CustomCode.UserIdNotFound);
+            }
+
+            var command = new DeletePersonFolderCommand
+            {
+                FolderIds = folderIds ?? new List<Guid>(),
+                CurrentUserId = currentUserId
+            };
+
+            try
+            {
+                var result = await _mediator.Send(command);
+                if (result)
+                {
+                    return Respond(CustomCode.Deleted);
+                }
+                return Respond(CustomCode.FolderDeleteFailed);
+            }
+            catch (AppException ex)
+            {
+                return Respond(ex.StatusCode, ex.Errors);
+            }
+            catch (Exception)
+            {
+                return Respond(CustomCode.FolderDeleteFailed);
+            }
         }
     }
 }

@@ -202,6 +202,42 @@ namespace Eduva.API.Controllers.Users
             }
         }
 
+        [HttpGet("export")]
+        [Authorize(Roles = nameof(Role.SchoolAdmin))]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
+        [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> ExportUsers([FromQuery] ExportUsersRequest request)
+        {
+            var schoolAdminIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(schoolAdminIdStr, out var schoolAdminId))
+            {
+                return Respond(CustomCode.UserIdNotFound);
+            }
+
+            try
+            {
+                var fileBytes = await _mediator.Send(new ExportUsersQuery(request, schoolAdminId));
+
+                var roleName = request.Role?.ToString() ?? "all";
+                var fileName = $"users_export_{roleName.ToLower()}_{DateTime.Now:dd_MM_yyyy}.xlsx";
+
+                return File(
+                    fileContents: fileBytes,
+                    contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    fileDownloadName: fileName);
+            }
+            catch (AppException ex)
+            {
+                return Respond(ex.StatusCode);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while exporting users");
+                return Respond(CustomCode.SystemError);
+            }
+        }
+
         [HttpPut("{userId:guid}/lock")]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]

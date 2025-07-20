@@ -18,6 +18,10 @@ namespace Eduva.Application.Test.Features.Classes.Commands.RemoveMaterialsFromFo
         private Mock<IGenericRepository<Folder, Guid>> _folderRepoMock = null!;
         private Mock<IGenericRepository<FolderLessonMaterial, int>> _folderLessonMaterialRepoMock = null!;
         private Mock<IGenericRepository<Classroom, Guid>> _classroomRepoMock = null!;
+        private Mock<IGenericRepository<LessonMaterial, Guid>> _lessonMaterialRepoMock = null!;
+        private Mock<IGenericRepository<LessonMaterialQuestion, int>> _lessonMaterialQuestionsRepoMock = null!;
+        private Mock<IGenericRepository<LessonMaterialApproval, int>> _lessonMaterialApprovalRepoMock = null!;
+
         private RemoveMaterialsFromFolderHandler _handler = null!;
 
         [SetUp]
@@ -29,6 +33,10 @@ namespace Eduva.Application.Test.Features.Classes.Commands.RemoveMaterialsFromFo
             _folderRepoMock = new Mock<IGenericRepository<Folder, Guid>>();
             _folderLessonMaterialRepoMock = new Mock<IGenericRepository<FolderLessonMaterial, int>>();
             _classroomRepoMock = new Mock<IGenericRepository<Classroom, Guid>>();
+            _lessonMaterialRepoMock = new Mock<IGenericRepository<LessonMaterial, Guid>>();
+            _lessonMaterialQuestionsRepoMock = new Mock<IGenericRepository<LessonMaterialQuestion, int>>();
+            _lessonMaterialApprovalRepoMock = new Mock<IGenericRepository<LessonMaterialApproval, int>>();
+
 
             _unitOfWorkMock.Setup(u => u.GetRepository<Folder, Guid>())
                 .Returns(_folderRepoMock.Object);
@@ -36,6 +44,9 @@ namespace Eduva.Application.Test.Features.Classes.Commands.RemoveMaterialsFromFo
                 .Returns(_folderLessonMaterialRepoMock.Object);
             _unitOfWorkMock.Setup(u => u.GetRepository<Classroom, Guid>())
                 .Returns(_classroomRepoMock.Object);
+            _unitOfWorkMock.Setup(u => u.GetRepository<LessonMaterial, Guid>()).Returns(_lessonMaterialRepoMock.Object);
+            _unitOfWorkMock.Setup(u => u.GetRepository<LessonMaterialQuestion, int>()).Returns(_lessonMaterialQuestionsRepoMock.Object);
+            _unitOfWorkMock.Setup(u => u.GetRepository<LessonMaterialApproval, int>()).Returns(_lessonMaterialApprovalRepoMock.Object);
 
             _handler = new RemoveMaterialsFromFolderHandler(_unitOfWorkMock.Object, _userManagerMock.Object);
         }
@@ -71,6 +82,9 @@ namespace Eduva.Application.Test.Features.Classes.Commands.RemoveMaterialsFromFo
             _folderLessonMaterialRepoMock.Setup(r => r.GetAllAsync())
                 .ReturnsAsync(new List<FolderLessonMaterial> { folderMaterial });
             _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
+            _lessonMaterialQuestionsRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<LessonMaterialQuestion>());
+            _lessonMaterialApprovalRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<LessonMaterialApproval>());
+
 
             // Act
             var result = await _handler.Handle(command, CancellationToken.None);
@@ -100,16 +114,35 @@ namespace Eduva.Application.Test.Features.Classes.Commands.RemoveMaterialsFromFo
         [Test]
         public void Handle_Should_Throw_When_Folder_Not_Belongs_To_Class()
         {
-            var folder = new Folder { Id = Guid.NewGuid(), ClassId = Guid.NewGuid(), OwnerType = OwnerType.Personal };
+            // Arrange a CLASS folder that the user does not own/teach/etc
+            var folderId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
+            var wrongUserId = Guid.NewGuid();
+            var folder = new Folder
+            {
+                Id = folderId,
+                ClassId = classId,
+                OwnerType = OwnerType.Class
+            };
+
+            var user = new ApplicationUser { Id = wrongUserId, SchoolId = 1 };
             var command = new RemoveMaterialsFromFolderCommand
             {
                 FolderId = folder.Id,
-                ClassId = Guid.NewGuid(),
+                ClassId = classId,
                 MaterialIds = new List<Guid> { Guid.NewGuid() },
-                CurrentUserId = Guid.NewGuid()
+                CurrentUserId = wrongUserId
             };
-            _folderRepoMock.Setup(r => r.GetByIdAsync(folder.Id)).ReturnsAsync(folder);
 
+            _folderRepoMock.Setup(r => r.GetByIdAsync(folder.Id)).ReturnsAsync(folder);
+            _userManagerMock.Setup(u => u.FindByIdAsync(command.CurrentUserId.ToString())).ReturnsAsync(user);
+            _userManagerMock.Setup(u => u.GetRolesAsync(user)).ReturnsAsync(new List<string> { nameof(Role.Student) });
+
+            // Classroom exists but does NOT belong to user as teacher or school admin
+            var classroom = new Classroom { Id = classId, TeacherId = Guid.NewGuid(), SchoolId = 2 };
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+
+            // Act + Assert
             var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, CancellationToken.None));
             Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.Unauthorized));
         }
@@ -253,7 +286,8 @@ namespace Eduva.Application.Test.Features.Classes.Commands.RemoveMaterialsFromFo
             _folderLessonMaterialRepoMock.Setup(r => r.GetAllAsync())
                 .ReturnsAsync(new List<FolderLessonMaterial> { folderMaterial });
             _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
-
+            _lessonMaterialQuestionsRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<LessonMaterialQuestion>());
+            _lessonMaterialApprovalRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<LessonMaterialApproval>());
             var result = await _handler.Handle(command, CancellationToken.None);
 
             Assert.That(result, Is.True);
@@ -288,6 +322,9 @@ namespace Eduva.Application.Test.Features.Classes.Commands.RemoveMaterialsFromFo
             _folderLessonMaterialRepoMock.Setup(r => r.GetAllAsync())
                 .ReturnsAsync(new List<FolderLessonMaterial> { folderMaterial });
             _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
+
+            _lessonMaterialQuestionsRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<LessonMaterialQuestion>());
+            _lessonMaterialApprovalRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<LessonMaterialApproval>());
 
             var result = await _handler.Handle(command, CancellationToken.None);
 

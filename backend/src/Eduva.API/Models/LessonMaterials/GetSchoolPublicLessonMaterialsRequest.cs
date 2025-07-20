@@ -6,7 +6,6 @@ namespace Eduva.API.Models.LessonMaterials
     public class GetSchoolPublicLessonMaterialsRequest : BaseSpecParam
     {
         public Guid? CreatedByUserId { get; set; }
-        public string? Tag { get; set; }
         public ContentType? ContentType { get; set; }
         public EntityStatus EntityStatus { get; set; } = EntityStatus.Active;
     }

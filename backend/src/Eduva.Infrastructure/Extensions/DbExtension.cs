@@ -264,12 +264,12 @@ namespace Eduva.Infrastructure.Extensions
                     new AIServicePricing
                     {
                         ServiceType = AIServiceType.GenAudio,
-                        PricePerMinuteCredits = 10,
+                        PricePerMinuteCredits = 2,
                     },
                     new AIServicePricing
                     {
                         ServiceType = AIServiceType.GenVideo,
-                        PricePerMinuteCredits = 20,
+                        PricePerMinuteCredits = 4,
                     },
                 };
 

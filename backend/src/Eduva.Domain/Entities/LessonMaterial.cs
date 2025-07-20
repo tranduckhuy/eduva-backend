@@ -9,7 +9,6 @@ namespace Eduva.Domain.Entities
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; } = string.Empty;
         public ContentType ContentType { get; set; }
-        public string? Tag { get; set; } = string.Empty;
         public LessonMaterialStatus LessonStatus { get; set; }
         public int? Duration { get; set; }
         public int FileSize { get; set; } // Size in bytes

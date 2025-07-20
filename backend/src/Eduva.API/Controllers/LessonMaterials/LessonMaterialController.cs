@@ -1,12 +1,16 @@
-﻿using Eduva.API.Attributes;
+using Eduva.API.Attributes;
 using Eduva.API.Controllers.Base;
 using Eduva.API.Mappings;
 using Eduva.API.Models;
 using Eduva.API.Models.LessonMaterials;
 using Eduva.Application.Common.Mappings;
-using Eduva.Application.Features.LessonMaterials.Commands;
+using Eduva.Application.Features.LessonMaterials.Commands.ApproveLessonMaterial;
+using Eduva.Application.Features.LessonMaterials.Commands.CreateLessonMaterial;
+using Eduva.Application.Features.LessonMaterials.Commands.RestoreLessonMaterial;
+using Eduva.Application.Features.LessonMaterials.Commands.UpdateLessonMaterial;
 using Eduva.Application.Features.LessonMaterials.Queries.GetAllLessonMaterials;
 using Eduva.Application.Features.LessonMaterials.Queries.GetLessonMaterialById;
+using Eduva.Application.Features.LessonMaterials.Queries.GetOwnLessonMaterials;
 using Eduva.Application.Features.LessonMaterials.Queries.GetPendingLessonMaterials;
 using Eduva.Application.Features.LessonMaterials.Queries.GetSchoolPublicLessonMaterials;
 using Eduva.Application.Features.LessonMaterials.Specifications;
@@ -196,6 +200,84 @@ namespace Eduva.API.Controllers.LessonMaterials
             return await HandleRequestAsync(async () =>
             {
                 await _mediator.Send(command);
+            });
+        }
+
+        [HttpPut("{personalFolderId:guid}/restore")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
+        [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+        [Authorize(Roles = $"{nameof(Role.Teacher)},{nameof(Role.ContentModerator)},{nameof(Role.SchoolAdmin)},{nameof(Role.SystemAdmin)}")]
+        public async Task<IActionResult> RestoreLessonMaterials(Guid personalFolderId, [FromBody] List<Guid> materialIds)
+        {
+            var validationResult = CheckModelStateValidity();
+            if (validationResult != null)
+                return validationResult;
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return Respond(CustomCode.UserIdNotFound);
+
+            var command = new RestoreLessonMaterialCommand
+            {
+                PersonalFolderId = personalFolderId,
+                LessonMaterialIds = materialIds,
+                CurrentUserId = Guid.Parse(userId)
+            };
+
+            return await HandleRequestAsync<object>(async () =>
+            {
+                var result = await _mediator.Send(command);
+                return (CustomCode.Success, result);
+            });
+        }
+
+        [HttpPut("{id:guid}")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [Authorize(Policy = "EducatorOnly")]
+        public async Task<IActionResult> UpdateLessonMaterial(Guid id, [FromBody] UpdateLessonMaterialCommand command)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Respond(CustomCode.UserIdNotFound);
+            }
+
+            command.Id = id;
+            command.CreatorId = Guid.Parse(userId);
+
+            return await HandleRequestAsync(async () =>
+            {
+                await _mediator.Send(command);
+            });
+        }
+
+        // Get own lesson materials by status with pagination
+        [HttpGet("me")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
+        [Authorize(Policy = "EducatorOnly")]
+        public async Task<IActionResult> GetOwnLessonMaterialsByStatus([FromQuery] GetOwnLessonMaterialsRequest request)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Respond(CustomCode.UserIdNotFound);
+            }
+
+            int schoolIdInt = int.TryParse(User.FindFirstValue(SCHOOL_ID_CLAIM), out var parsedSchoolId) ? parsedSchoolId : 0;
+            if (schoolIdInt <= 0)
+            {
+                return Respond(CustomCode.SchoolNotFound);
+            }
+
+            var lessonMaterialSpecParam = AppMapper<ModelMappingProfile>.Mapper.Map<LessonMaterialSpecParam>(request);
+            lessonMaterialSpecParam.SchoolId = schoolIdInt;
+
+            var query = new GetOwnLessonMaterialsQuery(lessonMaterialSpecParam, Guid.Parse(userId));
+            return await HandleRequestAsync(async () =>
+            {
+                var response = await _mediator.Send(query);
+                return (CustomCode.Success, response);
             });
         }
     }
