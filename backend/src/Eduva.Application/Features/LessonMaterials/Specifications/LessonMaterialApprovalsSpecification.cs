@@ -9,7 +9,7 @@ namespace Eduva.Application.Features.LessonMaterials.Specifications
         public Expression<Func<LessonMaterialApproval, bool>> Criteria { get; private set; }
         public Func<IQueryable<LessonMaterialApproval>, IOrderedQueryable<LessonMaterialApproval>>? OrderBy { get; private set; }
         public List<Expression<Func<LessonMaterialApproval, object>>> Includes { get; private set; } = [];
-        public Func<IQueryable<LessonMaterialApproval>, IQueryable<LessonMaterialApproval>>? Selector { get; private set; }
+        public Func<IQueryable<LessonMaterialApproval>, IQueryable<LessonMaterialApproval>>? Selector { get; }
         public int Skip { get; private set; }
         public int Take { get; private set; }
 
