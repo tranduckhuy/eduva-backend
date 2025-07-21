@@ -20,5 +20,9 @@ namespace Eduva.Application.Features.LessonMaterials.Responses
         public EntityStatus Status { get; set; }
         public Guid CreatedById { get; set; }
         public string? CreatedByName { get; set; }
+
+        // Additional properties for next and previous Lesson Materials
+        public Guid? PreviousLessonMaterialId { get; set; }
+        public Guid? NextLessonMaterialId { get; set; }
     }
 }
