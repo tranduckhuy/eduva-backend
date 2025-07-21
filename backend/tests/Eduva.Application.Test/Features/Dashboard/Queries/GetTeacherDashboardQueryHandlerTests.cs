@@ -66,7 +66,7 @@ namespace Eduva.Application.Test.Features.Dashboard.Queries
             var contentTypeStats = new List<ContentTypeStatsDto> { new() { Period = "2024-01", Pdf = 2, Total = 10, Audio = 2, Doc = 4, Video = 2, AudioPercentage = 20, DocPercentage = 40, PdfPercentage = 20, VideoPercentage = 20 } };
             var reviewLessons = new List<ReviewLessonDto> { new() { Id = Guid.NewGuid(), Title = "Review", ContentType = ContentType.PDF, CreatedAt = DateTimeOffset.UtcNow, LessonStatus = LessonMaterialStatus.Approved, OwnerName = "S" } };
             var recentLessons = new List<RecentLessonDto> { new() { Id = Guid.NewGuid(), Title = "Recent", ContentType = ContentType.PDF, CreatedAt = DateTimeOffset.UtcNow, LessonStatus = LessonMaterialStatus.Approved, OwnerName = "S" } };
-            var unAnswerQuestions = new List<UnAnswerQuestionDto> { new() { Id = Guid.NewGuid(), Title = "Unanswered", OwnerName = "A", LessonName = "L" } };
+            var unAnswerQuestions = new List<UnAnswerQuestionDto> { new() { Title = "Unanswered", OwnerName = "A", LessonId = Guid.NewGuid(), LessonName = "L" } };
 
             _dashboardRepositoryMock.Setup(x => x.GetTeacherSystemOverviewAsync(teacherId, It.IsAny<CancellationToken>())).ReturnsAsync(overview);
             _dashboardRepositoryMock.Setup(x => x.GetTeacherLessonActivityAsync(teacherId, request.LessonActivityPeriod, It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>())).ReturnsAsync(lessonActivity);
