@@ -593,16 +593,17 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                 .ToListAsync(cancellationToken);
 
             var teacherAnswers = await _context.QuestionComments
-                .Include(c => c.CreatedByUser)
-                .Where(c => (c.Question.LessonMaterial.CreatedByUserId == teacherId || // Original lessons
-                             teacherUsedLessonIds.Contains(c.Question.LessonMaterialId)) && // Lessons teacher is using
-                            c.Question.LessonMaterial.SchoolId == teacherSchoolId &&
-                            c.Status == EntityStatus.Active &&
-                            c.CreatedAt >= startDate &&
-                            c.CreatedAt <= endDate &&
-                            !_context.StudentClasses.Any(sc => sc.StudentId == c.CreatedByUserId))
-                .Select(c => new { c.CreatedAt, Type = "TeacherAnswer" })
-                .ToListAsync(cancellationToken);
+                 .Include(c => c.CreatedByUser)
+                 .Where(c => (c.Question.LessonMaterial.CreatedByUserId == teacherId || // Original lessons
+                              teacherUsedLessonIds.Contains(c.Question.LessonMaterialId)) && // Lessons teacher is using
+                             c.Question.LessonMaterial.SchoolId == teacherSchoolId &&
+                             c.CreatedByUserId == teacherId &&
+                             c.Status == EntityStatus.Active &&
+                             c.CreatedAt >= startDate &&
+                             c.CreatedAt <= endDate &&
+                             !_context.StudentClasses.Any(sc => sc.StudentId == c.CreatedByUserId))
+                 .Select(c => new { c.CreatedAt, Type = "TeacherAnswer" })
+                 .ToListAsync(cancellationToken);
 
             var allInteractions = studentQuestions.Concat(teacherAnswers).ToList();
 
