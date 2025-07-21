@@ -34,7 +34,7 @@ namespace Eduva.Application.Interfaces.Repositories
         Task<List<LessonActivityDataPoint>> GetTeacherLessonActivityAsync(Guid teacherId, PeriodType period, DateTimeOffset startDate, DateTimeOffset endDate, CancellationToken cancellationToken = default);
         Task<List<QuestionVolumeTrendDto>> GetTeacherQuestionVolumeTrendAsync(Guid teacherId, PeriodType period, DateTimeOffset startDate, DateTimeOffset endDate, CancellationToken cancellationToken = default);
         Task<List<ContentTypeStatsDto>> GetTeacherContentTypeStatsAsync(Guid teacherId, PeriodType? period = null, DateTimeOffset? startDate = null, DateTimeOffset? endDate = null, CancellationToken cancellationToken = default);
-        Task<List<ReviewLessonDto>> GetContentModeratorReviewLessonsAsync(Guid teacherId, int limit, CancellationToken cancellationToken = default);
+        Task<List<ReviewLessonDto>> GetContentModeratorReviewLessonsAsync(Guid contentModeratorId, int limit, CancellationToken cancellationToken = default);
         Task<List<RecentLessonDto>> GetTeacherRecentLessonsAsync(Guid teacherId, int limit, CancellationToken cancellationToken = default);
         Task<List<UnAnswerQuestionDto>> GetTeacherUnAnswerQuestionsAsync(Guid teacherId, int limit, CancellationToken cancellationToken = default);
 

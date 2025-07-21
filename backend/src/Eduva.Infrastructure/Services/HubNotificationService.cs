@@ -12,6 +12,13 @@ namespace Eduva.Infrastructure.Services
 {
     public class HubNotificationService : IHubNotificationService
     {
+        private const string QuestionCreatedNotificationType = "QuestionCreated";
+        private const string QuestionUpdatedNotificationType = "QuestionUpdated";
+        private const string QuestionDeletedNotificationType = "QuestionDeleted";
+        private const string QuestionCommentedNotificationType = "QuestionCommented";
+        private const string QuestionCommentUpdatedNotificationType = "QuestionCommentUpdated";
+        private const string QuestionCommentDeletedNotificationType = "QuestionCommentDeleted";
+
         private readonly INotificationHub _notificationHub;
         private readonly INotificationService _notificationService;
         private readonly ILogger<HubNotificationService> _logger;
@@ -52,10 +59,10 @@ namespace Eduva.Infrastructure.Services
                 ActionType = QuestionActionType.Created
             };
 
-            await SendNotificationAsync(notification, "QuestionCreated");
+            await SendNotificationAsync(notification, QuestionCreatedNotificationType);
 
             // Save the notification to the database for persistence
-            await SaveNotificationToDatabase("QuestionCreated", notification, lessonMaterialId);
+            await SaveNotificationToDatabase(QuestionCreatedNotificationType, notification, lessonMaterialId);
         }
 
         public async Task NotifyQuestionUpdatedAsync(QuestionResponse question, Guid lessonMaterialId)
@@ -77,10 +84,10 @@ namespace Eduva.Infrastructure.Services
                 ActionType = QuestionActionType.Updated
             };
 
-            await SendNotificationAsync(notification, "QuestionUpdated");
+            await SendNotificationAsync(notification, QuestionUpdatedNotificationType);
 
             // Save the notification to the database for persistence
-            await SaveNotificationToDatabase("QuestionUpdated", notification, lessonMaterialId);
+            await SaveNotificationToDatabase(QuestionUpdatedNotificationType, notification, lessonMaterialId);
         }
 
         public async Task NotifyQuestionDeletedAsync(Guid questionId, Guid lessonMaterialId)
@@ -105,7 +112,7 @@ namespace Eduva.Infrastructure.Services
                 // Send to each user individually
                 foreach (var userId in targetUserIds)
                 {
-                    await _notificationHub.SendNotificationToUserAsync(userId.ToString(), "QuestionDeleted", notification);
+                    await _notificationHub.SendNotificationToUserAsync(userId.ToString(), QuestionDeletedNotificationType, notification);
                 }
 
                 _logger.LogInformation("[SignalR] Question deleted notification sent successfully! " +
@@ -113,7 +120,7 @@ namespace Eduva.Infrastructure.Services
                     targetUserIds.Count, questionId);
 
                 // Save the notification to the database for persistence
-                await SaveNotificationToDatabase("QuestionDeleted", notification, lessonMaterialId);
+                await SaveNotificationToDatabase(QuestionDeletedNotificationType, notification, lessonMaterialId);
             }
             catch (Exception ex)
             {
@@ -136,7 +143,7 @@ namespace Eduva.Infrastructure.Services
 
                 // Get target users for real-time notification
                 List<Guid> targetUserIds;
-                if (eventName == "QuestionCreated")
+                if (eventName == QuestionCreatedNotificationType)
                 {
                     targetUserIds = await _notificationService.GetUsersForNewQuestionNotificationAsync(notification.LessonMaterialId);
                 }
@@ -186,10 +193,10 @@ namespace Eduva.Infrastructure.Services
                 ActionType = QuestionActionType.Commented
             };
 
-            await SendCommentNotificationAsync(notification, "QuestionCommented");
+            await SendCommentNotificationAsync(notification, QuestionCommentedNotificationType);
 
             // Save the notification to the database for persistence
-            await SaveNotificationToDatabase("QuestionCommented", notification, lessonMaterialId);
+            await SaveNotificationToDatabase(QuestionCommentedNotificationType, notification, lessonMaterialId);
         }
 
         public async Task NotifyQuestionCommentUpdatedAsync(QuestionCommentResponse comment, Guid lessonMaterialId)
@@ -210,10 +217,10 @@ namespace Eduva.Infrastructure.Services
                 ActionType = QuestionActionType.Updated
             };
 
-            await SendCommentNotificationAsync(notification, "QuestionCommentUpdated");
+            await SendCommentNotificationAsync(notification, QuestionCommentUpdatedNotificationType);
 
             // Save the notification to the database for persistence
-            await SaveNotificationToDatabase("QuestionCommentUpdated", notification, lessonMaterialId);
+            await SaveNotificationToDatabase(QuestionCommentUpdatedNotificationType, notification, lessonMaterialId);
         }
 
         public async Task NotifyQuestionCommentDeletedAsync(Guid commentId, Guid questionId, Guid lessonMaterialId, int deletedRepliesCount = 0)
@@ -241,7 +248,7 @@ namespace Eduva.Infrastructure.Services
                 // Send to each user individually
                 foreach (var userId in targetUserIds)
                 {
-                    await _notificationHub.SendNotificationToUserAsync(userId.ToString(), "QuestionCommentDeleted", notification);
+                    await _notificationHub.SendNotificationToUserAsync(userId.ToString(), QuestionCommentDeletedNotificationType, notification);
                 }
 
                 _logger.LogInformation("[SignalR] Comment deleted notification sent successfully! " +
@@ -250,7 +257,7 @@ namespace Eduva.Infrastructure.Services
                     targetUserIds.Count, commentId, questionId, deletedRepliesCount);
 
                 // Save the notification to the database for persistence
-                await SaveNotificationToDatabase("QuestionCommentDeleted", notification, lessonMaterialId);
+                await SaveNotificationToDatabase(QuestionCommentDeletedNotificationType, notification, lessonMaterialId);
             }
             catch (Exception ex)
             {
@@ -311,7 +318,7 @@ namespace Eduva.Infrastructure.Services
                 List<Guid> targetUserIds;
 
                 // CASE 1: New question - only notify teachers + users with access to the lesson
-                if (notificationType == "QuestionCreated")
+                if (notificationType == QuestionCreatedNotificationType)
                 {
                     targetUserIds = await _notificationService.GetUsersForNewQuestionNotificationAsync(lessonMaterialId);
                 }
@@ -365,20 +372,20 @@ namespace Eduva.Infrastructure.Services
             return notificationType switch
             {
                 // Question operations related to specific questions
-                "QuestionUpdated" when notificationData is QuestionNotification qn =>
+                QuestionUpdatedNotificationType when notificationData is QuestionNotification qn =>
                     SetQuestionId(out questionId, qn.QuestionId),
 
-                "QuestionDeleted" when notificationData is QuestionDeleteNotification qdn =>
+                QuestionDeletedNotificationType when notificationData is QuestionDeleteNotification qdn =>
                     SetQuestionId(out questionId, qdn.QuestionId),
 
                 // Comment operation - always related to specific question
-                "QuestionCommented" when notificationData is QuestionCommentNotification qcn =>
+                QuestionCommentedNotificationType when notificationData is QuestionCommentNotification qcn =>
                     SetQuestionId(out questionId, qcn.QuestionId),
 
-                "QuestionCommentUpdated" when notificationData is QuestionCommentNotification qcu =>
+                QuestionCommentUpdatedNotificationType when notificationData is QuestionCommentNotification qcu =>
                     SetQuestionId(out questionId, qcu.QuestionId),
 
-                "QuestionCommentDeleted" when notificationData is QuestionCommentDeleteNotification qcdn =>
+                QuestionCommentDeletedNotificationType when notificationData is QuestionCommentDeleteNotification qcdn =>
                     SetQuestionId(out questionId, qcdn.QuestionId),
 
                 _ => false

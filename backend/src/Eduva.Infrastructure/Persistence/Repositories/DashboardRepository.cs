@@ -183,7 +183,7 @@ namespace Eduva.Infrastructure.Persistence.Repositories
         #region Dashboard for School Admin
 
         // Dashboard for School Admin
-        public async Task<int?> GetSchoolIdByAdminIdAsync(Guid schoolAdminId, CancellationToken cancellationToken)
+        public async Task<int?> GetSchoolIdByAdminIdAsync(Guid schoolAdminId, CancellationToken cancellationToken = default)
         {
             return await _context.Users
                 .Where(u => u.Id == schoolAdminId && u.Status != EntityStatus.Deleted)
@@ -191,7 +191,7 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                 .FirstOrDefaultAsync(cancellationToken);
         }
 
-        public async Task<SchoolAdminSystemOverviewDto> GetSchoolAdminSystemOverviewAsync(int schoolId, CancellationToken cancellationToken)
+        public async Task<SchoolAdminSystemOverviewDto> GetSchoolAdminSystemOverviewAsync(int schoolId, CancellationToken cancellationToken = default)
         {
             var totalUsers = await _context.Users
                 .CountAsync(u => u.SchoolId == schoolId && u.Status != EntityStatus.Deleted, cancellationToken);
@@ -246,6 +246,31 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                 })
                 .FirstOrDefaultAsync(cancellationToken);
 
+            CurrentSubscriptionDto currentSubscriptionDto;
+            if (subscription != null)
+            {
+                var price = subscription.BillingCycle == BillingCycle.Monthly
+                    ? subscription.PriceMonthly
+                    : subscription.PricePerYear;
+
+                currentSubscriptionDto = new CurrentSubscriptionDto
+                {
+                    Id = subscription.Id,
+                    Name = subscription.Name,
+                    Price = price,
+                    AmountPaid = subscription.Amount,
+                    MaxStorageBytes = (long)((double)subscription.StorageLimitGB * 1024 * 1024 * 1024),
+                    MaxStorageGB = (double)subscription.StorageLimitGB,
+                    BillingCycle = subscription.BillingCycle,
+                    StartDate = subscription.StartDate,
+                    EndDate = subscription.EndDate
+                };
+            }
+            else
+            {
+                currentSubscriptionDto = new CurrentSubscriptionDto();
+            }
+
             return new SchoolAdminSystemOverviewDto
             {
                 TotalUsers = totalUsers,
@@ -260,22 +285,11 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                 UsedStorageBytes = usedStorageBytes,
                 UsedStorageGB = usedStorageGB,
                 StorageUsagePercentage = subscription != null ? Math.Round((double)usedStorageBytes / ((double)subscription.StorageLimitGB * 1024 * 1024 * 1024) * 100, 2) : 0,
-                CurrentSubscription = subscription != null ? new CurrentSubscriptionDto
-                {
-                    Id = subscription.Id,
-                    Name = subscription.Name,
-                    Price = subscription.BillingCycle == BillingCycle.Monthly ? subscription.PriceMonthly : subscription.PricePerYear,
-                    AmountPaid = subscription.Amount,
-                    MaxStorageBytes = (long)((double)subscription.StorageLimitGB * 1024 * 1024 * 1024),
-                    MaxStorageGB = (double)subscription.StorageLimitGB,
-                    BillingCycle = subscription.BillingCycle,
-                    StartDate = subscription.StartDate,
-                    EndDate = subscription.EndDate
-                } : new CurrentSubscriptionDto()
+                CurrentSubscription = currentSubscriptionDto,
             };
         }
 
-        public async Task<List<LessonActivityDataPoint>> GetSchoolAdminLessonActivityAsync(int schoolId, PeriodType period, DateTimeOffset startDate, DateTimeOffset endDate, CancellationToken cancellationToken)
+        public async Task<List<LessonActivityDataPoint>> GetSchoolAdminLessonActivityAsync(int schoolId, PeriodType period, DateTimeOffset startDate, DateTimeOffset endDate, CancellationToken cancellationToken = default)
         {
             var lessons = await _context.LessonMaterials
                 .Where(lm => lm.SchoolId == schoolId &&
@@ -299,7 +313,7 @@ namespace Eduva.Infrastructure.Persistence.Repositories
             return grouped;
         }
 
-        public async Task<List<LessonStatusStatsDto>> GetSchoolAdminLessonStatusStatsAsync(int schoolId, PeriodType period, DateTimeOffset startDate, DateTimeOffset endDate, CancellationToken cancellationToken)
+        public async Task<List<LessonStatusStatsDto>> GetSchoolAdminLessonStatusStatsAsync(int schoolId, PeriodType period, DateTimeOffset startDate, DateTimeOffset endDate, CancellationToken cancellationToken = default)
         {
             var lessons = await _context.LessonMaterials
                 .Where(lm => lm.SchoolId == schoolId &&
@@ -386,7 +400,7 @@ namespace Eduva.Infrastructure.Persistence.Repositories
             return grouped;
         }
 
-        public async Task<List<TopTeachersDto>> GetSchoolAdminTopTeachersAsync(int schoolId, int limit, CancellationToken cancellationToken)
+        public async Task<List<TopTeachersDto>> GetSchoolAdminTopTeachersAsync(int schoolId, int limit, CancellationToken cancellationToken = default)
         {
             return await _context.Users
                 .Where(u => u.SchoolId == schoolId &&
@@ -411,7 +425,7 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                 .ToListAsync(cancellationToken);
         }
 
-        public async Task<List<ReviewLessonDto>> GetSchoolAdminReviewLessonsAsync(int schoolId, int limit, CancellationToken cancellationToken)
+        public async Task<List<ReviewLessonDto>> GetSchoolAdminReviewLessonsAsync(int schoolId, int limit, CancellationToken cancellationToken = default)
         {
             return await _context.LessonMaterials
                 .Where(lm => lm.SchoolId == schoolId &&
@@ -435,7 +449,7 @@ namespace Eduva.Infrastructure.Persistence.Repositories
 
         #region Dashboard for Teacher, Content Moderator
 
-        public async Task<TeacherSystemOverviewDto> GetTeacherSystemOverviewAsync(Guid teacherId, CancellationToken cancellationToken)
+        public async Task<TeacherSystemOverviewDto> GetTeacherSystemOverviewAsync(Guid teacherId, CancellationToken cancellationToken = default)
         {
             var user = await _context.Users
                 .Where(u => u.Id == teacherId && u.Status != EntityStatus.Deleted)
@@ -530,7 +544,7 @@ namespace Eduva.Infrastructure.Persistence.Repositories
             };
         }
 
-        public async Task<List<LessonActivityDataPoint>> GetTeacherLessonActivityAsync(Guid teacherId, PeriodType period, DateTimeOffset startDate, DateTimeOffset endDate, CancellationToken cancellationToken)
+        public async Task<List<LessonActivityDataPoint>> GetTeacherLessonActivityAsync(Guid teacherId, PeriodType period, DateTimeOffset startDate, DateTimeOffset endDate, CancellationToken cancellationToken = default)
         {
             var teacherSchoolId = await _context.Users
                 .Where(u => u.Id == teacherId)
@@ -560,7 +574,7 @@ namespace Eduva.Infrastructure.Persistence.Repositories
             return grouped;
         }
 
-        public async Task<List<QuestionVolumeTrendDto>> GetTeacherQuestionVolumeTrendAsync(Guid teacherId, PeriodType period, DateTimeOffset startDate, DateTimeOffset endDate, CancellationToken cancellationToken)
+        public async Task<List<QuestionVolumeTrendDto>> GetTeacherQuestionVolumeTrendAsync(Guid teacherId, PeriodType period, DateTimeOffset startDate, DateTimeOffset endDate, CancellationToken cancellationToken = default)
         {
             var teacherSchoolId = await _context.Users
                 .Where(u => u.Id == teacherId)
@@ -683,7 +697,7 @@ namespace Eduva.Infrastructure.Persistence.Repositories
             return grouped;
         }
 
-        public async Task<List<ReviewLessonDto>> GetContentModeratorReviewLessonsAsync(Guid contentModeratorId, int limit, CancellationToken cancellationToken)
+        public async Task<List<ReviewLessonDto>> GetContentModeratorReviewLessonsAsync(Guid contentModeratorId, int limit, CancellationToken cancellationToken = default)
         {
             var contentModeratorSchoolId = await _context.Users
                 .Where(u => u.Id == contentModeratorId)
@@ -710,7 +724,7 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                 .ToListAsync(cancellationToken);
         }
 
-        public async Task<List<RecentLessonDto>> GetTeacherRecentLessonsAsync(Guid teacherId, int limit, CancellationToken cancellationToken)
+        public async Task<List<RecentLessonDto>> GetTeacherRecentLessonsAsync(Guid teacherId, int limit, CancellationToken cancellationToken = default)
         {
             var teacherSchoolId = await _context.Users
                 .Where(u => u.Id == teacherId)
@@ -736,7 +750,7 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                 .ToListAsync(cancellationToken);
         }
 
-        public async Task<List<UnAnswerQuestionDto>> GetTeacherUnAnswerQuestionsAsync(Guid teacherId, int limit, CancellationToken cancellationToken)
+        public async Task<List<UnAnswerQuestionDto>> GetTeacherUnAnswerQuestionsAsync(Guid teacherId, int limit, CancellationToken cancellationToken = default)
         {
             var teacherSchoolId = await _context.Users
                 .Where(u => u.Id == teacherId)
