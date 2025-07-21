@@ -1,6 +1,7 @@
 ﻿using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Features.Dashboard.DTOs;
 using Eduva.Application.Interfaces.Repositories;
+using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using Eduva.Infrastructure.Persistence.DbContext;
 using Eduva.Shared.Enums;
@@ -87,25 +88,8 @@ namespace Eduva.Infrastructure.Persistence.Repositories
 
         public async Task<List<LessonActivityDataPoint>> GetLessonCreationActivityAsync(PeriodType period, DateTimeOffset startDate, DateTimeOffset endDate, CancellationToken cancellationToken = default)
         {
-            var lessons = await _context.LessonMaterials
-                .Where(lm => lm.Status == EntityStatus.Active &&
-                           lm.CreatedAt >= startDate &&
-                           lm.CreatedAt <= endDate)
-                .Select(lm => new { lm.CreatedAt, lm.IsAIContent })
-                .ToListAsync(cancellationToken);
-
-            var grouped = lessons.GroupBy(l => GetPeriodKey(l.CreatedAt, period))
-                .Select(g => new LessonActivityDataPoint
-                {
-                    Period = g.Key,
-                    UploadedCount = g.Count(x => !x.IsAIContent),
-                    AIGeneratedCount = g.Count(x => x.IsAIContent),
-                    TotalCount = g.Count()
-                })
-                .OrderBy(x => x.Period)
-                .ToList();
-
-            return grouped;
+            var baseQuery = _context.LessonMaterials;
+            return await GetLessonActivityDataAsync(baseQuery, period, startDate, endDate, cancellationToken);
         }
 
         public async Task<List<TopSchoolItem>> GetTopSchoolsAsync(int topCount, CancellationToken cancellationToken = default)
@@ -291,26 +275,8 @@ namespace Eduva.Infrastructure.Persistence.Repositories
 
         public async Task<List<LessonActivityDataPoint>> GetSchoolAdminLessonActivityAsync(int schoolId, PeriodType period, DateTimeOffset startDate, DateTimeOffset endDate, CancellationToken cancellationToken = default)
         {
-            var lessons = await _context.LessonMaterials
-                .Where(lm => lm.SchoolId == schoolId &&
-                           lm.Status == EntityStatus.Active &&
-                           lm.CreatedAt >= startDate &&
-                           lm.CreatedAt <= endDate)
-                .Select(lm => new { lm.CreatedAt, lm.IsAIContent })
-                .ToListAsync(cancellationToken);
-
-            var grouped = lessons.GroupBy(l => GetPeriodKey(l.CreatedAt, period))
-                .Select(g => new LessonActivityDataPoint
-                {
-                    Period = g.Key,
-                    UploadedCount = g.Count(x => !x.IsAIContent),
-                    AIGeneratedCount = g.Count(x => x.IsAIContent),
-                    TotalCount = g.Count()
-                })
-                .OrderBy(x => x.Period)
-                .ToList();
-
-            return grouped;
+            var baseQuery = _context.LessonMaterials.Where(lm => lm.SchoolId == schoolId);
+            return await GetLessonActivityDataAsync(baseQuery, period, startDate, endDate, cancellationToken);
         }
 
         public async Task<List<LessonStatusStatsDto>> GetSchoolAdminLessonStatusStatsAsync(int schoolId, PeriodType period, DateTimeOffset startDate, DateTimeOffset endDate, CancellationToken cancellationToken = default)
@@ -343,61 +309,8 @@ namespace Eduva.Infrastructure.Persistence.Repositories
 
         public async Task<List<ContentTypeStatsDto>> GetSchoolAdminContentTypeStatsAsync(int schoolId, PeriodType? period = null, DateTimeOffset? startDate = null, DateTimeOffset? endDate = null, CancellationToken cancellationToken = default)
         {
-            var query = _context.LessonMaterials
-                .Where(lm => lm.SchoolId == schoolId && lm.Status == EntityStatus.Active);
-
-            if (startDate.HasValue)
-            {
-                query = query.Where(lm => lm.CreatedAt >= startDate.Value);
-            }
-            if (endDate.HasValue)
-            {
-                query = query.Where(lm => lm.CreatedAt <= endDate.Value);
-            }
-
-            var lessons = await query
-                .Select(lm => new { lm.CreatedAt, lm.ContentType })
-                .ToListAsync(cancellationToken);
-
-            if (!period.HasValue)
-            {
-                var total = lessons.Count;
-                return new List<ContentTypeStatsDto>
-                {
-                    new ContentTypeStatsDto
-                    {
-                        Period = "all-time",
-                        Pdf = lessons.Count(x => x.ContentType == ContentType.PDF),
-                        Doc = lessons.Count(x => x.ContentType == ContentType.DOCX),
-                        Video = lessons.Count(x => x.ContentType == ContentType.Video),
-                        Audio = lessons.Count(x => x.ContentType == ContentType.Audio),
-                        Total = total,
-                        PdfPercentage = total > 0 ? Math.Round((double)lessons.Count(x => x.ContentType == ContentType.PDF) / total * 100, 2) : 0,
-                        DocPercentage = total > 0 ? Math.Round((double)lessons.Count(x => x.ContentType == ContentType.DOCX) / total * 100, 2) : 0,
-                        VideoPercentage = total > 0 ? Math.Round((double)lessons.Count(x => x.ContentType == ContentType.Video) / total * 100, 2) : 0,
-                        AudioPercentage = total > 0 ? Math.Round((double)lessons.Count(x => x.ContentType == ContentType.Audio) / total * 100, 2) : 0
-                    }
-                };
-            }
-
-            var grouped = lessons.GroupBy(l => GetPeriodKey(l.CreatedAt, period.Value))
-                .Select(g => new ContentTypeStatsDto
-                {
-                    Period = g.Key,
-                    Pdf = g.Count(x => x.ContentType == ContentType.PDF),
-                    Doc = g.Count(x => x.ContentType == ContentType.DOCX),
-                    Video = g.Count(x => x.ContentType == ContentType.Video),
-                    Audio = g.Count(x => x.ContentType == ContentType.Audio),
-                    Total = g.Count(),
-                    PdfPercentage = g.Any() ? Math.Round((double)g.Count(x => x.ContentType == ContentType.PDF) / g.Count() * 100, 2) : 0,
-                    DocPercentage = g.Any() ? Math.Round((double)g.Count(x => x.ContentType == ContentType.DOCX) / g.Count() * 100, 2) : 0,
-                    VideoPercentage = g.Any() ? Math.Round((double)g.Count(x => x.ContentType == ContentType.Video) / g.Count() * 100, 2) : 0,
-                    AudioPercentage = g.Any() ? Math.Round((double)g.Count(x => x.ContentType == ContentType.Audio) / g.Count() * 100, 2) : 0
-                })
-                .OrderBy(x => x.Period)
-                .ToList();
-
-            return grouped;
+            var baseQuery = _context.LessonMaterials.Where(lm => lm.SchoolId == schoolId);
+            return await GetContentTypeStatsDataAsync(baseQuery, period, startDate, endDate, cancellationToken);
         }
 
         public async Task<List<TopTeachersDto>> GetSchoolAdminTopTeachersAsync(int schoolId, int limit, CancellationToken cancellationToken = default)
@@ -551,27 +464,10 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                 .Select(u => u.SchoolId)
                 .FirstOrDefaultAsync(cancellationToken);
 
-            var lessons = await _context.LessonMaterials
-                .Where(lm => lm.CreatedByUserId == teacherId &&
-                             lm.SchoolId == teacherSchoolId &&
-                             lm.Status == EntityStatus.Active &&
-                             lm.CreatedAt >= startDate &&
-                             lm.CreatedAt <= endDate)
-                .Select(lm => new { lm.CreatedAt, lm.IsAIContent })
-                .ToListAsync(cancellationToken);
+            var baseQuery = _context.LessonMaterials
+                .Where(lm => lm.CreatedByUserId == teacherId && lm.SchoolId == teacherSchoolId);
 
-            var grouped = lessons.GroupBy(l => GetPeriodKey(l.CreatedAt, period))
-                .Select(g => new LessonActivityDataPoint
-                {
-                    Period = g.Key,
-                    UploadedCount = g.Count(x => !x.IsAIContent),
-                    AIGeneratedCount = g.Count(x => x.IsAIContent),
-                    TotalCount = g.Count()
-                })
-                .OrderBy(x => x.Period)
-                .ToList();
-
-            return grouped;
+            return await GetLessonActivityDataAsync(baseQuery, period, startDate, endDate, cancellationToken);
         }
 
         public async Task<List<QuestionVolumeTrendDto>> GetTeacherQuestionVolumeTrendAsync(Guid teacherId, PeriodType period, DateTimeOffset startDate, DateTimeOffset endDate, CancellationToken cancellationToken = default)
@@ -582,16 +478,7 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                 .FirstOrDefaultAsync(cancellationToken);
 
             // Get lessons that teacher is using (through folders)
-            var teacherUsedLessonIds = await _context.FolderLessonMaterials
-                .Include(flm => flm.Folder)
-                    .ThenInclude(f => f.Class)
-                .Where(flm => flm.Folder != null &&
-                              flm.Folder.Class != null &&
-                              flm.Folder.Class.TeacherId == teacherId &&
-                              flm.Folder.Class.SchoolId == teacherSchoolId)
-                .Select(flm => flm.LessonMaterialId)
-                .Distinct()
-                .ToListAsync(cancellationToken);
+            var teacherUsedLessonIds = await GetTeacherUsedLessonIdsAsync(teacherId, teacherSchoolId, cancellationToken);
 
             var studentQuestions = await _context.LessonMaterialQuestions
                 .Include(q => q.CreatedByUser)
@@ -642,59 +529,10 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                 .Select(u => u.SchoolId)
                 .FirstOrDefaultAsync(cancellationToken);
 
-            var query = _context.LessonMaterials
-                .Where(lm => lm.CreatedByUserId == teacherId &&
-                             lm.SchoolId == teacherSchoolId &&
-                             lm.Status == EntityStatus.Active);
+            var baseQuery = _context.LessonMaterials
+                .Where(lm => lm.CreatedByUserId == teacherId && lm.SchoolId == teacherSchoolId);
 
-            if (startDate.HasValue)
-                query = query.Where(lm => lm.CreatedAt >= startDate.Value);
-            if (endDate.HasValue)
-                query = query.Where(lm => lm.CreatedAt <= endDate.Value);
-
-            var lessons = await query
-                .Select(lm => new { lm.CreatedAt, lm.ContentType })
-                .ToListAsync(cancellationToken);
-
-            if (!period.HasValue)
-            {
-                var total = lessons.Count;
-                return new List<ContentTypeStatsDto>
-                {
-                    new ContentTypeStatsDto
-                    {
-                        Period = "all-time",
-                        Pdf = lessons.Count(x => x.ContentType == ContentType.PDF),
-                        Doc = lessons.Count(x => x.ContentType == ContentType.DOCX),
-                        Video = lessons.Count(x => x.ContentType == ContentType.Video),
-                        Audio = lessons.Count(x => x.ContentType == ContentType.Audio),
-                        Total = total,
-                        PdfPercentage = total > 0 ? Math.Round((double)lessons.Count(x => x.ContentType == ContentType.PDF) / total * 100, 2) : 0,
-                        DocPercentage = total > 0 ? Math.Round((double)lessons.Count(x => x.ContentType == ContentType.DOCX) / total * 100, 2) : 0,
-                        VideoPercentage = total > 0 ? Math.Round((double)lessons.Count(x => x.ContentType == ContentType.Video) / total * 100, 2) : 0,
-                        AudioPercentage = total > 0 ? Math.Round((double)lessons.Count(x => x.ContentType == ContentType.Audio) / total * 100, 2) : 0
-                    }
-                };
-            }
-
-            var grouped = lessons.GroupBy(l => GetPeriodKey(l.CreatedAt, period.Value))
-                .Select(g => new ContentTypeStatsDto
-                {
-                    Period = g.Key,
-                    Pdf = g.Count(x => x.ContentType == ContentType.PDF),
-                    Doc = g.Count(x => x.ContentType == ContentType.DOCX),
-                    Video = g.Count(x => x.ContentType == ContentType.Video),
-                    Audio = g.Count(x => x.ContentType == ContentType.Audio),
-                    Total = g.Count(),
-                    PdfPercentage = g.Any() ? Math.Round((double)g.Count(x => x.ContentType == ContentType.PDF) / g.Count() * 100, 2) : 0,
-                    DocPercentage = g.Any() ? Math.Round((double)g.Count(x => x.ContentType == ContentType.DOCX) / g.Count() * 100, 2) : 0,
-                    VideoPercentage = g.Any() ? Math.Round((double)g.Count(x => x.ContentType == ContentType.Video) / g.Count() * 100, 2) : 0,
-                    AudioPercentage = g.Any() ? Math.Round((double)g.Count(x => x.ContentType == ContentType.Audio) / g.Count() * 100, 2) : 0
-                })
-                .OrderBy(x => x.Period)
-                .ToList();
-
-            return grouped;
+            return await GetContentTypeStatsDataAsync(baseQuery, period, startDate, endDate, cancellationToken);
         }
 
         public async Task<List<ReviewLessonDto>> GetContentModeratorReviewLessonsAsync(Guid contentModeratorId, int limit, CancellationToken cancellationToken = default)
@@ -758,16 +596,7 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                 .FirstOrDefaultAsync(cancellationToken);
 
             // Get lessons that teacher is using (through folders)
-            var teacherUsedLessonIds = await _context.FolderLessonMaterials
-                .Include(flm => flm.Folder)
-                    .ThenInclude(f => f.Class)
-                .Where(flm => flm.Folder != null &&
-                              flm.Folder.Class != null &&
-                              flm.Folder.Class.TeacherId == teacherId &&
-                              flm.Folder.Class.SchoolId == teacherSchoolId)
-                .Select(flm => flm.LessonMaterialId)
-                .Distinct()
-                .ToListAsync(cancellationToken);
+            var teacherUsedLessonIds = await GetTeacherUsedLessonIdsAsync(teacherId, teacherSchoolId, cancellationToken);
 
             return await _context.LessonMaterialQuestions
                 .Include(q => q.LessonMaterial)
@@ -800,6 +629,108 @@ namespace Eduva.Infrastructure.Persistence.Repositories
         #endregion
 
         #region Helper Methods
+
+        private static async Task<List<LessonActivityDataPoint>> GetLessonActivityDataAsync(IQueryable<LessonMaterial> baseQuery, PeriodType period, DateTimeOffset startDate, DateTimeOffset endDate, CancellationToken cancellationToken = default)
+        {
+            var lessons = await baseQuery
+                .Where(lm => lm.Status == EntityStatus.Active &&
+                           lm.CreatedAt >= startDate &&
+                           lm.CreatedAt <= endDate)
+                .Select(lm => new { lm.CreatedAt, lm.IsAIContent })
+                .ToListAsync(cancellationToken);
+
+            var grouped = lessons.GroupBy(l => GetPeriodKey(l.CreatedAt, period))
+                .Select(g => new LessonActivityDataPoint
+                {
+                    Period = g.Key,
+                    UploadedCount = g.Count(x => !x.IsAIContent),
+                    AIGeneratedCount = g.Count(x => x.IsAIContent),
+                    TotalCount = g.Count()
+                })
+                .OrderBy(x => x.Period)
+                .ToList();
+
+            return grouped;
+        }
+
+        private static async Task<List<ContentTypeStatsDto>> GetContentTypeStatsDataAsync(IQueryable<LessonMaterial> baseQuery, PeriodType? period = null, DateTimeOffset? startDate = null, DateTimeOffset? endDate = null, CancellationToken cancellationToken = default)
+        {
+            var query = baseQuery.Where(lm => lm.Status == EntityStatus.Active);
+
+            if (startDate.HasValue)
+                query = query.Where(lm => lm.CreatedAt >= startDate.Value);
+            if (endDate.HasValue)
+                query = query.Where(lm => lm.CreatedAt <= endDate.Value);
+
+            var lessons = await query
+                .Select(lm => new { lm.CreatedAt, lm.ContentType })
+                .ToListAsync(cancellationToken);
+
+            if (!period.HasValue)
+            {
+                var total = lessons.Count;
+                return CreateSinglePeriodContentTypeStats(lessons, total, "all-time");
+            }
+
+            var grouped = lessons.GroupBy(l => GetPeriodKey(l.CreatedAt, period.Value))
+                .Select(g => CreateContentTypeStatsFromGroup(g))
+                .OrderBy(x => x.Period)
+                .ToList();
+
+            return grouped;
+        }
+
+        private static List<ContentTypeStatsDto> CreateSinglePeriodContentTypeStats(IEnumerable<dynamic> lessons, int total, string periodName)
+        {
+            return new List<ContentTypeStatsDto>
+            {
+                new ContentTypeStatsDto
+                {
+                    Period = periodName,
+                    Pdf = lessons.Count(x => x.ContentType == ContentType.PDF),
+                    Doc = lessons.Count(x => x.ContentType == ContentType.DOCX),
+                    Video = lessons.Count(x => x.ContentType == ContentType.Video),
+                    Audio = lessons.Count(x => x.ContentType == ContentType.Audio),
+                    Total = total,
+                    PdfPercentage = total > 0 ? Math.Round((double)lessons.Count(x => x.ContentType == ContentType.PDF) / total * 100, 2) : 0,
+                    DocPercentage = total > 0 ? Math.Round((double)lessons.Count(x => x.ContentType == ContentType.DOCX) / total * 100, 2) : 0,
+                    VideoPercentage = total > 0 ? Math.Round((double)lessons.Count(x => x.ContentType == ContentType.Video) / total * 100, 2) : 0,
+                    AudioPercentage = total > 0 ? Math.Round((double)lessons.Count(x => x.ContentType == ContentType.Audio) / total * 100, 2) : 0
+                }
+            };
+        }
+
+        private async Task<List<Guid>> GetTeacherUsedLessonIdsAsync(Guid teacherId, int? teacherSchoolId, CancellationToken cancellationToken = default)
+        {
+            return await _context.FolderLessonMaterials
+                .Include(flm => flm.Folder)
+                    .ThenInclude(f => f.Class)
+                .Where(flm => flm.Folder != null &&
+                              flm.Folder.Class != null &&
+                              flm.Folder.Class.TeacherId == teacherId &&
+                              flm.Folder.Class.SchoolId == teacherSchoolId)
+                .Select(flm => flm.LessonMaterialId)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+        }
+
+        private static ContentTypeStatsDto CreateContentTypeStatsFromGroup(IGrouping<string, dynamic> group)
+        {
+            var total = group.Count();
+            return new ContentTypeStatsDto
+            {
+                Period = group.Key,
+                Pdf = group.Count(x => x.ContentType == ContentType.PDF),
+                Doc = group.Count(x => x.ContentType == ContentType.DOCX),
+                Video = group.Count(x => x.ContentType == ContentType.Video),
+                Audio = group.Count(x => x.ContentType == ContentType.Audio),
+                Total = total,
+                PdfPercentage = total > 0 ? Math.Round((double)group.Count(x => x.ContentType == ContentType.PDF) / total * 100, 2) : 0,
+                DocPercentage = total > 0 ? Math.Round((double)group.Count(x => x.ContentType == ContentType.DOCX) / total * 100, 2) : 0,
+                VideoPercentage = total > 0 ? Math.Round((double)group.Count(x => x.ContentType == ContentType.Video) / total * 100, 2) : 0,
+                AudioPercentage = total > 0 ? Math.Round((double)group.Count(x => x.ContentType == ContentType.Audio) / total * 100, 2) : 0
+            };
+        }
 
         private static string GetPeriodKey(DateTimeOffset date, PeriodType period)
         {
