@@ -3,6 +3,7 @@
     public class SystemOverviewDto
     {
         public int TotalUsers { get; set; }
+        public int SystemAdmins { get; set; }
         public int SchoolAdmins { get; set; }
         public int ContentModerators { get; set; }
         public int Teachers { get; set; }
@@ -16,6 +17,10 @@
         public decimal CreditPackRevenue { get; set; }
         public decimal SubscriptionPlanRevenue { get; set; }
         public decimal TotalRevenue => CreditPackRevenue + SubscriptionPlanRevenue;
+
+        // Storage usage
+        public long TotalStorageUsedBytes { get; set; }
+        public double TotalStorageUsedGB { get; set; }
     }
 
     public class LessonActivityDataPoint
@@ -39,6 +44,7 @@
     {
         public string Period { get; set; } = string.Empty;
         public int TotalRegistrations { get; set; }
+        public int SchoolAdmins { get; set; }
         public int ContentModerators { get; set; }
         public int Teachers { get; set; }
         public int Students { get; set; }

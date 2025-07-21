@@ -1,9 +1,7 @@
-﻿using Eduva.Application.Common.Models.Notifications;
-using Eduva.Application.Contracts.Hubs;
+﻿using Eduva.Application.Contracts.Hubs;
 using Eduva.Application.Features.Questions.Responses;
 using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
-using Eduva.Domain.Enums;
 using Eduva.Infrastructure.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -13,63 +11,374 @@ namespace Eduva.Infrastructure.Test.Services
     [TestFixture]
     public class HubNotificationServiceTests
     {
-        #region Fields and Setup
+        private Mock<INotificationHub> _mockNotificationHub = null!;
+        private Mock<INotificationService> _mockNotificationService = null!;
+        private Mock<ILogger<HubNotificationService>> _mockLogger = null!;
+        private HubNotificationService _hubNotificationService = null!;
 
-        private Mock<INotificationHub> _notificationHubMock = default!;
-        private Mock<INotificationService> _notificationServiceMock = default!;
-        private Mock<ILogger<HubNotificationService>> _loggerMock = default!;
-        private HubNotificationService _service = default!;
-
-        // Test data
-        private readonly Guid _userId = Guid.NewGuid();
-        private readonly Guid _questionId = Guid.NewGuid();
-        private readonly Guid _commentId = Guid.NewGuid();
-        private readonly Guid _lessonMaterialId = Guid.NewGuid();
+        #region SetUp
 
         [SetUp]
-        public void Setup()
+        public void SetUp()
         {
-            _notificationHubMock = new Mock<INotificationHub>();
-            _notificationServiceMock = new Mock<INotificationService>();
-            _loggerMock = new Mock<ILogger<HubNotificationService>>();
+            _mockNotificationHub = new Mock<INotificationHub>();
+            _mockNotificationService = new Mock<INotificationService>();
+            _mockLogger = new Mock<ILogger<HubNotificationService>>();
 
-            _service = new HubNotificationService(
-                _notificationHubMock.Object,
-                _notificationServiceMock.Object,
-                _loggerMock.Object);
+            _hubNotificationService = new HubNotificationService(
+                _mockNotificationHub.Object,
+                _mockNotificationService.Object,
+                _mockLogger.Object);
+        }
+
+        #endregion
+
+        #region NotifyQuestionCreatedAsync Tests
+
+        [Test]
+        public async Task NotifyQuestionCreated_ShouldSendNotificationAndSaveToDatabase_WhenSuccessful()
+        {
+            var lessonMaterialId = Guid.NewGuid();
+            var creatorId = Guid.NewGuid();
+            var targetUser1 = Guid.NewGuid();
+            var targetUser2 = Guid.NewGuid();
+            var targetUsers = new List<Guid> { targetUser1, targetUser2, creatorId };
+
+            var question = CreateSampleQuestionResponse(creatorId);
+            var persistentNotification = CreateSamplePersistentNotification();
+
+            SetupNotificationServiceMocks(targetUsers, persistentNotification, lessonMaterialId, question.Id);
+
+            await _hubNotificationService.NotifyQuestionCreatedAsync(question, lessonMaterialId);
+
+            VerifyUserNotificationSent(targetUser1.ToString(), "QuestionCreated");
+            VerifyUserNotificationSent(targetUser2.ToString(), "QuestionCreated");
+            VerifyUserNotificationNotSent(creatorId.ToString());
+            VerifyPersistentNotificationCreated("QuestionCreated");
+        }
+
+        [Test]
+        public async Task NotifyQuestionCreated_ShouldNotSendNotifications_WhenOnlyCreatorInTargetList()
+        {
+            await Task.Yield();
+            var lessonMaterialId = Guid.NewGuid();
+            var creatorId = Guid.NewGuid();
+            var targetUsers = new List<Guid> { creatorId };
+
+            var question = CreateSampleQuestionResponse(creatorId);
+            var persistentNotification = CreateSamplePersistentNotification();
+
+            SetupNotificationServiceMocks(targetUsers, persistentNotification, lessonMaterialId, question.Id);
+
+            await _hubNotificationService.NotifyQuestionCreatedAsync(question, lessonMaterialId);
+
+            VerifyNoUserNotificationsSent();
+            VerifyPersistentNotificationCreated("QuestionCreated", false);
+        }
+
+        #endregion
+
+        #region NotifyQuestionUpdatedAsync Tests
+
+        [Test]
+        public async Task NotifyQuestionUpdated_ShouldSendNotificationAndSaveToDatabase_WhenSuccessful()
+        {
+            var lessonMaterialId = Guid.NewGuid();
+            var creatorId = Guid.NewGuid();
+            var targetUser1 = Guid.NewGuid();
+            var targetUser2 = Guid.NewGuid();
+            var targetUsers = new List<Guid> { targetUser1, targetUser2, creatorId };
+
+            var question = CreateSampleQuestionResponse(creatorId);
+            var persistentNotification = CreateSamplePersistentNotification();
+
+            SetupNotificationServiceMocks(targetUsers, persistentNotification, lessonMaterialId, question.Id);
+
+            await _hubNotificationService.NotifyQuestionUpdatedAsync(question, lessonMaterialId);
+
+            VerifyUserNotificationSent(targetUser1.ToString(), "QuestionUpdated");
+            VerifyUserNotificationSent(targetUser2.ToString(), "QuestionUpdated");
+            VerifyUserNotificationNotSent(creatorId.ToString());
+            VerifyPersistentNotificationCreated("QuestionUpdated");
+        }
+
+        #endregion
+
+        #region NotifyQuestionDeletedAsync Tests
+
+        [Test]
+        public async Task NotifyQuestionDeleted_ShouldSendNotificationAndSaveToDatabase_WhenSuccessful()
+        {
+            var questionId = Guid.NewGuid();
+            var lessonMaterialId = Guid.NewGuid();
+            var targetUser1 = Guid.NewGuid();
+            var targetUsers = new List<Guid> { targetUser1 };
+            var persistentNotification = CreateSamplePersistentNotification();
+
+            SetupNotificationServiceMocks(targetUsers, persistentNotification, lessonMaterialId, questionId);
+
+            await _hubNotificationService.NotifyQuestionDeletedAsync(questionId, lessonMaterialId);
+
+            VerifyUserNotificationSent(targetUser1.ToString(), "QuestionDeleted");
+            VerifyPersistentNotificationCreated("QuestionDeleted");
+        }
+
+        [Test]
+        public async Task NotifyQuestionDeleted_ShouldLogError_WhenServiceThrows()
+        {
+            await Task.Yield();
+            var questionId = Guid.NewGuid();
+            var lessonMaterialId = Guid.NewGuid();
+
+            _mockNotificationService.Setup(x => x.GetUsersForQuestionCommentNotificationAsync(
+                questionId,
+                lessonMaterialId,
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("Service error"));
+
+            Assert.DoesNotThrowAsync(async () =>
+                await _hubNotificationService.NotifyQuestionDeletedAsync(questionId, lessonMaterialId));
+
+            VerifyErrorLogged();
+        }
+
+        #endregion
+
+        #region NotifyQuestionCommentedAsync Tests
+
+        [Test]
+        public async Task NotifyQuestionCommented_ShouldSendNotificationAndSaveToDatabase_WhenSuccessful()
+        {
+            var lessonMaterialId = Guid.NewGuid();
+            var creatorId = Guid.NewGuid();
+            var targetUser1 = Guid.NewGuid();
+            var targetUsers = new List<Guid> { targetUser1, creatorId };
+
+            var comment = CreateSampleQuestionCommentResponse(creatorId);
+            var persistentNotification = CreateSamplePersistentNotification();
+
+            SetupNotificationServiceMocks(targetUsers, persistentNotification, lessonMaterialId, comment.QuestionId);
+
+            await _hubNotificationService.NotifyQuestionCommentedAsync(comment, lessonMaterialId);
+
+            VerifyUserNotificationSent(targetUser1.ToString(), "QuestionCommented");
+            VerifyUserNotificationNotSent(creatorId.ToString());
+            VerifyPersistentNotificationCreated("QuestionCommented");
+        }
+
+        [Test]
+        public async Task NotifyQuestionCommentCreated_ShouldSetCorrectReplyFlag_WhenHasParentComment()
+        {
+            await Task.Yield();
+            var lessonMaterialId = Guid.NewGuid();
+            var creatorId = Guid.NewGuid();
+            var parentCommentId = Guid.NewGuid();
+            var targetUser1 = Guid.NewGuid();
+            var targetUsers = new List<Guid> { targetUser1, creatorId };
+
+            var comment = CreateSampleQuestionCommentResponse(creatorId, parentCommentId);
+            var persistentNotification = CreateSamplePersistentNotification();
+
+            SetupNotificationServiceMocks(targetUsers, persistentNotification, lessonMaterialId, comment.QuestionId);
+
+            await _hubNotificationService.NotifyQuestionCommentedAsync(comment, lessonMaterialId);
+
+            VerifyUserNotificationSent(targetUser1.ToString(), "QuestionCommented");
+        }
+
+        #endregion
+
+        #region NotifyQuestionCommentUpdatedAsync Tests
+
+        [Test]
+        public async Task NotifyQuestionCommentUpdated_ShouldSendNotificationAndSaveToDatabase_WhenSuccessful()
+        {
+            var lessonMaterialId = Guid.NewGuid();
+            var creatorId = Guid.NewGuid();
+            var targetUser1 = Guid.NewGuid();
+            var targetUsers = new List<Guid> { targetUser1, creatorId };
+
+            var comment = CreateSampleQuestionCommentResponse(creatorId);
+            var persistentNotification = CreateSamplePersistentNotification();
+
+            SetupNotificationServiceMocks(targetUsers, persistentNotification, lessonMaterialId, comment.QuestionId);
+
+            await _hubNotificationService.NotifyQuestionCommentUpdatedAsync(comment, lessonMaterialId);
+
+            VerifyUserNotificationSent(targetUser1.ToString(), "QuestionCommentUpdated");
+            VerifyPersistentNotificationCreated("QuestionCommentUpdated");
+        }
+
+        #endregion
+
+        #region NotifyQuestionCommentDeletedAsync Tests
+
+        [Test]
+        public async Task NotifyQuestionCommentDeleted_ShouldSendNotificationAndSaveToDatabase_WhenSuccessful()
+        {
+            var commentId = Guid.NewGuid();
+            var questionId = Guid.NewGuid();
+            var lessonMaterialId = Guid.NewGuid();
+            var deletedRepliesCount = 3;
+            var targetUser1 = Guid.NewGuid();
+            var targetUsers = new List<Guid> { targetUser1 };
+            var persistentNotification = CreateSamplePersistentNotification();
+
+            SetupNotificationServiceMocks(targetUsers, persistentNotification, lessonMaterialId, questionId);
+
+            await _hubNotificationService.NotifyQuestionCommentDeletedAsync(commentId, questionId, lessonMaterialId, deletedRepliesCount);
+
+            VerifyUserNotificationSent(targetUser1.ToString(), "QuestionCommentDeleted");
+            VerifyPersistentNotificationCreated("QuestionCommentDeleted");
+        }
+
+        [Test]
+        public async Task NotifyQuestionCommentDeleted_ShouldLogError_WhenServiceThrows()
+        {
+            await Task.Yield();
+            var commentId = Guid.NewGuid();
+            var questionId = Guid.NewGuid();
+            var lessonMaterialId = Guid.NewGuid();
+
+            _mockNotificationService.Setup(x => x.GetUsersForQuestionCommentNotificationAsync(
+                questionId,
+                lessonMaterialId,
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("Service error"));
+
+            Assert.DoesNotThrowAsync(async () =>
+                await _hubNotificationService.NotifyQuestionCommentDeletedAsync(commentId, questionId, lessonMaterialId, 0));
+
+            VerifyErrorLogged();
+        }
+
+        #endregion
+
+        #region Error Handling Tests
+
+        [Test]
+        public async Task NotifyComment_ShouldLogError_WhenHubException()
+        {
+            await Task.Yield();
+            var lessonMaterialId = Guid.NewGuid();
+            var creatorId = Guid.NewGuid();
+            var targetUsers = new List<Guid> { Guid.NewGuid() };
+
+            _mockNotificationService.Setup(s => s.GetUsersForQuestionCommentNotificationAsync(
+                It.IsAny<Guid>(),
+                It.IsAny<Guid>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(targetUsers);
+            _mockNotificationHub.Setup(h => h.SendNotificationToUserAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object>()))
+                .ThrowsAsync(new Exception("Hub error"));
+
+            var comment = CreateSampleQuestionCommentResponse(creatorId);
+
+            Assert.DoesNotThrowAsync(async () =>
+                await _hubNotificationService.NotifyQuestionCommentedAsync(comment, lessonMaterialId));
+
+            VerifyErrorLogged();
         }
 
         #endregion
 
         #region Helper Methods
 
-        private QuestionResponse CreateTestQuestion()
+        private void SetupNotificationServiceMocks(List<Guid> targetUsers, Notification persistentNotification, Guid lessonMaterialId, Guid questionId)
+        {
+            _mockNotificationService.Setup(s => s.GetUsersForNewQuestionNotificationAsync(
+            lessonMaterialId,
+            It.IsAny<CancellationToken>()))
+        .ReturnsAsync(targetUsers);
+
+            _mockNotificationService.Setup(s => s.GetUsersForQuestionCommentNotificationAsync(
+                    questionId,
+                    lessonMaterialId,
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(targetUsers);
+
+            _mockNotificationService.Setup(s => s.CreateNotificationAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(persistentNotification);
+
+            _mockNotificationService.Setup(s => s.CreateUserNotificationsAsync(
+               It.IsAny<Guid>(),
+               It.IsAny<List<Guid>>(),
+               It.IsAny<CancellationToken>()))
+           .Returns(Task.CompletedTask);
+        }
+
+        private void VerifyUserNotificationSent(string userId, string eventName)
+        {
+            _mockNotificationHub.Verify(h => h.SendNotificationToUserAsync(userId, eventName, It.IsAny<object>()), Times.Once);
+        }
+
+        private void VerifyUserNotificationNotSent(string userId)
+        {
+            _mockNotificationHub.Verify(h => h.SendNotificationToUserAsync(userId, It.IsAny<string>(), It.IsAny<object>()), Times.Never);
+        }
+
+        private void VerifyNoUserNotificationsSent()
+        {
+            _mockNotificationHub.Verify(h => h.SendNotificationToUserAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object>()), Times.Never);
+        }
+
+        private void VerifyPersistentNotificationCreated(string notificationType, bool expectUserNotifications = true)
+        {
+            _mockNotificationService.Verify(
+                s => s.CreateNotificationAsync(
+                    notificationType,
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+
+            _mockNotificationService.Verify(
+                s => s.CreateUserNotificationsAsync(
+                    It.IsAny<Guid>(),
+                    It.IsAny<List<Guid>>(),
+                    It.IsAny<CancellationToken>()),
+                expectUserNotifications ? Times.Once() : Times.Never());
+        }
+
+        private void VerifyErrorLogged()
+        {
+            _mockLogger.Verify(l => l.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.AtLeastOnce);
+        }
+
+        private static QuestionResponse CreateSampleQuestionResponse(Guid creatorId)
         {
             return new QuestionResponse
             {
-                Id = _questionId,
+                Id = Guid.NewGuid(),
                 Title = "Test Question",
                 Content = "Test Content",
                 LessonMaterialTitle = "Test Lesson",
                 CreatedAt = DateTimeOffset.UtcNow,
                 LastModifiedAt = DateTimeOffset.UtcNow,
-                CreatedByUserId = _userId,
+                CreatedByUserId = creatorId,
                 CreatedByName = "Test User",
                 CreatedByAvatar = "avatar.jpg",
                 CreatedByRole = "Student",
-                CommentCount = 5
+                CommentCount = 0
             };
         }
 
-        private QuestionCommentResponse CreateTestComment(Guid? parentCommentId = null)
+        private static QuestionCommentResponse CreateSampleQuestionCommentResponse(Guid creatorId, Guid? parentCommentId = null)
         {
             return new QuestionCommentResponse
             {
-                Id = _commentId,
-                QuestionId = _questionId,
+                Id = Guid.NewGuid(),
+                QuestionId = Guid.NewGuid(),
                 Content = "Test Comment",
                 CreatedAt = DateTimeOffset.UtcNow,
-                CreatedByUserId = _userId,
+                CreatedByUserId = creatorId,
                 CreatedByName = "Test User",
                 CreatedByAvatar = "avatar.jpg",
                 CreatedByRole = "Student",
@@ -77,352 +386,15 @@ namespace Eduva.Infrastructure.Test.Services
             };
         }
 
-        #endregion
-
-        #region Question Notification Tests
-
-        [Test]
-        public async Task NotifyQuestionCreated_ShouldSendNotificationAndSaveToDatabase_WhenSuccessful()
+        private static Notification CreateSamplePersistentNotification()
         {
-            // Arrange
-            var question = CreateTestQuestion();
-            var notification = new Notification { Id = Guid.NewGuid() };
-            var userIds = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() };
-
-            _notificationServiceMock.Setup(x => x.CreateNotificationAsync("QuestionCreated", It.IsAny<string>(), default))
-                .ReturnsAsync(notification);
-            _notificationServiceMock.Setup(x => x.GetUsersForNewQuestionNotificationAsync(_lessonMaterialId, default))
-                .ReturnsAsync(userIds);
-
-            // Act
-            await _service.NotifyQuestionCreatedAsync(question, _lessonMaterialId);
-
-            // Assert
-            _notificationHubMock.Verify(x => x.SendNotificationToGroupAsync(
-                $"Lesson_{_lessonMaterialId}", "QuestionCreated", It.IsAny<QuestionNotification>()), Times.Once);
-
-            _notificationServiceMock.Verify(x => x.CreateNotificationAsync("QuestionCreated", It.IsAny<string>(), default), Times.Once);
-            _notificationServiceMock.Verify(x => x.GetUsersForNewQuestionNotificationAsync(_lessonMaterialId, default), Times.Once);
-            _notificationServiceMock.Verify(x => x.CreateUserNotificationsAsync(notification.Id, It.IsAny<List<Guid>>(), default), Times.Once);
-        }
-
-        [Test]
-        public async Task NotifyQuestionUpdated_ShouldSendNotificationAndSaveToDatabase_WhenSuccessful()
-        {
-            // Arrange
-            var question = CreateTestQuestion();
-            var notification = new Notification { Id = Guid.NewGuid() };
-            var userIds = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() };
-
-            _notificationServiceMock.Setup(x => x.CreateNotificationAsync("QuestionUpdated", It.IsAny<string>(), default))
-                .ReturnsAsync(notification);
-            _notificationServiceMock.Setup(x => x.GetUsersForQuestionCommentNotificationAsync(_questionId, _lessonMaterialId, default))
-                .ReturnsAsync(userIds);
-
-            // Act
-            await _service.NotifyQuestionUpdatedAsync(question, _lessonMaterialId);
-
-            // Assert
-            _notificationHubMock.Verify(x => x.SendNotificationToGroupAsync(
-                $"Lesson_{_lessonMaterialId}", "QuestionUpdated", It.IsAny<QuestionNotification>()), Times.Once);
-
-            _notificationServiceMock.Verify(x => x.CreateNotificationAsync("QuestionUpdated", It.IsAny<string>(), default), Times.Once);
-            _notificationServiceMock.Verify(x => x.GetUsersForQuestionCommentNotificationAsync(_questionId, _lessonMaterialId, default), Times.Once);
-            _notificationServiceMock.Verify(x => x.CreateUserNotificationsAsync(notification.Id, It.IsAny<List<Guid>>(), default), Times.Once);
-        }
-
-        [Test]
-        public async Task NotifyQuestionDeleted_ShouldSendNotificationAndSaveToDatabase_WhenSuccessful()
-        {
-            // Arrange
-            var notification = new Notification { Id = Guid.NewGuid() };
-            var userIds = new List<Guid> { Guid.NewGuid() };
-
-            _notificationServiceMock.Setup(x => x.CreateNotificationAsync("QuestionDeleted", It.IsAny<string>(), default))
-                .ReturnsAsync(notification);
-            _notificationServiceMock.Setup(x => x.GetUsersForQuestionCommentNotificationAsync(_questionId, _lessonMaterialId, default))
-                .ReturnsAsync(userIds);
-
-            // Act
-            await _service.NotifyQuestionDeletedAsync(_questionId, _lessonMaterialId);
-
-            // Assert
-            _notificationHubMock.Verify(x => x.SendNotificationToGroupAsync(
-                $"Lesson_{_lessonMaterialId}", "QuestionDeleted", It.IsAny<QuestionDeleteNotification>()), Times.Once);
-
-            _notificationServiceMock.Verify(x => x.CreateNotificationAsync("QuestionDeleted", It.IsAny<string>(), default), Times.Once);
-            _notificationServiceMock.Verify(x => x.GetUsersForQuestionCommentNotificationAsync(_questionId, _lessonMaterialId, default), Times.Once);
-            _notificationServiceMock.Verify(x => x.CreateUserNotificationsAsync(notification.Id, It.IsAny<List<Guid>>(), default), Times.Once);
-        }
-
-        #endregion
-
-        #region Comment Notification Tests
-
-        [TestCase("QuestionCommented")]
-        [TestCase("QuestionCommentUpdated")]
-        public async Task NotifyComment_ShouldSendNotificationAndSaveToDatabase_WhenSuccessful(string eventType)
-        {
-            // Arrange
-            var comment = CreateTestComment();
-            var notification = new Notification { Id = Guid.NewGuid() };
-            var userIds = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() };
-
-            _notificationServiceMock.Setup(x => x.CreateNotificationAsync(eventType, It.IsAny<string>(), default))
-                .ReturnsAsync(notification);
-            _notificationServiceMock.Setup(x => x.GetUsersForQuestionCommentNotificationAsync(_questionId, _lessonMaterialId, default))
-                .ReturnsAsync(userIds);
-
-            // Act
-            if (eventType == "QuestionCommented")
-                await _service.NotifyQuestionCommentedAsync(comment, _lessonMaterialId);
-            else
-                await _service.NotifyQuestionCommentUpdatedAsync(comment, _lessonMaterialId);
-
-            // Assert
-            _notificationHubMock.Verify(x => x.SendNotificationToGroupAsync(
-                $"Lesson_{_lessonMaterialId}", eventType, It.IsAny<QuestionCommentNotification>()), Times.Once);
-
-            _notificationServiceMock.Verify(x => x.CreateNotificationAsync(eventType, It.IsAny<string>(), default), Times.Once);
-            _notificationServiceMock.Verify(x => x.GetUsersForQuestionCommentNotificationAsync(_questionId, _lessonMaterialId, default), Times.Once);
-            _notificationServiceMock.Verify(x => x.CreateUserNotificationsAsync(notification.Id, It.IsAny<List<Guid>>(), default), Times.Once);
-        }
-
-        [Test]
-        public async Task NotifyQuestionCommentDeleted_ShouldSendNotificationAndSaveToDatabase_WhenSuccessful()
-        {
-            // Arrange
-            var notification = new Notification { Id = Guid.NewGuid() };
-            var userIds = new List<Guid> { Guid.NewGuid() };
-
-            _notificationServiceMock.Setup(x => x.CreateNotificationAsync("QuestionCommentDeleted", It.IsAny<string>(), default))
-                .ReturnsAsync(notification);
-            _notificationServiceMock.Setup(x => x.GetUsersForQuestionCommentNotificationAsync(_questionId, _lessonMaterialId, default))
-                .ReturnsAsync(userIds);
-
-            // Act
-            await _service.NotifyQuestionCommentDeletedAsync(_commentId, _questionId, _lessonMaterialId, 0);
-
-            // Assert
-            _notificationHubMock.Verify(x => x.SendNotificationToGroupAsync(
-                $"Lesson_{_lessonMaterialId}", "QuestionCommentDeleted", It.IsAny<QuestionCommentDeleteNotification>()), Times.Once);
-
-            _notificationServiceMock.Verify(x => x.CreateNotificationAsync("QuestionCommentDeleted", It.IsAny<string>(), default), Times.Once);
-            _notificationServiceMock.Verify(x => x.GetUsersForQuestionCommentNotificationAsync(_questionId, _lessonMaterialId, default), Times.Once);
-            _notificationServiceMock.Verify(x => x.CreateUserNotificationsAsync(notification.Id, It.IsAny<List<Guid>>(), default), Times.Once);
-        }
-
-        [Test]
-        public async Task NotifyQuestionCommentCreated_ShouldSetCorrectReplyFlag_WhenHasParentComment()
-        {
-            // Arrange
-            var parentCommentId = Guid.NewGuid();
-            var comment = CreateTestComment(parentCommentId);
-
-            // Act
-            await _service.NotifyQuestionCommentedAsync(comment, _lessonMaterialId);
-
-            // Assert
-            _notificationHubMock.Verify(x => x.SendNotificationToGroupAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.Is<QuestionCommentNotification>(n =>
-                n.IsReply && n.ParentCommentId == parentCommentId)), Times.Once);
-        }
-
-        [TestCase(0)]
-        [TestCase(5)]
-        public async Task NotifyQuestionCommentDeleted_ShouldSendNotificationWithCorrectDeletedRepliesCount(int deletedRepliesCount)
-        {
-            // Arrange
-            var notification = new Notification { Id = Guid.NewGuid() };
-            _notificationServiceMock.Setup(x => x.CreateNotificationAsync("QuestionCommentDeleted", It.IsAny<string>(), default))
-                .ReturnsAsync(notification);
-            _notificationServiceMock.Setup(x => x.GetUsersForQuestionCommentNotificationAsync(_questionId, _lessonMaterialId, default))
-                .ReturnsAsync(new List<Guid>());
-
-            // Act
-            await _service.NotifyQuestionCommentDeletedAsync(_commentId, _questionId, _lessonMaterialId, deletedRepliesCount);
-
-            // Assert
-            _notificationHubMock.Verify(x => x.SendNotificationToGroupAsync(
-                $"Lesson_{_lessonMaterialId}", "QuestionCommentDeleted", It.Is<QuestionCommentDeleteNotification>(n =>
-                n.DeletedRepliesCount == deletedRepliesCount)), Times.Once);
-        }
-
-        [TestCase("QuestionCommented")]
-        [TestCase("QuestionCommentUpdated")]
-        [TestCase("QuestionCommentDeleted")]
-        public async Task NotifyComment_ShouldLogError_WhenHubException(string eventType)
-        {
-            // Arrange
-            var comment = CreateTestComment();
-            _notificationHubMock.Setup(x => x.SendNotificationToGroupAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object>()))
-                .ThrowsAsync(new Exception("Hub connection failed"));
-
-            // Act & Assert - Should not throw
-            if (eventType == "QuestionCommented")
-                await _service.NotifyQuestionCommentedAsync(comment, _lessonMaterialId);
-            else if (eventType == "QuestionCommentUpdated")
-                await _service.NotifyQuestionCommentUpdatedAsync(comment, _lessonMaterialId);
-            else
-                await _service.NotifyQuestionCommentDeletedAsync(_commentId, _questionId, _lessonMaterialId, 2);
-
-            _notificationHubMock.Verify(x => x.SendNotificationToGroupAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object>()), Times.Once);
-        }
-
-        #endregion
-
-        #region Database Persistence Tests
-
-        [Test]
-        public async Task SaveNotificationToDatabase_ShouldExcludeCreatorFromTargetUsers_WhenQuestionNotification()
-        {
-            // Arrange
-            var question = CreateTestQuestion();
-            var notification = new Notification { Id = Guid.NewGuid() };
-            var userIds = new List<Guid> { _userId, Guid.NewGuid(), Guid.NewGuid() }; // Creator + others
-
-            _notificationServiceMock.Setup(x => x.CreateNotificationAsync(It.IsAny<string>(), It.IsAny<string>(), default))
-                .ReturnsAsync(notification);
-            _notificationServiceMock.Setup(x => x.GetUsersForNewQuestionNotificationAsync(_lessonMaterialId, default))
-                .ReturnsAsync(userIds);
-
-            // Act
-            await _service.NotifyQuestionCreatedAsync(question, _lessonMaterialId);
-
-            // Assert
-            _notificationServiceMock.Verify(x => x.CreateUserNotificationsAsync(
-                notification.Id, It.Is<List<Guid>>(list => !list.Contains(_userId) && list.Count == 2), default), Times.Once);
-        }
-
-        [Test]
-        public async Task SaveNotificationToDatabase_ShouldExcludeCreatorFromTargetUsers_WhenCommentNotification()
-        {
-            // Arrange
-            var comment = CreateTestComment();
-            var notification = new Notification { Id = Guid.NewGuid() };
-            var userIds = new List<Guid> { _userId, Guid.NewGuid() }; // Creator + other
-
-            _notificationServiceMock.Setup(x => x.CreateNotificationAsync(It.IsAny<string>(), It.IsAny<string>(), default))
-                .ReturnsAsync(notification);
-            _notificationServiceMock.Setup(x => x.GetUsersForQuestionCommentNotificationAsync(_questionId, _lessonMaterialId, default))
-                .ReturnsAsync(userIds);
-
-            // Act
-            await _service.NotifyQuestionCommentedAsync(comment, _lessonMaterialId);
-
-            // Assert
-            _notificationServiceMock.Verify(x => x.CreateUserNotificationsAsync(
-                notification.Id, It.Is<List<Guid>>(list => !list.Contains(_userId) && list.Count == 1), default), Times.Once);
-        }
-
-        [Test]
-        public async Task SaveNotificationToDatabase_ShouldNotCreateUserNotifications_WhenNoTargetUsers()
-        {
-            // Arrange
-            var question = CreateTestQuestion();
-            var notification = new Notification { Id = Guid.NewGuid() };
-            var userIds = new List<Guid> { _userId }; // Only creator
-
-            _notificationServiceMock.Setup(x => x.CreateNotificationAsync(It.IsAny<string>(), It.IsAny<string>(), default))
-                .ReturnsAsync(notification);
-            _notificationServiceMock.Setup(x => x.GetUsersForNewQuestionNotificationAsync(_lessonMaterialId, default))
-                .ReturnsAsync(userIds);
-
-            // Act
-            await _service.NotifyQuestionCreatedAsync(question, _lessonMaterialId);
-
-            // Assert
-            _notificationServiceMock.Verify(x => x.CreateUserNotificationsAsync(
-                It.IsAny<Guid>(), It.IsAny<List<Guid>>(), It.IsAny<CancellationToken>()), Times.Never);
-        }
-
-        [Test]
-        public async Task SaveNotificationToDatabase_ShouldLogError_WhenExceptionThrown()
-        {
-            // Arrange
-            var question = CreateTestQuestion();
-            _notificationServiceMock.Setup(x => x.CreateNotificationAsync(It.IsAny<string>(), It.IsAny<string>(), default))
-                .ThrowsAsync(new Exception("Database error"));
-
-            // Act & Assert - Should not throw
-            await _service.NotifyQuestionCreatedAsync(question, _lessonMaterialId);
-
-            _notificationServiceMock.Verify(x => x.CreateNotificationAsync(It.IsAny<string>(), It.IsAny<string>(), default), Times.Once);
-        }
-
-        #endregion
-
-        #region Edge Cases and Integration Tests
-
-        [Test]
-        public async Task AllMethods_ShouldCallCorrectServices_WhenValidInput()
-        {
-            // Arrange
-            var question = CreateTestQuestion();
-            var comment = CreateTestComment();
-            var notification = new Notification { Id = Guid.NewGuid() };
-
-            _notificationServiceMock.Setup(x => x.CreateNotificationAsync(It.IsAny<string>(), It.IsAny<string>(), default))
-                .ReturnsAsync(notification);
-            _notificationServiceMock.Setup(x => x.GetUsersForNewQuestionNotificationAsync(_lessonMaterialId, default))
-                .ReturnsAsync(new List<Guid>());
-            _notificationServiceMock.Setup(x => x.GetUsersForQuestionCommentNotificationAsync(_questionId, _lessonMaterialId, default))
-                .ReturnsAsync(new List<Guid>());
-
-            // Act
-            await _service.NotifyQuestionCreatedAsync(question, _lessonMaterialId);
-            await _service.NotifyQuestionUpdatedAsync(question, _lessonMaterialId);
-            await _service.NotifyQuestionDeletedAsync(_questionId, _lessonMaterialId);
-            await _service.NotifyQuestionCommentedAsync(comment, _lessonMaterialId);
-            await _service.NotifyQuestionCommentUpdatedAsync(comment, _lessonMaterialId);
-            await _service.NotifyQuestionCommentDeletedAsync(_commentId, _questionId, _lessonMaterialId);
-
-            // Assert
-            _notificationHubMock.Verify(x => x.SendNotificationToGroupAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object>()), Times.Exactly(6));
-            _notificationServiceMock.Verify(x => x.CreateNotificationAsync(It.IsAny<string>(), It.IsAny<string>(), default), Times.Exactly(6));
-
-            // Verify new logic is being used correctly
-            _notificationServiceMock.Verify(x => x.GetUsersForNewQuestionNotificationAsync(_lessonMaterialId, default), Times.Once); // QuestionCreated
-            _notificationServiceMock.Verify(x => x.GetUsersForQuestionCommentNotificationAsync(_questionId, _lessonMaterialId, default), Times.Exactly(5)); // All other cases
-
-            // Verify old method is NOT called
-            _notificationServiceMock.Verify(x => x.GetUsersInLessonAsync(_lessonMaterialId, default), Times.Never);
-        }
-
-        [TestCase(QuestionActionType.Created)]
-        [TestCase(QuestionActionType.Updated)]
-        [TestCase(QuestionActionType.Deleted)]
-        [TestCase(QuestionActionType.Commented)]
-        public async Task NotificationObjects_ShouldHaveCorrectActionType(QuestionActionType actionType)
-        {
-            // Arrange
-            var question = CreateTestQuestion();
-            var comment = CreateTestComment();
-
-            // Act & Assert
-            switch (actionType)
+            return new Notification
             {
-                case QuestionActionType.Created:
-                    await _service.NotifyQuestionCreatedAsync(question, _lessonMaterialId);
-                    _notificationHubMock.Verify(x => x.SendNotificationToGroupAsync(
-                        It.IsAny<string>(), It.IsAny<string>(), It.Is<QuestionNotification>(n => n.ActionType == QuestionActionType.Created)), Times.Once);
-                    break;
-                case QuestionActionType.Updated:
-                    await _service.NotifyQuestionUpdatedAsync(question, _lessonMaterialId);
-                    _notificationHubMock.Verify(x => x.SendNotificationToGroupAsync(
-                        It.IsAny<string>(), It.IsAny<string>(), It.Is<QuestionNotification>(n => n.ActionType == QuestionActionType.Updated)), Times.Once);
-                    break;
-                case QuestionActionType.Deleted:
-                    await _service.NotifyQuestionDeletedAsync(_questionId, _lessonMaterialId);
-                    _notificationHubMock.Verify(x => x.SendNotificationToGroupAsync(
-                        It.IsAny<string>(), It.IsAny<string>(), It.Is<QuestionDeleteNotification>(n => n.ActionType == QuestionActionType.Deleted)), Times.Once);
-                    break;
-                case QuestionActionType.Commented:
-                    await _service.NotifyQuestionCommentedAsync(comment, _lessonMaterialId);
-                    _notificationHubMock.Verify(x => x.SendNotificationToGroupAsync(
-                        It.IsAny<string>(), It.IsAny<string>(), It.Is<QuestionCommentNotification>(n => n.ActionType == QuestionActionType.Commented)), Times.Once);
-                    break;
-            }
+                Id = Guid.NewGuid(),
+                Type = "TestNotification",
+                Payload = "{}",
+                CreatedAt = DateTimeOffset.UtcNow
+            };
         }
 
         #endregion
