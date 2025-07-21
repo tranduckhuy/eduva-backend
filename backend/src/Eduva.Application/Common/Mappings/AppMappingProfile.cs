@@ -264,6 +264,16 @@ namespace Eduva.Application.Common.Mappings
             // AIUsageLogs mappings
             CreateMap<AIUsageLog, AIUsageLogResponse>();
             CreateMap<Pagination<AIUsageLog>, Pagination<AIUsageLogResponse>>();
+
+            CreateMap<LessonMaterialApproval, LessonMaterialApprovalResponse>()
+            .ForMember(dest => dest.LessonMaterialTitle, opt => opt.MapFrom(src => src.LessonMaterial.Title))
+            .ForMember(dest => dest.ApproverName, opt => opt.MapFrom(src => src.Approver.FullName))
+            .ForMember(dest => dest.ApproverAvatarUrl, opt => opt.MapFrom(src => src.Approver.AvatarUrl))
+            .ForMember(dest => dest.CreatorName, opt => opt.MapFrom(src => src.LessonMaterial.CreatedByUser.FullName))
+            .ForMember(dest => dest.SchoolId, opt => opt.MapFrom(src => src.LessonMaterial.SchoolId))
+            .ForMember(dest => dest.SchoolName, opt => opt.MapFrom(src =>
+                src.LessonMaterial.School != null ? src.LessonMaterial.School.Name : string.Empty));
+            CreateMap<Pagination<LessonMaterialApproval>, Pagination<LessonMaterialApprovalResponse>>();
         }
         private static string GetOwnerName(Folder folder)
         {
