@@ -667,8 +667,11 @@ namespace Eduva.API.Test.Controllers.Classes
             Assert.That(objectResult, Is.Not.Null);
             var response = objectResult!.Value as ApiResponse<object>;
             Assert.That(response, Is.Not.Null);
-            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
-            Assert.That(response.Data, Is.EqualTo(expectedResponse));
+            Assert.Multiple(() =>
+            {
+                Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+                Assert.That(response.Data, Is.EqualTo(expectedResponse));
+            });
         }
 
         [Test]
