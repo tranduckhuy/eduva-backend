@@ -451,5 +451,117 @@ namespace Eduva.Application.Test.Features.Classes.Commands.AddMaterialsToFolder
             var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, CancellationToken.None));
             Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.Unauthorized));
         }
+
+        [Test]
+        public void Handle_ShouldThrow_WhenMaterialNotApproved()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var folderId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
+            var materialId = Guid.NewGuid();
+
+            var folder = new Folder { Id = folderId, ClassId = classId, OwnerType = OwnerType.Class };
+            // Thiết lập lesson material với trạng thái Draft
+            var material = new LessonMaterial
+            {
+                Id = materialId,
+                CreatedByUserId = userId,
+                LessonStatus = LessonMaterialStatus.Pending
+            };
+            var user = new ApplicationUser { Id = userId };
+
+            var command = new AddMaterialsToFolderCommand
+            {
+                FolderId = folderId,
+                ClassId = classId,
+                MaterialIds = new List<Guid> { materialId },
+                CurrentUserId = userId
+            };
+
+            _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
+            _lessonMaterialRepoMock.Setup(r => r.GetByIdAsync(materialId)).ReturnsAsync(material);
+            _userManagerMock.Setup(u => u.FindByIdAsync(userId.ToString())).ReturnsAsync(user);
+            _userManagerMock.Setup(u => u.GetRolesAsync(user)).ReturnsAsync(new List<string> { nameof(Role.SystemAdmin) });
+
+            // Act & Assert
+            var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, CancellationToken.None));
+            Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.LessonMaterialNotApproved));
+        }
+
+        [Test]
+        public void Handle_ShouldAllowAccess_WhenFolderClassIdMatch()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
+            var folderId = Guid.NewGuid();
+            var materialId = Guid.NewGuid();
+
+            var folder = new Folder { Id = folderId, ClassId = classId, OwnerType = OwnerType.Class };
+            var material = new LessonMaterial { Id = materialId, CreatedByUserId = userId, LessonStatus = LessonMaterialStatus.Approved };
+            var user = new ApplicationUser { Id = userId };
+
+            var command = new AddMaterialsToFolderCommand
+            {
+                FolderId = folderId,
+                ClassId = classId,
+                MaterialIds = new List<Guid> { materialId },
+                CurrentUserId = userId
+            };
+
+            _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
+            _lessonMaterialRepoMock.Setup(r => r.GetByIdAsync(materialId)).ReturnsAsync(material);
+            _folderLessonMaterialRepoMock.Setup(r => r.ExistsAsync(It.IsAny<Expression<Func<FolderLessonMaterial, bool>>>()))
+                .ReturnsAsync(false);
+            _userManagerMock.Setup(u => u.FindByIdAsync(userId.ToString())).ReturnsAsync(user);
+            _userManagerMock.Setup(u => u.GetRolesAsync(user)).ReturnsAsync(new List<string> { nameof(Role.SystemAdmin) });
+            _folderLessonMaterialRepoMock.Setup(r => r.AddAsync(It.IsAny<FolderLessonMaterial>())).Returns(Task.CompletedTask);
+            _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
+
+            var result = _handler.Handle(command, CancellationToken.None);
+
+            Assert.DoesNotThrowAsync(() => result);
+        }
+
+        [Test]
+        public void Handle_ShouldThrow_WhenPersonalFolderButNotOwner()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var anotherUserId = Guid.NewGuid(); // Một user ID khác
+            var folderId = Guid.NewGuid();
+            var materialId = Guid.NewGuid();
+
+            var folder = new Folder
+            {
+                Id = folderId,
+                OwnerType = OwnerType.Personal,
+                UserId = anotherUserId
+            };
+            var material = new LessonMaterial
+            {
+                Id = materialId,
+                CreatedByUserId = userId,
+                LessonStatus = LessonMaterialStatus.Approved
+            };
+            var user = new ApplicationUser { Id = userId };
+
+            var command = new AddMaterialsToFolderCommand
+            {
+                FolderId = folderId,
+                MaterialIds = new List<Guid> { materialId },
+                CurrentUserId = userId
+            };
+
+            _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
+            _userManagerMock.Setup(u => u.FindByIdAsync(userId.ToString())).ReturnsAsync(user);
+            _userManagerMock.Setup(u => u.GetRolesAsync(user)).ReturnsAsync(new List<string> { nameof(Role.Student) });
+
+            // Act & Assert
+            var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, CancellationToken.None));
+            Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.Unauthorized));
+        }
+
     }
 }

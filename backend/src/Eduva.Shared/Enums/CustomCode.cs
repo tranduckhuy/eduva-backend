@@ -91,6 +91,7 @@ namespace Eduva.Shared.Enums
         InvalidMultipleRoleCombination = 4078,
         TooManyRolesAssigned = 4079,
         StudentRoleNotAssignable = 4080,
+        DuplicateClassCodeSameSchool = 4081,
 
         // File Storage Errors
         InvalidBlobName = 4200,
