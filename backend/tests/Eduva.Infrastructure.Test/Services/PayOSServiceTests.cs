@@ -1,8 +1,8 @@
-﻿using Eduva.Application.Features.Payments.Configurations.PayOSService;
+﻿using Eduva.Infrastructure.Services;
 using Net.payOS;
 using Net.payOS.Types;
 
-namespace Eduva.Application.Test.Features.SchoolSubscriptions.Configurations.Services
+namespace Eduva.Infrastructure.Test.Services
 {
     [TestFixture]
     public class PayOSServiceTests

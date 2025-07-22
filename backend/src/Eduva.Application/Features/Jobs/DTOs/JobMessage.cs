@@ -1,7 +1,7 @@
 using Eduva.Application.Features.Jobs.Commands.ConfirmJob;
 using Eduva.Domain.Enums;
 
-namespace Eduva.Application.Models.Jobs;
+namespace Eduva.Application.Features.Jobs.DTOs;
 
 public class JobMessage
 {

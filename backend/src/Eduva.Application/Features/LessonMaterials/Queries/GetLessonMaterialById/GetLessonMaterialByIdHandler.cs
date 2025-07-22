@@ -26,7 +26,7 @@ namespace Eduva.Application.Features.LessonMaterials.Queries.GetLessonMaterialBy
             var repository = _unitOfWork.GetCustomRepository<ILessonMaterialRepository>();
 
             var lessonMaterial = await repository.GetByIdWithDetailsAsync(request.Id, cancellationToken)
-                ?? throw new LessonMaterialNotFountException(request.Id);
+                ?? throw new LessonMaterialNotFoundException(request.Id);
 
             // Check if the user has access to the lesson material
             var user = await _unitOfWork.GetCustomRepository<IUserRepository>()

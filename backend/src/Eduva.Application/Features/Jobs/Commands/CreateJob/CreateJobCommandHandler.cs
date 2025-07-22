@@ -1,7 +1,6 @@
 using Eduva.Application.Features.Jobs.DTOs;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Services;
-using Eduva.Application.Models.Jobs;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using MediatR;

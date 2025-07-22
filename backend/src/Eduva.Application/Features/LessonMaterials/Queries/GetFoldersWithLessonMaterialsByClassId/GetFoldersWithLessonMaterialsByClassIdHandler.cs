@@ -3,6 +3,7 @@ using Eduva.Application.Features.LessonMaterials.Queries.Extensions;
 using Eduva.Application.Features.LessonMaterials.Responses;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
+using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using MediatR;
@@ -13,9 +14,12 @@ namespace Eduva.Application.Features.LessonMaterials.Queries.GetFoldersWithLesso
         : IRequestHandler<GetFoldersWithLessonMaterialsByClassIdQuery, IReadOnlyList<FolderWithLessonMaterialsResponse>>
     {
         private readonly IUnitOfWork _unitOfWork;
-        public GetFoldersWithLessonMaterialsByClassIdHandler(IUnitOfWork unitOfWork)
+        private readonly ICacheService _cacheService;
+
+        public GetFoldersWithLessonMaterialsByClassIdHandler(IUnitOfWork unitOfWork, ICacheService cacheService)
         {
             _unitOfWork = unitOfWork;
+            _cacheService = cacheService;
         }
 
         public async Task<IReadOnlyList<FolderWithLessonMaterialsResponse>> Handle(GetFoldersWithLessonMaterialsByClassIdQuery request, CancellationToken cancellationToken)
