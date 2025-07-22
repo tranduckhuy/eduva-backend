@@ -44,20 +44,21 @@ namespace Eduva.Application.Features.Classes.Commands.AddMaterialsToFolder
             {
                 var material = await lessonMaterialRepository.GetByIdAsync(materialId);
                 if (material == null)
-                {
                     throw new AppException(CustomCode.LessonMaterialNotFound);
-                }
 
                 if (material.LessonStatus != LessonMaterialStatus.Approved)
-                {
                     throw new AppException(CustomCode.LessonMaterialNotApproved);
-                }
 
                 // Check if material belongs to the user
                 if (material.CreatedByUserId != request.CurrentUserId)
-                {
                     throw new AppException(CustomCode.Unauthorized);
-                }
+
+                bool existsInAnyFolderOfClass = await folderLessonMaterialRepository.ExistsAsync(flm =>
+                    flm.LessonMaterialId == materialId &&
+                    flm.Folder.ClassId == request.ClassId);
+
+                if (existsInAnyFolderOfClass)
+                    throw new AppException(CustomCode.LessonMaterialAlreadyExistsInClassFolder);
 
                 // Check if material is already in this folder
                 bool alreadyInFolder = await folderLessonMaterialRepository.ExistsAsync(flm =>

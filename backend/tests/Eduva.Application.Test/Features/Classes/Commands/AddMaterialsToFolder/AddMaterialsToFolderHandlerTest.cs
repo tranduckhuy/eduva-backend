@@ -210,13 +210,8 @@ namespace Eduva.Application.Test.Features.Classes.Commands.AddMaterialsToFolder
             _userManagerMock.Setup(u => u.GetRolesAsync(user)).ReturnsAsync(new List<string> { nameof(Role.SystemAdmin) });
             _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
 
-            // Act
-            var result = await _handler.Handle(command, CancellationToken.None);
-
-            // Assert
-            Assert.That(result, Is.True);
-            _folderLessonMaterialRepoMock.Verify(r => r.AddAsync(It.IsAny<FolderLessonMaterial>()), Times.Never);
-            _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Once);
+            var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, CancellationToken.None));
+            Assert.That(ex!.Message, Is.EqualTo("The lesson material already exists in another folder of this class."));
         }
 
         [Test]

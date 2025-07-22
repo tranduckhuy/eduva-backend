@@ -364,6 +364,8 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Failed to restore the lesson material!" }},
             { CustomCode.InvalidPersonalFolder, new MessageDetail {
                 HttpCode = StatusCodes.Status400BadRequest, Message = "The folder must be a personal folder and in Active status." }},
+            { CustomCode.LessonMaterialAlreadyExistsInClassFolder, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "The lesson material already exists in another folder of this class." }},
 
             // Storage Quota Errors
             { CustomCode.StorageQuotaExceeded, new MessageDetail {
