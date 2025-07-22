@@ -26,9 +26,6 @@ namespace Eduva.Infrastructure.Persistence.Configurations
                 .HasConversion<string>()
                 .IsRequired();
 
-            builder.Property(lm => lm.Duration)
-                .IsRequired();
-
             builder.Property(lm => lm.FileSize)
                 .IsRequired();
 

@@ -1,9 +1,7 @@
-using Eduva.Application.Common.Mappings;
 using Eduva.Application.Features.LessonMaterials.Queries.Extensions;
 using Eduva.Application.Features.LessonMaterials.Responses;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
-using Eduva.Domain.Entities;
 using MediatR;
 
 namespace Eduva.Application.Features.LessonMaterials.Queries.GetLessonMaterialsByFolder
@@ -30,7 +28,7 @@ namespace Eduva.Application.Features.LessonMaterials.Queries.GetLessonMaterialsB
                     request.FilterOptions,
                     cancellationToken);
 
-                return MapWithNextPrev(allMaterials);
+                return allMaterials.MapWithNextPrev();
             }
 
             // Teacher can only access their own materials in a folder
@@ -43,7 +41,7 @@ namespace Eduva.Application.Features.LessonMaterials.Queries.GetLessonMaterialsB
                     request.FilterOptions,
                     cancellationToken);
 
-                return MapWithNextPrev(teacherMaterials);
+                return teacherMaterials.MapWithNextPrev();
             }
 
             // Student can only access materials shared with them in a folder
@@ -56,24 +54,10 @@ namespace Eduva.Application.Features.LessonMaterials.Queries.GetLessonMaterialsB
                     request.FilterOptions,
                     cancellationToken);
 
-                return MapWithNextPrev(studentMaterials);
+                return studentMaterials.MapWithNextPrev();
             }
 
             return new List<LessonMaterialResponse>();
         }
-
-        private static List<LessonMaterialResponse> MapWithNextPrev(IReadOnlyList<LessonMaterial> materials)
-        {
-            var mapped = AppMapper<AppMappingProfile>.Mapper
-                .Map<List<LessonMaterialResponse>>(materials);
-
-            return mapped.Select((item, index) =>
-            {
-                item.PreviousLessonMaterialId = index > 0 ? mapped[index - 1].Id : null;
-                item.NextLessonMaterialId = index < mapped.Count - 1 ? mapped[index + 1].Id : null;
-                return item;
-            }).ToList();
-        }
-
     }
 }

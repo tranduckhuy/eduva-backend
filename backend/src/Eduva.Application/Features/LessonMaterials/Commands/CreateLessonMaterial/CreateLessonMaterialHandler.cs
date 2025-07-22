@@ -69,8 +69,12 @@ namespace Eduva.Application.Features.LessonMaterials.Commands.CreateLessonMateri
             {
                 _logger.LogError(ex, "Error creating lesson materials.");
 
-                // Remove blobs if any were created
-                await _storageService.DeleteRangeFileAsync(request.BlobNames);
+                // Remove blobs if any were created and there are no AI-generated materials
+                if (!createdLessonMaterials.Any(m => m.IsAIContent))
+                {
+                    _logger.LogInformation("Deleting uploaded blobs due to error.");
+                    await _storageService.DeleteRangeFileAsync(request.BlobNames);
+                }
 
                 throw;
             }
