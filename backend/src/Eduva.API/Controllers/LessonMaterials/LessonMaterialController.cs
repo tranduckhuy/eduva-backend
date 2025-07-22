@@ -4,11 +4,15 @@ using Eduva.API.Mappings;
 using Eduva.API.Models;
 using Eduva.API.Models.LessonMaterials;
 using Eduva.Application.Common.Mappings;
+using Eduva.Application.Features.LessonMaterials;
 using Eduva.Application.Features.LessonMaterials.Commands.ApproveLessonMaterial;
 using Eduva.Application.Features.LessonMaterials.Commands.CreateLessonMaterial;
+using Eduva.Application.Features.LessonMaterials.Commands.DeleteLessonMaterial;
 using Eduva.Application.Features.LessonMaterials.Commands.RestoreLessonMaterial;
 using Eduva.Application.Features.LessonMaterials.Commands.UpdateLessonMaterial;
 using Eduva.Application.Features.LessonMaterials.Queries.GetAllLessonMaterials;
+using Eduva.Application.Features.LessonMaterials.Queries.GetLessonMaterialApprovals;
+using Eduva.Application.Features.LessonMaterials.Queries.GetLessonMaterialApprovalsById;
 using Eduva.Application.Features.LessonMaterials.Queries.GetLessonMaterialById;
 using Eduva.Application.Features.LessonMaterials.Queries.GetOwnLessonMaterials;
 using Eduva.Application.Features.LessonMaterials.Queries.GetPendingLessonMaterials;
@@ -274,6 +278,93 @@ namespace Eduva.API.Controllers.LessonMaterials
             lessonMaterialSpecParam.SchoolId = schoolIdInt;
 
             var query = new GetOwnLessonMaterialsQuery(lessonMaterialSpecParam, Guid.Parse(userId));
+            return await HandleRequestAsync(async () =>
+            {
+                var response = await _mediator.Send(query);
+                return (CustomCode.Success, response);
+            });
+        }
+
+        // Delete lesson material by id
+        [HttpDelete("{id:guid}")]
+        [Authorize(Policy = "EducatorOnly")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> DeleteLessonMaterial(Guid id, [FromQuery] bool permanent = false)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Respond(CustomCode.UserIdNotFound);
+            }
+
+            int schoolIdInt = int.TryParse(User.FindFirstValue(SCHOOL_ID_CLAIM), out var parsedSchoolId) ? parsedSchoolId : 0;
+            if (schoolIdInt <= 0)
+            {
+                return Respond(CustomCode.SchoolNotFound);
+            }
+
+            var command = new DeleteLessonMaterialCommand
+            {
+                Id = id,
+                UserId = Guid.Parse(userId),
+                SchoolId = schoolIdInt,
+                Permanent = permanent
+            };
+
+            return await HandleRequestAsync(async () =>
+            {
+                await _mediator.Send(command);
+            });
+        }
+
+        [HttpGet("approvals")]
+        [Authorize(Policy = "EducatorOnly")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
+        public async Task<IActionResult> GetLessonMaterialApprovals([FromQuery] GetLessonMaterialApprovalsRequest request)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Respond(CustomCode.UserIdNotFound);
+            }
+
+            int? schoolId = int.TryParse(User.FindFirstValue(SCHOOL_ID_CLAIM), out var parsedSchoolId) ? parsedSchoolId : null;
+
+            // Get user roles
+            var userRoles = User.Claims
+                .Where(c => c.Type == ClaimTypes.Role)
+                .Select(c => c.Value)
+                .ToList();
+
+            var specParam = AppMapper<ModelMappingProfile>.Mapper.Map<LessonMaterialApprovalsSpecParam>(request);
+
+            // Set school ID from claim
+            if (schoolId.HasValue)
+            {
+                specParam.SchoolId = schoolId;
+            }
+
+            var query = new GetLessonMaterialApprovalsQuery(specParam, Guid.Parse(userId), userRoles);
+
+            return await HandleRequestAsync(async () =>
+            {
+                var response = await _mediator.Send(query);
+                return (CustomCode.Success, response);
+            });
+        }
+
+        [HttpGet("{lessonMaterialId:guid}/approvals")]
+        [Authorize(Policy = "EducatorOnly")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
+        public async Task<IActionResult> GetLessonMaterialApprovalsById([FromRoute] Guid lessonMaterialId)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return Respond(CustomCode.UserIdNotFound);
+
+            var query = new GetLessonMaterialApprovalsByIdQuery(lessonMaterialId, Guid.Parse(userId));
+
             return await HandleRequestAsync(async () =>
             {
                 var response = await _mediator.Send(query);

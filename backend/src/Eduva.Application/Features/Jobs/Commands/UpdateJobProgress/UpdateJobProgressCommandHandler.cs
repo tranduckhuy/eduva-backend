@@ -67,7 +67,7 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
         var audioOutputBlobNameUrl = string.Empty;
         if (!string.IsNullOrEmpty(request.AudioOutputBlobName))
         {
-            (string blobNameUrl, videoOutputBlobNameUrl) = _storageService.GetReadableUrlFromBlobName(request.AudioOutputBlobName);
+            (string blobNameUrl, audioOutputBlobNameUrl) = _storageService.GetReadableUrlFromBlobName(request.AudioOutputBlobName);
             job.AudioOutputBlobName = blobNameUrl;
         }
 

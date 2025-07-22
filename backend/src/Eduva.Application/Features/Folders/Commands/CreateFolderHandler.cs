@@ -42,7 +42,6 @@ namespace Eduva.Application.Features.Folders.Commands
                 {
                     // If class exists and user is the teacher of the class -> create class folder
                     request.OwnerType = OwnerType.Class;
-                    request.UserId = null;
                 }
                 else
                 {
@@ -58,11 +57,24 @@ namespace Eduva.Application.Features.Folders.Commands
 
             // Check for duplicate folder name within the same scope
             var folderRepository = _unitOfWork.GetCustomRepository<IFolderRepository>();
-            bool folderExists = await folderRepository.ExistsAsync(f =>
-                f.Name == request.Name &&
-                (request.OwnerType == OwnerType.Personal && f.UserId == request.UserId ||
-                 request.OwnerType == OwnerType.Class && f.ClassId == request.ClassId) &&
-                f.Status == EntityStatus.Active);
+            bool folderExists = false;
+
+            if (request.OwnerType == OwnerType.Personal)
+            {
+                folderExists = await folderRepository.ExistsAsync(f =>
+                    f.Name == request.Name &&
+                    f.OwnerType == OwnerType.Personal &&
+                    f.UserId == request.UserId &&
+                    f.Status == EntityStatus.Active);
+            }
+            else if (request.OwnerType == OwnerType.Class)
+            {
+                folderExists = await folderRepository.ExistsAsync(f =>
+                    f.Name == request.Name &&
+                    f.OwnerType == OwnerType.Class &&
+                    f.ClassId == request.ClassId &&
+                    f.Status == EntityStatus.Active);
+            }
 
             if (folderExists)
             {

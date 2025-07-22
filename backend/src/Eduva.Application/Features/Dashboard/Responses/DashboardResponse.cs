@@ -4,7 +4,7 @@ namespace Eduva.Application.Features.Dashboard.Responses
 {
     public class DashboardResponse
     {
-        public SystemOverviewDto SystemOverview { get; set; } = new();
+        public SystemOverviewDto SystemOverview { get; set; } = default!;
         public List<LessonActivityDataPoint> LessonActivity { get; set; } = [];
         public List<TopSchoolItem> TopSchools { get; set; } = [];
         public List<UserRegistrationDataPoint> UserRegistrations { get; set; } = [];

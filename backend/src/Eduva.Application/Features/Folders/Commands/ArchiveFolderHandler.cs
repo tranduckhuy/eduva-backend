@@ -27,40 +27,50 @@ namespace Eduva.Application.Features.Folders.Commands
         {
             var folderRepository = _unitOfWork.GetRepository<Folder, Guid>();
 
-            // Retrieve folder
             var folder = await folderRepository.GetByIdAsync(request.Id);
             if (folder == null)
-            {
                 throw new AppException(CustomCode.FolderNotFound);
-            }
 
-            // Check if folder is already archived
+            if (folder.OwnerType != OwnerType.Personal)
+                throw new AppException(CustomCode.FolderMustBePersonal);
+
             if (folder.Status == EntityStatus.Archived)
-            {
                 throw new AppException(CustomCode.FolderAlreadyArchived);
-            }
 
             if (folder.Status == EntityStatus.Deleted)
-            {
                 throw new AppException(CustomCode.FolderDeleteFailed);
-            }
 
-            // Verify ownership and permissions
             bool hasPermission = await HasPermissionToUpdateFolder(folder, request.CurrentUserId);
             if (!hasPermission)
-            {
                 throw new AppException(CustomCode.Forbidden);
-            }
 
             try
             {
-                // Update folder status to Archived
                 folder.Status = EntityStatus.Archived;
                 folder.LastModifiedAt = DateTimeOffset.UtcNow;
-
                 folderRepository.Update(folder);
-                await _unitOfWork.CommitAsync();
 
+                var folderLessonMaterialRepo = _unitOfWork.GetRepository<FolderLessonMaterial, int>();
+                var lessonMaterialRepo = _unitOfWork.GetRepository<LessonMaterial, Guid>();
+
+                var allFolderLessonMaterials = await folderLessonMaterialRepo.GetAllAsync();
+                var lessonMaterialIds = allFolderLessonMaterials
+                    .Where(flm => flm.FolderId == folder.Id)
+                    .Select(flm => flm.LessonMaterialId)
+                    .ToList();
+
+                var allLessonMaterials = await lessonMaterialRepo.GetAllAsync();
+                var materialsToArchive = allLessonMaterials
+                    .Where(lm => lessonMaterialIds.Contains(lm.Id) && lm.Status != EntityStatus.Deleted)
+                    .ToList();
+
+                foreach (var lessonMaterial in materialsToArchive)
+                {
+                    lessonMaterial.Status = EntityStatus.Deleted;
+                    lessonMaterialRepo.Update(lessonMaterial);
+                }
+
+                await _unitOfWork.CommitAsync();
                 return Unit.Value;
             }
             catch (Exception)
