@@ -182,7 +182,7 @@ namespace Eduva.Application.Test.Features.Classes.Commands.AddMaterialsToFolder
         }
 
         [Test]
-        public async Task Handle_ShouldNotAddMaterial_IfAlreadyInFolder()
+        public void Handle_ShouldNotAddMaterial_IfAlreadyInFolder()
         {
             // Arrange
             var userId = Guid.NewGuid();
