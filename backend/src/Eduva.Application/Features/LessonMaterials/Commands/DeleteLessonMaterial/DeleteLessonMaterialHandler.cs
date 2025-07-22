@@ -11,7 +11,7 @@ namespace Eduva.Application.Features.LessonMaterials.Commands.DeleteLessonMateri
     public class DeleteLessonMaterialHandler : IRequestHandler<DeleteLessonMaterialCommand, Unit>
     {
         private readonly IUnitOfWork _unitOfWork;
-        private ILogger<DeleteLessonMaterialHandler> _logger;
+        private readonly ILogger<DeleteLessonMaterialHandler> _logger;
 
         public DeleteLessonMaterialHandler(IUnitOfWork unitOfWork, ILogger<DeleteLessonMaterialHandler> logger)
         {
