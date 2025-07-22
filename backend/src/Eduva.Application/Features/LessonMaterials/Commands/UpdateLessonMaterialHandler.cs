@@ -23,7 +23,7 @@ namespace Eduva.Application.Features.LessonMaterials.Commands
 
             if (lessonMaterial.CreatedByUserId != request.CreatorId)
             {
-                throw new UnauthorizedException(["You are not authorized to update this lesson material."]);
+                throw new ForbiddenException(["You are not authorized to update this lesson material."]);
             }
 
             // Update lesson material properties

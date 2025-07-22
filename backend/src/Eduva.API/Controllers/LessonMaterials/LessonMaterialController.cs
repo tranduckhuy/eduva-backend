@@ -3,6 +3,7 @@ using Eduva.API.Controllers.Base;
 using Eduva.API.Mappings;
 using Eduva.API.Models;
 using Eduva.API.Models.LessonMaterials;
+using Eduva.Application.Common.Constants;
 using Eduva.Application.Common.Mappings;
 using Eduva.Application.Features.LessonMaterials;
 using Eduva.Application.Features.LessonMaterials.Commands.ApproveLessonMaterial;
@@ -31,7 +32,6 @@ namespace Eduva.API.Controllers.LessonMaterials
     [Authorize]
     public class LessonMaterialController : BaseController<LessonMaterialController>
     {
-        private const string SCHOOL_ID_CLAIM = "SchoolId";
         private readonly IMediator _mediator;
 
         public LessonMaterialController(IMediator mediator, ILogger<LessonMaterialController> logger) : base(logger)
@@ -48,7 +48,7 @@ namespace Eduva.API.Controllers.LessonMaterials
                 return Respond(CustomCode.UserIdNotFound);
             }
 
-            var schoolId = User.FindFirstValue(SCHOOL_ID_CLAIM);
+            var schoolId = User.FindFirstValue(ClaimConstants.SchoolId);
             int? schoolIdInt = schoolId != null ? int.Parse(schoolId) : null;
             var isStudent = User.IsInRole(nameof(Role.Student));
 
@@ -79,7 +79,7 @@ namespace Eduva.API.Controllers.LessonMaterials
             }
 
             // Get schoolID from claims or context if needed
-            var schoolId = int.Parse(User.FindFirstValue(SCHOOL_ID_CLAIM) ?? "0");
+            var schoolId = int.Parse(User.FindFirstValue(ClaimConstants.SchoolId) ?? "0");
 
             command.SchoolId = schoolId > 0 ? schoolId : null;
 
@@ -102,7 +102,7 @@ namespace Eduva.API.Controllers.LessonMaterials
                 return Respond(CustomCode.UserIdNotFound);
             }
 
-            int schoolIdInt = int.TryParse(User.FindFirstValue(SCHOOL_ID_CLAIM), out var parsedSchoolId) ? parsedSchoolId : 0;
+            int schoolIdInt = int.TryParse(User.FindFirstValue(ClaimConstants.SchoolId), out var parsedSchoolId) ? parsedSchoolId : 0;
 
             if (schoolIdInt <= 0)
             {
@@ -134,7 +134,7 @@ namespace Eduva.API.Controllers.LessonMaterials
                 return Respond(CustomCode.UserIdNotFound);
             }
 
-            int? schoolId = int.TryParse(User.FindFirstValue(SCHOOL_ID_CLAIM), out var parsedSchoolId) ? parsedSchoolId : null;
+            int? schoolId = int.TryParse(User.FindFirstValue(ClaimConstants.SchoolId), out var parsedSchoolId) ? parsedSchoolId : null;
 
             var query = new GetLessonMaterialByIdQuery
             {
@@ -160,7 +160,7 @@ namespace Eduva.API.Controllers.LessonMaterials
                 return Respond(CustomCode.UserIdNotFound);
             }
 
-            int schoolIdInt = int.TryParse(User.FindFirstValue(SCHOOL_ID_CLAIM), out var parsedSchoolId) ? parsedSchoolId : 0;
+            int schoolIdInt = int.TryParse(User.FindFirstValue(ClaimConstants.SchoolId), out var parsedSchoolId) ? parsedSchoolId : 0;
 
             if (schoolIdInt <= 0)
             {
@@ -268,7 +268,7 @@ namespace Eduva.API.Controllers.LessonMaterials
                 return Respond(CustomCode.UserIdNotFound);
             }
 
-            int schoolIdInt = int.TryParse(User.FindFirstValue(SCHOOL_ID_CLAIM), out var parsedSchoolId) ? parsedSchoolId : 0;
+            int schoolIdInt = int.TryParse(User.FindFirstValue(ClaimConstants.SchoolId), out var parsedSchoolId) ? parsedSchoolId : 0;
             if (schoolIdInt <= 0)
             {
                 return Respond(CustomCode.SchoolNotFound);
@@ -298,7 +298,7 @@ namespace Eduva.API.Controllers.LessonMaterials
                 return Respond(CustomCode.UserIdNotFound);
             }
 
-            int schoolIdInt = int.TryParse(User.FindFirstValue(SCHOOL_ID_CLAIM), out var parsedSchoolId) ? parsedSchoolId : 0;
+            int schoolIdInt = int.TryParse(User.FindFirstValue(ClaimConstants.SchoolId), out var parsedSchoolId) ? parsedSchoolId : 0;
             if (schoolIdInt <= 0)
             {
                 return Respond(CustomCode.SchoolNotFound);
@@ -329,7 +329,7 @@ namespace Eduva.API.Controllers.LessonMaterials
                 return Respond(CustomCode.UserIdNotFound);
             }
 
-            int? schoolId = int.TryParse(User.FindFirstValue(SCHOOL_ID_CLAIM), out var parsedSchoolId) ? parsedSchoolId : null;
+            int? schoolId = int.TryParse(User.FindFirstValue(ClaimConstants.SchoolId), out var parsedSchoolId) ? parsedSchoolId : null;
 
             // Get user roles
             var userRoles = User.Claims

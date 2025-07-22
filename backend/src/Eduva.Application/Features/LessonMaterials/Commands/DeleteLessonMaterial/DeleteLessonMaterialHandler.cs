@@ -26,7 +26,7 @@ namespace Eduva.Application.Features.LessonMaterials.Commands.DeleteLessonMateri
 
             if (lessonMaterial.SchoolId != request.SchoolId)
             {
-                throw new UnauthorizedException(["Unauthorized to delete this lesson material. The specified school ID does not match the lesson material's school ID."]);
+                throw new ForbiddenException(["You do not have permission to delete this lesson material."]);
             }
 
             if (request.Permanent && lessonMaterial.Status == EntityStatus.Deleted)
