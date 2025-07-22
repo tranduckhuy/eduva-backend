@@ -1,4 +1,4 @@
-using Eduva.Application.Common.Exceptions;
+﻿using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Features.Classes.Responses;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
@@ -35,18 +35,42 @@ namespace Eduva.Application.Features.Classes.Commands.EnrollByClassCode
                 throw new AppException(CustomCode.UserNotStudent);
             }
 
-            // Find class based on ClassCode
-            var classroomRepository = _unitOfWork.GetCustomRepository<IClassroomRepository>();
-            var classroom = await classroomRepository.FindByClassCodeAsync(request.ClassCode)
-                ?? throw new AppException(CustomCode.ClassNotFound);
+            if (student.SchoolId == null)
+            {
+                throw new AppException(CustomCode.SchoolNotFound);
+            }
 
-            // Check if class is active
+            var classroomRepository = _unitOfWork.GetRepository<Classroom, Guid>();
+            var allClassrooms = await classroomRepository.GetAllAsync();
+            var classrooms = allClassrooms
+                .Where(c => c.ClassCode == request.ClassCode)
+                .ToList();
+
+            if (classrooms.Count == 0)
+            {
+                throw new AppException(CustomCode.ClassNotFound);
+            }
+
+            var sameSchoolClasses = classrooms
+                .Where(c => c.SchoolId == student.SchoolId)
+                .ToList();
+
+            if (sameSchoolClasses.Count > 1)
+            {
+                throw new AppException(CustomCode.DuplicateClassCodeSameSchool);
+            }
+
+            var classroom = sameSchoolClasses.FirstOrDefault();
+            if (classroom == null)
+            {
+                throw new AppException(CustomCode.StudentCannotEnrollDifferentSchool);
+            }
+
             if (classroom.Status != EntityStatus.Active)
             {
                 throw new AppException(CustomCode.ClassNotActive);
             }
 
-            // Check student's school
             if (student.SchoolId == null)
             {
                 throw new AppException(CustomCode.SchoolNotFound);

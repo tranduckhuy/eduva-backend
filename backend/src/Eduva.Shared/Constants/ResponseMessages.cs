@@ -186,6 +186,8 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status400BadRequest, Message = "You cannot enroll in a class from a different school." } },
             { CustomCode.EnrollmentFailed, new MessageDetail {
                 HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to enroll in the class. Please try again later." } },
+            { CustomCode.DuplicateClassCodeSameSchool, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "The class code already exists in this school. Please use a different class code." } },
 
             // Payment Transaction Errors
             { CustomCode.PaymentTransactionNotFound, new MessageDetail {

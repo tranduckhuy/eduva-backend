@@ -1,5 +1,6 @@
 ﻿using Eduva.API.Controllers.Classes;
 using Eduva.API.Models;
+using Eduva.Application.Common.Constants;
 using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Common.Models;
 using Eduva.Application.Features.Classes.Commands.AddMaterialsToFolder;
@@ -19,6 +20,9 @@ using Eduva.Application.Features.Classes.Queries.GetStudentClasses;
 using Eduva.Application.Features.Classes.Queries.GetTeacherClasses;
 using Eduva.Application.Features.Classes.Responses;
 using Eduva.Application.Features.Classes.Specifications;
+using Eduva.Application.Features.LessonMaterials.Queries.GetFoldersWithLessonMaterialsByClassId;
+using Eduva.Application.Features.LessonMaterials.Responses;
+using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -562,6 +566,290 @@ namespace Eduva.API.Test.Controllers.Classes
                 c.MaterialIds == materialIds &&
                 c.CurrentUserId == _testUserId
             ), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        #endregion
+
+        #region GetLessonMaterialsByFolder Tests
+
+        [Test]
+        public async Task GetLessonMaterialsByFolder_ShouldReturnUserIdNotFound_WhenUserIdIsNull()
+        {
+            // Arrange
+            var claims = new List<Claim> { new(ClaimTypes.Role, "Teacher") };
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = new ClaimsPrincipal(new ClaimsIdentity(claims, "Test"))
+                }
+            };
+
+            // Act
+            var result = await _controller.GetLessonMaterialsByFolder(Guid.NewGuid(), null, null);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task GetLessonMaterialsByFolder_ShouldReturnSchoolNotFound_WhenSchoolIdIsInvalid()
+        {
+            // Arrange
+            var claims = new List<Claim>
+    {
+        new(ClaimTypes.NameIdentifier, _testUserId.ToString()),
+        new(ClaimTypes.Role, "Teacher")
+        // No SchoolId claim or invalid SchoolId
+    };
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = new ClaimsPrincipal(new ClaimsIdentity(claims, "Test"))
+                }
+            };
+
+            // Act
+            var result = await _controller.GetLessonMaterialsByFolder(Guid.NewGuid(), null, null);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.SchoolNotFound));
+        }
+
+        [Test]
+        public async Task GetLessonMaterialsByFolder_ShouldReturnSuccess_WhenRequestIsValid()
+        {
+            // Arrange
+            var schoolId = 123;
+            var classId = Guid.NewGuid();
+            var claims = new List<Claim>
+    {
+        new(ClaimTypes.NameIdentifier, _testUserId.ToString()),
+        new(ClaimConstants.SchoolId, schoolId.ToString()),
+        new(ClaimTypes.Role, "Teacher")
+    };
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = new ClaimsPrincipal(new ClaimsIdentity(claims, "Test"))
+                }
+            };
+
+            var lessonStatus = LessonMaterialStatus.Pending;
+            var status = EntityStatus.Active;
+
+            var expectedResponse = new List<FolderWithLessonMaterialsResponse>();
+            _mediatorMock.Setup(m => m.Send(
+                It.Is<GetFoldersWithLessonMaterialsByClassIdQuery>(q =>
+                    q.ClassId == classId &&
+                    q.SchoolId == schoolId &&
+                    q.UserId == _testUserId &&
+                    q.LessonStatus == lessonStatus &&
+                    q.Status == status),
+                It.IsAny<CancellationToken>()))
+                .ReturnsAsync(expectedResponse);
+
+            // Act
+            var result = await _controller.GetLessonMaterialsByFolder(classId, lessonStatus, status);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+            Assert.That(response.Data, Is.EqualTo(expectedResponse));
+        }
+
+        [Test]
+        public async Task GetLessonMaterialsByFolder_ShouldReturnAppExceptionStatusCode_WhenAppExceptionThrown()
+        {
+            // Arrange
+            var schoolId = 123;
+            var classId = Guid.NewGuid();
+            var claims = new List<Claim>
+    {
+        new(ClaimTypes.NameIdentifier, _testUserId.ToString()),
+        new(ClaimConstants.SchoolId, schoolId.ToString()),
+        new(ClaimTypes.Role, "Teacher")
+    };
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = new ClaimsPrincipal(new ClaimsIdentity(claims, "Test"))
+                }
+            };
+
+            var appException = new AppException(CustomCode.ClassNotFound);
+            _mediatorMock.Setup(m => m.Send(It.IsAny<GetFoldersWithLessonMaterialsByClassIdQuery>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(appException);
+
+            // Act
+            var result = await _controller.GetLessonMaterialsByFolder(classId, null, null);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.ClassNotFound));
+        }
+
+        [Test]
+        public async Task GetLessonMaterialsByFolder_ShouldReturnInternalServerError_WhenGenericExceptionThrown()
+        {
+            // Arrange
+            var schoolId = 123;
+            var classId = Guid.NewGuid();
+            var claims = new List<Claim>
+    {
+        new(ClaimTypes.NameIdentifier, _testUserId.ToString()),
+        new(ClaimConstants.SchoolId, schoolId.ToString()),
+        new(ClaimTypes.Role, "Teacher")
+    };
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = new ClaimsPrincipal(new ClaimsIdentity(claims, "Test"))
+                }
+            };
+
+            _mediatorMock.Setup(m => m.Send(It.IsAny<GetFoldersWithLessonMaterialsByClassIdQuery>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new Exception("Unexpected error"));
+
+            // Act
+            var result = await _controller.GetLessonMaterialsByFolder(classId, null, null);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
+        }
+
+        [Test]
+        public async Task GetLessonMaterialsByFolder_ShouldReturnModelInvalid_WhenModelStateIsInvalid()
+        {
+            // Arrange
+            var schoolId = 123;
+            var classId = Guid.NewGuid();
+            var claims = new List<Claim>
+            {
+                new(ClaimTypes.NameIdentifier, _testUserId.ToString()),
+                new(ClaimConstants.SchoolId, schoolId.ToString()),
+                new(ClaimTypes.Role, "Teacher")
+            };
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = new ClaimsPrincipal(new ClaimsIdentity(claims, "Test"))
+                }
+            };
+
+            _controller.ModelState.AddModelError("test", "error");
+
+            // Act
+            var result = await _controller.GetLessonMaterialsByFolder(classId, null, null);
+
+            // Assert
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.ModelInvalid));
+        }
+
+        [Test]
+        public async Task GetLessonMaterialsByFolder_ShouldSendCorrectParameters_WhenRequestIsValid()
+        {
+            // Arrange
+            var schoolId = 123;
+            var classId = Guid.NewGuid();
+            var claims = new List<Claim>
+            {
+                new(ClaimTypes.NameIdentifier, _testUserId.ToString()),
+                new(ClaimConstants.SchoolId, schoolId.ToString()),
+                new(ClaimTypes.Role, "Teacher"),
+                new(ClaimTypes.Role, "ContentCreator")
+            };
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = new ClaimsPrincipal(new ClaimsIdentity(claims, "Test"))
+                }
+            };
+
+            var lessonStatus = LessonMaterialStatus.Approved;
+            var status = EntityStatus.Active;
+
+            _mediatorMock.Setup(m => m.Send(It.IsAny<GetFoldersWithLessonMaterialsByClassIdQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<FolderWithLessonMaterialsResponse>());
+
+            // Act
+            await _controller.GetLessonMaterialsByFolder(classId, lessonStatus, status);
+
+            // Assert
+            _mediatorMock.Verify(m => m.Send(
+                It.Is<GetFoldersWithLessonMaterialsByClassIdQuery>(q =>
+                    q.ClassId == classId &&
+                    q.SchoolId == schoolId &&
+                    q.UserId == _testUserId &&
+                    q.UserRoles.Count == 2 &&
+                    q.UserRoles.Contains("Teacher") &&
+                    q.UserRoles.Contains("ContentCreator") &&
+                    q.LessonStatus == lessonStatus &&
+                    q.Status == status),
+                It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Test]
+        public async Task GetLessonMaterialsByFolder_ShouldHandleNullFilters_WhenNotProvided()
+        {
+            // Arrange
+            var schoolId = 123;
+            var classId = Guid.NewGuid();
+            var claims = new List<Claim>
+            {
+                new(ClaimTypes.NameIdentifier, _testUserId.ToString()),
+                new(ClaimConstants.SchoolId, schoolId.ToString()),
+                new(ClaimTypes.Role, "Teacher")
+            };
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = new ClaimsPrincipal(new ClaimsIdentity(claims, "Test"))
+                }
+            };
+
+            _mediatorMock.Setup(m => m.Send(It.IsAny<GetFoldersWithLessonMaterialsByClassIdQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<FolderWithLessonMaterialsResponse>());
+
+            // Act
+            await _controller.GetLessonMaterialsByFolder(classId, null, null);
+
+            // Assert
+            _mediatorMock.Verify(m => m.Send(
+                It.Is<GetFoldersWithLessonMaterialsByClassIdQuery>(q =>
+                    q.ClassId == classId &&
+                    q.LessonStatus == null &&
+                    q.Status == null),
+                It.IsAny<CancellationToken>()),
+                Times.Once);
         }
 
         #endregion
