@@ -131,6 +131,7 @@ namespace Eduva.Shared.Enums
         InvalidPersonalFolder = 4611,
         FolderMustBePersonal = 4612,
         FolderShouldBeArchivedBeforeRestore = 4613,
+        LessonMaterialAlreadyExistsInClassFolder = 4614,
 
         // Class Errors - All consolidated in 4700 range
         ClassNotFound = 4700,
