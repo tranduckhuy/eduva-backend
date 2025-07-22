@@ -19,7 +19,7 @@ namespace Eduva.Application.Features.LessonMaterials.Commands.UpdateLessonMateri
         {
             var lessonMaterialRepository = _unitOfWork.GetRepository<LessonMaterial, Guid>();
 
-            var lessonMaterial = await lessonMaterialRepository.GetByIdAsync(request.Id) ?? throw new LessonMaterialNotFountException(request.Id);
+            var lessonMaterial = await lessonMaterialRepository.GetByIdAsync(request.Id) ?? throw new LessonMaterialNotFoundException(request.Id);
 
             if (lessonMaterial.CreatedByUserId != request.CreatorId)
             {

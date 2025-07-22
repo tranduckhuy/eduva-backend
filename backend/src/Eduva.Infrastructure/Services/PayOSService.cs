@@ -2,7 +2,7 @@
 using Net.payOS;
 using Net.payOS.Types;
 
-namespace Eduva.Application.Features.Payments.Configurations.PayOSService
+namespace Eduva.Infrastructure.Services
 {
     public class PayOSService : IPayOSService
     {

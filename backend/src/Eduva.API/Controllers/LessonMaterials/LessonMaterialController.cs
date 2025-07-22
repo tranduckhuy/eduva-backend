@@ -286,11 +286,11 @@ namespace Eduva.API.Controllers.LessonMaterials
         }
 
         // Delete lesson material by id
-        [HttpDelete("{id:guid}")]
+        [HttpDelete]
         [Authorize(Policy = "EducatorOnly")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> DeleteLessonMaterial(Guid id, [FromQuery] bool permanent = false)
+        public async Task<IActionResult> DeleteLessonMaterial([FromBody] DeleteLessonMaterialCommand command)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
@@ -304,13 +304,8 @@ namespace Eduva.API.Controllers.LessonMaterials
                 return Respond(CustomCode.SchoolNotFound);
             }
 
-            var command = new DeleteLessonMaterialCommand
-            {
-                Id = id,
-                UserId = Guid.Parse(userId),
-                SchoolId = schoolIdInt,
-                Permanent = permanent
-            };
+            command.SchoolId = schoolIdInt;
+            command.UserId = Guid.Parse(userId);
 
             return await HandleRequestAsync(async () =>
             {
