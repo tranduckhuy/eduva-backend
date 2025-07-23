@@ -113,5 +113,48 @@ namespace Eduva.Application.Test.Features.Classes.Specifications
                 Assert.That(spec.Take, Is.EqualTo(5));
             });
         }
+
+        [Test]
+        public void OrderBy_Should_Order_By_Name_Asc_When_SortDirection_Is_Not_Desc()
+        {
+            var param = new ClassSpecParam { SortBy = "name", SortDirection = "ascending", PageIndex = 1, PageSize = 10 };
+            var spec = new ClassSpecification(param);
+
+            var data = new List<Classroom>
+            {
+                new() { Name = "B" },
+                new() { Name = "A" },
+                new() { Name = "C" }
+            }.AsQueryable();
+
+            var ordered = spec.OrderBy!(data).ToList();
+            Assert.Multiple(() =>
+            {
+                Assert.That(ordered[0].Name, Is.EqualTo("A"));
+                Assert.That(ordered[2].Name, Is.EqualTo("C"));
+            });
+        }
+
+        [Test]
+        public void OrderBy_Should_Order_By_CreatedAt_Asc_When_SortDirection_Is_Not_Desc()
+        {
+            var param = new ClassSpecParam { SortBy = "other", SortDirection = "ascending", PageIndex = 1, PageSize = 10 };
+            var spec = new ClassSpecification(param);
+
+            var now = DateTime.UtcNow;
+            var data = new List<Classroom>
+            {
+                new() { Name = "A", CreatedAt = now.AddDays(-1) },
+                new() { Name = "B", CreatedAt = now },
+                new() { Name = "C", CreatedAt = now.AddDays(-2) }
+            }.AsQueryable();
+
+            var ordered = spec.OrderBy!(data).ToList();
+            Assert.Multiple(() =>
+            {
+                Assert.That(ordered[0].Name, Is.EqualTo("C"));
+                Assert.That(ordered[2].Name, Is.EqualTo("B"));
+            });
+        }
     }
 }

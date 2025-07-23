@@ -255,5 +255,59 @@ namespace Eduva.Application.Test.Features.Classes.Specifications
                 Assert.That(spec.Take, Is.EqualTo(5));
             });
         }
+
+        [Test]
+        public void OrderBy_Should_Order_Ascending_When_SortDirection_Is_Not_Desc()
+        {
+            var param = new StudentClassSpecParam
+            {
+                SortBy = "classname",
+                SortDirection = "asc",
+                PageIndex = 1,
+                PageSize = 10
+            };
+            var spec = new StudentClassSpecification(param);
+
+            var data = new List<StudentClass>
+            {
+                new() { Class = new Classroom { Name = "B" } },
+                new() { Class = new Classroom { Name = "A" } },
+                new() { Class = new Classroom { Name = "C" } }
+            }.AsQueryable();
+
+            var ordered = spec.OrderBy!(data).ToList();
+            Assert.Multiple(() =>
+            {
+                Assert.That(ordered[0].Class.Name, Is.EqualTo("A"));
+                Assert.That(ordered[2].Class.Name, Is.EqualTo("C"));
+            });
+        }
+
+        [Test]
+        public void OrderBy_Should_Order_By_StudentName_Asc()
+        {
+            var param = new StudentClassSpecParam
+            {
+                SortBy = "studentname",
+                SortDirection = "asc",
+                PageIndex = 1,
+                PageSize = 10
+            };
+            var spec = new StudentClassSpecification(param);
+
+            var data = new List<StudentClass>
+            {
+                new() { Student = new ApplicationUser { FullName = "B" } },
+                new() { Student = new ApplicationUser { FullName = "A" } },
+                new() { Student = new ApplicationUser { FullName = "C" } }
+            }.AsQueryable();
+
+            var ordered = spec.OrderBy!(data).ToList();
+            Assert.Multiple(() =>
+            {
+                Assert.That(ordered[0].Student.FullName, Is.EqualTo("A"));
+                Assert.That(ordered[2].Student.FullName, Is.EqualTo("C"));
+            });
+        }
     }
 }

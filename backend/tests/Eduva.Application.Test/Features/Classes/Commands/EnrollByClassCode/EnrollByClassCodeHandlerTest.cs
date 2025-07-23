@@ -156,14 +156,17 @@ namespace Eduva.Application.Test.Features.Classes.Commands.EnrollByClassCode
         {
             var studentId = Guid.NewGuid();
             var command = new EnrollByClassCodeCommand { StudentId = studentId, ClassCode = "ABC123" };
-            var student = new ApplicationUser { Id = studentId };
+            var student = new ApplicationUser { Id = studentId, SchoolId = 1 };
 
             _userRepoMock.Setup(r => r.GetByIdAsync(studentId)).ReturnsAsync(student);
             _userManagerMock.Setup(m => m.GetRolesAsync(student)).ReturnsAsync(new List<string> { nameof(Role.Student) });
-            _classroomRepoMock.Setup(r => r.FindByClassCodeAsync("ABC123")).ReturnsAsync((Classroom?)null);
+
+            var classroomRepoMock = new Mock<IGenericRepository<Classroom, Guid>>();
+            classroomRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Classroom>());
+            _unitOfWorkMock.Setup(u => u.GetRepository<Classroom, Guid>()).Returns(classroomRepoMock.Object);
 
             var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, CancellationToken.None));
-            Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.SchoolNotFound));
+            Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.ClassNotFound));
         }
 
         [Test]
@@ -346,6 +349,77 @@ namespace Eduva.Application.Test.Features.Classes.Commands.EnrollByClassCode
 
             var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, CancellationToken.None));
             Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.SchoolNotFound));
+        }
+
+        [Test]
+        public void Handle_Should_Throw_When_Duplicate_ClassCode_Same_School()
+        {
+            // Arrange
+            var studentId = Guid.NewGuid();
+            var classId1 = Guid.NewGuid();
+            var classId2 = Guid.NewGuid();
+            var schoolId = 1;
+            var command = new EnrollByClassCodeCommand { StudentId = studentId, ClassCode = "DUPLICATE" };
+
+            var student = new ApplicationUser { Id = studentId, SchoolId = schoolId };
+
+            var classroom1 = new Classroom
+            {
+                Id = classId1,
+                ClassCode = "DUPLICATE",
+                SchoolId = schoolId,
+                Status = EntityStatus.Active
+            };
+            var classroom2 = new Classroom
+            {
+                Id = classId2,
+                ClassCode = "DUPLICATE",
+                SchoolId = schoolId,
+                Status = EntityStatus.Active
+            };
+
+            _userRepoMock.Setup(r => r.GetByIdAsync(studentId)).ReturnsAsync(student);
+            _userManagerMock.Setup(m => m.GetRolesAsync(student)).ReturnsAsync(new List<string> { nameof(Role.Student) });
+
+            var classroomRepoMock = new Mock<IGenericRepository<Classroom, Guid>>();
+            classroomRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Classroom> { classroom1, classroom2 });
+            _unitOfWorkMock.Setup(u => u.GetRepository<Classroom, Guid>()).Returns(classroomRepoMock.Object);
+
+            // Act & Assert
+            var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, CancellationToken.None));
+            Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.DuplicateClassCodeSameSchool));
+        }
+
+        [Test]
+        public void Handle_Should_Throw_When_Student_SchoolId_Different_From_Classroom()
+        {
+            var studentId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
+            var studentSchoolId = 1;
+            var classroomSchoolId = 2;
+            var command = new EnrollByClassCodeCommand { StudentId = studentId, ClassCode = "ABC123" };
+
+            var student = new ApplicationUser { Id = studentId, SchoolId = studentSchoolId };
+
+            var classroom = new Classroom
+            {
+                Id = classId,
+                ClassCode = "ABC123",
+                SchoolId = classroomSchoolId,
+                Status = EntityStatus.Active,
+                Teacher = new ApplicationUser { FullName = "Teacher Name" },
+                School = new School { Name = "Other School" }
+            };
+
+            _userRepoMock.Setup(r => r.GetByIdAsync(studentId)).ReturnsAsync(student);
+            _userManagerMock.Setup(m => m.GetRolesAsync(student)).ReturnsAsync(new List<string> { nameof(Role.Student) });
+
+            var classroomRepoMock = new Mock<IGenericRepository<Classroom, Guid>>();
+            classroomRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Classroom> { classroom });
+            _unitOfWorkMock.Setup(u => u.GetRepository<Classroom, Guid>()).Returns(classroomRepoMock.Object);
+
+            var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, CancellationToken.None));
+            Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.StudentCannotEnrollDifferentSchool));
         }
     }
 }

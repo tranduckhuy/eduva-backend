@@ -224,5 +224,66 @@ namespace Eduva.Application.Test.Features.Classes.Commands.ResetClassCode
                     mapperField.SetValue(null, originalMapper);
             }
         }
+
+        [Test]
+        public async Task Handle_Should_Set_Empty_TeacherName_And_SchoolName_When_Null()
+        {
+            // Arrange
+            var classId = Guid.NewGuid();
+            var teacherId = Guid.NewGuid();
+            var classroom = new Classroom
+            {
+                Id = classId,
+                TeacherId = teacherId,
+                ClassCode = "OLD123",
+                Teacher = new ApplicationUser { FullName = string.Empty },
+                School = new School { Name = string.Empty }
+            };
+            var teacher = new ApplicationUser { Id = teacherId };
+
+            var command = new ResetClassCodeCommand { Id = classId, TeacherId = teacherId };
+
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+            _userRepoMock.Setup(r => r.GetByIdAsync(teacherId)).ReturnsAsync(teacher);
+            _userManagerMock.Setup(m => m.GetRolesAsync(teacher)).ReturnsAsync(new List<string> { nameof(Role.Teacher) });
+            _classroomRepoMock.Setup(r => r.ExistsAsync(It.IsAny<Expression<Func<Classroom, bool>>>())).ReturnsAsync(false);
+            _classroomRepoMock.Setup(r => r.Update(It.IsAny<Classroom>()));
+            _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
+
+            var mockMapper = new Mock<IMapper>();
+            mockMapper.Setup(m => m.Map<ClassResponse>(It.IsAny<Classroom>()))
+                .Returns((Classroom c) => new ClassResponse
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    TeacherId = c.TeacherId,
+                    SchoolId = c.SchoolId,
+                    ClassCode = c.ClassCode
+                });
+
+            var appMapperType = typeof(AppMapper<AppMappingProfile>);
+            var mapperField = appMapperType.GetField("_mapper", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            var originalMapper = mapperField?.GetValue(null);
+
+            try
+            {
+                mapperField?.SetValue(null, mockMapper.Object);
+
+                // Act
+                var result = await _handler.Handle(command, CancellationToken.None);
+
+                Assert.Multiple(() =>
+                {
+                    // Assert
+                    Assert.That(result.TeacherName, Is.EqualTo(string.Empty));
+                    Assert.That(result.SchoolName, Is.EqualTo(string.Empty));
+                });
+            }
+            finally
+            {
+                if (mapperField != null && originalMapper != null)
+                    mapperField.SetValue(null, originalMapper);
+            }
+        }
     }
 }
