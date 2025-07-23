@@ -70,6 +70,8 @@ namespace Eduva.Application.Features.Questions.Queries
                     await ValidateStudentEligibility(userId, schoolId, studentClassCustomRepo);
                     break;
 
+                case nameof(Role.Teacher):
+                case nameof(Role.ContentModerator):
                 case nameof(Role.SchoolAdmin):
                 case nameof(Role.SystemAdmin):
                     break;
