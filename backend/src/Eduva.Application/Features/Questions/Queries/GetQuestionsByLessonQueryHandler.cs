@@ -56,7 +56,7 @@ namespace Eduva.Application.Features.Questions.Queries
             var userRoles = await _userManager.GetRolesAsync(user);
             var userRole = _permissionService.GetHighestPriorityRole(userRoles);
 
-            await ValidateUserAccessToMaterial(request.CurrentUserId, request.LessonMaterialId, userRole);
+            await ValidateUserAccessToMaterial(request.CurrentUserId, request.LessonMaterialId, userRole, lesson);
 
             var spec = new QuestionsByLessonSpecification(request.Param, request.LessonMaterialId, user.SchoolId);
             var result = await _repository.GetWithSpecAsync(spec);
@@ -96,7 +96,7 @@ namespace Eduva.Application.Features.Questions.Queries
 
         #region Validation User Access Material
 
-        private async Task ValidateUserAccessToMaterial(Guid userId, Guid lessonMaterialId, string userRole)
+        private async Task ValidateUserAccessToMaterial(Guid userId, Guid lessonMaterialId, string userRole, LessonMaterial lessonMaterial)
         {
             var studentClassCustomRepo = _unitOfWork.GetCustomRepository<IStudentClassRepository>();
 
@@ -108,7 +108,7 @@ namespace Eduva.Application.Features.Questions.Queries
 
                 case nameof(Role.Teacher):
                 case nameof(Role.ContentModerator):
-                    await ValidateTeacherAccess(userId, lessonMaterialId, studentClassCustomRepo);
+                    await ValidateTeacherAccess(userId, lessonMaterialId, studentClassCustomRepo, lessonMaterial);
                     break;
 
                 case nameof(Role.SchoolAdmin):
@@ -156,8 +156,13 @@ namespace Eduva.Application.Features.Questions.Queries
 
         #region Validation Teacher Access
 
-        private static async Task ValidateTeacherAccess(Guid teacherId, Guid lessonMaterialId, IStudentClassRepository repo)
+        private static async Task ValidateTeacherAccess(Guid teacherId, Guid lessonMaterialId, IStudentClassRepository repo, LessonMaterial lessonMaterial)
         {
+            if (lessonMaterial.CreatedByUserId == teacherId)
+            {
+                return;
+            }
+
             var hasAccess = await repo.TeacherHasAccessToMaterialAsync(teacherId, lessonMaterialId);
 
             if (!hasAccess)

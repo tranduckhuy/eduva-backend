@@ -70,11 +70,6 @@ namespace Eduva.Application.Features.Questions.Queries
                     await ValidateStudentEligibility(userId, schoolId, studentClassCustomRepo);
                     break;
 
-                case nameof(Role.Teacher):
-                case nameof(Role.ContentModerator):
-                    await ValidateTeacherEligibility(userId, schoolId, studentClassCustomRepo);
-                    break;
-
                 case nameof(Role.SchoolAdmin):
                 case nameof(Role.SystemAdmin):
                     break;
@@ -100,25 +95,6 @@ namespace Eduva.Application.Features.Questions.Queries
             if (!hasValidClassInSchool)
             {
                 throw new AppException(CustomCode.StudentNotInSchoolClass);
-            }
-        }
-
-        #endregion
-
-        #region Validation Teacher Eligibility
-
-        private static async Task ValidateTeacherEligibility(Guid teacherId, int schoolId, IStudentClassRepository repo)
-        {
-            var hasActiveClass = await repo.TeacherHasActiveClassAsync(teacherId);
-            if (!hasActiveClass)
-            {
-                throw new AppException(CustomCode.TeacherMustHaveActiveClass);
-            }
-
-            var hasValidClassInSchool = await repo.TeacherHasValidClassInSchoolAsync(teacherId, schoolId);
-            if (!hasValidClassInSchool)
-            {
-                throw new AppException(CustomCode.TeacherClassNotInOwnSchool);
             }
         }
 
