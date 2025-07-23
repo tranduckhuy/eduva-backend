@@ -17,11 +17,12 @@ namespace Eduva.Application.Features.LessonMaterials.Commands.UpdateLessonMateri
                 .MustAsync(LessonMaterialExists).WithMessage("The specified lesson material does not exist.");
 
             RuleFor(x => x.Title)
-                .NotEmpty().WithMessage("Title is required.")
-                .MaximumLength(255).WithMessage("Title cannot exceed 255 characters.");
+                .MaximumLength(255).WithMessage("Title cannot exceed 255 characters.")
+                .When(x => !string.IsNullOrEmpty(x.Title), ApplyConditionTo.CurrentValidator);
 
             RuleFor(x => x.Duration)
-                .GreaterThanOrEqualTo(0).WithMessage("Duration must be a non-negative integer.");
+                .GreaterThanOrEqualTo(0).WithMessage("Duration must be a non-negative integer.")
+                .When(x => x.Duration.HasValue, ApplyConditionTo.CurrentValidator);
 
             RuleFor(x => x.Visibility)
                 .IsInEnum().WithMessage("Visibility must be a valid enum value.")
