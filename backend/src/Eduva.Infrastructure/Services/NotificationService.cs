@@ -139,7 +139,7 @@ namespace Eduva.Infrastructure.Services
                 await AddUsersWhoInteractedWithLessonAsync(lessonMaterialId, userIds);
 
                 // 3. Add users with access based on folder structure
-                await AddUsersWithFolderAccessAsync(lessonMaterialId, userIds, cancellationToken);
+                await AddUsersWithFolderAccessAsync(lessonMaterialId, userIds);
 
                 // 4. For lessons not in folders, add users with access based on visibility
                 if (userIds.Count <= 1) // Only creator found
@@ -182,7 +182,7 @@ namespace Eduva.Infrastructure.Services
                 _logger.LogInformation("Added lesson creator for new question: {UserId}", lesson.CreatedByUserId);
 
                 // 2. Add users with access based on folder structure (students/teachers in class)
-                await AddUsersWithFolderAccessAsync(lessonMaterialId, userIds, cancellationToken);
+                await AddUsersWithFolderAccessAsync(lessonMaterialId, userIds);
 
                 // 3. Only in personal folder & School visibility: notify eligible roles
                 if (userIds.Count <= 1) // Only creator found
@@ -295,7 +295,7 @@ namespace Eduva.Infrastructure.Services
             }
         }
 
-        private async Task AddUsersWithFolderAccessAsync(Guid lessonMaterialId, HashSet<Guid> userIds, CancellationToken cancellationToken = default)
+        private async Task AddUsersWithFolderAccessAsync(Guid lessonMaterialId, HashSet<Guid> userIds)
         {
             try
             {
