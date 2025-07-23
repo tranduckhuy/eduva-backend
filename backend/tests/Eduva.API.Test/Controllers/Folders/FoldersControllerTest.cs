@@ -2,6 +2,7 @@ using Eduva.API.Controllers.Folders;
 using Eduva.API.Models;
 using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Common.Models;
+using Eduva.Application.Features.Classes.Commands.RemoveMaterialsFromFolder;
 using Eduva.Application.Features.Folders.Commands;
 using Eduva.Application.Features.Folders.Queries;
 using Eduva.Application.Features.Folders.Responses;
@@ -151,6 +152,23 @@ namespace Eduva.API.Test.Controllers.Folders
         #endregion
 
         #region CreateFolder Tests
+
+        [Test]
+        public async Task CreateFolder_ShouldReturnFolderCreateFailed_WhenExceptionThrown()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            var command = new CreateFolderCommand { Name = "Test Folder" };
+            _mediatorMock.Setup(m => m.Send(It.IsAny<CreateFolderCommand>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new Exception("unexpected"));
+
+            var result = await _controller.CreateFolder(command);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo(5000));
+        }
 
         [Test]
         public async Task CreateFolder_ShouldReturnUserIdNotFound_WhenUserIdIsNull()
@@ -462,6 +480,32 @@ namespace Eduva.API.Test.Controllers.Folders
         #endregion
 
         #region GetUserFolders Tests
+
+        [Test]
+        public async Task GetUserFolders_ShouldReturnAllUserFolders_WhenIsPagingIsFalse()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            var param = new FolderSpecParam { PageIndex = 1, PageSize = 10 };
+            var folders = new List<FolderResponse> { new FolderResponse { Name = "Test Folder" } };
+
+            _mediatorMock.Setup(m => m.Send(It.IsAny<GetAllUserFoldersQuery>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(folders);
+
+            var result = await _controller.GetUserFolders(param, isPaging: false);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+                Assert.That(response.Data, Is.TypeOf<List<FolderResponse>>());
+            });
+            var returnedFolders = (List<FolderResponse>)response.Data!;
+            Assert.That(returnedFolders, Has.Count.EqualTo(1));
+            Assert.That(returnedFolders[0].Name, Is.EqualTo("Test Folder"));
+        }
 
         [Test]
         public async Task GetUserFolders_ShouldReturnUserIdNotFound_WhenUserIdIsNull()
@@ -1062,6 +1106,289 @@ namespace Eduva.API.Test.Controllers.Folders
             var response = objectResult!.Value as ApiResponse<object>;
             Assert.That(response, Is.Not.Null);
             Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.ModelInvalid));
+        }
+
+        #endregion
+
+        #region RemoveMaterialsFromFolderPerson Tests
+
+        [Test]
+        public async Task RemoveMaterialsFromFolderPerson_ShouldReturnValidationResult_WhenModelStateIsInvalid()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            _controller.ModelState.AddModelError("MaterialIds", "Required");
+            var folderId = Guid.NewGuid();
+            var materialIds = new List<Guid> { Guid.NewGuid() };
+
+            var result = await _controller.RemoveMaterialsFromFolderPerson(folderId, materialIds);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.ModelInvalid));
+        }
+
+        [Test]
+        public async Task RemoveMaterialsFromFolderPerson_ShouldReturnUserIdNotFound_WhenUserIdIsNullOrInvalid()
+        {
+            // Null userId
+            SetupUser(null);
+            var folderId = Guid.NewGuid();
+            var materialIds = new List<Guid> { Guid.NewGuid() };
+            var result = await _controller.RemoveMaterialsFromFolderPerson(folderId, materialIds);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+
+            // Invalid userId
+            SetupUser("not-a-guid");
+            result = await _controller.RemoveMaterialsFromFolderPerson(folderId, materialIds);
+            objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task RemoveMaterialsFromFolderPerson_ShouldReturnSuccess_WhenValid()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            var folderId = Guid.NewGuid();
+            var materialIds = new List<Guid> { Guid.NewGuid() };
+
+            _mediatorMock.Setup(m => m.Send(It.IsAny<RemoveMaterialsFromFolderCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
+            var result = await _controller.RemoveMaterialsFromFolderPerson(folderId, materialIds);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+                Assert.That(response.Data, Is.EqualTo(true));
+            });
+        }
+
+        [Test]
+        public async Task RemoveMaterialsFromFolderPerson_ShouldReturn_ModelInvalid_WhenMaterialIdsIsNull()
+        {
+            var userId = Guid.NewGuid();
+            SetupUser(userId.ToString());
+            var result = await _controller.RemoveMaterialsFromFolderPerson(Guid.NewGuid(), new List<Guid>());
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo(2000));
+        }
+
+        [Test]
+        public async Task RemoveMaterialsFromFolderPerson_ShouldReturn_FolderDeleteFailed_WhenMediatorReturnsFalse()
+        {
+            var userId = Guid.NewGuid();
+            SetupUser(userId.ToString());
+            _mediatorMock.Setup(m => m.Send(It.IsAny<RemoveMaterialsFromFolderCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+            var result = await _controller.RemoveMaterialsFromFolderPerson(Guid.NewGuid(), new List<Guid> { Guid.NewGuid() });
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo(2000));
+        }
+
+        [Test]
+        public async Task RemoveMaterialsFromFolderPerson_ShouldReturn_FolderDeleteFailed_WhenMaterialIdsIsEmpty()
+        {
+            var userId = Guid.NewGuid();
+            SetupUser(userId.ToString());
+            _mediatorMock.Setup(m => m.Send(It.IsAny<RemoveMaterialsFromFolderCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+            var result = await _controller.RemoveMaterialsFromFolderPerson(Guid.NewGuid(), new List<Guid>());
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo(2000));
+        }
+
+        [Test]
+        public async Task RemoveMaterialsFromFolderPerson_ShouldReturn_FolderDeleteFailed_WhenMediatorThrowsException()
+        {
+            var userId = Guid.NewGuid();
+            SetupUser(userId.ToString());
+            _mediatorMock.Setup(m => m.Send(It.IsAny<RemoveMaterialsFromFolderCommand>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new Exception("fail"));
+            var result = await _controller.RemoveMaterialsFromFolderPerson(Guid.NewGuid(), new List<Guid> { Guid.NewGuid() });
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo(5000));
+        }
+
+        [Test]
+        public async Task RemoveMaterialsFromFolderPerson_ShouldReturnSuccess_WhenMediatorReturnsFalse()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            var folderId = Guid.NewGuid();
+            var materialIds = new List<Guid> { Guid.NewGuid() };
+
+            _mediatorMock.Setup(m => m.Send(It.IsAny<RemoveMaterialsFromFolderCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+
+            var result = await _controller.RemoveMaterialsFromFolderPerson(folderId, materialIds);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Success));
+                Assert.That(response.Data, Is.EqualTo(false));
+            });
+        }
+
+        #endregion
+
+        #region DeletePersonFolder Tests
+
+        [Test]
+        public async Task DeletePersonFolder_ShouldReturnValidationResult_WhenModelStateIsInvalid()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            _controller.ModelState.AddModelError("FolderIds", "Required");
+            var result = await _controller.DeletePersonFolder(new List<Guid> { Guid.NewGuid() });
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.ModelInvalid));
+        }
+
+        [Test]
+        public async Task DeletePersonFolder_ShouldReturnUserIdNotFound_WhenUserIdIsNullOrInvalid()
+        {
+            // Null userId
+            SetupUser(null);
+            var result = await _controller.DeletePersonFolder(new List<Guid> { Guid.NewGuid() });
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+
+            // Invalid userId
+            SetupUser("not-a-guid");
+            result = await _controller.DeletePersonFolder(new List<Guid> { Guid.NewGuid() });
+            objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.UserIdNotFound));
+        }
+
+        [Test]
+        public async Task DeletePersonFolder_ShouldReturnDeleted_WhenMediatorReturnsTrue()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            _mediatorMock.Setup(m => m.Send(It.IsAny<DeletePersonFolderCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
+            var result = await _controller.DeletePersonFolder(new List<Guid> { Guid.NewGuid() });
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Deleted));
+        }
+
+        [Test]
+        public async Task DeletePersonFolder_ShouldReturnFolderDeleteFailed_WhenMediatorReturnsFalse()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            _mediatorMock.Setup(m => m.Send(It.IsAny<DeletePersonFolderCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+
+            var result = await _controller.DeletePersonFolder(new List<Guid> { Guid.NewGuid() });
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.FolderDeleteFailed));
+        }
+
+        [Test]
+        public async Task DeletePersonFolder_ShouldReturnAppExceptionStatusCode_WhenAppExceptionThrown()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            _mediatorMock.Setup(m => m.Send(It.IsAny<DeletePersonFolderCommand>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new AppException(CustomCode.FolderArchiveFailed));
+
+            var result = await _controller.DeletePersonFolder(new List<Guid> { Guid.NewGuid() });
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.FolderArchiveFailed));
+        }
+
+        [Test]
+        public async Task DeletePersonFolder_ShouldReturnFolderDeleteFailed_OnException()
+        {
+            var validUserId = Guid.NewGuid();
+            SetupUser(validUserId.ToString());
+            _mediatorMock.Setup(m => m.Send(It.IsAny<DeletePersonFolderCommand>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new Exception("unexpected"));
+
+            var result = await _controller.DeletePersonFolder(new List<Guid> { Guid.NewGuid() });
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.FolderDeleteFailed));
+        }
+
+        [Test]
+        public async Task DeletePersonFolder_ShouldReturn_Deleted_WhenFolderIdsIsNull()
+        {
+            var userId = Guid.NewGuid();
+            SetupUser(userId.ToString());
+            _mediatorMock.Setup(m => m.Send(It.IsAny<DeletePersonFolderCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+            var result = await _controller.DeletePersonFolder(null);
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Deleted));
+        }
+
+        [Test]
+        public async Task DeletePersonFolder_ShouldReturn_Deleted_WhenFolderIdsIsEmptyList()
+        {
+            var userId = Guid.NewGuid();
+            SetupUser(userId.ToString());
+            _mediatorMock.Setup(m => m.Send(It.IsAny<DeletePersonFolderCommand>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+            var result = await _controller.DeletePersonFolder(new List<Guid>());
+            var objectResult = result as ObjectResult;
+            Assert.That(objectResult, Is.Not.Null);
+            var response = objectResult!.Value as ApiResponse<object>;
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response!.StatusCode, Is.EqualTo((int)CustomCode.Deleted));
         }
 
         #endregion
