@@ -114,6 +114,8 @@ namespace Eduva.Infrastructure.Services
             _logger.LogInformation("Marked all notifications as read for user: {UserId}", userId);
         }
 
+        #region Notification question/comment
+
         #region FALLBACK LOGIC OLD
 
         public async Task<List<Guid>> GetUsersInLessonAsync(Guid lessonMaterialId, CancellationToken cancellationToken = default)
@@ -253,7 +255,8 @@ namespace Eduva.Infrastructure.Services
             }
         }
 
-        #region Helper Methods
+
+        #region Helper methods question/comment
 
         private async Task AddUsersWhoInteractedWithLessonAsync(Guid lessonMaterialId, HashSet<Guid> userIds)
         {
@@ -438,5 +441,8 @@ namespace Eduva.Infrastructure.Services
         }
 
         #endregion
+
+        #endregion
+
     }
 }

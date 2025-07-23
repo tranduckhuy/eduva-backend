@@ -1,4 +1,5 @@
 ﻿using Eduva.Application.Common.Exceptions;
+using Eduva.Application.Features.Questions.Responses;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
@@ -52,10 +53,33 @@ namespace Eduva.Application.Features.Questions.Commands.DeleteQuestion
 
             var lessonMaterialId = question.LessonMaterialId;
 
+            var lessonRepo = _unitOfWork.GetRepository<LessonMaterial, Guid>();
+            var lessonMaterial = await lessonRepo.GetByIdAsync(lessonMaterialId) ?? throw new AppException(CustomCode.LessonMaterialNotFound);
+
+            if (lessonMaterial.Status != EntityStatus.Active)
+            {
+                throw new AppException(CustomCode.LessonMaterialNotActive);
+            }
+
             questionRepo.Remove(question);
             await _unitOfWork.CommitAsync();
 
-            await _hubNotificationService.NotifyQuestionDeletedAsync(request.Id, lessonMaterialId);
+            var response = new QuestionResponse
+            {
+                Id = question.Id,
+                LessonMaterialId = question.LessonMaterialId,
+                LessonMaterialTitle = lessonMaterial.Title,
+                Title = question.Title,
+                Content = question.Content,
+                CreatedAt = question.CreatedAt,
+                CreatedByUserId = question.CreatedByUserId,
+                CreatedByName = user.FullName,
+                CreatedByAvatar = user.AvatarUrl,
+                CreatedByRole = userRole,
+                CommentCount = 0
+            };
+
+            await _hubNotificationService.NotifyQuestionDeletedAsync(response, lessonMaterialId, request.DeletedByUserId);
 
             return true;
         }

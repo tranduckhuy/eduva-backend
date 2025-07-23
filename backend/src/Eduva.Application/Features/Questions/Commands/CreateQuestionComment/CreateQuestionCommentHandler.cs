@@ -43,6 +43,10 @@ namespace Eduva.Application.Features.Questions.Commands.CreateQuestionComment
                 throw new AppException(CustomCode.QuestionNotActive);
             }
 
+            var lessonRepo = _unitOfWork.GetRepository<LessonMaterial, Guid>();
+            var lesson = await lessonRepo.GetByIdAsync(question.LessonMaterialId) ?? throw new AppException(CustomCode.LessonMaterialNotFound);
+
+
             await ValidateQuestionAccessPermissions(user, userRole, question);
 
             Guid? flattenedParentCommentId = null;
@@ -70,7 +74,7 @@ namespace Eduva.Application.Features.Questions.Commands.CreateQuestionComment
 
             var response = BuildCommentResponse(comment, user, userRole);
 
-            await _hubNotificationService.NotifyQuestionCommentedAsync(response, question.LessonMaterialId);
+            await _hubNotificationService.NotifyQuestionCommentedAsync(response, question.LessonMaterialId, question.Title, lesson.Title, request.CreatedByUserId);
 
             return response;
         }

@@ -1,4 +1,5 @@
 ﻿using Eduva.Application.Common.Exceptions;
+using Eduva.Application.Features.Questions.Responses;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
@@ -47,6 +48,9 @@ namespace Eduva.Application.Features.Questions.Commands.DeleteQuestionComment
             var questionRepo = _unitOfWork.GetRepository<LessonMaterialQuestion, Guid>();
             var question = await questionRepo.GetByIdAsync(comment.QuestionId) ?? throw new AppException(CustomCode.QuestionNotFound);
 
+            var lessonRepo = _unitOfWork.GetRepository<LessonMaterial, Guid>();
+            var lesson = await lessonRepo.GetByIdAsync(question.LessonMaterialId) ?? throw new AppException(CustomCode.LessonMaterialNotFound);
+
             var replies = await ValidateDeletePermissionsAndGetReplies(comment, user, userRole);
 
             if (replies.Count != 0)
@@ -61,11 +65,32 @@ namespace Eduva.Application.Features.Questions.Commands.DeleteQuestionComment
 
             await _unitOfWork.CommitAsync();
 
-            await _hubNotificationService.NotifyQuestionCommentDeletedAsync(
-                comment.Id,
-                comment.QuestionId,
-                question.LessonMaterialId,
-                replies.Count);
+            var commentCreator = await userRepo.GetByIdAsync(comment.CreatedByUserId);
+            string commentCreatorRole = "";
+            if (commentCreator != null)
+            {
+                var commentCreatorRoles = await _userManager.GetRolesAsync(commentCreator);
+                commentCreatorRole = _permissionService.GetHighestPriorityRole(commentCreatorRoles);
+            }
+
+            var response = new QuestionCommentResponse
+            {
+                Id = comment.Id,
+                QuestionId = comment.QuestionId,
+                Content = comment.Content,
+                ParentCommentId = comment.ParentCommentId,
+                CreatedByUserId = comment.CreatedByUserId,
+                CreatedAt = comment.CreatedAt,
+                CreatedByName = commentCreator?.FullName,
+                CreatedByAvatar = commentCreator?.AvatarUrl,
+                CreatedByRole = commentCreatorRole,
+                CanUpdate = false,
+                CanDelete = false,
+                ReplyCount = replies.Count,
+                Replies = new List<QuestionReplyResponse>()
+            };
+
+            await _hubNotificationService.NotifyQuestionCommentDeletedAsync(response, lesson.Id, question.Title, lesson.Title, replies.Count, request.DeletedByUserId);
 
             return true;
         }

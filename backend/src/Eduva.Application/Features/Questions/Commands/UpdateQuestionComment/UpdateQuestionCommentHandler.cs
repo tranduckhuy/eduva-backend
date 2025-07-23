@@ -57,8 +57,14 @@ namespace Eduva.Application.Features.Questions.Commands.UpdateQuestionComment
             await _unitOfWork.CommitAsync();
 
             var response = await BuildCommentResponseWithPermissions(comment, user, userRole);
+            var lessonRepo = _unitOfWork.GetRepository<LessonMaterial, Guid>();
+            var lesson = await lessonRepo.GetByIdAsync(question.LessonMaterialId) ?? throw new AppException(CustomCode.LessonMaterialNotFound);
+            if (lesson.Status != EntityStatus.Active)
+            {
+                throw new AppException(CustomCode.LessonMaterialNotActive);
+            }
 
-            await _hubNotificationService.NotifyQuestionCommentUpdatedAsync(response, question.LessonMaterialId);
+            await _hubNotificationService.NotifyQuestionCommentUpdatedAsync(response, question.LessonMaterialId, question.Title, lesson.Title, request.UpdatedByUserId);
 
             return response;
         }
