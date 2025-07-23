@@ -709,5 +709,28 @@ namespace Eduva.Application.Test.Features.Folders.Commands
 
             Assert.That(await (Task<bool>)result!, Is.True);
         }
+
+        [Test]
+        public async Task HasPermissionToUpdateFolder_Should_ReturnFalse_When_ClassUser_NotTeacher_NotSchoolAdmin()
+        {
+            var userId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
+            var folder = new Folder { Id = Guid.NewGuid(), OwnerType = OwnerType.Class, ClassId = classId };
+            var classroom = new Classroom { Id = classId, TeacherId = Guid.NewGuid(), SchoolId = 1 };
+            var user = new ApplicationUser { Id = userId, SchoolId = 2 };
+
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+            _userRepoMock.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(user);
+            _userManagerMock.Setup(m => m.GetRolesAsync(user)).ReturnsAsync(new List<string> { nameof(Role.Student) });
+
+            _unitOfWorkMock.Setup(u => u.GetRepository<Classroom, Guid>()).Returns(_classroomRepoMock.Object);
+            _unitOfWorkMock.Setup(u => u.GetRepository<ApplicationUser, Guid>()).Returns(_userRepoMock.Object);
+
+            var handler = new UpdateFolderOrderHandler(_unitOfWorkMock.Object, _loggerMock.Object, _userManagerMock.Object);
+            var method = handler.GetType().GetMethod("HasPermissionToUpdateFolder", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+            var taskObj = method.Invoke(handler, new object[] { folder, userId });
+            var result = await (Task<bool>)taskObj!;
+            Assert.That(result, Is.False);
+        }
     }
 }
