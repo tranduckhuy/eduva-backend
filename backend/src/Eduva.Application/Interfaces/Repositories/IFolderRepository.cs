@@ -9,5 +9,6 @@ namespace Eduva.Application.Interfaces.Repositories
 
         Task<Folder?> GetFolderWithMaterialsAsync(Guid folderId);
         Task<IEnumerable<Folder>> ListAsync(Expression<Func<Folder, bool>> predicate, CancellationToken cancellationToken);
+        Task<List<Folder>> GetFoldersWithLessonMaterialsByClassIdAsync(Guid classId);
     }
 }

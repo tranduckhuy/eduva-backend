@@ -6,7 +6,7 @@ using Eduva.Domain.Entities;
 using MediatR;
 using Moq;
 
-namespace Eduva.Application.Test.Features.AICreditPacks.Commands;
+namespace Eduva.Application.Test.Features.AICreditPacks.Commands.UpdatePack;
 
 [TestFixture]
 public class UpdateAICreditPackCommandHandlerTests

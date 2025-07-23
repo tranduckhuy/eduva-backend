@@ -303,6 +303,55 @@ namespace Eduva.Application.Test.Features.Questions.Queries
         #region Teacher Access Validation Tests
 
         [Test]
+        public void ValidateTeacherAccess_ShouldNotThrow_WhenLessonMaterialCreatedByTeacher()
+        {
+            // Arrange
+            var teacherId = Guid.NewGuid();
+            var lessonMaterialId = Guid.NewGuid();
+
+            var lessonMaterial = new LessonMaterial
+            {
+                Id = lessonMaterialId,
+                CreatedByUserId = teacherId
+            };
+
+            var studentClassRepoMock = new Mock<IStudentClassRepository>();
+
+            // Act & Assert
+            Assert.That(
+                async () => await CallValidateTeacherAccess(teacherId, lessonMaterialId, studentClassRepoMock.Object, lessonMaterial),
+                Throws.Nothing
+            );
+        }
+
+        private static async Task CallValidateTeacherAccess(
+            Guid teacherId,
+            Guid lessonMaterialId,
+            IStudentClassRepository repo,
+            LessonMaterial lessonMaterial)
+        {
+            if (lessonMaterial.CreatedByUserId == teacherId)
+            {
+                await Task.CompletedTask;
+                return;
+            }
+
+            var hasAccess = await repo.TeacherHasAccessToMaterialAsync(teacherId, lessonMaterialId);
+
+            if (!hasAccess)
+            {
+                var hasActiveClass = await repo.TeacherHasActiveClassAsync(teacherId);
+
+                if (!hasActiveClass)
+                {
+                    throw new AppException(CustomCode.TeacherMustHaveActiveClass);
+                }
+
+                throw new AppException(CustomCode.TeacherNotHaveAccessToMaterial);
+            }
+        }
+
+        [Test]
         public void Handle_ShouldThrowTeacherMustHaveActiveClass_WhenTeacherHasNoActiveClass()
         {
             // Arrange

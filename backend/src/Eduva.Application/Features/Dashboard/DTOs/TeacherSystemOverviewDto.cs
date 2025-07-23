@@ -36,9 +36,9 @@ namespace Eduva.Application.Features.Dashboard.DTOs
 
     public class UnAnswerQuestionDto
     {
-        public Guid Id { get; set; }
         public string Title { get; set; } = string.Empty;
         public string OwnerName { get; set; } = string.Empty;
+        public Guid LessonId { get; set; }
         public string LessonName { get; set; } = string.Empty;
     }
 }

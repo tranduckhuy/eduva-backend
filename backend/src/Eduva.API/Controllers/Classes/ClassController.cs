@@ -1,6 +1,7 @@
 using Eduva.API.Attributes;
 using Eduva.API.Controllers.Base;
 using Eduva.API.Models;
+using Eduva.Application.Common.Constants;
 using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Common.Models;
 using Eduva.Application.Features.Classes.Commands.AddMaterialsToFolder;
@@ -20,6 +21,7 @@ using Eduva.Application.Features.Classes.Queries.GetStudentClasses;
 using Eduva.Application.Features.Classes.Queries.GetTeacherClasses;
 using Eduva.Application.Features.Classes.Responses;
 using Eduva.Application.Features.Classes.Specifications;
+using Eduva.Application.Features.LessonMaterials.Queries.GetFoldersWithLessonMaterialsByClassId;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
@@ -472,6 +474,47 @@ namespace Eduva.API.Controllers.Classes
             {
                 var result = await _mediator.Send(command);
                 return (CustomCode.Success, result);
+            });
+        }
+
+        [HttpGet("{classId:guid}/lesson-materials")]
+        [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
+        [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<object>>), StatusCodes.Status200OK)]
+        [ApiExplorerSettings(GroupName = "LessonMaterial")]
+        public async Task<IActionResult> GetLessonMaterialsByFolder(Guid classId, [FromQuery] LessonMaterialStatus? lessonStatus, [FromQuery] EntityStatus? status)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Respond(CustomCode.UserIdNotFound);
+            }
+
+            int schoolId = int.TryParse(User.FindFirstValue(ClaimConstants.SchoolId), out var parsedSchoolId) ? parsedSchoolId : 0;
+
+            if (schoolId <= 0)
+            {
+                return Respond(CustomCode.SchoolNotFound);
+            }
+
+            // Get user roles
+            var userRoles = User.Claims
+                .Where(c => c.Type == ClaimTypes.Role)
+                .Select(c => c.Value)
+                .ToList();
+
+            var query = new GetFoldersWithLessonMaterialsByClassIdQuery(
+                classId,
+                schoolId,
+                Guid.Parse(userId),
+                userRoles,
+                lessonStatus,
+                status
+            );
+
+            return await HandleRequestAsync(async () =>
+            {
+                var response = await _mediator.Send(query);
+                return (CustomCode.Success, response);
             });
         }
     }

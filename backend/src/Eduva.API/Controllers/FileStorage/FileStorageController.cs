@@ -1,6 +1,7 @@
 ﻿using Eduva.API.Attributes;
 using Eduva.API.Controllers.Base;
 using Eduva.API.Models.FileStorage;
+using Eduva.Application.Common.Constants;
 using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
@@ -13,7 +14,6 @@ namespace Eduva.API.Controllers.FileStorage
     [Route("api/file-storage")]
     public class FileStorageController : BaseController<FileStorageController>
     {
-        private const string SCHOOL_ID_CLAIM = "SchoolId";
         private readonly IStorageService _storageService;
         private readonly IStorageQuotaService _storageQuotaService;
 
@@ -34,7 +34,7 @@ namespace Eduva.API.Controllers.FileStorage
                 return Respond(CustomCode.UserIdNotFound);
             }
 
-            var schoolIdClaim = User.FindFirstValue(SCHOOL_ID_CLAIM);
+            var schoolIdClaim = User.FindFirstValue(ClaimConstants.SchoolId);
             if (string.IsNullOrEmpty(schoolIdClaim) || !int.TryParse(schoolIdClaim, out int schoolId))
             {
                 return Respond(CustomCode.SchoolNotFound);
@@ -76,7 +76,7 @@ namespace Eduva.API.Controllers.FileStorage
         [Authorize(Policy = "EducatorOnly")]
         public async Task<IActionResult> GetStorageQuota()
         {
-            var schoolIdClaim = User.FindFirstValue(SCHOOL_ID_CLAIM);
+            var schoolIdClaim = User.FindFirstValue(ClaimConstants.SchoolId);
             if (string.IsNullOrEmpty(schoolIdClaim) || !int.TryParse(schoolIdClaim, out int schoolId))
             {
                 return Respond(CustomCode.SchoolNotFound);

@@ -48,5 +48,14 @@ namespace Eduva.Infrastructure.Persistence.Repositories
         {
             return await _context.Folders.Where(predicate).ToListAsync(cancellationToken);
         }
+
+        public async Task<List<Folder>> GetFoldersWithLessonMaterialsByClassIdAsync(Guid classId)
+        {
+            return await _context.Folders
+                .Where(f => f.ClassId == classId)
+                .Include(f => f.FolderLessonMaterials)
+                    .ThenInclude(flm => flm.LessonMaterial)
+                .ToListAsync();
+        }
     }
 }

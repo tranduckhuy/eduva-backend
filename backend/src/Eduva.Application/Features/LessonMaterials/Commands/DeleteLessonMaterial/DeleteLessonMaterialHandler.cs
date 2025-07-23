@@ -19,32 +19,47 @@ namespace Eduva.Application.Features.LessonMaterials.Commands.DeleteLessonMateri
             _logger = logger;
         }
 
+
         public async Task<Unit> Handle(DeleteLessonMaterialCommand request, CancellationToken cancellationToken)
         {
             var lessonMaterialRepository = _unitOfWork.GetRepository<LessonMaterial, Guid>();
-            var lessonMaterial = await lessonMaterialRepository.GetByIdAsync(request.Id) ?? throw new LessonMaterialNotFountException(request.Id);
 
-            if (lessonMaterial.SchoolId != request.SchoolId)
+            var materials = await lessonMaterialRepository
+                .FindAsync(x => request.Ids.Contains(x.Id), cancellationToken);
+
+            var notFoundIds = request.Ids.Except(materials.Select(m => m.Id)).ToList();
+            if (notFoundIds.Count != 0)
             {
-                throw new UnauthorizedException(["Unauthorized to delete this lesson material. The specified school ID does not match the lesson material's school ID."]);
+                throw new LessonMaterialNotFoundException(notFoundIds);
             }
 
-            if (request.Permanent && lessonMaterial.Status == EntityStatus.Deleted)
+            foreach (var material in materials)
             {
-                // Permanently delete the lesson material
-                lessonMaterialRepository.Remove(lessonMaterial);
-            }
-            else
-            {
-                lessonMaterial.Status = EntityStatus.Deleted;
-                lessonMaterialRepository.Update(lessonMaterial);
-            }
+                if (material.SchoolId != request.SchoolId)
+                {
+                    throw new ForbiddenException(["You do not have permission to delete because the material does not belong to your school."]);
+                }
 
-            _logger.LogInformation("User {UserId} deleted lesson material {LessonMaterialId} in school {SchoolId}. Permanent: {Permanent}",
-                request.UserId, request.Id, request.SchoolId, request.Permanent);
+                if (material.CreatedByUserId != request.UserId)
+                {
+                    throw new ForbiddenException(["You can only delete materials that you created."]);
+                }
+
+                if (request.Permanent && material.Status == EntityStatus.Deleted)
+                {
+                    lessonMaterialRepository.Remove(material);
+                }
+                else
+                {
+                    material.Status = EntityStatus.Deleted;
+                    lessonMaterialRepository.Update(material);
+                }
+
+                _logger.LogInformation("User {UserId} deleted lesson material {MaterialId} in school {SchoolId}. Permanent: {Permanent}",
+                    request.UserId, material.Id, request.SchoolId, request.Permanent);
+            }
 
             await _unitOfWork.CommitAsync();
-
             return Unit.Value;
         }
     }

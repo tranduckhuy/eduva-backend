@@ -1,6 +1,7 @@
 using Eduva.API.Attributes;
 using Eduva.API.Controllers.Base;
 using Eduva.API.Models;
+using Eduva.Application.Common.Constants;
 using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Common.Models;
 using Eduva.Application.Features.Classes.Commands.RemoveMaterialsFromFolder;
@@ -24,7 +25,6 @@ namespace Eduva.API.Controllers.Folders
     public class FoldersController : BaseController<FoldersController>
     {
         private readonly IMediator _mediator;
-        private const string SCHOOL_ID_CLAIM = "SchoolId";
 
         public FoldersController(IMediator mediator, ILogger<FoldersController> logger) : base(logger)
         {
@@ -341,7 +341,7 @@ namespace Eduva.API.Controllers.Folders
                 return Respond(CustomCode.UserIdNotFound);
             }
 
-            int schoolId = int.TryParse(User.FindFirstValue(SCHOOL_ID_CLAIM), out var parsedSchoolId) ? parsedSchoolId : 0;
+            int schoolId = int.TryParse(User.FindFirstValue(ClaimConstants.SchoolId), out var parsedSchoolId) ? parsedSchoolId : 0;
 
             if (schoolId <= 0)
             {

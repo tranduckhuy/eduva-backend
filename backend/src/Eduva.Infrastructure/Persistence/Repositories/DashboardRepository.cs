@@ -618,9 +618,9 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                 .Take(limit)
                 .Select(q => new UnAnswerQuestionDto
                 {
-                    Id = q.Id,
                     Title = q.Title,
                     OwnerName = q.CreatedByUser != null ? q.CreatedByUser.FullName ?? string.Empty : string.Empty,
+                    LessonId = q.LessonMaterialId,
                     LessonName = q.LessonMaterial.Title
                 })
                 .ToListAsync(cancellationToken);

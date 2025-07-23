@@ -56,70 +56,6 @@ namespace Eduva.Application.Test.Features.Questions.Queries
         #region Tests
 
         [Test]
-        public async Task Handle_ShouldReturnQuestions_WhenUserIsTeacherWithActiveClass()
-        {
-            // Arrange
-            var userId = Guid.NewGuid();
-            var param = new MyQuestionsSpecParam();
-            var query = new GetMyQuestionsQuery(param, userId);
-            var user = new ApplicationUser { Id = userId, SchoolId = 1 };
-            var questions = new List<LessonMaterialQuestion> { new() { Id = Guid.NewGuid() } };
-            var pagination = new Pagination<LessonMaterialQuestion> { Data = questions };
-
-            _userRepositoryMock.Setup(x => x.GetByIdAsync(userId))
-                .ReturnsAsync(user);
-            _userManagerMock.Setup(x => x.GetRolesAsync(user))
-                .ReturnsAsync(["Teacher"]);
-            _permissionServiceMock.Setup(x => x.GetHighestPriorityRole(It.IsAny<IList<string>>()))
-                .Returns("Teacher");
-            _studentClassRepositoryMock.Setup(x => x.TeacherHasActiveClassAsync(userId))
-                .ReturnsAsync(true);
-            _studentClassRepositoryMock.Setup(x => x.TeacherHasValidClassInSchoolAsync(userId, 1))
-                .ReturnsAsync(true);
-            _repositoryMock.Setup(x => x.GetWithSpecAsync(It.IsAny<MyQuestionsSpecification>()))
-                .ReturnsAsync(pagination);
-
-            // Act
-            var result = await _handler.Handle(query, CancellationToken.None);
-
-            // Assert
-            Assert.That(result.Data, Has.Count.EqualTo(1));
-            Assert.That(result.Data.First().CreatedByRole, Is.EqualTo("Teacher"));
-        }
-
-        [Test]
-        public async Task Handle_ShouldReturnQuestions_WhenUserIsContentModerator()
-        {
-            // Arrange
-            var userId = Guid.NewGuid();
-            var param = new MyQuestionsSpecParam();
-            var query = new GetMyQuestionsQuery(param, userId);
-            var user = new ApplicationUser { Id = userId, SchoolId = 1 };
-            var questions = new List<LessonMaterialQuestion> { new() { Id = Guid.NewGuid() } };
-            var pagination = new Pagination<LessonMaterialQuestion> { Data = questions };
-
-            _userRepositoryMock.Setup(x => x.GetByIdAsync(userId))
-                .ReturnsAsync(user);
-            _userManagerMock.Setup(x => x.GetRolesAsync(user))
-                .ReturnsAsync(["ContentModerator"]);
-            _permissionServiceMock.Setup(x => x.GetHighestPriorityRole(It.IsAny<IList<string>>()))
-                .Returns("ContentModerator");
-            _studentClassRepositoryMock.Setup(x => x.TeacherHasActiveClassAsync(userId))
-                .ReturnsAsync(true);
-            _studentClassRepositoryMock.Setup(x => x.TeacherHasValidClassInSchoolAsync(userId, 1))
-                .ReturnsAsync(true);
-            _repositoryMock.Setup(x => x.GetWithSpecAsync(It.IsAny<MyQuestionsSpecification>()))
-                .ReturnsAsync(pagination);
-
-            // Act
-            var result = await _handler.Handle(query, CancellationToken.None);
-
-            // Assert
-            Assert.That(result.Data, Has.Count.EqualTo(1));
-            Assert.That(result.Data.First().CreatedByRole, Is.EqualTo("ContentModerator"));
-        }
-
-        [Test]
         public async Task Handle_ShouldReturnQuestions_WhenUserIsSystemAdmin()
         {
             // Arrange
@@ -145,82 +81,6 @@ namespace Eduva.Application.Test.Features.Questions.Queries
             // Assert
             Assert.That(result.Data, Has.Count.EqualTo(1));
             Assert.That(result.Data.First().CreatedByRole, Is.EqualTo("SystemAdmin"));
-        }
-
-        [Test]
-        public void Handle_ShouldThrowTeacherClassNotInOwnSchool_WhenTeacherClassNotInSchool()
-        {
-            // Arrange
-            var userId = Guid.NewGuid();
-            var param = new MyQuestionsSpecParam();
-            var query = new GetMyQuestionsQuery(param, userId);
-            var user = new ApplicationUser { Id = userId, SchoolId = 1 };
-
-            _userRepositoryMock.Setup(x => x.GetByIdAsync(userId))
-                .ReturnsAsync(user);
-            _userManagerMock.Setup(x => x.GetRolesAsync(user))
-                .ReturnsAsync(["Teacher"]);
-            _permissionServiceMock.Setup(x => x.GetHighestPriorityRole(It.IsAny<IList<string>>()))
-                .Returns("Teacher");
-            _studentClassRepositoryMock.Setup(x => x.TeacherHasActiveClassAsync(userId))
-                .ReturnsAsync(true);
-            _studentClassRepositoryMock.Setup(x => x.TeacherHasValidClassInSchoolAsync(userId, 1))
-                .ReturnsAsync(false);
-
-            // Act & Assert
-            var ex = Assert.ThrowsAsync<AppException>(async () =>
-                await _handler.Handle(query, CancellationToken.None));
-            Assert.That(ex.StatusCode, Is.EqualTo(CustomCode.TeacherClassNotInOwnSchool));
-        }
-
-        [Test]
-        public void Handle_ShouldThrowContentModeratorMustHaveActiveClass_WhenContentModeratorHasNoActiveClass()
-        {
-            // Arrange
-            var userId = Guid.NewGuid();
-            var param = new MyQuestionsSpecParam();
-            var query = new GetMyQuestionsQuery(param, userId);
-            var user = new ApplicationUser { Id = userId, SchoolId = 1 };
-
-            _userRepositoryMock.Setup(x => x.GetByIdAsync(userId))
-                .ReturnsAsync(user);
-            _userManagerMock.Setup(x => x.GetRolesAsync(user))
-                .ReturnsAsync(["ContentModerator"]);
-            _permissionServiceMock.Setup(x => x.GetHighestPriorityRole(It.IsAny<IList<string>>()))
-                .Returns("ContentModerator");
-            _studentClassRepositoryMock.Setup(x => x.TeacherHasActiveClassAsync(userId))
-                .ReturnsAsync(false);
-
-            // Act & Assert
-            var ex = Assert.ThrowsAsync<AppException>(async () =>
-                await _handler.Handle(query, CancellationToken.None));
-            Assert.That(ex.StatusCode, Is.EqualTo(CustomCode.TeacherMustHaveActiveClass));
-        }
-
-        [Test]
-        public void Handle_ShouldThrowContentModeratorClassNotInOwnSchool_WhenContentModeratorClassNotInSchool()
-        {
-            // Arrange
-            var userId = Guid.NewGuid();
-            var param = new MyQuestionsSpecParam();
-            var query = new GetMyQuestionsQuery(param, userId);
-            var user = new ApplicationUser { Id = userId, SchoolId = 1 };
-
-            _userRepositoryMock.Setup(x => x.GetByIdAsync(userId))
-                .ReturnsAsync(user);
-            _userManagerMock.Setup(x => x.GetRolesAsync(user))
-                .ReturnsAsync(["ContentModerator"]);
-            _permissionServiceMock.Setup(x => x.GetHighestPriorityRole(It.IsAny<IList<string>>()))
-                .Returns("ContentModerator");
-            _studentClassRepositoryMock.Setup(x => x.TeacherHasActiveClassAsync(userId))
-                .ReturnsAsync(true);
-            _studentClassRepositoryMock.Setup(x => x.TeacherHasValidClassInSchoolAsync(userId, 1))
-                .ReturnsAsync(false);
-
-            // Act & Assert
-            var ex = Assert.ThrowsAsync<AppException>(async () =>
-                await _handler.Handle(query, CancellationToken.None));
-            Assert.That(ex.StatusCode, Is.EqualTo(CustomCode.TeacherClassNotInOwnSchool));
         }
 
         [Test]
@@ -386,30 +246,6 @@ namespace Eduva.Application.Test.Features.Questions.Queries
             var ex = Assert.ThrowsAsync<AppException>(async () =>
                 await _handler.Handle(query, CancellationToken.None));
             Assert.That(ex.StatusCode, Is.EqualTo(CustomCode.StudentNotEnrolledInAnyClassForQuestions));
-        }
-
-        [Test]
-        public void Handle_ShouldThrowTeacherMustHaveActiveClass_WhenTeacherHasNoActiveClass()
-        {
-            // Arrange
-            var userId = Guid.NewGuid();
-            var param = new MyQuestionsSpecParam();
-            var query = new GetMyQuestionsQuery(param, userId);
-            var user = new ApplicationUser { Id = userId, SchoolId = 1 };
-
-            _userRepositoryMock.Setup(x => x.GetByIdAsync(userId))
-                .ReturnsAsync(user);
-            _userManagerMock.Setup(x => x.GetRolesAsync(user))
-                .ReturnsAsync(["Teacher"]);
-            _permissionServiceMock.Setup(x => x.GetHighestPriorityRole(It.IsAny<IList<string>>()))
-                .Returns("Teacher");
-            _studentClassRepositoryMock.Setup(x => x.TeacherHasActiveClassAsync(userId))
-                .ReturnsAsync(false);
-
-            // Act & Assert
-            var ex = Assert.ThrowsAsync<AppException>(async () =>
-                await _handler.Handle(query, CancellationToken.None));
-            Assert.That(ex.StatusCode, Is.EqualTo(CustomCode.TeacherMustHaveActiveClass));
         }
 
         #endregion

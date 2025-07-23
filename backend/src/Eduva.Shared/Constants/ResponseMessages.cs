@@ -186,6 +186,8 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status400BadRequest, Message = "You cannot enroll in a class from a different school." } },
             { CustomCode.EnrollmentFailed, new MessageDetail {
                 HttpCode = StatusCodes.Status500InternalServerError, Message = "Failed to enroll in the class. Please try again later." } },
+            { CustomCode.DuplicateClassCodeSameSchool, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "The class code already exists in this school. Please use a different class code." } },
 
             // Payment Transaction Errors
             { CustomCode.PaymentTransactionNotFound, new MessageDetail {
@@ -364,6 +366,8 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status400BadRequest, Message = "Failed to restore the lesson material!" }},
             { CustomCode.InvalidPersonalFolder, new MessageDetail {
                 HttpCode = StatusCodes.Status400BadRequest, Message = "The folder must be a personal folder and in Active status." }},
+            { CustomCode.LessonMaterialAlreadyExistsInClassFolder, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "The lesson material already exists in another folder of this class." }},
 
             // Storage Quota Errors
             { CustomCode.StorageQuotaExceeded, new MessageDetail {

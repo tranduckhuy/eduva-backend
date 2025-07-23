@@ -19,11 +19,11 @@ namespace Eduva.Application.Features.LessonMaterials.Commands.UpdateLessonMateri
         {
             var lessonMaterialRepository = _unitOfWork.GetRepository<LessonMaterial, Guid>();
 
-            var lessonMaterial = await lessonMaterialRepository.GetByIdAsync(request.Id) ?? throw new LessonMaterialNotFountException(request.Id);
+            var lessonMaterial = await lessonMaterialRepository.GetByIdAsync(request.Id) ?? throw new LessonMaterialNotFoundException(request.Id);
 
             if (lessonMaterial.CreatedByUserId != request.CreatorId)
             {
-                throw new UnauthorizedException(["You are not authorized to update this lesson material."]);
+                throw new ForbiddenException(["You are not authorized to update this lesson material."]);
             }
 
             // Update lesson material properties

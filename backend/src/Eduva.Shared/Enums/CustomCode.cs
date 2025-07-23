@@ -91,6 +91,7 @@ namespace Eduva.Shared.Enums
         InvalidMultipleRoleCombination = 4078,
         TooManyRolesAssigned = 4079,
         StudentRoleNotAssignable = 4080,
+        DuplicateClassCodeSameSchool = 4081,
 
         // File Storage Errors
         InvalidBlobName = 4200,
@@ -131,6 +132,7 @@ namespace Eduva.Shared.Enums
         InvalidPersonalFolder = 4611,
         FolderMustBePersonal = 4612,
         FolderShouldBeArchivedBeforeRestore = 4613,
+        LessonMaterialAlreadyExistsInClassFolder = 4614,
 
         // Class Errors - All consolidated in 4700 range
         ClassNotFound = 4700,
