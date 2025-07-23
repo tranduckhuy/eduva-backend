@@ -84,6 +84,34 @@ namespace Eduva.Application.Test.Features.Questions.Queries
         }
 
         [Test]
+        public async Task Handle_ShouldReturnQuestions_WhenUserIsSchoolAdmin()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var param = new MyQuestionsSpecParam();
+            var query = new GetMyQuestionsQuery(param, userId);
+            var user = new ApplicationUser { Id = userId, SchoolId = 1 };
+            var questions = new List<LessonMaterialQuestion> { new() { Id = Guid.NewGuid() } };
+            var pagination = new Pagination<LessonMaterialQuestion> { Data = questions };
+
+            _userRepositoryMock.Setup(x => x.GetByIdAsync(userId))
+                .ReturnsAsync(user);
+            _userManagerMock.Setup(x => x.GetRolesAsync(user))
+                .ReturnsAsync(["SchoolAdmin"]);
+            _permissionServiceMock.Setup(x => x.GetHighestPriorityRole(It.IsAny<IList<string>>()))
+                .Returns("SchoolAdmin");
+            _repositoryMock.Setup(x => x.GetWithSpecAsync(It.IsAny<MyQuestionsSpecification>()))
+                .ReturnsAsync(pagination);
+
+            // Act
+            var result = await _handler.Handle(query, CancellationToken.None);
+
+            // Assert
+            Assert.That(result.Data, Has.Count.EqualTo(1));
+            Assert.That(result.Data.First().CreatedByRole, Is.EqualTo("SchoolAdmin"));
+        }
+
+        [Test]
         public void Handle_ShouldThrowStudentNotInSchoolClass_WhenStudentNotInValidSchoolClass()
         {
             // Arrange
@@ -197,7 +225,7 @@ namespace Eduva.Application.Test.Features.Questions.Queries
         }
 
         [Test]
-        public async Task Handle_ShouldReturnQuestions_WhenUserIsSchoolAdmin()
+        public async Task Handle_ShouldReturnQuestions_WhenUserIsTeacher()
         {
             // Arrange
             var userId = Guid.NewGuid();
@@ -210,9 +238,9 @@ namespace Eduva.Application.Test.Features.Questions.Queries
             _userRepositoryMock.Setup(x => x.GetByIdAsync(userId))
                 .ReturnsAsync(user);
             _userManagerMock.Setup(x => x.GetRolesAsync(user))
-                .ReturnsAsync(["SchoolAdmin"]);
+                .ReturnsAsync(["Teacher"]);
             _permissionServiceMock.Setup(x => x.GetHighestPriorityRole(It.IsAny<IList<string>>()))
-                .Returns("SchoolAdmin");
+                .Returns("Teacher");
             _repositoryMock.Setup(x => x.GetWithSpecAsync(It.IsAny<MyQuestionsSpecification>()))
                 .ReturnsAsync(pagination);
 
@@ -221,7 +249,35 @@ namespace Eduva.Application.Test.Features.Questions.Queries
 
             // Assert
             Assert.That(result.Data, Has.Count.EqualTo(1));
-            Assert.That(result.Data.First().CreatedByRole, Is.EqualTo("SchoolAdmin"));
+            Assert.That(result.Data.First().CreatedByRole, Is.EqualTo("Teacher"));
+        }
+
+        [Test]
+        public async Task Handle_ShouldReturnQuestions_WhenUserIsContentModerator()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var param = new MyQuestionsSpecParam();
+            var query = new GetMyQuestionsQuery(param, userId);
+            var user = new ApplicationUser { Id = userId, SchoolId = 1 };
+            var questions = new List<LessonMaterialQuestion> { new() { Id = Guid.NewGuid() } };
+            var pagination = new Pagination<LessonMaterialQuestion> { Data = questions };
+
+            _userRepositoryMock.Setup(x => x.GetByIdAsync(userId))
+                .ReturnsAsync(user);
+            _userManagerMock.Setup(x => x.GetRolesAsync(user))
+                .ReturnsAsync(["ContentModerator"]);
+            _permissionServiceMock.Setup(x => x.GetHighestPriorityRole(It.IsAny<IList<string>>()))
+                .Returns("ContentModerator");
+            _repositoryMock.Setup(x => x.GetWithSpecAsync(It.IsAny<MyQuestionsSpecification>()))
+                .ReturnsAsync(pagination);
+
+            // Act
+            var result = await _handler.Handle(query, CancellationToken.None);
+
+            // Assert
+            Assert.That(result.Data, Has.Count.EqualTo(1));
+            Assert.That(result.Data.First().CreatedByRole, Is.EqualTo("ContentModerator"));
         }
 
         [Test]
