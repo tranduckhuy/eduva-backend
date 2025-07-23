@@ -332,9 +332,157 @@ namespace Eduva.Application.Test.Features.Classes.Queries.GetClassById
             var exception = Assert.ThrowsAsync<AppException>(async () =>
                 await _handler.Handle(new GetClassByIdQuery(classId, userId), CancellationToken.None));
 
-            // Thay đổi dòng này từ kiểm tra CustomCode sang kiểm tra Message
             Assert.That(exception.StatusCode, Is.EqualTo(CustomCode.ClassNotFound));
         }
+
+        [Test]
+        public async Task Handle_Should_Set_Empty_TeacherName_SchoolName_Avatar_When_Teacher_Or_School_Null()
+        {
+            // Arrange
+            var classId = Guid.NewGuid();
+            var teacherId = Guid.NewGuid();
+            var schoolId = 1;
+
+            var classroom = new Classroom
+            {
+                Id = classId,
+                TeacherId = teacherId,
+                SchoolId = schoolId,
+                Name = "Test Class",
+                ClassCode = "TC123"
+            };
+
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+            _userRepoMock.Setup(r => r.GetByIdAsync(teacherId)).ReturnsAsync((ApplicationUser?)null);
+            _schoolRepoMock.Setup(r => r.GetByIdAsync(schoolId)).ReturnsAsync((School?)null);
+            _folderRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Folder>());
+
+            // Act
+            var result = await _handler.Handle(new GetClassByIdQuery(classId, teacherId), CancellationToken.None);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.TeacherName, Is.EqualTo(string.Empty));
+                Assert.That(result.SchoolName, Is.EqualTo(string.Empty));
+                Assert.That(result.TeacherAvatarUrl, Is.EqualTo(string.Empty));
+            });
+        }
+
+        [Test]
+        public async Task Handle_Should_Set_CountLessonMaterial_Zero_When_No_Class_Folder()
+        {
+            // Arrange
+            var classId = Guid.NewGuid();
+            var teacherId = Guid.NewGuid();
+            var schoolId = 1;
+
+            var classroom = new Classroom
+            {
+                Id = classId,
+                TeacherId = teacherId,
+                SchoolId = schoolId,
+                Name = "Test Class",
+                ClassCode = "TC123"
+            };
+
+            var teacher = new ApplicationUser
+            {
+                Id = teacherId,
+                FullName = "Test Teacher"
+            };
+
+            var school = new School
+            {
+                Id = schoolId,
+                Name = "Test School"
+            };
+
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+            _userRepoMock.Setup(r => r.GetByIdAsync(teacherId)).ReturnsAsync(teacher);
+            _schoolRepoMock.Setup(r => r.GetByIdAsync(schoolId)).ReturnsAsync(school);
+
+            var folders = new List<Folder>
+            {
+                new() { Id = Guid.NewGuid(), ClassId = classId, OwnerType = OwnerType.Personal },
+                new() { Id = Guid.NewGuid(), ClassId = classId, OwnerType = OwnerType.Class }
+            };
+            _folderRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(folders);
+            var result = await _handler.Handle(new GetClassByIdQuery(classId, teacherId), CancellationToken.None);
+            Assert.That(result.CountLessonMaterial, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void Handle_ShouldThrowUnauthorized_WhenUserNotFound()
+        {
+            // Arrange
+            var classId = Guid.NewGuid();
+            var teacherId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var classroom = new Classroom { Id = classId, TeacherId = teacherId, SchoolId = 1 };
+
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+            _userRepoMock.Setup(r => r.GetByIdAsync(teacherId)).ReturnsAsync((ApplicationUser?)null);
+            _schoolRepoMock.Setup(r => r.GetByIdAsync(classroom.SchoolId)).ReturnsAsync(new School { Id = classroom.SchoolId });
+
+            _userManagerMock.Setup(um => um.FindByIdAsync(userId.ToString())).ReturnsAsync((ApplicationUser?)null);
+
+            // Act & Assert
+            var ex = Assert.ThrowsAsync<AppException>(() =>
+                _handler.Handle(new GetClassByIdQuery(classId, userId), CancellationToken.None));
+            Assert.That(ex.StatusCode, Is.EqualTo(CustomCode.Unauthorized));
+        }
+
+        [Test]
+        public void Handle_ShouldThrowUnauthorized_WhenUserIsTeacherButNotClassTeacher()
+        {
+            // Arrange
+            var classId = Guid.NewGuid();
+            var teacherId = Guid.NewGuid();
+            var otherTeacherId = Guid.NewGuid();
+            var classroom = new Classroom { Id = classId, TeacherId = teacherId, SchoolId = 1 };
+            var otherTeacher = new ApplicationUser { Id = otherTeacherId, SchoolId = 1 };
+
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+            _userRepoMock.Setup(r => r.GetByIdAsync(teacherId)).ReturnsAsync(new ApplicationUser { Id = teacherId });
+            _schoolRepoMock.Setup(r => r.GetByIdAsync(classroom.SchoolId)).ReturnsAsync(new School { Id = classroom.SchoolId });
+
+            _userManagerMock.Setup(um => um.FindByIdAsync(otherTeacherId.ToString())).ReturnsAsync(otherTeacher);
+            _userManagerMock.Setup(um => um.GetRolesAsync(otherTeacher)).ReturnsAsync(new List<string> { nameof(Role.Teacher) });
+
+            // Act & Assert
+            var ex = Assert.ThrowsAsync<AppException>(() =>
+                _handler.Handle(new GetClassByIdQuery(classId, otherTeacherId), CancellationToken.None));
+            Assert.That(ex.StatusCode, Is.EqualTo(CustomCode.Unauthorized));
+        }
+
+        [Test]
+        public async Task Handle_ShouldReturnClassResponse_WhenUserIsSchoolAdminOfSameSchool()
+        {
+            // Arrange
+            var classId = Guid.NewGuid();
+            var teacherId = Guid.NewGuid();
+            var schoolAdminId = Guid.NewGuid();
+            var schoolId = 1;
+
+            var classroom = new Classroom { Id = classId, TeacherId = teacherId, SchoolId = schoolId };
+            var schoolAdmin = new ApplicationUser { Id = schoolAdminId, SchoolId = schoolId };
+
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+            _userRepoMock.Setup(r => r.GetByIdAsync(teacherId)).ReturnsAsync(new ApplicationUser { Id = teacherId });
+            _schoolRepoMock.Setup(r => r.GetByIdAsync(schoolId)).ReturnsAsync(new School { Id = schoolId });
+
+            _userManagerMock.Setup(um => um.FindByIdAsync(schoolAdminId.ToString())).ReturnsAsync(schoolAdmin);
+            _userManagerMock.Setup(um => um.GetRolesAsync(schoolAdmin)).ReturnsAsync(new List<string> { nameof(Role.SchoolAdmin) });
+
+            _folderRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Folder>());
+            // Act
+            var result = await _handler.Handle(new GetClassByIdQuery(classId, schoolAdminId), CancellationToken.None);
+
+            // Assert
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.Id, Is.EqualTo(classId));
+        }
+
         #endregion
     }
 }

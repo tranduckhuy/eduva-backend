@@ -163,5 +163,37 @@ namespace Eduva.Application.Test.Features.Classes.Commands.RestoreClass
             var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, CancellationToken.None));
             Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.ClassRestoreFailed));
         }
+
+        [Test]
+        public async Task Handle_Should_Restore_Class_When_SchoolAdmin()
+        {
+            // Arrange
+            var classId = Guid.NewGuid();
+            var adminId = Guid.NewGuid();
+            var classroom = new Classroom
+            {
+                Id = classId,
+                TeacherId = Guid.NewGuid(),
+                Status = EntityStatus.Archived
+            };
+            var admin = new ApplicationUser { Id = adminId };
+
+            var command = new RestoreClassCommand { Id = classId, TeacherId = adminId };
+
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+            _userRepoMock.Setup(r => r.GetByIdAsync(adminId)).ReturnsAsync(admin);
+            _userManagerMock.Setup(m => m.GetRolesAsync(admin)).ReturnsAsync(new List<string> { nameof(Role.SchoolAdmin) });
+            _classroomRepoMock.Setup(r => r.Update(It.IsAny<Classroom>()));
+            _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
+
+            // Act
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            Assert.That(classroom.Status, Is.EqualTo(EntityStatus.Active));
+            _classroomRepoMock.Verify(r => r.Update(It.Is<Classroom>(c => c.Id == classId && c.Status == EntityStatus.Active)), Times.Once);
+            _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Once);
+            Assert.That(result, Is.EqualTo(Unit.Value));
+        }
     }
 }
