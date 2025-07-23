@@ -318,5 +318,39 @@ namespace Eduva.Application.Test.Features.Folders.Queries
             });
         }
 
+        [Test]
+        public async Task Handle_Should_Return_Response_For_Class_SystemAdmin()
+        {
+            var folderId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
+            var folder = new Folder
+            {
+                Id = folderId,
+                OwnerType = OwnerType.Class,
+                ClassId = classId
+            };
+            var classroom = new Classroom { Id = classId, TeacherId = Guid.NewGuid(), SchoolId = 1 };
+            var user = new ApplicationUser { Id = userId, SchoolId = 2 };
+            _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
+            _classRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+            _userRepoMock.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(user);
+            _lessonMaterialRepoMock.Setup(r => r.GetApprovedMaterialCountsByFolderAsync(
+                It.IsAny<List<Guid>>(), It.IsAny<CancellationToken>())).ReturnsAsync(new Dictionary<Guid, int> { { folderId, 7 } });
+
+            _userManagerMock.Setup(u => u.GetRolesAsync(It.IsAny<ApplicationUser>()))
+                .ReturnsAsync(new List<string> { nameof(Role.SystemAdmin) });
+
+            var query = new GetFolderByIdQuery(folderId, userId);
+
+            var result = await _handler.Handle(query, CancellationToken.None);
+
+            Assert.That(result, Is.Not.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Id, Is.EqualTo(folderId));
+                Assert.That(result.CountLessonMaterial, Is.EqualTo(7));
+            });
+        }
     }
 }

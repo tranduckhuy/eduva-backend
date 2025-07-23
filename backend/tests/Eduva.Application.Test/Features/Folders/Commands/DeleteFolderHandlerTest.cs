@@ -352,5 +352,90 @@ namespace Eduva.Application.Test.Features.Folders.Commands
             var result = await _handler.HasPermissionToUpdateFolder(folder, userId);
             Assert.That(result, Is.False);
         }
+
+        [Test]
+        public async Task Handle_Should_Not_Update_LessonMaterial_If_Already_Deleted()
+        {
+            var folderId = Guid.NewGuid();
+            var lessonMaterialId = Guid.NewGuid();
+            var lessonMaterial = new LessonMaterial { Id = lessonMaterialId, Status = EntityStatus.Deleted };
+            var folder = new Folder
+            {
+                Id = folderId,
+                Status = EntityStatus.Archived,
+                OwnerType = OwnerType.Personal,
+                FolderLessonMaterials = new List<FolderLessonMaterial>
+                {
+                    new() { Id = Guid.NewGuid(), FolderId = folderId, LessonMaterialId = lessonMaterialId, LessonMaterial = lessonMaterial }
+                }
+            };
+            var command = new DeleteFolderCommand { Id = folderId, CurrentUserId = Guid.NewGuid() };
+
+            _folderRepoMock.Setup(r => r.GetFolderWithMaterialsAsync(folderId)).ReturnsAsync(folder);
+            _userRepoMock.Setup(r => r.GetByIdAsync(command.CurrentUserId)).ReturnsAsync(new ApplicationUser { Id = command.CurrentUserId });
+            _userManagerMock.Setup(m => m.GetRolesAsync(It.IsAny<ApplicationUser>())).ReturnsAsync(new List<string> { nameof(Role.SystemAdmin) });
+            _folderLessonMaterialRepoMock.Setup(r => r.Remove(It.IsAny<FolderLessonMaterial>()));
+            _folderLessonMaterialRepoMock.Setup(r => r.CountAsync(It.IsAny<Expression<Func<FolderLessonMaterial, bool>>>(), It.IsAny<CancellationToken>())).ReturnsAsync(0);
+            _lessonMaterialRepoMock.Setup(r => r.Remove(lessonMaterial));
+            _folderRepoMock.Setup(r => r.Remove(folder));
+            _lessonMaterialQuestionsRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<LessonMaterialQuestion>());
+            _lessonMaterialsApproveRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<LessonMaterialApproval>());
+            _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
+
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            _lessonMaterialRepoMock.Verify(r => r.Update(It.IsAny<LessonMaterial>()), Times.Never);
+            Assert.That(result, Is.True);
+        }
+
+        [Test]
+        public async Task Handle_Should_Remove_Questions_And_Approvals_Of_OnlyUsedLessonMaterial()
+        {
+            var folderId = Guid.NewGuid();
+            var lessonMaterialId = Guid.NewGuid();
+            var lessonMaterial = new LessonMaterial { Id = lessonMaterialId, Status = EntityStatus.Active };
+            var folder = new Folder
+            {
+                Id = folderId,
+                Status = EntityStatus.Archived,
+                OwnerType = OwnerType.Personal,
+                FolderLessonMaterials = new List<FolderLessonMaterial>
+                {
+                    new() { Id = Guid.NewGuid(), FolderId = folderId, LessonMaterialId = lessonMaterialId, LessonMaterial = lessonMaterial }
+                }
+            };
+            var command = new DeleteFolderCommand { Id = folderId, CurrentUserId = Guid.NewGuid() };
+
+            _folderRepoMock.Setup(r => r.GetFolderWithMaterialsAsync(folderId)).ReturnsAsync(folder);
+            _userRepoMock.Setup(r => r.GetByIdAsync(command.CurrentUserId)).ReturnsAsync(new ApplicationUser { Id = command.CurrentUserId });
+            _userManagerMock.Setup(m => m.GetRolesAsync(It.IsAny<ApplicationUser>())).ReturnsAsync(new List<string> { nameof(Role.SystemAdmin) });
+            _folderLessonMaterialRepoMock.Setup(r => r.Remove(It.IsAny<FolderLessonMaterial>()));
+            _folderLessonMaterialRepoMock.Setup(r => r.CountAsync(It.IsAny<Expression<Func<FolderLessonMaterial, bool>>>(), It.IsAny<CancellationToken>())).ReturnsAsync(0);
+            _lessonMaterialRepoMock.Setup(r => r.Remove(lessonMaterial));
+            _folderRepoMock.Setup(r => r.Remove(folder));
+            _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
+
+            var questions = new List<LessonMaterialQuestion>
+            {
+                new() { Id = Guid.NewGuid(), LessonMaterialId = lessonMaterialId },
+                new() { Id = Guid.NewGuid(), LessonMaterialId = Guid.NewGuid() }
+            };
+            var approvals = new List<LessonMaterialApproval>
+            {
+                new() { Id = Guid.NewGuid(), LessonMaterialId = lessonMaterialId },
+                new() { Id = Guid.NewGuid(), LessonMaterialId = Guid.NewGuid() }
+            };
+            _lessonMaterialQuestionsRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(questions);
+            _lessonMaterialsApproveRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(approvals);
+
+            _lessonMaterialQuestionsRepoMock.Setup(r => r.RemoveRange(It.Is<IEnumerable<LessonMaterialQuestion>>(qs => qs.All(q => q.LessonMaterialId == lessonMaterialId))));
+            _lessonMaterialsApproveRepoMock.Setup(r => r.RemoveRange(It.Is<IEnumerable<LessonMaterialApproval>>(asv => asv.All(a => a.LessonMaterialId == lessonMaterialId))));
+
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            _lessonMaterialQuestionsRepoMock.Verify(r => r.RemoveRange(It.Is<IEnumerable<LessonMaterialQuestion>>(qs => qs.All(q => q.LessonMaterialId == lessonMaterialId))), Times.Once);
+            _lessonMaterialsApproveRepoMock.Verify(r => r.RemoveRange(It.Is<IEnumerable<LessonMaterialApproval>>(asv => asv.All(a => a.LessonMaterialId == lessonMaterialId))), Times.Once);
+            Assert.That(result, Is.True);
+        }
     }
 }

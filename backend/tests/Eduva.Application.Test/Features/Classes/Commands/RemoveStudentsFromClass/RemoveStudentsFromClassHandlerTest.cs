@@ -237,5 +237,106 @@ namespace Eduva.Application.Test.Features.Classes.Commands.RemoveStudentsFromCla
             var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, CancellationToken.None));
             Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.Unauthorized));
         }
+
+        [Test]
+        public async Task Handle_Should_Remove_All_Students_When_StudentIds_Is_Null()
+        {
+            // Arrange
+            var classId = Guid.NewGuid();
+            var teacherId = Guid.NewGuid();
+            var classroom = new Classroom { Id = classId, SchoolId = 1, TeacherId = teacherId };
+            var studentId1 = Guid.NewGuid();
+            var studentId2 = Guid.NewGuid();
+            var studentClasses = new List<StudentClass>
+            {
+                new StudentClass { Id = Guid.NewGuid(), ClassId = classId, StudentId = studentId1 },
+                new StudentClass { Id = Guid.NewGuid(), ClassId = classId, StudentId = studentId2 }
+            };
+
+            var command = new RemoveStudentsFromClassCommand
+            {
+                ClassId = classId,
+                StudentIds = new List<Guid>(),
+                RequestUserId = teacherId,
+                IsTeacher = true
+            };
+
+            _classRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+            _studentClassRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(studentClasses);
+            _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
+
+            // Act
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            _studentClassRepoMock.Verify(r => r.Remove(It.Is<StudentClass>(sc => sc.StudentId == studentId1)), Times.Once);
+            _studentClassRepoMock.Verify(r => r.Remove(It.Is<StudentClass>(sc => sc.StudentId == studentId2)), Times.Once);
+            _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Once);
+            Assert.That(result, Is.EqualTo(Unit.Value));
+        }
+
+        [Test]
+        public async Task Handle_Should_Remove_Only_Specified_Students()
+        {
+            // Arrange
+            var classId = Guid.NewGuid();
+            var teacherId = Guid.NewGuid();
+            var studentId1 = Guid.NewGuid();
+            var studentId2 = Guid.NewGuid();
+            var studentId3 = Guid.NewGuid();
+            var classroom = new Classroom { Id = classId, SchoolId = 1, TeacherId = teacherId };
+            var studentClasses = new List<StudentClass>
+            {
+                new() { Id = Guid.NewGuid(), ClassId = classId, StudentId = studentId1 },
+                new() { Id = Guid.NewGuid(), ClassId = classId, StudentId = studentId2 },
+                new() { Id = Guid.NewGuid(), ClassId = classId, StudentId = studentId3 }
+            };
+
+            var command = new RemoveStudentsFromClassCommand
+            {
+                ClassId = classId,
+                StudentIds = new List<Guid> { studentId1, studentId3 },
+                RequestUserId = teacherId,
+                IsTeacher = true
+            };
+
+            _classRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+            _studentClassRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(studentClasses);
+            _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
+
+            // Act
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            _studentClassRepoMock.Verify(r => r.Remove(It.Is<StudentClass>(sc => sc.StudentId == studentId1)), Times.Once);
+            _studentClassRepoMock.Verify(r => r.Remove(It.Is<StudentClass>(sc => sc.StudentId == studentId3)), Times.Once);
+            _studentClassRepoMock.Verify(r => r.Remove(It.Is<StudentClass>(sc => sc.StudentId == studentId2)), Times.Never);
+            _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Once);
+            Assert.That(result, Is.EqualTo(Unit.Value));
+        }
+
+        [Test]
+        public void Handle_Should_Throw_When_User_Has_No_Permission_Flags()
+        {
+            // Arrange
+            var classId = Guid.NewGuid();
+            var classroom = new Classroom { Id = classId, SchoolId = 1, TeacherId = Guid.NewGuid() };
+            var command = new RemoveStudentsFromClassCommand
+            {
+                ClassId = classId,
+                StudentIds = new List<Guid> { Guid.NewGuid() },
+                RequestUserId = Guid.NewGuid(),
+                IsSystemAdmin = false,
+                IsTeacher = false,
+                IsContentModerator = false,
+                IsSchoolAdmin = false
+            };
+
+            _classRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+
+            // Act & Assert
+            var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, CancellationToken.None));
+            Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.Unauthorized));
+        }
     }
 }
