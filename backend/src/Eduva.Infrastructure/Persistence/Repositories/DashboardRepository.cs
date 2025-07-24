@@ -545,7 +545,6 @@ namespace Eduva.Infrastructure.Persistence.Repositories
             return await _context.LessonMaterials
                 .Include(lm => lm.CreatedByUser)
                 .Where(lm => lm.SchoolId == contentModeratorSchoolId &&
-                             lm.CreatedByUserId != contentModeratorId &&
                              lm.Status == EntityStatus.Active &&
                              lm.LessonStatus == LessonMaterialStatus.Pending)
                 .OrderByDescending(lm => lm.CreatedAt)

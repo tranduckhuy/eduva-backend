@@ -18,5 +18,12 @@
 
         #endregion
 
+        #region Lesson Material Notifications
+
+        public const string LessonMaterialApproved = "LessonMaterialApproved";
+        public const string LessonMaterialRejected = "LessonMaterialRejected";
+
+        #endregion
+
     }
 }
