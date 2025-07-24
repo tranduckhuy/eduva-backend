@@ -78,7 +78,7 @@ namespace Eduva.Application.Features.Questions.Commands.CreateQuestion
                 CommentCount = 0
             };
 
-            await _hubNotificationService.NotifyQuestionCreatedAsync(response, request.LessonMaterialId, request.CreatedByUserId);
+            await _hubNotificationService.NotifyQuestionCreatedAsync(response, request.LessonMaterialId, user);
 
             return response;
         }

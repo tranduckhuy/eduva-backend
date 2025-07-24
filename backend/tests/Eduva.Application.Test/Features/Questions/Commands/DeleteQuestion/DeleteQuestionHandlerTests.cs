@@ -170,7 +170,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestion
             // Mock notification service
             _hubNotificationServiceMock.Setup(x => x.NotifyQuestionDeletedAsync(
                 It.IsAny<QuestionResponse>(),
-                It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<List<Guid>>()))
+                It.IsAny<Guid>(), It.IsAny<ApplicationUser?>(), It.IsAny<List<Guid>>()))
                 .Returns(Task.CompletedTask);
 
             // Act
@@ -182,7 +182,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestion
             _unitOfWorkMock.Verify(x => x.CommitAsync(), Times.Once);
             _hubNotificationServiceMock.Verify(x => x.NotifyQuestionDeletedAsync(
                 It.IsAny<QuestionResponse>(),
-                lessonMaterialId, It.IsAny<Guid?>(), It.IsAny<List<Guid>>()), Times.Once);
+                lessonMaterialId, It.IsAny<ApplicationUser?>(), It.IsAny<List<Guid>>()), Times.Once);
         }
 
         [Test]
@@ -224,7 +224,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestion
 
             _hubNotificationServiceMock.Setup(x => x.NotifyQuestionDeletedAsync(
                 It.IsAny<QuestionResponse>(),
-                It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<List<Guid>>()))
+                It.IsAny<Guid>(), It.IsAny<ApplicationUser?>(), It.IsAny<List<Guid>>()))
                 .Returns(Task.CompletedTask);
 
             // Act
@@ -236,7 +236,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestion
             _unitOfWorkMock.Verify(x => x.CommitAsync(), Times.Once);
             _hubNotificationServiceMock.Verify(x => x.NotifyQuestionDeletedAsync(
                 It.IsAny<QuestionResponse>(),
-                lessonMaterialId, It.IsAny<Guid?>(), It.IsAny<List<Guid>>()), Times.Once);
+                lessonMaterialId, It.IsAny<ApplicationUser?>(), It.IsAny<List<Guid>>()), Times.Once);
         }
 
         [Test]
@@ -348,7 +348,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestion
             // Mock notification service
             _hubNotificationServiceMock.Setup(x => x.NotifyQuestionDeletedAsync(
                 It.IsAny<QuestionResponse>(),
-                lessonMaterialId, It.IsAny<Guid?>(), It.IsAny<List<Guid>>()))
+                lessonMaterialId, It.IsAny<ApplicationUser?>(), It.IsAny<List<Guid>>()))
                 .Returns(Task.CompletedTask);
 
             // Act
@@ -360,7 +360,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestion
             _unitOfWorkMock.Verify(x => x.CommitAsync(), Times.Once);
             _hubNotificationServiceMock.Verify(x => x.NotifyQuestionDeletedAsync(
                 It.IsAny<QuestionResponse>(),
-                lessonMaterialId, It.IsAny<Guid?>(), It.IsAny<List<Guid>>()), Times.Once);
+                lessonMaterialId, It.IsAny<ApplicationUser?>(), It.IsAny<List<Guid>>()), Times.Once);
         }
 
         #endregion

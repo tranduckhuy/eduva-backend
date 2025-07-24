@@ -82,7 +82,7 @@ namespace Eduva.Application.Features.Questions.Commands.UpdateQuestion
                 CommentCount = commentCount
             };
 
-            await _hubNotificationService.NotifyQuestionUpdatedAsync(response, question.LessonMaterialId, request.UpdatedByUserId);
+            await _hubNotificationService.NotifyQuestionUpdatedAsync(response, question.LessonMaterialId, user);
 
             return response;
         }

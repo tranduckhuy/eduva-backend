@@ -47,9 +47,16 @@ namespace Eduva.Infrastructure.Test.Services
             var question = CreateSampleQuestionResponse(creatorId);
             var persistentNotification = CreateSamplePersistentNotification();
 
+            var creatorUser = new ApplicationUser
+            {
+                Id = creatorId,
+                FullName = "Creator Name",
+                AvatarUrl = "avatar.png"
+            };
+
             SetupNotificationServiceMocks(targetUsers, persistentNotification, lessonMaterialId, question.Id);
 
-            await _hubNotificationService.NotifyQuestionCreatedAsync(question, lessonMaterialId, creatorId);
+            await _hubNotificationService.NotifyQuestionCreatedAsync(question, lessonMaterialId, creatorUser);
 
             VerifyUserNotificationSent(targetUser1.ToString(), "QuestionCreated");
             VerifyUserNotificationSent(targetUser2.ToString(), "QuestionCreated");
@@ -68,9 +75,16 @@ namespace Eduva.Infrastructure.Test.Services
             var question = CreateSampleQuestionResponse(creatorId);
             var persistentNotification = CreateSamplePersistentNotification();
 
+            var creatorUser = new ApplicationUser
+            {
+                Id = creatorId,
+                FullName = "Creator Name",
+                AvatarUrl = "avatar.png"
+            };
+
             SetupNotificationServiceMocks(targetUsers, persistentNotification, lessonMaterialId, question.Id);
 
-            await _hubNotificationService.NotifyQuestionCreatedAsync(question, lessonMaterialId, creatorId);
+            await _hubNotificationService.NotifyQuestionCreatedAsync(question, lessonMaterialId, creatorUser);
 
             VerifyNoUserNotificationsSent();
             VerifyPersistentNotificationCreated("QuestionCreated", false);
@@ -92,9 +106,16 @@ namespace Eduva.Infrastructure.Test.Services
             var question = CreateSampleQuestionResponse(creatorId);
             var persistentNotification = CreateSamplePersistentNotification();
 
+            var creatorUser = new ApplicationUser
+            {
+                Id = creatorId,
+                FullName = "Creator Name",
+                AvatarUrl = "avatar.png"
+            };
+
             SetupNotificationServiceMocks(targetUsers, persistentNotification, lessonMaterialId, question.Id);
 
-            await _hubNotificationService.NotifyQuestionUpdatedAsync(question, lessonMaterialId, creatorId);
+            await _hubNotificationService.NotifyQuestionUpdatedAsync(question, lessonMaterialId, creatorUser);
 
             VerifyUserNotificationSent(targetUser1.ToString(), "QuestionUpdated");
             VerifyUserNotificationSent(targetUser2.ToString(), "QuestionUpdated");
@@ -195,6 +216,13 @@ namespace Eduva.Infrastructure.Test.Services
             var comment = CreateSampleQuestionCommentResponse(creatorId);
             var persistentNotification = CreateSamplePersistentNotification();
 
+            var creatorUser = new ApplicationUser
+            {
+                Id = creatorId,
+                FullName = "Creator Name",
+                AvatarUrl = "avatar.png",
+            };
+
             SetupNotificationServiceMocks(targetUsers, persistentNotification, lessonMaterialId, comment.QuestionId);
 
             await _hubNotificationService.NotifyQuestionCommentedAsync(
@@ -202,7 +230,7 @@ namespace Eduva.Infrastructure.Test.Services
                 lessonMaterialId,
                 "Test Question Title",
                 "Test Lesson Material Title",
-                creatorId
+                creatorUser
             );
             VerifyUserNotificationSent(targetUser1.ToString(), "QuestionCommented");
             VerifyUserNotificationNotSent(creatorId.ToString());
