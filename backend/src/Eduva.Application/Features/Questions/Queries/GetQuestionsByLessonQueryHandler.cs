@@ -58,6 +58,10 @@ namespace Eduva.Application.Features.Questions.Queries
 
             await ValidateUserAccessToMaterial(request.CurrentUserId, request.LessonMaterialId, userRole, lesson);
 
+            var totalCount = await _repository.CountAsync(q =>
+                q.LessonMaterialId == request.LessonMaterialId
+                && q.LessonMaterial.SchoolId == user.SchoolId, cancellationToken);
+
             var spec = new QuestionsByLessonSpecification(request.Param, request.LessonMaterialId, user.SchoolId);
             var result = await _repository.GetWithSpecAsync(spec);
             var response = AppMapper<AppMappingProfile>.Mapper.Map<Pagination<QuestionResponse>>(result);
@@ -89,7 +93,7 @@ namespace Eduva.Application.Features.Questions.Queries
             return new Pagination<QuestionResponse>(
                 response.PageIndex,
                 response.PageSize,
-                filteredData.Count,
+                totalCount,
                 filteredData
             );
         }
