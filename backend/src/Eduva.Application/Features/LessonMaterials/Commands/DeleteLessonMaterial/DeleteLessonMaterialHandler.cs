@@ -1,6 +1,7 @@
 ﻿using Eduva.Application.Exceptions.Auth;
 using Eduva.Application.Exceptions.LessonMaterial;
 using Eduva.Application.Interfaces;
+using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using MediatR;
@@ -11,12 +12,14 @@ namespace Eduva.Application.Features.LessonMaterials.Commands.DeleteLessonMateri
     public class DeleteLessonMaterialHandler : IRequestHandler<DeleteLessonMaterialCommand, Unit>
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IStorageService _storageService;
         private readonly ILogger<DeleteLessonMaterialHandler> _logger;
 
-        public DeleteLessonMaterialHandler(IUnitOfWork unitOfWork, ILogger<DeleteLessonMaterialHandler> logger)
+        public DeleteLessonMaterialHandler(IUnitOfWork unitOfWork, ILogger<DeleteLessonMaterialHandler> logger, IStorageService storageService)
         {
             _unitOfWork = unitOfWork;
             _logger = logger;
+            _storageService = storageService;
         }
 
 
@@ -48,6 +51,10 @@ namespace Eduva.Application.Features.LessonMaterials.Commands.DeleteLessonMateri
                 if (request.Permanent && material.Status == EntityStatus.Deleted)
                 {
                     lessonMaterialRepository.Remove(material);
+                    if (!material.IsAIContent)
+                    {
+                        await _storageService.DeleteFileAsync(material.SourceUrl);
+                    }
                 }
                 else
                 {
