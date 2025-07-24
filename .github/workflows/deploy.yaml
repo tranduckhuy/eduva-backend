@@ -2,7 +2,7 @@ name: Deploy Eduva
 
 on:
   workflow_run:
-    workflows: ["Publish Eduva API Image"]
+    workflows: ["Release and Publish Eduva API"]
     types:
       - completed
   workflow_dispatch:
