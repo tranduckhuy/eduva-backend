@@ -52,7 +52,7 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
             var result = await _handler.Handle(query, CancellationToken.None);
 
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.Data.Count, Is.EqualTo(1));
+            Assert.That(result.Data, Has.Count.EqualTo(1));
         }
 
         [Test]
@@ -83,7 +83,7 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
             Assert.That(result, Is.Not.Null);
             Assert.Multiple(() =>
             {
-                Assert.That(result.Data.Count, Is.EqualTo(0));
+                Assert.That(result.Data, Is.Empty);
                 Assert.That(capturedSpec, Is.Not.Null);
             });
         }

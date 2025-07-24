@@ -58,8 +58,11 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
 
             Assert.That(result, Is.Not.Null);
             Assert.That(result.Count, Is.EqualTo(2));
-            Assert.That(result.Data.First().Title, Is.EqualTo("Material 1"));
-            Assert.That(result.Data.ElementAt(1).Title, Is.EqualTo("Material 2"));
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Data.First().Title, Is.EqualTo("Material 1"));
+                Assert.That(result.Data.ElementAt(1).Title, Is.EqualTo("Material 2"));
+            });
         }
 
         [Test]

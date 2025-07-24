@@ -171,8 +171,11 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
             var result = await _handler.Handle(query, CancellationToken.None);
 
             Assert.That(result, Has.Count.EqualTo(2));
-            Assert.That(result[0].Id, Is.EqualTo(approval1.Id));
-            Assert.That(result[1].Id, Is.EqualTo(approval2.Id));
+            Assert.Multiple(() =>
+            {
+                Assert.That(result[0].Id, Is.EqualTo(approval1.Id));
+                Assert.That(result[1].Id, Is.EqualTo(approval2.Id));
+            });
         }
 
         [Test]

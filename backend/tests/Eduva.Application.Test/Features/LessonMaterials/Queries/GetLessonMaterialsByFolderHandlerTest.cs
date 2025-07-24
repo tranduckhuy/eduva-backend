@@ -46,9 +46,12 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
 
             var result = await _handler.Handle(query, CancellationToken.None);
 
-            Assert.That(result.Count, Is.EqualTo(2));
-            Assert.That(result[0].Title, Is.EqualTo("Material 1"));
-            Assert.That(result[1].Title, Is.EqualTo("Material 2"));
+            Assert.That(result, Has.Count.EqualTo(2));
+            Assert.Multiple(() =>
+            {
+                Assert.That(result[0].Title, Is.EqualTo("Material 1"));
+                Assert.That(result[1].Title, Is.EqualTo("Material 2"));
+            });
         }
 
         [Test]
@@ -72,7 +75,7 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
 
             var result = await _handler.Handle(query, CancellationToken.None);
 
-            Assert.That(result.Count, Is.EqualTo(1));
+            Assert.That(result, Has.Count.EqualTo(1));
             Assert.That(result[0].Title, Is.EqualTo("Material 1"));
         }
 
@@ -97,7 +100,7 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
 
             var result = await _handler.Handle(query, CancellationToken.None);
 
-            Assert.That(result.Count, Is.EqualTo(1));
+            Assert.That(result, Has.Count.EqualTo(1));
             Assert.That(result[0].Title, Is.EqualTo("Material 1"));
         }
 
@@ -122,7 +125,7 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
 
             var result = await _handler.Handle(query, CancellationToken.None);
 
-            Assert.That(result.Count, Is.EqualTo(1));
+            Assert.That(result, Has.Count.EqualTo(1));
             Assert.That(result[0].Title, Is.EqualTo("Teacher Material"));
         }
 
@@ -147,7 +150,7 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
 
             var result = await _handler.Handle(query, CancellationToken.None);
 
-            Assert.That(result.Count, Is.EqualTo(1));
+            Assert.That(result, Has.Count.EqualTo(1));
             Assert.That(result[0].Title, Is.EqualTo("Student Material"));
         }
 
