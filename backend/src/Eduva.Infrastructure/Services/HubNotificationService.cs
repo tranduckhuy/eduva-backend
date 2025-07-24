@@ -358,6 +358,71 @@ namespace Eduva.Infrastructure.Services
 
         #endregion
 
+
+
+        #region Helper Methods
+
+        private static bool IsQuestionSpecificNotification(string notificationType, object notificationData, out Guid questionId)
+        {
+            questionId = Guid.Empty;
+
+            return notificationType switch
+            {
+                // Question operations related to specific questions
+                NotificationTypes.QuestionUpdated when notificationData is QuestionNotification qn =>
+                    SetQuestionId(out questionId, qn.QuestionId),
+
+                NotificationTypes.QuestionDeleted when notificationData is QuestionDeleteNotification qdn =>
+                    SetQuestionId(out questionId, qdn.QuestionId),
+
+                // Comment operation - always related to specific question
+                NotificationTypes.QuestionCommented when notificationData is QuestionCommentNotification qcn =>
+                    SetQuestionId(out questionId, qcn.QuestionId),
+
+                NotificationTypes.QuestionCommentUpdated when notificationData is QuestionCommentNotification qcu =>
+                    SetQuestionId(out questionId, qcu.QuestionId),
+
+                NotificationTypes.QuestionCommentDeleted when notificationData is QuestionCommentDeleteNotification qcdn =>
+                    SetQuestionId(out questionId, qcdn.QuestionId),
+
+                _ => false
+            };
+        }
+
+        private static bool SetQuestionId(out Guid questionId, Guid id)
+        {
+            questionId = id;
+            return true;
+        }
+
+        #endregion
+
+        #endregion
+
+        #region Lesson Material Approval Notifications
+
+        public async Task NotifyLessonMaterialApprovalAsync(
+            LessonMaterialApprovalNotification notification,
+            string eventType,
+            Guid targetUserId,
+            ApplicationUser? performedByUser = null)
+        {
+            if (performedByUser != null)
+            {
+                notification.PerformedByUserId = performedByUser.Id;
+                notification.PerformedByName = performedByUser.FullName;
+                notification.PerformedByAvatar = performedByUser.AvatarUrl;
+            }
+
+            await _notificationHub.SendNotificationToUserAsync(targetUserId.ToString(), eventType, notification);
+
+            await SaveNotificationToDatabase(eventType, notification, notification.LessonMaterialId, targetUserId, performedByUser, new List<Guid> { targetUserId });
+        }
+
+        #endregion
+
+        #region Save Notification to Database
+
         private async Task SaveNotificationToDatabase(string notificationType, object notificationData, Guid lessonMaterialId, Guid? createdUserId = null, ApplicationUser? user = null, List<Guid>? targetUserIds = null)
         {
             try
@@ -410,43 +475,6 @@ namespace Eduva.Infrastructure.Services
                     notificationType, ex.Message, ex.StackTrace);
             }
         }
-
-        #region Helper Methods
-
-        private static bool IsQuestionSpecificNotification(string notificationType, object notificationData, out Guid questionId)
-        {
-            questionId = Guid.Empty;
-
-            return notificationType switch
-            {
-                // Question operations related to specific questions
-                NotificationTypes.QuestionUpdated when notificationData is QuestionNotification qn =>
-                    SetQuestionId(out questionId, qn.QuestionId),
-
-                NotificationTypes.QuestionDeleted when notificationData is QuestionDeleteNotification qdn =>
-                    SetQuestionId(out questionId, qdn.QuestionId),
-
-                // Comment operation - always related to specific question
-                NotificationTypes.QuestionCommented when notificationData is QuestionCommentNotification qcn =>
-                    SetQuestionId(out questionId, qcn.QuestionId),
-
-                NotificationTypes.QuestionCommentUpdated when notificationData is QuestionCommentNotification qcu =>
-                    SetQuestionId(out questionId, qcu.QuestionId),
-
-                NotificationTypes.QuestionCommentDeleted when notificationData is QuestionCommentDeleteNotification qcdn =>
-                    SetQuestionId(out questionId, qcdn.QuestionId),
-
-                _ => false
-            };
-        }
-
-        private static bool SetQuestionId(out Guid questionId, Guid id)
-        {
-            questionId = id;
-            return true;
-        }
-
-        #endregion
 
         #endregion
 
