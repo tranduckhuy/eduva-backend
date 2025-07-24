@@ -11,13 +11,11 @@ namespace Eduva.Application.Features.Jobs.Commands.DeleteCompletedJob
     public class DeleteCompletedJobHandler : IRequestHandler<DeleteCompletedJobCommand, Unit>
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IStorageService _storageService;
-        private ILogger<DeleteCompletedJobHandler> _logger;
+        private readonly ILogger<DeleteCompletedJobHandler> _logger;
 
-        public DeleteCompletedJobHandler(IUnitOfWork unitOfWork, IStorageService storageService, ILogger<DeleteCompletedJobHandler> logger)
+        public DeleteCompletedJobHandler(IUnitOfWork unitOfWork, ILogger<DeleteCompletedJobHandler> logger)
         {
             _unitOfWork = unitOfWork;
-            _storageService = storageService;
             _logger = logger;
         }
 

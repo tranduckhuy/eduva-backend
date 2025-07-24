@@ -21,7 +21,10 @@ jobs:
         id: release
         uses: googleapis/release-please-action@v4
         with:
-          config-file: .release-please-config.json
+          release-type: simple
+          package-name: eduva-backend
+          version-file: Eduva.API/Eduva.API.csproj
+          changelog-path: CHANGELOG.md
           token: ${{ secrets.GITHUB_TOKEN }}
 
   publish:
