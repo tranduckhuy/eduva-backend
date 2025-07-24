@@ -1,0 +1,9 @@
+{
+  "release-type": "dotnet",
+  "packages": {
+    "backend": {
+      "path": "backend/src/Eduva.API",
+      "version-file": "Eduva.API.csproj"
+    }
+  }
+}
