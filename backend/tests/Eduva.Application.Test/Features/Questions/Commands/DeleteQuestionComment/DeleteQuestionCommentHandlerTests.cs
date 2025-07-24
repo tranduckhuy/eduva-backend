@@ -22,6 +22,8 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestionComme
         private Mock<IGenericRepository<ApplicationUser, Guid>> _userRepositoryMock = default!;
         private Mock<IGenericRepository<QuestionComment, Guid>> _commentRepositoryMock = default!;
         private Mock<IGenericRepository<LessonMaterialQuestion, Guid>> _questionRepositoryMock = default!;
+        private Mock<INotificationService> _notificationServiceMock = default!;
+
         private DeleteQuestionCommentHandler _handler = default!;
 
         #region Setup
@@ -37,6 +39,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestionComme
             _userRepositoryMock = new Mock<IGenericRepository<ApplicationUser, Guid>>();
             _commentRepositoryMock = new Mock<IGenericRepository<QuestionComment, Guid>>();
             _questionRepositoryMock = new Mock<IGenericRepository<LessonMaterialQuestion, Guid>>();
+            _notificationServiceMock = new Mock<INotificationService>();
 
             _unitOfWorkMock.Setup(x => x.GetRepository<ApplicationUser, Guid>())
                 .Returns(_userRepositoryMock.Object);
@@ -49,7 +52,8 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestionComme
                 _unitOfWorkMock.Object,
                 _userManagerMock.Object,
                 _hubNotificationServiceMock.Object,
-                _permissionServiceMock.Object);
+                _permissionServiceMock.Object,
+                 _notificationServiceMock.Object);
         }
 
         #endregion
@@ -194,7 +198,8 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestionComme
                 lessonMaterialId,
                 It.IsAny<string>(),
                 It.IsAny<string>(),
-                0, It.IsAny<Guid?>()))
+                0, It.IsAny<Guid?>(),
+                It.IsAny<List<Guid>>()))
             .Returns(Task.CompletedTask);
 
             // Act
@@ -209,7 +214,8 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestionComme
                 lessonMaterialId,
                 It.IsAny<string>(),
                 It.IsAny<string>(),
-                0, It.IsAny<Guid?>()), Times.Once);
+                0, It.IsAny<Guid?>(),
+                It.IsAny<List<Guid>>()), Times.Once);
         }
 
         [Test]
@@ -252,7 +258,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestionComme
                  lessonMaterialId,
                  It.IsAny<string>(),
                  It.IsAny<string>(),
-                 0, It.IsAny<Guid?>()))
+                 0, It.IsAny<Guid?>(), It.IsAny<List<Guid>>()))
              .Returns(Task.CompletedTask);
 
             // Act
@@ -267,7 +273,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestionComme
                  lessonMaterialId,
                  It.IsAny<string>(),
                  It.IsAny<string>(),
-                 0, It.IsAny<Guid?>()), Times.Once);
+                 0, It.IsAny<Guid?>(), It.IsAny<List<Guid>>()), Times.Once);
         }
 
         [Test]
@@ -404,7 +410,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestionComme
                 lessonMaterialId,
                 It.IsAny<string>(),
                 It.IsAny<string>(),
-                1, It.IsAny<Guid?>()))
+                1, It.IsAny<Guid?>(), It.IsAny<List<Guid>>()))
             .Returns(Task.CompletedTask);
 
             // Act
@@ -420,7 +426,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestionComme
              lessonMaterialId,
              It.IsAny<string>(),
              It.IsAny<string>(),
-             1, It.IsAny<Guid?>()), Times.Once);
+             1, It.IsAny<Guid?>(), It.IsAny<List<Guid>>()), Times.Once);
         }
 
         #endregion

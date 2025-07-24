@@ -12,6 +12,7 @@ namespace Eduva.Application.Common.Models.Notifications
         public DateTimeOffset DeletedAt { get; set; }
         public int DeletedRepliesCount { get; set; }
         public Guid CreatedByUserId { get; set; }
+        public Guid ExecutorByUserId { get; set; }
         public string? CreatedByName { get; set; }
         public string? CreatedByAvatar { get; set; }
         public string? CreatedByRole { get; set; }

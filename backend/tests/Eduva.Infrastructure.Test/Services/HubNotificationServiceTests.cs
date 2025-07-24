@@ -147,10 +147,12 @@ namespace Eduva.Infrastructure.Test.Services
             await Task.Yield();
             var questionId = Guid.NewGuid();
             var lessonMaterialId = Guid.NewGuid();
+            var targetUser1 = Guid.NewGuid();
 
             _mockNotificationService.Setup(x => x.GetUsersForQuestionCommentNotificationAsync(
                 questionId,
                 lessonMaterialId,
+                targetUser1,
                 It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Service error"));
 
@@ -303,10 +305,12 @@ namespace Eduva.Infrastructure.Test.Services
             var commentId = Guid.NewGuid();
             var questionId = Guid.NewGuid();
             var lessonMaterialId = Guid.NewGuid();
+            var targetUser1 = Guid.NewGuid();
 
             _mockNotificationService.Setup(x => x.GetUsersForQuestionCommentNotificationAsync(
                 questionId,
                 lessonMaterialId,
+                targetUser1,
                 It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Service error"));
 
@@ -350,6 +354,7 @@ namespace Eduva.Infrastructure.Test.Services
             _mockNotificationService.Setup(s => s.GetUsersForQuestionCommentNotificationAsync(
                 It.IsAny<Guid>(),
                 It.IsAny<Guid>(),
+                It.IsAny<Guid>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(targetUsers);
             _mockNotificationHub.Setup(h => h.SendNotificationToUserAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object>()))
@@ -382,6 +387,7 @@ namespace Eduva.Infrastructure.Test.Services
             _mockNotificationService.Setup(s => s.GetUsersForQuestionCommentNotificationAsync(
                     questionId,
                     lessonMaterialId,
+                    It.IsAny<Guid>(),
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync(targetUsers);
 

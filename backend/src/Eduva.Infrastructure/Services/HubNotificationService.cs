@@ -56,7 +56,7 @@ namespace Eduva.Infrastructure.Services
             await SendNotificationAsync(notification, NotificationTypes.QuestionCreated, executorUserId);
 
             // Save the notification to the database for persistence
-            await SaveNotificationToDatabase(NotificationTypes.QuestionCreated, notification, lessonMaterialId, executorUserId);
+            await SaveNotificationToDatabase(NotificationTypes.QuestionCreated, notification, lessonMaterialId, question.CreatedByUserId, executorUserId);
         }
 
         public async Task NotifyQuestionUpdatedAsync(QuestionResponse question, Guid lessonMaterialId, Guid? executorUserId = null)
@@ -71,6 +71,7 @@ namespace Eduva.Infrastructure.Services
                 CreatedAt = question.CreatedAt,
                 LastModifiedAt = question.LastModifiedAt,
                 CreatedByUserId = question.CreatedByUserId,
+                ExecutorByUserId = executorUserId ?? Guid.Empty,
                 CreatedByName = question.CreatedByName,
                 CreatedByAvatar = question.CreatedByAvatar,
                 CreatedByRole = question.CreatedByRole,
@@ -81,10 +82,10 @@ namespace Eduva.Infrastructure.Services
             await SendNotificationAsync(notification, NotificationTypes.QuestionUpdated, executorUserId);
 
             // Save the notification to the database for persistence
-            await SaveNotificationToDatabase(NotificationTypes.QuestionUpdated, notification, lessonMaterialId, executorUserId);
+            await SaveNotificationToDatabase(NotificationTypes.QuestionUpdated, notification, lessonMaterialId, question.CreatedByUserId, executorUserId);
         }
 
-        public async Task NotifyQuestionDeletedAsync(QuestionResponse question, Guid lessonMaterialId, Guid? executorUserId = null)
+        public async Task NotifyQuestionDeletedAsync(QuestionResponse question, Guid lessonMaterialId, Guid? executorUserId = null, List<Guid>? targetUserIds = null)
         {
             var notification = new QuestionDeleteNotification
             {
@@ -93,6 +94,7 @@ namespace Eduva.Infrastructure.Services
                 LessonMaterialId = lessonMaterialId,
                 LessonMaterialTitle = question.LessonMaterialTitle,
                 CreatedByUserId = question.CreatedByUserId,
+                ExecutorByUserId = executorUserId ?? Guid.Empty,
                 CreatedByName = question.CreatedByName,
                 CreatedByAvatar = question.CreatedByAvatar,
                 CreatedByRole = question.CreatedByRole,
@@ -107,7 +109,8 @@ namespace Eduva.Infrastructure.Services
                     question.Id, lessonMaterialId);
 
                 // Get target users for question deletion notification
-                var targetUserIds = await _notificationService.GetUsersForQuestionCommentNotificationAsync(question.Id, lessonMaterialId);
+                targetUserIds ??= await _notificationService.GetUsersForQuestionCommentNotificationAsync(
+                        question.Id, lessonMaterialId, question.CreatedByUserId);
 
                 // Exclude the creator from receiving their own notification
                 if (executorUserId.HasValue)
@@ -126,7 +129,7 @@ namespace Eduva.Infrastructure.Services
                     targetUserIds.Count, question.Id);
 
                 // Save the notification to the database for persistence
-                await SaveNotificationToDatabase(NotificationTypes.QuestionDeleted, notification, lessonMaterialId, executorUserId);
+                await SaveNotificationToDatabase(NotificationTypes.QuestionDeleted, notification, lessonMaterialId, question.CreatedByUserId, executorUserId, targetUserIds);
             }
             catch (Exception ex)
             {
@@ -155,7 +158,7 @@ namespace Eduva.Infrastructure.Services
                 }
                 else
                 {
-                    targetUserIds = await _notificationService.GetUsersForQuestionCommentNotificationAsync(notification.QuestionId, notification.LessonMaterialId);
+                    targetUserIds = await _notificationService.GetUsersForQuestionCommentNotificationAsync(notification.QuestionId, notification.LessonMaterialId, notification.CreatedByUserId);
                 }
 
                 // Exclude the creator from receiving their own notification
@@ -207,7 +210,7 @@ namespace Eduva.Infrastructure.Services
             await SendCommentNotificationAsync(notification, NotificationTypes.QuestionCommented, executorUserId);
 
             // Save the notification to the database for persistence
-            await SaveNotificationToDatabase(NotificationTypes.QuestionCommented, notification, lessonMaterialId, executorUserId);
+            await SaveNotificationToDatabase(NotificationTypes.QuestionCommented, notification, lessonMaterialId, comment.CreatedByUserId, executorUserId);
         }
 
         public async Task NotifyQuestionCommentUpdatedAsync(QuestionCommentResponse comment, Guid lessonMaterialId, string title, string lessonMaterialTitle, Guid? executorUserId = null)
@@ -222,6 +225,7 @@ namespace Eduva.Infrastructure.Services
                 Content = comment.Content,
                 CreatedAt = comment.CreatedAt,
                 CreatedByUserId = comment.CreatedByUserId,
+                ExecutorByUserId = executorUserId ?? Guid.Empty,
                 CreatedByName = comment.CreatedByName,
                 CreatedByAvatar = comment.CreatedByAvatar,
                 CreatedByRole = comment.CreatedByRole,
@@ -233,10 +237,10 @@ namespace Eduva.Infrastructure.Services
             await SendCommentNotificationAsync(notification, NotificationTypes.QuestionCommentUpdated, executorUserId);
 
             // Save the notification to the database for persistence
-            await SaveNotificationToDatabase(NotificationTypes.QuestionCommentUpdated, notification, lessonMaterialId, executorUserId);
+            await SaveNotificationToDatabase(NotificationTypes.QuestionCommentUpdated, notification, lessonMaterialId, comment.CreatedByUserId, executorUserId);
         }
 
-        public async Task NotifyQuestionCommentDeletedAsync(QuestionCommentResponse comment, Guid lessonMaterialId, string title, string lessonMaterialTitle, int deletedRepliesCount = 0, Guid? executorUserId = null)
+        public async Task NotifyQuestionCommentDeletedAsync(QuestionCommentResponse comment, Guid lessonMaterialId, string title, string lessonMaterialTitle, int deletedRepliesCount = 0, Guid? executorUserId = null, List<Guid>? targetUserIds = null)
         {
             var notification = new QuestionCommentDeleteNotification
             {
@@ -248,6 +252,7 @@ namespace Eduva.Infrastructure.Services
                 DeletedAt = DateTimeOffset.UtcNow,
                 DeletedRepliesCount = deletedRepliesCount,
                 CreatedByUserId = comment.CreatedByUserId,
+                ExecutorByUserId = executorUserId ?? Guid.Empty,
                 CreatedByName = comment.CreatedByName,
                 CreatedByAvatar = comment.CreatedByAvatar,
                 CreatedByRole = comment.CreatedByRole,
@@ -262,7 +267,8 @@ namespace Eduva.Infrastructure.Services
                     comment.Id, comment.QuestionId, lessonMaterialId, deletedRepliesCount);
 
                 // Get target users for comment deletion notification
-                var targetUserIds = await _notificationService.GetUsersForQuestionCommentNotificationAsync(comment.QuestionId, lessonMaterialId);
+                targetUserIds ??= await _notificationService.GetUsersForQuestionCommentNotificationAsync(
+                            comment.QuestionId, lessonMaterialId, comment.CreatedByUserId);
 
                 // Exclude the creator from receiving their own notification
                 if (executorUserId.HasValue)
@@ -282,7 +288,7 @@ namespace Eduva.Infrastructure.Services
                     targetUserIds.Count, comment.Id, comment.QuestionId, deletedRepliesCount);
 
                 // Save the notification to the database for persistence
-                await SaveNotificationToDatabase(NotificationTypes.QuestionCommentDeleted, notification, lessonMaterialId, executorUserId);
+                await SaveNotificationToDatabase(NotificationTypes.QuestionCommentDeleted, notification, lessonMaterialId, comment.CreatedByUserId, executorUserId, targetUserIds);
             }
             catch (Exception ex)
             {
@@ -305,7 +311,7 @@ namespace Eduva.Infrastructure.Services
 
                 // Get target users for comment notification
                 var targetUserIds = await _notificationService.GetUsersForQuestionCommentNotificationAsync(
-                    notification.QuestionId, notification.LessonMaterialId);
+                    notification.QuestionId, notification.LessonMaterialId, notification.CreatedByUserId);
 
                 // Exclude the creator from receiving their own notification
                 if (executorUserId.HasValue)
@@ -333,7 +339,7 @@ namespace Eduva.Infrastructure.Services
             }
         }
 
-        private async Task SaveNotificationToDatabase(string notificationType, object notificationData, Guid lessonMaterialId, Guid? executorUserId = null)
+        private async Task SaveNotificationToDatabase(string notificationType, object notificationData, Guid lessonMaterialId, Guid? createdUserId = null, Guid? executorUserId = null, List<Guid>? targetUserIds = null)
         {
             try
             {
@@ -343,22 +349,21 @@ namespace Eduva.Infrastructure.Services
                 // Create persistent notification
                 var persistentNotification = await _notificationService.CreateNotificationAsync(notificationType, payload);
 
-                List<Guid> targetUserIds;
-
-                // CASE 1: New question - only notify teachers + users with access to the lesson
-                if (notificationType == NotificationTypes.QuestionCreated)
+                if (targetUserIds == null)
                 {
-                    targetUserIds = await _notificationService.GetUsersForNewQuestionNotificationAsync(lessonMaterialId);
-                }
-                else if (IsQuestionSpecificNotification(notificationType, notificationData, out var questionId))
-                {
-                    // CASE 2: All other operations related to the specific question
-                    targetUserIds = await _notificationService.GetUsersForQuestionCommentNotificationAsync(questionId, lessonMaterialId);
-                }
-                else
-                {
-                    // CASE 3: Keep the old logic for other cases - ensure safety
-                    targetUserIds = await _notificationService.GetUsersInLessonAsync(lessonMaterialId);
+                    if (notificationType == NotificationTypes.QuestionCreated)
+                    {
+                        targetUserIds = await _notificationService.GetUsersForNewQuestionNotificationAsync(lessonMaterialId);
+                    }
+                    else if (IsQuestionSpecificNotification(notificationType, notificationData, out var questionId))
+                    {
+                        targetUserIds = await _notificationService.GetUsersForQuestionCommentNotificationAsync(
+                            questionId, lessonMaterialId, createdUserId);
+                    }
+                    else
+                    {
+                        targetUserIds = await _notificationService.GetUsersInLessonAsync(lessonMaterialId);
+                    }
                 }
 
                 _logger.LogInformation("Notification target users determined - Found {Count} users for {NotificationType}",

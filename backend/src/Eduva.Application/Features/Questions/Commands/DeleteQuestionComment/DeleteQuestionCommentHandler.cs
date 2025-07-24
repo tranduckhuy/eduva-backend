@@ -16,17 +16,20 @@ namespace Eduva.Application.Features.Questions.Commands.DeleteQuestionComment
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IHubNotificationService _hubNotificationService;
         private readonly IQuestionPermissionService _permissionService;
+        private readonly INotificationService _notificationService;
 
         public DeleteQuestionCommentHandler(
             IUnitOfWork unitOfWork,
             UserManager<ApplicationUser> userManager,
             IHubNotificationService hubNotificationService,
-            IQuestionPermissionService permissionService)
+            IQuestionPermissionService permissionService,
+            INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
             _hubNotificationService = hubNotificationService;
             _permissionService = permissionService;
+            _notificationService = notificationService;
         }
 
         public async Task<bool> Handle(DeleteQuestionCommentCommand request, CancellationToken cancellationToken)
@@ -53,18 +56,6 @@ namespace Eduva.Application.Features.Questions.Commands.DeleteQuestionComment
 
             var replies = await ValidateDeletePermissionsAndGetReplies(comment, user, userRole);
 
-            if (replies.Count != 0)
-            {
-                foreach (var reply in replies)
-                {
-                    commentRepo.Remove(reply);
-                }
-            }
-
-            commentRepo.Remove(comment);
-
-            await _unitOfWork.CommitAsync();
-
             var commentCreator = await userRepo.GetByIdAsync(comment.CreatedByUserId);
             string commentCreatorRole = "";
             if (commentCreator != null)
@@ -90,7 +81,25 @@ namespace Eduva.Application.Features.Questions.Commands.DeleteQuestionComment
                 Replies = new List<QuestionReplyResponse>()
             };
 
-            await _hubNotificationService.NotifyQuestionCommentDeletedAsync(response, lesson.Id, question.Title, lesson.Title, replies.Count, request.DeletedByUserId);
+            var targetUserIds = await _notificationService.GetUsersForQuestionCommentNotificationAsync(
+                comment.QuestionId, lesson.Id, comment.CreatedByUserId, cancellationToken);
+
+
+            if (replies.Count != 0)
+            {
+                foreach (var reply in replies)
+                {
+                    commentRepo.Remove(reply);
+                }
+            }
+
+            commentRepo.Remove(comment);
+
+            await _unitOfWork.CommitAsync();
+
+
+
+            await _hubNotificationService.NotifyQuestionCommentDeletedAsync(response, lesson.Id, question.Title, lesson.Title, replies.Count, request.DeletedByUserId, targetUserIds);
 
             return true;
         }

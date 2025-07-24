@@ -23,6 +23,8 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestion
         private Mock<IGenericRepository<LessonMaterialQuestion, Guid>> _questionRepositoryMock = default!;
         private Mock<IGenericRepository<ApplicationUser, Guid>> _userRepositoryMock = default!;
         private Mock<IGenericRepository<QuestionComment, Guid>> _commentRepositoryMock = default!;
+        private Mock<INotificationService> _notificationServiceMock = default!;
+
         private DeleteQuestionHandler _handler = default!;
 
         #region Setup
@@ -38,6 +40,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestion
             _questionRepositoryMock = new Mock<IGenericRepository<LessonMaterialQuestion, Guid>>();
             _userRepositoryMock = new Mock<IGenericRepository<ApplicationUser, Guid>>();
             _commentRepositoryMock = new Mock<IGenericRepository<QuestionComment, Guid>>();
+            _notificationServiceMock = new Mock<INotificationService>();
 
             _unitOfWorkMock.Setup(x => x.GetRepository<LessonMaterialQuestion, Guid>())
                 .Returns(_questionRepositoryMock.Object);
@@ -50,7 +53,8 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestion
                 _unitOfWorkMock.Object,
                 _userManagerMock.Object,
                 _hubNotificationServiceMock.Object,
-                _permissionServiceMock.Object);
+                _permissionServiceMock.Object,
+                 _notificationServiceMock.Object);
         }
 
         #endregion
@@ -129,6 +133,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestion
             // Arrange
             var questionId = Guid.NewGuid();
             var userId = Guid.NewGuid();
+            var creatorId = Guid.NewGuid();
             var lessonMaterialId = Guid.NewGuid();
             var lessonMaterialRepoMock = new Mock<IGenericRepository<LessonMaterial, Guid>>();
             _unitOfWorkMock.Setup(x => x.GetRepository<LessonMaterial, Guid>())
@@ -141,16 +146,22 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestion
                 Id = questionId,
                 Status = EntityStatus.Active,
                 Title = "Test Question",
-                LessonMaterialId = lessonMaterialId
+                LessonMaterialId = lessonMaterialId,
+                CreatedByUserId = creatorId
             };
             var user = new ApplicationUser { Id = userId };
+            var creator = new ApplicationUser { Id = creatorId, FullName = "Creator" };
 
             _questionRepositoryMock.Setup(x => x.GetByIdAsync(questionId))
                 .ReturnsAsync(question);
             _userRepositoryMock.Setup(x => x.GetByIdAsync(userId))
                 .ReturnsAsync(user);
+            _userRepositoryMock.Setup(x => x.GetByIdAsync(creatorId))
+                .ReturnsAsync(creator);
             _userManagerMock.Setup(x => x.GetRolesAsync(user))
                 .ReturnsAsync(new List<string> { "SystemAdmin" });
+            _userManagerMock.Setup(x => x.GetRolesAsync(creator))
+                .ReturnsAsync(new List<string> { "Student" });
             _permissionServiceMock.Setup(x => x.GetHighestPriorityRole(It.IsAny<IList<string>>()))
                 .Returns("SystemAdmin");
             _unitOfWorkMock.Setup(x => x.CommitAsync())
@@ -159,7 +170,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestion
             // Mock notification service
             _hubNotificationServiceMock.Setup(x => x.NotifyQuestionDeletedAsync(
                 It.IsAny<QuestionResponse>(),
-                It.IsAny<Guid>(), It.IsAny<Guid?>()))
+                It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<List<Guid>>()))
                 .Returns(Task.CompletedTask);
 
             // Act
@@ -171,7 +182,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestion
             _unitOfWorkMock.Verify(x => x.CommitAsync(), Times.Once);
             _hubNotificationServiceMock.Verify(x => x.NotifyQuestionDeletedAsync(
                 It.IsAny<QuestionResponse>(),
-                lessonMaterialId, It.IsAny<Guid?>()), Times.Once);
+                lessonMaterialId, It.IsAny<Guid?>(), It.IsAny<List<Guid>>()), Times.Once);
         }
 
         [Test]
@@ -213,7 +224,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestion
 
             _hubNotificationServiceMock.Setup(x => x.NotifyQuestionDeletedAsync(
                 It.IsAny<QuestionResponse>(),
-                It.IsAny<Guid>(), It.IsAny<Guid?>()))
+                It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<List<Guid>>()))
                 .Returns(Task.CompletedTask);
 
             // Act
@@ -225,7 +236,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestion
             _unitOfWorkMock.Verify(x => x.CommitAsync(), Times.Once);
             _hubNotificationServiceMock.Verify(x => x.NotifyQuestionDeletedAsync(
                 It.IsAny<QuestionResponse>(),
-                lessonMaterialId, It.IsAny<Guid?>()), Times.Once);
+                lessonMaterialId, It.IsAny<Guid?>(), It.IsAny<List<Guid>>()), Times.Once);
         }
 
         [Test]
@@ -337,7 +348,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestion
             // Mock notification service
             _hubNotificationServiceMock.Setup(x => x.NotifyQuestionDeletedAsync(
                 It.IsAny<QuestionResponse>(),
-                lessonMaterialId, It.IsAny<Guid?>()))
+                lessonMaterialId, It.IsAny<Guid?>(), It.IsAny<List<Guid>>()))
                 .Returns(Task.CompletedTask);
 
             // Act
@@ -349,7 +360,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestion
             _unitOfWorkMock.Verify(x => x.CommitAsync(), Times.Once);
             _hubNotificationServiceMock.Verify(x => x.NotifyQuestionDeletedAsync(
                 It.IsAny<QuestionResponse>(),
-                lessonMaterialId, It.IsAny<Guid?>()), Times.Once);
+                lessonMaterialId, It.IsAny<Guid?>(), It.IsAny<List<Guid>>()), Times.Once);
         }
 
         #endregion

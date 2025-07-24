@@ -5,11 +5,11 @@ using System.Security.Claims;
 namespace Eduva.API.Hubs
 {
     [Authorize]
-    public class QuestionCommentHub : Hub
+    public class NotificationHub : Hub
     {
-        private readonly ILogger<QuestionCommentHub> _logger;
+        private readonly ILogger<NotificationHub> _logger;
 
-        public QuestionCommentHub(ILogger<QuestionCommentHub> logger)
+        public NotificationHub(ILogger<NotificationHub> logger)
         {
             _logger = logger;
         }
@@ -17,11 +17,10 @@ namespace Eduva.API.Hubs
         public override async Task OnConnectedAsync()
         {
             var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var userName = Context.User?.FindFirst(ClaimTypes.Name)?.Value;
 
             _logger.LogInformation("[SignalR] User connected - ConnectionId: {ConnectionId}, " +
-                "UserId: {UserId}, UserName: {UserName}",
-                Context.ConnectionId, userId, userName);
+                "UserId: {UserId}",
+                Context.ConnectionId, userId);
 
             await base.OnConnectedAsync();
         }
@@ -45,6 +44,8 @@ namespace Eduva.API.Hubs
 
             await base.OnDisconnectedAsync(exception);
         }
+
+        #region Hub Methods - Group Management
 
         public async Task JoinLessonGroup(string lessonMaterialId)
         {
@@ -77,5 +78,8 @@ namespace Eduva.API.Hubs
                 "GroupName: {GroupName}",
                 Context.ConnectionId, groupName);
         }
+
+        #endregion
+
     }
 }

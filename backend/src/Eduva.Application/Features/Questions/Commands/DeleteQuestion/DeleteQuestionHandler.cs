@@ -16,13 +16,16 @@ namespace Eduva.Application.Features.Questions.Commands.DeleteQuestion
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IHubNotificationService _hubNotificationService;
         private readonly IQuestionPermissionService _permissionService;
+        private readonly INotificationService _notificationService;
 
-        public DeleteQuestionHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager, IHubNotificationService hubNotificationService, IQuestionPermissionService permissionService)
+        public DeleteQuestionHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager, IHubNotificationService hubNotificationService, IQuestionPermissionService permissionService, INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
             _hubNotificationService = hubNotificationService;
             _permissionService = permissionService;
+            _notificationService = notificationService;
+
         }
 
         public async Task<bool> Handle(DeleteQuestionCommand request, CancellationToken cancellationToken)
@@ -61,8 +64,9 @@ namespace Eduva.Application.Features.Questions.Commands.DeleteQuestion
                 throw new AppException(CustomCode.LessonMaterialNotActive);
             }
 
-            questionRepo.Remove(question);
-            await _unitOfWork.CommitAsync();
+            var createdByUser = await userRepo.GetByIdAsync(question.CreatedByUserId) ?? throw new AppException(CustomCode.UserNotFound);
+            var createdByRoles = await _userManager.GetRolesAsync(createdByUser);
+            var createdByRole = _permissionService.GetHighestPriorityRole(createdByRoles);
 
             var response = new QuestionResponse
             {
@@ -73,13 +77,18 @@ namespace Eduva.Application.Features.Questions.Commands.DeleteQuestion
                 Content = question.Content,
                 CreatedAt = question.CreatedAt,
                 CreatedByUserId = question.CreatedByUserId,
-                CreatedByName = user.FullName,
-                CreatedByAvatar = user.AvatarUrl,
-                CreatedByRole = userRole,
+                CreatedByName = createdByUser.FullName,
+                CreatedByAvatar = createdByUser.AvatarUrl,
+                CreatedByRole = createdByRole,
                 CommentCount = 0
             };
 
-            await _hubNotificationService.NotifyQuestionDeletedAsync(response, lessonMaterialId, request.DeletedByUserId);
+            var targetUserIds = await _notificationService.GetUsersForQuestionCommentNotificationAsync(question.Id, lessonMaterialId, question.CreatedByUserId, cancellationToken);
+
+            questionRepo.Remove(question);
+            await _unitOfWork.CommitAsync();
+
+            await _hubNotificationService.NotifyQuestionDeletedAsync(response, lessonMaterialId, request.DeletedByUserId, targetUserIds);
 
             return true;
         }

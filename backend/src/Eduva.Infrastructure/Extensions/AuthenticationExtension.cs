@@ -108,7 +108,7 @@ namespace Eduva.Infrastructure.Extensions
 
                         if (!string.IsNullOrEmpty(accessToken) &&
                             (path.StartsWithSegments("/hubs/job-status") ||
-                             path.StartsWithSegments("/hubs/question-comment")))
+                             path.StartsWithSegments("/hubs/notification")))
                         {
                             context.Token = accessToken;
                         }
