@@ -146,7 +146,7 @@ app.UseAuthorization();
 app.UseMiddleware<SubscriptionValidationMiddleware>();
 
 // Add SignalR Hub mapping
-app.MapHub<QuestionCommentHub>("/hubs/question-comment");
+app.MapHub<NotificationHub>("/hubs/notification");
 app.MapHub<JobStatusHub>("/hubs/job-status");
 
 app.MapControllers();

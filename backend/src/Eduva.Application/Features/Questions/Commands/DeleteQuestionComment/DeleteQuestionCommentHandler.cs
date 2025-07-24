@@ -1,4 +1,5 @@
 ﻿using Eduva.Application.Common.Exceptions;
+using Eduva.Application.Features.Questions.Responses;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
@@ -15,17 +16,20 @@ namespace Eduva.Application.Features.Questions.Commands.DeleteQuestionComment
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IHubNotificationService _hubNotificationService;
         private readonly IQuestionPermissionService _permissionService;
+        private readonly INotificationService _notificationService;
 
         public DeleteQuestionCommentHandler(
             IUnitOfWork unitOfWork,
             UserManager<ApplicationUser> userManager,
             IHubNotificationService hubNotificationService,
-            IQuestionPermissionService permissionService)
+            IQuestionPermissionService permissionService,
+            INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
             _hubNotificationService = hubNotificationService;
             _permissionService = permissionService;
+            _notificationService = notificationService;
         }
 
         public async Task<bool> Handle(DeleteQuestionCommentCommand request, CancellationToken cancellationToken)
@@ -47,7 +51,39 @@ namespace Eduva.Application.Features.Questions.Commands.DeleteQuestionComment
             var questionRepo = _unitOfWork.GetRepository<LessonMaterialQuestion, Guid>();
             var question = await questionRepo.GetByIdAsync(comment.QuestionId) ?? throw new AppException(CustomCode.QuestionNotFound);
 
+            var lessonRepo = _unitOfWork.GetRepository<LessonMaterial, Guid>();
+            var lesson = await lessonRepo.GetByIdAsync(question.LessonMaterialId) ?? throw new AppException(CustomCode.LessonMaterialNotFound);
+
             var replies = await ValidateDeletePermissionsAndGetReplies(comment, user, userRole);
+
+            var commentCreator = await userRepo.GetByIdAsync(comment.CreatedByUserId);
+            string commentCreatorRole = "";
+            if (commentCreator != null)
+            {
+                var commentCreatorRoles = await _userManager.GetRolesAsync(commentCreator);
+                commentCreatorRole = _permissionService.GetHighestPriorityRole(commentCreatorRoles);
+            }
+
+            var response = new QuestionCommentResponse
+            {
+                Id = comment.Id,
+                QuestionId = comment.QuestionId,
+                Content = comment.Content,
+                ParentCommentId = comment.ParentCommentId,
+                CreatedByUserId = comment.CreatedByUserId,
+                CreatedAt = comment.CreatedAt,
+                CreatedByName = commentCreator?.FullName,
+                CreatedByAvatar = commentCreator?.AvatarUrl,
+                CreatedByRole = commentCreatorRole,
+                CanUpdate = false,
+                CanDelete = false,
+                ReplyCount = replies.Count,
+                Replies = new List<QuestionReplyResponse>()
+            };
+
+            var targetUserIds = await _notificationService.GetUsersForQuestionCommentNotificationAsync(
+                comment.QuestionId, lesson.Id, comment.CreatedByUserId, cancellationToken);
+
 
             if (replies.Count != 0)
             {
@@ -61,11 +97,9 @@ namespace Eduva.Application.Features.Questions.Commands.DeleteQuestionComment
 
             await _unitOfWork.CommitAsync();
 
-            await _hubNotificationService.NotifyQuestionCommentDeletedAsync(
-                comment.Id,
-                comment.QuestionId,
-                question.LessonMaterialId,
-                replies.Count);
+
+
+            await _hubNotificationService.NotifyQuestionCommentDeletedAsync(response, lesson.Id, question.Title, lesson.Title, replies.Count, user, targetUserIds);
 
             return true;
         }

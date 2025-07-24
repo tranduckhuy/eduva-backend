@@ -6,14 +6,14 @@ namespace Eduva.API.Adapters
 {
     public class SignalRNotificationHub : INotificationHub
     {
-        private readonly IHubContext<QuestionCommentHub> _questionCommentHubContext;
+        private readonly IHubContext<NotificationHub> _notificationHubContext;
         private readonly IHubContext<JobStatusHub> _jobStatusHubContext;
 
         public SignalRNotificationHub(
-            IHubContext<QuestionCommentHub> questionCommentHubContext,
+            IHubContext<NotificationHub> notificationHubContext,
             IHubContext<JobStatusHub> jobStatusHubContext)
         {
-            _questionCommentHubContext = questionCommentHubContext;
+            _notificationHubContext = notificationHubContext;
             _jobStatusHubContext = jobStatusHubContext;
         }
 
@@ -26,7 +26,7 @@ namespace Eduva.API.Adapters
             }
             else
             {
-                await _questionCommentHubContext.Clients.Group(groupName).SendAsync(eventName, data);
+                await _notificationHubContext.Clients.Group(groupName).SendAsync(eventName, data);
             }
         }
 
@@ -38,14 +38,14 @@ namespace Eduva.API.Adapters
             }
             else
             {
-                await _questionCommentHubContext.Clients.User(userId).SendAsync(eventName, data);
+                await _notificationHubContext.Clients.User(userId).SendAsync(eventName, data);
             }
         }
 
         public async Task SendNotificationToAllAsync(string eventName, object data)
         {
             // For broadcast notifications, send to both hubs
-            await _questionCommentHubContext.Clients.All.SendAsync(eventName, data);
+            await _notificationHubContext.Clients.All.SendAsync(eventName, data);
         }
     }
 }

@@ -707,7 +707,13 @@ namespace Eduva.Application.Test.Features.Questions.Commands.CreateQuestionComme
 
             _commentRepositoryMock.Setup(x => x.AddAsync(It.IsAny<QuestionComment>())).Returns(Task.CompletedTask);
             _unitOfWorkMock.Setup(x => x.CommitAsync()).ReturnsAsync(1);
-            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionCommentedAsync(It.IsAny<QuestionCommentResponse>(), lessonId)).Returns(Task.CompletedTask);
+            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionCommentedAsync(
+                    It.IsAny<QuestionCommentResponse>(),
+                    lessonId,
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<ApplicationUser>()))
+                .Returns(Task.CompletedTask);
 
             // Act
             var result = await _handler.Handle(command, CancellationToken.None);
@@ -768,8 +774,13 @@ namespace Eduva.Application.Test.Features.Questions.Commands.CreateQuestionComme
                 .Returns(Task.CompletedTask);
             _unitOfWorkMock.Setup(x => x.CommitAsync())
                 .ReturnsAsync(1);
-            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionCommentedAsync(It.IsAny<QuestionCommentResponse>(), lessonId))
-                .Returns(Task.CompletedTask);
+            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionCommentedAsync(
+                It.IsAny<QuestionCommentResponse>(),
+                lessonId,
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<ApplicationUser>()))
+            .Returns(Task.CompletedTask);
 
             // Act
             var result = await _handler.Handle(command, CancellationToken.None);
@@ -790,7 +801,11 @@ namespace Eduva.Application.Test.Features.Questions.Commands.CreateQuestionComme
 
             _commentRepositoryMock.Verify(x => x.AddAsync(It.IsAny<QuestionComment>()), Times.Once);
             _unitOfWorkMock.Verify(x => x.CommitAsync(), Times.Once);
-            _hubNotificationServiceMock.Verify(x => x.NotifyQuestionCommentedAsync(It.IsAny<QuestionCommentResponse>(), lessonId), Times.Once);
+            _hubNotificationServiceMock.Verify(x => x.NotifyQuestionCommentedAsync(
+                It.IsAny<QuestionCommentResponse>(),
+                lessonId,
+                It.IsAny<string>(),
+                It.IsAny<string>(), It.IsAny<ApplicationUser>()), Times.Once);
         }
 
         [Test]
@@ -835,8 +850,12 @@ namespace Eduva.Application.Test.Features.Questions.Commands.CreateQuestionComme
                 .Returns(Task.CompletedTask);
             _unitOfWorkMock.Setup(x => x.CommitAsync())
                 .ReturnsAsync(1);
-            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionCommentedAsync(It.IsAny<QuestionCommentResponse>(), lessonId))
-                .Returns(Task.CompletedTask);
+            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionCommentedAsync(
+                 It.IsAny<QuestionCommentResponse>(),
+                 lessonId,
+                 It.IsAny<string>(),
+                 It.IsAny<string>(), It.IsAny<ApplicationUser>()))
+             .Returns(Task.CompletedTask);
 
             // Act
             var result = await _handler.Handle(command, CancellationToken.None);
@@ -901,8 +920,12 @@ namespace Eduva.Application.Test.Features.Questions.Commands.CreateQuestionComme
                 .Returns(Task.CompletedTask);
             _unitOfWorkMock.Setup(x => x.CommitAsync())
                 .ReturnsAsync(1);
-            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionCommentedAsync(It.IsAny<QuestionCommentResponse>(), lessonId))
-                .Returns(Task.CompletedTask);
+            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionCommentedAsync(
+                  It.IsAny<QuestionCommentResponse>(),
+                  lessonId,
+                  It.IsAny<string>(),
+                  It.IsAny<string>(), It.IsAny<ApplicationUser>()))
+              .Returns(Task.CompletedTask);
 
             // Act
             var result = await _handler.Handle(command, CancellationToken.None);
