@@ -1,5 +1,8 @@
 ﻿using Eduva.Application.Common.Exceptions;
+using Eduva.Application.Common.Models.Notifications;
 using Eduva.Application.Interfaces;
+using Eduva.Application.Interfaces.Services;
+using Eduva.Domain.Constants;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
@@ -12,13 +15,15 @@ namespace Eduva.Application.Features.LessonMaterials.Commands.ApproveLessonMater
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IHubNotificationService _hubNotificationService;
 
         public ApproveLessonMaterialHandler(
             IUnitOfWork unitOfWork,
-            UserManager<ApplicationUser> userManager)
+            UserManager<ApplicationUser> userManager, IHubNotificationService hubNotificationService)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
+            _hubNotificationService = hubNotificationService;
         }
 
         public async Task<Unit> Handle(ApproveLessonMaterialCommand request, CancellationToken cancellationToken)
@@ -63,6 +68,22 @@ namespace Eduva.Application.Features.LessonMaterials.Commands.ApproveLessonMater
                 await approvalRepo.AddAsync(approval);
 
                 await _unitOfWork.CommitAsync();
+
+                var notification = new LessonMaterialApprovalNotification
+                {
+                    LessonMaterialId = lesson.Id,
+                    LessonMaterialTitle = lesson.Title,
+                    Status = lesson.LessonStatus,
+                    Feedback = request.Feedback,
+                    ApprovedAt = DateTimeOffset.UtcNow
+                };
+
+                var eventType = lesson.LessonStatus == LessonMaterialStatus.Approved
+                    ? NotificationTypes.LessonMaterialApproved
+                    : NotificationTypes.LessonMaterialRejected;
+
+                await _hubNotificationService.NotifyLessonMaterialApprovalAsync(notification, eventType, lesson.CreatedByUserId, moderator);
+
                 return Unit.Value;
             }
 

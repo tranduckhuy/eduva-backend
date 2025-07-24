@@ -1,4 +1,5 @@
-﻿using Eduva.Application.Features.Questions.Responses;
+﻿using Eduva.Application.Common.Models.Notifications;
+using Eduva.Application.Features.Questions.Responses;
 using Eduva.Domain.Entities;
 
 namespace Eduva.Application.Interfaces.Services
@@ -15,6 +16,12 @@ namespace Eduva.Application.Interfaces.Services
         Task NotifyQuestionCommentedAsync(QuestionCommentResponse comment, Guid lessonMaterialId, string title, string lessonMaterialTitle, ApplicationUser? user = null);
         Task NotifyQuestionCommentUpdatedAsync(QuestionCommentResponse comment, Guid lessonMaterialId, string title, string lessonMaterialTitle, ApplicationUser? user = null);
         Task NotifyQuestionCommentDeletedAsync(QuestionCommentResponse comment, Guid lessonMaterialId, string title, string lessonMaterialTitle, int deletedRepliesCount = 0, ApplicationUser? user = null, List<Guid>? targetUserIds = null);
+
+        #endregion
+
+        #region Lesson Material Notifications
+
+        Task NotifyLessonMaterialApprovalAsync(LessonMaterialApprovalNotification notification, string eventType, Guid targetUserId, ApplicationUser? performedByUser = null);
 
         #endregion
 
