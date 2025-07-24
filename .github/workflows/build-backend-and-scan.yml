@@ -4,6 +4,9 @@ on:
   pull_request:
     paths:
       - backend/**
+    branches-ignore:
+      - release-please--branches--master
+      - imgbot
 
 permissions:
   contents: read

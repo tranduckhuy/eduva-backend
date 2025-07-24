@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - master
+  workflow_dispatch:
 
 permissions:
   contents: write
+  issues: write
   pull-requests: write
 
 jobs:
@@ -22,9 +24,6 @@ jobs:
         uses: googleapis/release-please-action@v4
         with:
           release-type: simple
-          package-name: eduva-backend
-          version-file: Eduva.API/Eduva.API.csproj
-          changelog-path: CHANGELOG.md
           token: ${{ secrets.GITHUB_TOKEN }}
 
   publish:
