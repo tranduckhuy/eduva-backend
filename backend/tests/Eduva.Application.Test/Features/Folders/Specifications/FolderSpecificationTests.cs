@@ -190,5 +190,15 @@ public class FolderSpecificationTests
         }
     }
 
+    [Test]
+    public void Criteria_ShouldFilter_By_Status()
+    {
+        var status = EntityStatus.Active;
+        var param = new FolderSpecParam { Status = status, PageIndex = 1, PageSize = 10 };
+        var spec = new FolderSpecification(param);
+        var result = _folders.AsQueryable().Where(spec.Criteria).ToList();
+        Assert.That(result.All(f => f.Status == status));
+    }
+
     #endregion
 }

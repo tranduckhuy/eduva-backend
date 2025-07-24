@@ -47,9 +47,16 @@ namespace Eduva.Infrastructure.Test.Services
             var question = CreateSampleQuestionResponse(creatorId);
             var persistentNotification = CreateSamplePersistentNotification();
 
+            var creatorUser = new ApplicationUser
+            {
+                Id = creatorId,
+                FullName = "Creator Name",
+                AvatarUrl = "avatar.png"
+            };
+
             SetupNotificationServiceMocks(targetUsers, persistentNotification, lessonMaterialId, question.Id);
 
-            await _hubNotificationService.NotifyQuestionCreatedAsync(question, lessonMaterialId);
+            await _hubNotificationService.NotifyQuestionCreatedAsync(question, lessonMaterialId, creatorUser);
 
             VerifyUserNotificationSent(targetUser1.ToString(), "QuestionCreated");
             VerifyUserNotificationSent(targetUser2.ToString(), "QuestionCreated");
@@ -68,9 +75,16 @@ namespace Eduva.Infrastructure.Test.Services
             var question = CreateSampleQuestionResponse(creatorId);
             var persistentNotification = CreateSamplePersistentNotification();
 
+            var creatorUser = new ApplicationUser
+            {
+                Id = creatorId,
+                FullName = "Creator Name",
+                AvatarUrl = "avatar.png"
+            };
+
             SetupNotificationServiceMocks(targetUsers, persistentNotification, lessonMaterialId, question.Id);
 
-            await _hubNotificationService.NotifyQuestionCreatedAsync(question, lessonMaterialId);
+            await _hubNotificationService.NotifyQuestionCreatedAsync(question, lessonMaterialId, creatorUser);
 
             VerifyNoUserNotificationsSent();
             VerifyPersistentNotificationCreated("QuestionCreated", false);
@@ -92,9 +106,16 @@ namespace Eduva.Infrastructure.Test.Services
             var question = CreateSampleQuestionResponse(creatorId);
             var persistentNotification = CreateSamplePersistentNotification();
 
+            var creatorUser = new ApplicationUser
+            {
+                Id = creatorId,
+                FullName = "Creator Name",
+                AvatarUrl = "avatar.png"
+            };
+
             SetupNotificationServiceMocks(targetUsers, persistentNotification, lessonMaterialId, question.Id);
 
-            await _hubNotificationService.NotifyQuestionUpdatedAsync(question, lessonMaterialId);
+            await _hubNotificationService.NotifyQuestionUpdatedAsync(question, lessonMaterialId, creatorUser);
 
             VerifyUserNotificationSent(targetUser1.ToString(), "QuestionUpdated");
             VerifyUserNotificationSent(targetUser2.ToString(), "QuestionUpdated");
@@ -117,7 +138,25 @@ namespace Eduva.Infrastructure.Test.Services
 
             SetupNotificationServiceMocks(targetUsers, persistentNotification, lessonMaterialId, questionId);
 
-            await _hubNotificationService.NotifyQuestionDeletedAsync(questionId, lessonMaterialId);
+            var questionResponse = new QuestionResponse
+            {
+                Id = questionId,
+                Title = "Test Question",
+                Content = "Test Content",
+                LessonMaterialTitle = "Test Lesson",
+                CreatedAt = DateTimeOffset.UtcNow,
+                LastModifiedAt = DateTimeOffset.UtcNow,
+                CreatedByUserId = Guid.NewGuid(),
+                CreatedByName = "Test User",
+                CreatedByAvatar = "avatar.jpg",
+                CreatedByRole = "Student",
+                CommentCount = 0
+            };
+
+            await _hubNotificationService.NotifyQuestionDeletedAsync(
+                questionResponse,
+                lessonMaterialId
+            );
 
             VerifyUserNotificationSent(targetUser1.ToString(), "QuestionDeleted");
             VerifyPersistentNotificationCreated("QuestionDeleted");
@@ -129,15 +168,35 @@ namespace Eduva.Infrastructure.Test.Services
             await Task.Yield();
             var questionId = Guid.NewGuid();
             var lessonMaterialId = Guid.NewGuid();
+            var targetUser1 = Guid.NewGuid();
 
             _mockNotificationService.Setup(x => x.GetUsersForQuestionCommentNotificationAsync(
                 questionId,
                 lessonMaterialId,
+                targetUser1,
                 It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Service error"));
 
+            var questionResponse = new QuestionResponse
+            {
+                Id = questionId,
+                Title = "Test Question",
+                Content = "Test Content",
+                LessonMaterialTitle = "Test Lesson",
+                CreatedAt = DateTimeOffset.UtcNow,
+                LastModifiedAt = DateTimeOffset.UtcNow,
+                CreatedByUserId = Guid.NewGuid(),
+                CreatedByName = "Test User",
+                CreatedByAvatar = "avatar.jpg",
+                CreatedByRole = "Student",
+                CommentCount = 0
+            };
+
             Assert.DoesNotThrowAsync(async () =>
-                await _hubNotificationService.NotifyQuestionDeletedAsync(questionId, lessonMaterialId));
+                await _hubNotificationService.NotifyQuestionDeletedAsync(
+                    questionResponse,
+                    lessonMaterialId
+                ));
 
             VerifyErrorLogged();
         }
@@ -157,10 +216,22 @@ namespace Eduva.Infrastructure.Test.Services
             var comment = CreateSampleQuestionCommentResponse(creatorId);
             var persistentNotification = CreateSamplePersistentNotification();
 
+            var creatorUser = new ApplicationUser
+            {
+                Id = creatorId,
+                FullName = "Creator Name",
+                AvatarUrl = "avatar.png",
+            };
+
             SetupNotificationServiceMocks(targetUsers, persistentNotification, lessonMaterialId, comment.QuestionId);
 
-            await _hubNotificationService.NotifyQuestionCommentedAsync(comment, lessonMaterialId);
-
+            await _hubNotificationService.NotifyQuestionCommentedAsync(
+                comment,
+                lessonMaterialId,
+                "Test Question Title",
+                "Test Lesson Material Title",
+                creatorUser
+            );
             VerifyUserNotificationSent(targetUser1.ToString(), "QuestionCommented");
             VerifyUserNotificationNotSent(creatorId.ToString());
             VerifyPersistentNotificationCreated("QuestionCommented");
@@ -181,8 +252,12 @@ namespace Eduva.Infrastructure.Test.Services
 
             SetupNotificationServiceMocks(targetUsers, persistentNotification, lessonMaterialId, comment.QuestionId);
 
-            await _hubNotificationService.NotifyQuestionCommentedAsync(comment, lessonMaterialId);
-
+            await _hubNotificationService.NotifyQuestionCommentedAsync(
+                comment,
+                lessonMaterialId,
+                "Test Question Title",
+                "Test Lesson Material Title"
+            );
             VerifyUserNotificationSent(targetUser1.ToString(), "QuestionCommented");
         }
 
@@ -203,7 +278,7 @@ namespace Eduva.Infrastructure.Test.Services
 
             SetupNotificationServiceMocks(targetUsers, persistentNotification, lessonMaterialId, comment.QuestionId);
 
-            await _hubNotificationService.NotifyQuestionCommentUpdatedAsync(comment, lessonMaterialId);
+            await _hubNotificationService.NotifyQuestionCommentUpdatedAsync(comment, lessonMaterialId, "Test Title", "Test Lesson Material Title");
 
             VerifyUserNotificationSent(targetUser1.ToString(), "QuestionCommentUpdated");
             VerifyPersistentNotificationCreated("QuestionCommentUpdated");
@@ -226,8 +301,27 @@ namespace Eduva.Infrastructure.Test.Services
 
             SetupNotificationServiceMocks(targetUsers, persistentNotification, lessonMaterialId, questionId);
 
-            await _hubNotificationService.NotifyQuestionCommentDeletedAsync(commentId, questionId, lessonMaterialId, deletedRepliesCount);
+            var commentResponse = new QuestionCommentResponse
+            {
+                Id = commentId,
+                QuestionId = questionId,
+                Content = "Test Comment",
+                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedByUserId = Guid.NewGuid(),
+                CreatedByName = "Test User",
+                CreatedByAvatar = "avatar.jpg",
+                CreatedByRole = "Student",
+                ParentCommentId = null,
+                ReplyCount = deletedRepliesCount
+            };
 
+            await _hubNotificationService.NotifyQuestionCommentDeletedAsync(
+                commentResponse,
+                lessonMaterialId,
+                "Test Question Title",
+                "Test Lesson Material Title",
+                deletedRepliesCount
+            );
             VerifyUserNotificationSent(targetUser1.ToString(), "QuestionCommentDeleted");
             VerifyPersistentNotificationCreated("QuestionCommentDeleted");
         }
@@ -239,15 +333,36 @@ namespace Eduva.Infrastructure.Test.Services
             var commentId = Guid.NewGuid();
             var questionId = Guid.NewGuid();
             var lessonMaterialId = Guid.NewGuid();
+            var targetUser1 = Guid.NewGuid();
 
             _mockNotificationService.Setup(x => x.GetUsersForQuestionCommentNotificationAsync(
                 questionId,
                 lessonMaterialId,
+                targetUser1,
                 It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Service error"));
 
+            var commentResponse = new QuestionCommentResponse
+            {
+                Id = commentId,
+                QuestionId = questionId,
+                Content = "Test Comment",
+                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedByUserId = Guid.NewGuid(),
+                CreatedByName = "Test User",
+                CreatedByAvatar = "avatar.jpg",
+                CreatedByRole = "Student",
+                ParentCommentId = null,
+            };
+
             Assert.DoesNotThrowAsync(async () =>
-                await _hubNotificationService.NotifyQuestionCommentDeletedAsync(commentId, questionId, lessonMaterialId, 0));
+                await _hubNotificationService.NotifyQuestionCommentDeletedAsync(
+                    commentResponse,
+                    lessonMaterialId,
+                    "Test Question Title",
+                    "Test Lesson Material Title",
+                    0
+                ));
 
             VerifyErrorLogged();
         }
@@ -267,6 +382,7 @@ namespace Eduva.Infrastructure.Test.Services
             _mockNotificationService.Setup(s => s.GetUsersForQuestionCommentNotificationAsync(
                 It.IsAny<Guid>(),
                 It.IsAny<Guid>(),
+                It.IsAny<Guid>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(targetUsers);
             _mockNotificationHub.Setup(h => h.SendNotificationToUserAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object>()))
@@ -275,7 +391,12 @@ namespace Eduva.Infrastructure.Test.Services
             var comment = CreateSampleQuestionCommentResponse(creatorId);
 
             Assert.DoesNotThrowAsync(async () =>
-                await _hubNotificationService.NotifyQuestionCommentedAsync(comment, lessonMaterialId));
+                 await _hubNotificationService.NotifyQuestionCommentedAsync(
+                     comment,
+                     lessonMaterialId,
+                     "Test Question Title",
+                     "Test Lesson Material Title"
+                 ));
 
             VerifyErrorLogged();
         }
@@ -294,6 +415,7 @@ namespace Eduva.Infrastructure.Test.Services
             _mockNotificationService.Setup(s => s.GetUsersForQuestionCommentNotificationAsync(
                     questionId,
                     lessonMaterialId,
+                    It.IsAny<Guid>(),
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync(targetUsers);
 

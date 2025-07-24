@@ -1,5 +1,6 @@
 ﻿using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Features.Questions.Commands.DeleteQuestionComment;
+using Eduva.Application.Features.Questions.Responses;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Application.Interfaces.Services;
@@ -21,6 +22,8 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestionComme
         private Mock<IGenericRepository<ApplicationUser, Guid>> _userRepositoryMock = default!;
         private Mock<IGenericRepository<QuestionComment, Guid>> _commentRepositoryMock = default!;
         private Mock<IGenericRepository<LessonMaterialQuestion, Guid>> _questionRepositoryMock = default!;
+        private Mock<INotificationService> _notificationServiceMock = default!;
+
         private DeleteQuestionCommentHandler _handler = default!;
 
         #region Setup
@@ -36,6 +39,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestionComme
             _userRepositoryMock = new Mock<IGenericRepository<ApplicationUser, Guid>>();
             _commentRepositoryMock = new Mock<IGenericRepository<QuestionComment, Guid>>();
             _questionRepositoryMock = new Mock<IGenericRepository<LessonMaterialQuestion, Guid>>();
+            _notificationServiceMock = new Mock<INotificationService>();
 
             _unitOfWorkMock.Setup(x => x.GetRepository<ApplicationUser, Guid>())
                 .Returns(_userRepositoryMock.Object);
@@ -48,7 +52,8 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestionComme
                 _unitOfWorkMock.Object,
                 _userManagerMock.Object,
                 _hubNotificationServiceMock.Object,
-                _permissionServiceMock.Object);
+                _permissionServiceMock.Object,
+                 _notificationServiceMock.Object);
         }
 
         #endregion
@@ -161,10 +166,18 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestionComme
             var userId = Guid.NewGuid();
             var questionId = Guid.NewGuid();
             var lessonMaterialId = Guid.NewGuid();
+
+            // Mock lesson material repo
+            var lessonMaterialRepoMock = new Mock<IGenericRepository<LessonMaterial, Guid>>();
+            _unitOfWorkMock.Setup(x => x.GetRepository<LessonMaterial, Guid>())
+                .Returns(lessonMaterialRepoMock.Object);
+            lessonMaterialRepoMock.Setup(x => x.GetByIdAsync(lessonMaterialId))
+                .ReturnsAsync(new LessonMaterial { Id = lessonMaterialId, Title = "Test Lesson" });
+
             var command = new DeleteQuestionCommentCommand { Id = commentId, DeletedByUserId = userId };
             var user = new ApplicationUser { Id = userId };
             var comment = new QuestionComment { Id = commentId, Status = EntityStatus.Active, QuestionId = questionId };
-            var question = new LessonMaterialQuestion { Id = questionId, LessonMaterialId = lessonMaterialId };
+            var question = new LessonMaterialQuestion { Id = questionId, LessonMaterialId = lessonMaterialId, Title = "Test Question" };
 
             _userRepositoryMock.Setup(x => x.GetByIdAsync(userId))
                 .ReturnsAsync(user);
@@ -180,8 +193,14 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestionComme
                 .ReturnsAsync(new List<QuestionComment>());
             _unitOfWorkMock.Setup(x => x.CommitAsync())
                 .ReturnsAsync(1);
-            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionCommentDeletedAsync(commentId, questionId, lessonMaterialId, 0))
-                .Returns(Task.CompletedTask);
+            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionCommentDeletedAsync(
+                It.IsAny<QuestionCommentResponse>(),
+                lessonMaterialId,
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                0, It.IsAny<ApplicationUser>(),
+                It.IsAny<List<Guid>>()))
+            .Returns(Task.CompletedTask);
 
             // Act
             var result = await _handler.Handle(command, CancellationToken.None);
@@ -190,7 +209,13 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestionComme
             Assert.That(result, Is.True);
             _commentRepositoryMock.Verify(x => x.Remove(comment), Times.Once);
             _unitOfWorkMock.Verify(x => x.CommitAsync(), Times.Once);
-            _hubNotificationServiceMock.Verify(x => x.NotifyQuestionCommentDeletedAsync(commentId, questionId, lessonMaterialId, 0), Times.Once);
+            _hubNotificationServiceMock.Verify(x => x.NotifyQuestionCommentDeletedAsync(
+                It.IsAny<QuestionCommentResponse>(),
+                lessonMaterialId,
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                0, It.IsAny<ApplicationUser>(),
+                It.IsAny<List<Guid>>()), Times.Once);
         }
 
         [Test]
@@ -201,10 +226,18 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestionComme
             var userId = Guid.NewGuid();
             var questionId = Guid.NewGuid();
             var lessonMaterialId = Guid.NewGuid();
+
+            // Mock lesson material repo
+            var lessonMaterialRepoMock = new Mock<IGenericRepository<LessonMaterial, Guid>>();
+            _unitOfWorkMock.Setup(x => x.GetRepository<LessonMaterial, Guid>())
+                .Returns(lessonMaterialRepoMock.Object);
+            lessonMaterialRepoMock.Setup(x => x.GetByIdAsync(lessonMaterialId))
+                .ReturnsAsync(new LessonMaterial { Id = lessonMaterialId, Title = "Test Lesson" });
+
             var command = new DeleteQuestionCommentCommand { Id = commentId, DeletedByUserId = userId };
             var user = new ApplicationUser { Id = userId };
             var comment = new QuestionComment { Id = commentId, Status = EntityStatus.Active, QuestionId = questionId, CreatedByUserId = userId };
-            var question = new LessonMaterialQuestion { Id = questionId, LessonMaterialId = lessonMaterialId };
+            var question = new LessonMaterialQuestion { Id = questionId, LessonMaterialId = lessonMaterialId, Title = "Test Question" };
 
             _userRepositoryMock.Setup(x => x.GetByIdAsync(userId))
                 .ReturnsAsync(user);
@@ -220,8 +253,13 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestionComme
                 .ReturnsAsync(new List<QuestionComment>());
             _unitOfWorkMock.Setup(x => x.CommitAsync())
                 .ReturnsAsync(1);
-            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionCommentDeletedAsync(commentId, questionId, lessonMaterialId, 0))
-                .Returns(Task.CompletedTask);
+            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionCommentDeletedAsync(
+                 It.IsAny<QuestionCommentResponse>(),
+                 lessonMaterialId,
+                 It.IsAny<string>(),
+                 It.IsAny<string>(),
+                 0, It.IsAny<ApplicationUser>(), It.IsAny<List<Guid>>()))
+             .Returns(Task.CompletedTask);
 
             // Act
             var result = await _handler.Handle(command, CancellationToken.None);
@@ -230,7 +268,12 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestionComme
             Assert.That(result, Is.True);
             _commentRepositoryMock.Verify(x => x.Remove(comment), Times.Once);
             _unitOfWorkMock.Verify(x => x.CommitAsync(), Times.Once);
-            _hubNotificationServiceMock.Verify(x => x.NotifyQuestionCommentDeletedAsync(commentId, questionId, lessonMaterialId, 0), Times.Once);
+            _hubNotificationServiceMock.Verify(x => x.NotifyQuestionCommentDeletedAsync(
+                 It.IsAny<QuestionCommentResponse>(),
+                 lessonMaterialId,
+                 It.IsAny<string>(),
+                 It.IsAny<string>(),
+                 0, It.IsAny<ApplicationUser>(), It.IsAny<List<Guid>>()), Times.Once);
         }
 
         [Test]
@@ -240,10 +283,19 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestionComme
             var commentId = Guid.NewGuid();
             var userId = Guid.NewGuid();
             var questionId = Guid.NewGuid();
+            var lessonMaterialId = Guid.NewGuid();
+
+            // Mock lesson material repo
+            var lessonMaterialRepoMock = new Mock<IGenericRepository<LessonMaterial, Guid>>();
+            _unitOfWorkMock.Setup(x => x.GetRepository<LessonMaterial, Guid>())
+                .Returns(lessonMaterialRepoMock.Object);
+            lessonMaterialRepoMock.Setup(x => x.GetByIdAsync(lessonMaterialId))
+                .ReturnsAsync(new LessonMaterial { Id = lessonMaterialId, Title = "Test Lesson" });
+
             var command = new DeleteQuestionCommentCommand { Id = commentId, DeletedByUserId = userId };
             var user = new ApplicationUser { Id = userId };
             var comment = new QuestionComment { Id = commentId, Status = EntityStatus.Active, QuestionId = questionId };
-            var question = new LessonMaterialQuestion { Id = questionId };
+            var question = new LessonMaterialQuestion { Id = questionId, LessonMaterialId = lessonMaterialId, Title = "Test Question" };
             var replies = new List<QuestionComment> { new QuestionComment { Id = Guid.NewGuid(), ParentCommentId = commentId, Status = EntityStatus.Active } };
 
             _userRepositoryMock.Setup(x => x.GetByIdAsync(userId))
@@ -274,11 +326,20 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestionComme
             var userId = Guid.NewGuid();
             var creatorId = Guid.NewGuid();
             var questionId = Guid.NewGuid();
+            var lessonMaterialId = Guid.NewGuid();
+
+            // Mock lesson material repo
+            var lessonMaterialRepoMock = new Mock<IGenericRepository<LessonMaterial, Guid>>();
+            _unitOfWorkMock.Setup(x => x.GetRepository<LessonMaterial, Guid>())
+                .Returns(lessonMaterialRepoMock.Object);
+            lessonMaterialRepoMock.Setup(x => x.GetByIdAsync(lessonMaterialId))
+                .ReturnsAsync(new LessonMaterial { Id = lessonMaterialId, Title = "Test Lesson" });
+
             var command = new DeleteQuestionCommentCommand { Id = commentId, DeletedByUserId = userId };
             var user = new ApplicationUser { Id = userId };
             var creator = new ApplicationUser { Id = creatorId };
             var comment = new QuestionComment { Id = commentId, Status = EntityStatus.Active, QuestionId = questionId, CreatedByUserId = creatorId };
-            var question = new LessonMaterialQuestion { Id = questionId };
+            var question = new LessonMaterialQuestion { Id = questionId, LessonMaterialId = lessonMaterialId, Title = "Test Question" };
 
             _userRepositoryMock.Setup(x => x.GetByIdAsync(userId))
                 .ReturnsAsync(user);
@@ -320,8 +381,15 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestionComme
             var command = new DeleteQuestionCommentCommand { Id = commentId, DeletedByUserId = userId };
             var user = new ApplicationUser { Id = userId };
             var comment = new QuestionComment { Id = commentId, Status = EntityStatus.Active, QuestionId = questionId };
-            var question = new LessonMaterialQuestion { Id = questionId, LessonMaterialId = lessonMaterialId };
+            var question = new LessonMaterialQuestion { Id = questionId, LessonMaterialId = lessonMaterialId, Title = "Test Question" };
             var reply = new QuestionComment { Id = replyId, ParentCommentId = commentId, Status = EntityStatus.Active };
+
+            // Mock lesson material repo
+            var lessonMaterialRepoMock = new Mock<IGenericRepository<LessonMaterial, Guid>>();
+            _unitOfWorkMock.Setup(x => x.GetRepository<LessonMaterial, Guid>())
+                .Returns(lessonMaterialRepoMock.Object);
+            lessonMaterialRepoMock.Setup(x => x.GetByIdAsync(lessonMaterialId))
+                .ReturnsAsync(new LessonMaterial { Id = lessonMaterialId, Title = "Test Lesson" });
 
             _userRepositoryMock.Setup(x => x.GetByIdAsync(userId))
                 .ReturnsAsync(user);
@@ -337,8 +405,13 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestionComme
                 .ReturnsAsync(new List<QuestionComment> { reply });
             _unitOfWorkMock.Setup(x => x.CommitAsync())
                 .ReturnsAsync(1);
-            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionCommentDeletedAsync(commentId, questionId, lessonMaterialId, 1))
-                .Returns(Task.CompletedTask);
+            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionCommentDeletedAsync(
+                It.IsAny<QuestionCommentResponse>(),
+                lessonMaterialId,
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                1, It.IsAny<ApplicationUser>(), It.IsAny<List<Guid>>()))
+            .Returns(Task.CompletedTask);
 
             // Act
             var result = await _handler.Handle(command, CancellationToken.None);
@@ -348,7 +421,12 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestionComme
             _commentRepositoryMock.Verify(x => x.Remove(reply), Times.Once);
             _commentRepositoryMock.Verify(x => x.Remove(comment), Times.Once);
             _unitOfWorkMock.Verify(x => x.CommitAsync(), Times.Once);
-            _hubNotificationServiceMock.Verify(x => x.NotifyQuestionCommentDeletedAsync(commentId, questionId, lessonMaterialId, 1), Times.Once);
+            _hubNotificationServiceMock.Verify(x => x.NotifyQuestionCommentDeletedAsync(
+             It.IsAny<QuestionCommentResponse>(),
+             lessonMaterialId,
+             It.IsAny<string>(),
+             It.IsAny<string>(),
+             1, It.IsAny<ApplicationUser>(), It.IsAny<List<Guid>>()), Times.Once);
         }
 
         #endregion

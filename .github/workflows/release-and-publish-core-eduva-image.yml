@@ -1,0 +1,58 @@
+name: Release and Publish Eduva API
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - name: Release with release-please
+        id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          config-file: .release-please-config.json
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  publish:
+    name: Publish Eduva API Docker Image
+    needs: release
+    if: ${{ needs.release.outputs.release_created == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish Docker Image
+        run: |
+          cp ./backend/src/Eduva.API/Dockerfile .
+          VERSION=${{ needs.release.outputs.tag_name }}
+          echo "Using version $VERSION"
+          docker buildx build . \
+            --tag ghcr.io/${{ github.repository_owner }}/eduva-api:$VERSION \
+            --tag ghcr.io/${{ github.repository_owner }}/eduva-api:latest \
+            --platform=linux/amd64 \
+            --push

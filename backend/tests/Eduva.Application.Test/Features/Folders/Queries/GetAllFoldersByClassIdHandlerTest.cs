@@ -229,5 +229,37 @@ namespace Eduva.Application.Test.Features.Folders.Queries
             Assert.That(result, Has.Count.EqualTo(1));
             Assert.That(result[0].CountLessonMaterial, Is.EqualTo(7));
         }
+
+        [Test]
+        public async Task Handle_Should_Set_CountLessonMaterial_To_Zero_If_NotInCounts()
+        {
+            var userId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
+
+            var user = new ApplicationUser { Id = userId, SchoolId = 1 };
+            var classroom = new Classroom { Id = classId, TeacherId = userId, SchoolId = 1 };
+
+            var folders = new List<Folder>
+            {
+                new() { Id = Guid.NewGuid(), OwnerType = OwnerType.Class, ClassId = classId }
+            };
+
+            var counts = new Dictionary<Guid, int>();
+
+            _userManagerMock.Setup(u => u.FindByIdAsync(userId.ToString())).ReturnsAsync(user);
+            _userManagerMock.Setup(u => u.GetRolesAsync(user)).ReturnsAsync(new List<string> { nameof(Role.Teacher) });
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+            _folderRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(folders);
+            _mapperMock.Setup(m => m.Map<IEnumerable<FolderResponse>>(It.IsAny<IEnumerable<Folder>>()))
+                .Returns((IEnumerable<Folder> fs) => fs.Select(f => new FolderResponse { Id = f.Id }).ToList());
+            _lessonMaterialRepoMock.Setup(r => r.GetApprovedMaterialCountsByFolderAsync(
+                It.IsAny<List<Guid>>(), It.IsAny<CancellationToken>())).ReturnsAsync(counts);
+
+            var query = new GetAllFoldersByClassIdQuery(classId, userId);
+            var result = (await _handler.Handle(query, CancellationToken.None)).ToList();
+
+            Assert.That(result, Has.Count.EqualTo(1));
+            Assert.That(result[0].CountLessonMaterial, Is.EqualTo(0));
+        }
     }
 }

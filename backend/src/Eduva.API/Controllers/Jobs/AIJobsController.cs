@@ -5,6 +5,7 @@ using Eduva.API.Models.Jobs;
 using Eduva.Application.Common.Mappings;
 using Eduva.Application.Features.Jobs.Commands.ConfirmJob;
 using Eduva.Application.Features.Jobs.Commands.CreateJob;
+using Eduva.Application.Features.Jobs.Commands.DeleteCompletedJob;
 using Eduva.Application.Features.Jobs.Commands.UpdateJobProgress;
 using Eduva.Application.Features.Jobs.DTOs;
 using Eduva.Application.Features.Jobs.Queries.GetCompletedJobs;
@@ -147,6 +148,30 @@ public class AIJobsController : BaseController<AIJobsController>
         {
             var response = await _mediator.Send(query);
             return (CustomCode.Success, response);
+        });
+    }
+
+    // Delete completed jobs by ID
+    [HttpDelete("{id:guid}")]
+    [Authorize]
+    public async Task<IActionResult> DeleteJob(Guid id, [FromQuery] bool permanent = false)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userId, out var userGuid))
+        {
+            return Respond(CustomCode.UserIdNotFound);
+        }
+
+        var command = new DeleteCompletedJobCommand
+        {
+            JobId = id,
+            UserId = userGuid,
+            Permanent = permanent
+        };
+
+        return await HandleRequestAsync(async () =>
+        {
+            await _mediator.Send(command);
         });
     }
 }

@@ -3,6 +3,7 @@ using Eduva.Application.Interfaces.Repositories;
 using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 
 namespace Eduva.Infrastructure.Services
@@ -11,11 +12,13 @@ namespace Eduva.Infrastructure.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<NotificationService> _logger;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public NotificationService(IUnitOfWork unitOfWork, ILogger<NotificationService> logger)
+        public NotificationService(IUnitOfWork unitOfWork, ILogger<NotificationService> logger, UserManager<ApplicationUser> userManager)
         {
             _unitOfWork = unitOfWork;
             _logger = logger;
+            _userManager = userManager;
         }
 
         public async Task<Notification> CreateNotificationAsync(string type, string payload, CancellationToken cancellationToken = default)
@@ -111,6 +114,8 @@ namespace Eduva.Infrastructure.Services
             _logger.LogInformation("Marked all notifications as read for user: {UserId}", userId);
         }
 
+        #region Notification question/comment
+
         #region FALLBACK LOGIC OLD
 
         public async Task<List<Guid>> GetUsersInLessonAsync(Guid lessonMaterialId, CancellationToken cancellationToken = default)
@@ -136,7 +141,7 @@ namespace Eduva.Infrastructure.Services
                 await AddUsersWhoInteractedWithLessonAsync(lessonMaterialId, userIds);
 
                 // 3. Add users with access based on folder structure
-                await AddUsersWithFolderAccessAsync(lessonMaterialId, userIds, cancellationToken);
+                await AddUsersWithFolderAccessAsync(lessonMaterialId, userIds);
 
                 // 4. For lessons not in folders, add users with access based on visibility
                 if (userIds.Count <= 1) // Only creator found
@@ -179,9 +184,9 @@ namespace Eduva.Infrastructure.Services
                 _logger.LogInformation("Added lesson creator for new question: {UserId}", lesson.CreatedByUserId);
 
                 // 2. Add users with access based on folder structure (students/teachers in class)
-                await AddUsersWithFolderAccessAsync(lessonMaterialId, userIds, cancellationToken);
+                await AddUsersWithFolderAccessAsync(lessonMaterialId, userIds);
 
-                // 3. For lessons not in folders, add users with access based on visibility
+                // 3. Only in personal folder & School visibility: notify eligible roles
                 if (userIds.Count <= 1) // Only creator found
                 {
                     await AddUsersBasedOnVisibilityAsync(lesson, userIds);
@@ -201,7 +206,7 @@ namespace Eduva.Infrastructure.Services
             }
         }
 
-        public async Task<List<Guid>> GetUsersForQuestionCommentNotificationAsync(Guid questionId, Guid lessonMaterialId, CancellationToken cancellationToken = default)
+        public async Task<List<Guid>> GetUsersForQuestionCommentNotificationAsync(Guid questionId, Guid lessonMaterialId, Guid? questionCreatorId = null, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -209,11 +214,19 @@ namespace Eduva.Infrastructure.Services
 
                 // 1. Add question creator
                 var questionRepo = _unitOfWork.GetRepository<LessonMaterialQuestion, Guid>();
-                var question = await questionRepo.GetByIdAsync(questionId);
-                if (question != null)
+                if (questionCreatorId.HasValue)
                 {
-                    userIds.Add(question.CreatedByUserId);
-                    _logger.LogInformation("Added question creator for comment notification: {UserId}", question.CreatedByUserId);
+                    userIds.Add(questionCreatorId.Value);
+                    _logger.LogInformation("Added question creator for comment notification: {UserId}", questionCreatorId.Value);
+                }
+                else
+                {
+                    var question = await questionRepo.GetByIdAsync(questionId);
+                    if (question != null)
+                    {
+                        userIds.Add(question.CreatedByUserId);
+                        _logger.LogInformation("Added question creator for comment notification: {UserId}", question.CreatedByUserId);
+                    }
                 }
 
                 // 2. Add lesson creator (teacher)
@@ -250,7 +263,8 @@ namespace Eduva.Infrastructure.Services
             }
         }
 
-        #region Helper Methods
+
+        #region Helper methods question/comment
 
         private async Task AddUsersWhoInteractedWithLessonAsync(Guid lessonMaterialId, HashSet<Guid> userIds)
         {
@@ -292,40 +306,45 @@ namespace Eduva.Infrastructure.Services
             }
         }
 
-        private async Task AddUsersWithFolderAccessAsync(Guid lessonMaterialId, HashSet<Guid> userIds, CancellationToken cancellationToken = default)
+        private async Task AddUsersWithFolderAccessAsync(Guid lessonMaterialId, HashSet<Guid> userIds)
         {
             try
             {
                 var folderLessonRepo = _unitOfWork.GetRepository<FolderLessonMaterial, Guid>();
-                var folderLesson = await folderLessonRepo.FirstOrDefaultAsync(fl => fl.LessonMaterialId == lessonMaterialId, cancellationToken: cancellationToken);
+                var folderLessons = await folderLessonRepo.GetAllAsync();
+                var relatedFolders = folderLessons.Where(fl => fl.LessonMaterialId == lessonMaterialId).ToList();
 
-                if (folderLesson == null)
+                if (relatedFolders.Count == 0)
                 {
                     _logger.LogInformation("Lesson not in any folder");
                     return;
                 }
 
                 var folderRepo = _unitOfWork.GetRepository<Folder, Guid>();
-                var folder = await folderRepo.GetByIdAsync(folderLesson.FolderId);
 
-                if (folder == null)
+                foreach (var folderLesson in relatedFolders)
                 {
-                    return;
-                }
+                    var folder = await folderRepo.GetByIdAsync(folderLesson.FolderId);
 
-                _logger.LogInformation("Found folder: {FolderId}, Type: {FolderType}", folder.Id,
-                    folder.UserId.HasValue ? "Personal" : "Class");
+                    if (folder == null)
+                    {
+                        continue;
+                    }
 
-                if (folder.UserId.HasValue)
-                {
-                    // Personal folder - add owner
-                    userIds.Add(folder.UserId.Value);
-                    _logger.LogInformation("Added folder owner: {UserId}", folder.UserId.Value);
-                }
-                else if (folder.ClassId.HasValue)
-                {
-                    // Class folder - add teacher and students with access
-                    await AddClassUsersWithAccessAsync(folder.ClassId.Value, lessonMaterialId, userIds);
+                    _logger.LogInformation("Found folder: {FolderId}, Type: {FolderType}", folder.Id,
+                        folder.UserId.HasValue ? "Personal" : "Class");
+
+                    if (folder.UserId.HasValue)
+                    {
+                        // Personal folder - add owner
+                        userIds.Add(folder.UserId.Value);
+                        _logger.LogInformation("Added folder owner: {UserId}", folder.UserId.Value);
+                    }
+                    else if (folder.ClassId.HasValue)
+                    {
+                        // Class folder - add teacher and students with access
+                        await AddClassUsersWithAccessAsync(folder.ClassId.Value, lessonMaterialId, userIds);
+                    }
                 }
             }
             catch (Exception ex)
@@ -397,14 +416,24 @@ namespace Eduva.Infrastructure.Services
                 var allUsers = await userRepo.GetAllAsync();
 
                 // Add active users from the same school
-                var schoolUsers = allUsers.Where(u =>
-                    u.SchoolId == lesson.SchoolId &&
-                    u.Status == EntityStatus.Active)
-                    .Select(u => u.Id)
+                var schoolUsers = allUsers
+                    .Where(u => u.SchoolId == lesson.SchoolId && u.Status == EntityStatus.Active)
                     .ToList();
 
+                var eligibleRoles = new[] { "Teacher", "SchoolAdmin", "ContentModerator" };
+                var eligibleUserIds = new List<Guid>();
+
+                foreach (var user in schoolUsers)
+                {
+                    var roles = await _userManager.GetRolesAsync(user);
+                    if (roles.Any(r => eligibleRoles.Contains(r)))
+                    {
+                        eligibleUserIds.Add(user.Id);
+                    }
+                }
+
                 var initialCount = userIds.Count;
-                foreach (var userId in schoolUsers)
+                foreach (var userId in eligibleUserIds)
                 {
                     userIds.Add(userId);
                 }
@@ -420,5 +449,8 @@ namespace Eduva.Infrastructure.Services
         }
 
         #endregion
+
+        #endregion
+
     }
 }
