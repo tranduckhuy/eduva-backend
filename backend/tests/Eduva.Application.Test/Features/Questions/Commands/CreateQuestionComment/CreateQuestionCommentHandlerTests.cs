@@ -712,7 +712,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.CreateQuestionComme
                     lessonId,
                     It.IsAny<string>(),
                     It.IsAny<string>(),
-                    It.IsAny<Guid?>()))
+                    It.IsAny<ApplicationUser>()))
                 .Returns(Task.CompletedTask);
 
             // Act
@@ -779,7 +779,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.CreateQuestionComme
                 lessonId,
                 It.IsAny<string>(),
                 It.IsAny<string>(),
-                It.IsAny<Guid?>()))
+                It.IsAny<ApplicationUser>()))
             .Returns(Task.CompletedTask);
 
             // Act
@@ -805,7 +805,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.CreateQuestionComme
                 It.IsAny<QuestionCommentResponse>(),
                 lessonId,
                 It.IsAny<string>(),
-                It.IsAny<string>(), It.IsAny<Guid?>()), Times.Once);
+                It.IsAny<string>(), It.IsAny<ApplicationUser>()), Times.Once);
         }
 
         [Test]
@@ -854,7 +854,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.CreateQuestionComme
                  It.IsAny<QuestionCommentResponse>(),
                  lessonId,
                  It.IsAny<string>(),
-                 It.IsAny<string>(), It.IsAny<Guid?>()))
+                 It.IsAny<string>(), It.IsAny<ApplicationUser>()))
              .Returns(Task.CompletedTask);
 
             // Act
@@ -924,7 +924,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.CreateQuestionComme
                   It.IsAny<QuestionCommentResponse>(),
                   lessonId,
                   It.IsAny<string>(),
-                  It.IsAny<string>(), It.IsAny<Guid?>()))
+                  It.IsAny<string>(), It.IsAny<ApplicationUser>()))
               .Returns(Task.CompletedTask);
 
             // Act

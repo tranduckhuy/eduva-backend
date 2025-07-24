@@ -262,7 +262,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.UpdateQuestionComme
                  It.IsAny<Guid>(),
                  It.IsAny<string>(),
                  It.IsAny<string>(),
-                 It.IsAny<Guid?>()))
+                 It.IsAny<ApplicationUser?>()))
              .Returns(Task.CompletedTask);
 
             // Act
@@ -341,7 +341,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.UpdateQuestionComme
                 It.IsAny<Guid>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
-                It.IsAny<Guid?>()))
+                It.IsAny<ApplicationUser?>()))
             .Returns(Task.CompletedTask);
 
             // Act
@@ -368,7 +368,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.UpdateQuestionComme
                  It.IsAny<Guid>(),
                  It.IsAny<string>(),
                  It.IsAny<string>(),
-                 It.IsAny<Guid?>()), Times.Once);
+                 It.IsAny<ApplicationUser?>()), Times.Once);
         }
 
         #endregion
@@ -489,7 +489,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.UpdateQuestionComme
                   It.IsAny<Guid>(),
                   It.IsAny<string>(),
                   It.IsAny<string>(),
-                  It.IsAny<Guid?>()))
+                  It.IsAny<ApplicationUser?>()))
               .Returns(Task.CompletedTask);
 
             // Act
@@ -514,7 +514,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.UpdateQuestionComme
                   It.IsAny<Guid>(),
                   It.IsAny<string>(),
                   It.IsAny<string>(),
-                  It.IsAny<Guid?>()), Times.Once);
+                  It.IsAny<ApplicationUser?>()), Times.Once);
         }
 
         [Test]
@@ -588,7 +588,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.UpdateQuestionComme
                  It.IsAny<Guid>(),
                  It.IsAny<string>(),
                  It.IsAny<string>(),
-                 It.IsAny<Guid?>()))
+                 It.IsAny<ApplicationUser?>()))
              .Returns(Task.CompletedTask);
 
             // Act
@@ -606,7 +606,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.UpdateQuestionComme
                   It.IsAny<Guid>(),
                   It.IsAny<string>(),
                   It.IsAny<string>(),
-                  It.IsAny<Guid?>()), Times.Once);
+                  It.IsAny<ApplicationUser?>()), Times.Once);
         }
 
         #endregion

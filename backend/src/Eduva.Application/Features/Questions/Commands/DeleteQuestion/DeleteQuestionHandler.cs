@@ -88,7 +88,8 @@ namespace Eduva.Application.Features.Questions.Commands.DeleteQuestion
             questionRepo.Remove(question);
             await _unitOfWork.CommitAsync();
 
-            await _hubNotificationService.NotifyQuestionDeletedAsync(response, lessonMaterialId, request.DeletedByUserId, targetUserIds);
+
+            await _hubNotificationService.NotifyQuestionDeletedAsync(response, lessonMaterialId, user, targetUserIds);
 
             return true;
         }

@@ -198,7 +198,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestionComme
                 lessonMaterialId,
                 It.IsAny<string>(),
                 It.IsAny<string>(),
-                0, It.IsAny<Guid?>(),
+                0, It.IsAny<ApplicationUser>(),
                 It.IsAny<List<Guid>>()))
             .Returns(Task.CompletedTask);
 
@@ -214,7 +214,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestionComme
                 lessonMaterialId,
                 It.IsAny<string>(),
                 It.IsAny<string>(),
-                0, It.IsAny<Guid?>(),
+                0, It.IsAny<ApplicationUser>(),
                 It.IsAny<List<Guid>>()), Times.Once);
         }
 
@@ -258,7 +258,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestionComme
                  lessonMaterialId,
                  It.IsAny<string>(),
                  It.IsAny<string>(),
-                 0, It.IsAny<Guid?>(), It.IsAny<List<Guid>>()))
+                 0, It.IsAny<ApplicationUser>(), It.IsAny<List<Guid>>()))
              .Returns(Task.CompletedTask);
 
             // Act
@@ -273,7 +273,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestionComme
                  lessonMaterialId,
                  It.IsAny<string>(),
                  It.IsAny<string>(),
-                 0, It.IsAny<Guid?>(), It.IsAny<List<Guid>>()), Times.Once);
+                 0, It.IsAny<ApplicationUser>(), It.IsAny<List<Guid>>()), Times.Once);
         }
 
         [Test]
@@ -410,7 +410,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestionComme
                 lessonMaterialId,
                 It.IsAny<string>(),
                 It.IsAny<string>(),
-                1, It.IsAny<Guid?>(), It.IsAny<List<Guid>>()))
+                1, It.IsAny<ApplicationUser>(), It.IsAny<List<Guid>>()))
             .Returns(Task.CompletedTask);
 
             // Act
@@ -426,7 +426,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.DeleteQuestionComme
              lessonMaterialId,
              It.IsAny<string>(),
              It.IsAny<string>(),
-             1, It.IsAny<Guid?>(), It.IsAny<List<Guid>>()), Times.Once);
+             1, It.IsAny<ApplicationUser>(), It.IsAny<List<Guid>>()), Times.Once);
         }
 
         #endregion

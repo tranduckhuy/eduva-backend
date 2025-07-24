@@ -64,7 +64,7 @@ namespace Eduva.Application.Features.Questions.Commands.UpdateQuestionComment
                 throw new AppException(CustomCode.LessonMaterialNotActive);
             }
 
-            await _hubNotificationService.NotifyQuestionCommentUpdatedAsync(response, question.LessonMaterialId, question.Title, lesson.Title, request.UpdatedByUserId);
+            await _hubNotificationService.NotifyQuestionCommentUpdatedAsync(response, question.LessonMaterialId, question.Title, lesson.Title, user);
 
             return response;
         }

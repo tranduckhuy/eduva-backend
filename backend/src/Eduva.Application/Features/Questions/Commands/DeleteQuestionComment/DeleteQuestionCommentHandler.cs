@@ -99,7 +99,7 @@ namespace Eduva.Application.Features.Questions.Commands.DeleteQuestionComment
 
 
 
-            await _hubNotificationService.NotifyQuestionCommentDeletedAsync(response, lesson.Id, question.Title, lesson.Title, replies.Count, request.DeletedByUserId, targetUserIds);
+            await _hubNotificationService.NotifyQuestionCommentDeletedAsync(response, lesson.Id, question.Title, lesson.Title, replies.Count, user, targetUserIds);
 
             return true;
         }

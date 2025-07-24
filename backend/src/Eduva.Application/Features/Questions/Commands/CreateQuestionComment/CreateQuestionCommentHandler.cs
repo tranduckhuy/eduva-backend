@@ -74,7 +74,7 @@ namespace Eduva.Application.Features.Questions.Commands.CreateQuestionComment
 
             var response = BuildCommentResponse(comment, user, userRole);
 
-            await _hubNotificationService.NotifyQuestionCommentedAsync(response, question.LessonMaterialId, question.Title, lesson.Title, request.CreatedByUserId);
+            await _hubNotificationService.NotifyQuestionCommentedAsync(response, question.LessonMaterialId, question.Title, lesson.Title, user);
 
             return response;
         }
