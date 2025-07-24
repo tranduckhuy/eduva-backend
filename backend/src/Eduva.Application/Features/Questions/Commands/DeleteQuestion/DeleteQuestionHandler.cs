@@ -1,4 +1,5 @@
 ﻿using Eduva.Application.Common.Exceptions;
+using Eduva.Application.Features.Questions.Responses;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
@@ -15,13 +16,16 @@ namespace Eduva.Application.Features.Questions.Commands.DeleteQuestion
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IHubNotificationService _hubNotificationService;
         private readonly IQuestionPermissionService _permissionService;
+        private readonly INotificationService _notificationService;
 
-        public DeleteQuestionHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager, IHubNotificationService hubNotificationService, IQuestionPermissionService permissionService)
+        public DeleteQuestionHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager, IHubNotificationService hubNotificationService, IQuestionPermissionService permissionService, INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
             _hubNotificationService = hubNotificationService;
             _permissionService = permissionService;
+            _notificationService = notificationService;
+
         }
 
         public async Task<bool> Handle(DeleteQuestionCommand request, CancellationToken cancellationToken)
@@ -52,10 +56,39 @@ namespace Eduva.Application.Features.Questions.Commands.DeleteQuestion
 
             var lessonMaterialId = question.LessonMaterialId;
 
+            var lessonRepo = _unitOfWork.GetRepository<LessonMaterial, Guid>();
+            var lessonMaterial = await lessonRepo.GetByIdAsync(lessonMaterialId) ?? throw new AppException(CustomCode.LessonMaterialNotFound);
+
+            if (lessonMaterial.Status != EntityStatus.Active)
+            {
+                throw new AppException(CustomCode.LessonMaterialNotActive);
+            }
+
+            var createdByUser = await userRepo.GetByIdAsync(question.CreatedByUserId) ?? throw new AppException(CustomCode.UserNotFound);
+            var createdByRoles = await _userManager.GetRolesAsync(createdByUser);
+            var createdByRole = _permissionService.GetHighestPriorityRole(createdByRoles);
+
+            var response = new QuestionResponse
+            {
+                Id = question.Id,
+                LessonMaterialId = question.LessonMaterialId,
+                LessonMaterialTitle = lessonMaterial.Title,
+                Title = question.Title,
+                Content = question.Content,
+                CreatedAt = question.CreatedAt,
+                CreatedByUserId = question.CreatedByUserId,
+                CreatedByName = createdByUser.FullName,
+                CreatedByAvatar = createdByUser.AvatarUrl,
+                CreatedByRole = createdByRole,
+                CommentCount = 0
+            };
+
+            var targetUserIds = await _notificationService.GetUsersForQuestionCommentNotificationAsync(question.Id, lessonMaterialId, question.CreatedByUserId, cancellationToken);
+
             questionRepo.Remove(question);
             await _unitOfWork.CommitAsync();
 
-            await _hubNotificationService.NotifyQuestionDeletedAsync(request.Id, lessonMaterialId);
+            await _hubNotificationService.NotifyQuestionDeletedAsync(response, lessonMaterialId, request.DeletedByUserId, targetUserIds);
 
             return true;
         }

@@ -197,6 +197,23 @@ namespace Eduva.Application.Test.Features.Questions.Commands.UpdateQuestionComme
             var userId = Guid.NewGuid();
             var commentId = Guid.NewGuid();
             var commentOwnerId = Guid.NewGuid();
+            var lessonMaterialId = Guid.NewGuid();
+
+            // Mock lesson material repo
+            var lessonMaterialRepoMock = new Mock<IGenericRepository<LessonMaterial, Guid>>();
+            _unitOfWorkMock.Setup(x => x.GetRepository<LessonMaterial, Guid>())
+                .Returns(lessonMaterialRepoMock.Object);
+            lessonMaterialRepoMock.Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(new LessonMaterial { Id = lessonMaterialId, Title = "Test Lesson" });
+
+            var commentCreator = new ApplicationUser { Id = commentOwnerId, FullName = "Owner", AvatarUrl = "avatar.jpg" };
+            _userRepositoryMock.Setup(x => x.GetByIdAsync(commentOwnerId))
+                .ReturnsAsync(commentCreator);
+            _userManagerMock.Setup(x => x.GetRolesAsync(commentCreator))
+                .ReturnsAsync(new List<string> { "Student" });
+            _permissionServiceMock.Setup(x => x.GetHighestPriorityRole(It.IsAny<IList<string>>()))
+                .Returns("Student");
+
             var command = new UpdateQuestionCommentCommand
             {
                 Id = commentId,
@@ -211,12 +228,17 @@ namespace Eduva.Application.Test.Features.Questions.Commands.UpdateQuestionComme
                 CreatedByUserId = commentOwnerId,
                 QuestionId = Guid.NewGuid()
             };
-            var question = new LessonMaterialQuestion { Id = Guid.NewGuid() };
+            var question = new LessonMaterialQuestion
+            {
+                Id = comment.QuestionId,
+                Title = "Test Question",
+                LessonMaterialId = lessonMaterialId
+            };
 
             _userRepositoryMock.Setup(x => x.GetByIdAsync(userId))
                 .ReturnsAsync(user);
             _userManagerMock.Setup(x => x.GetRolesAsync(user))
-                .ReturnsAsync(["SystemAdmin"]);
+                .ReturnsAsync(new List<string> { "SystemAdmin" });
             _permissionServiceMock.Setup(x => x.GetHighestPriorityRole(It.IsAny<IList<string>>()))
                 .Returns("SystemAdmin");
             _commentRepositoryMock.Setup(x => x.GetByIdAsync(commentId))
@@ -235,8 +257,13 @@ namespace Eduva.Application.Test.Features.Questions.Commands.UpdateQuestionComme
                 .Returns(true);
             _permissionServiceMock.Setup(x => x.CanUserDeleteCommentAsync(It.IsAny<QuestionComment>(), It.IsAny<ApplicationUser>(), It.IsAny<string>()))
                 .ReturnsAsync(true);
-            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionCommentUpdatedAsync(It.IsAny<QuestionCommentResponse>(), It.IsAny<Guid>()))
-                .Returns(Task.CompletedTask);
+            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionCommentUpdatedAsync(
+                 It.IsAny<QuestionCommentResponse>(),
+                 It.IsAny<Guid>(),
+                 It.IsAny<string>(),
+                 It.IsAny<string>(),
+                 It.IsAny<Guid?>()))
+             .Returns(Task.CompletedTask);
 
             // Act
             var result = await _handler.Handle(command, CancellationToken.None);
@@ -258,6 +285,14 @@ namespace Eduva.Application.Test.Features.Questions.Commands.UpdateQuestionComme
             // Arrange
             var userId = Guid.NewGuid();
             var commentId = Guid.NewGuid();
+            var lessonMaterialId = Guid.NewGuid();
+
+            var lessonMaterialRepoMock = new Mock<IGenericRepository<LessonMaterial, Guid>>();
+            _unitOfWorkMock.Setup(x => x.GetRepository<LessonMaterial, Guid>())
+                .Returns(lessonMaterialRepoMock.Object);
+            lessonMaterialRepoMock.Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(new LessonMaterial { Id = lessonMaterialId, Title = "Test Lesson" });
+
             var command = new UpdateQuestionCommentCommand
             {
                 Id = commentId,
@@ -272,12 +307,17 @@ namespace Eduva.Application.Test.Features.Questions.Commands.UpdateQuestionComme
                 CreatedByUserId = userId,
                 QuestionId = Guid.NewGuid()
             };
-            var question = new LessonMaterialQuestion { Id = Guid.NewGuid() };
+            var question = new LessonMaterialQuestion
+            {
+                Id = comment.QuestionId,
+                Title = "Test Question",
+                LessonMaterialId = lessonMaterialId
+            };
 
             _userRepositoryMock.Setup(x => x.GetByIdAsync(userId))
                 .ReturnsAsync(user);
             _userManagerMock.Setup(x => x.GetRolesAsync(user))
-                .ReturnsAsync(["Student"]);
+                .ReturnsAsync(new List<string> { "Student" });
             _permissionServiceMock.Setup(x => x.GetHighestPriorityRole(It.IsAny<IList<string>>()))
                 .Returns("Student");
             _commentRepositoryMock.Setup(x => x.GetByIdAsync(commentId))
@@ -296,8 +336,13 @@ namespace Eduva.Application.Test.Features.Questions.Commands.UpdateQuestionComme
                 .Returns(true);
             _permissionServiceMock.Setup(x => x.CanUserDeleteCommentAsync(It.IsAny<QuestionComment>(), It.IsAny<ApplicationUser>(), It.IsAny<string>()))
                 .ReturnsAsync(true);
-            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionCommentUpdatedAsync(It.IsAny<QuestionCommentResponse>(), It.IsAny<Guid>()))
-                .Returns(Task.CompletedTask);
+            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionCommentUpdatedAsync(
+                It.IsAny<QuestionCommentResponse>(),
+                It.IsAny<Guid>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<Guid?>()))
+            .Returns(Task.CompletedTask);
 
             // Act
             var result = await _handler.Handle(command, CancellationToken.None);
@@ -318,7 +363,12 @@ namespace Eduva.Application.Test.Features.Questions.Commands.UpdateQuestionComme
 
             _commentRepositoryMock.Verify(x => x.Update(It.IsAny<QuestionComment>()), Times.Once);
             _unitOfWorkMock.Verify(x => x.CommitAsync(), Times.Once);
-            _hubNotificationServiceMock.Verify(x => x.NotifyQuestionCommentUpdatedAsync(It.IsAny<QuestionCommentResponse>(), It.IsAny<Guid>()), Times.Once);
+            _hubNotificationServiceMock.Verify(x => x.NotifyQuestionCommentUpdatedAsync(
+                 It.IsAny<QuestionCommentResponse>(),
+                 It.IsAny<Guid>(),
+                 It.IsAny<string>(),
+                 It.IsAny<string>(),
+                 It.IsAny<Guid?>()), Times.Once);
         }
 
         #endregion
@@ -374,6 +424,15 @@ namespace Eduva.Application.Test.Features.Questions.Commands.UpdateQuestionComme
             // Arrange
             var userId = Guid.NewGuid();
             var commentId = Guid.NewGuid();
+            var lessonMaterialId = Guid.NewGuid();
+
+            // Mock lesson material repo
+            var lessonMaterialRepoMock = new Mock<IGenericRepository<LessonMaterial, Guid>>();
+            _unitOfWorkMock.Setup(x => x.GetRepository<LessonMaterial, Guid>())
+                .Returns(lessonMaterialRepoMock.Object);
+            lessonMaterialRepoMock.Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(new LessonMaterial { Id = lessonMaterialId, Title = "Test Lesson" });
+
             var command = new UpdateQuestionCommentCommand
             {
                 Id = commentId,
@@ -389,20 +448,24 @@ namespace Eduva.Application.Test.Features.Questions.Commands.UpdateQuestionComme
                 QuestionId = Guid.NewGuid(),
                 Content = "Original content"
             };
-            var question = new LessonMaterialQuestion { Id = Guid.NewGuid() };
+            var question = new LessonMaterialQuestion
+            {
+                Id = comment.QuestionId,
+                Title = "Test Question",
+                LessonMaterialId = lessonMaterialId
+            };
             var replies = new List<QuestionComment>
             {
                 new() { Id = Guid.NewGuid(), Status = EntityStatus.Active, ParentCommentId = commentId },
                 new() { Id = Guid.NewGuid(), Status = EntityStatus.Active, ParentCommentId = commentId }
             };
 
-            // Set the replies directly on the comment object
             comment.Replies = replies;
 
             _userRepositoryMock.Setup(x => x.GetByIdAsync(userId))
                 .ReturnsAsync(user);
             _userManagerMock.Setup(x => x.GetRolesAsync(user))
-                .ReturnsAsync(["Student"]);
+                .ReturnsAsync(new List<string> { "Student" });
             _permissionServiceMock.Setup(x => x.GetHighestPriorityRole(It.IsAny<IList<string>>()))
                 .Returns("Student");
             _commentRepositoryMock.Setup(x => x.GetByIdAsync(commentId))
@@ -421,8 +484,13 @@ namespace Eduva.Application.Test.Features.Questions.Commands.UpdateQuestionComme
                 .Returns(true);
             _permissionServiceMock.Setup(x => x.CanUserDeleteCommentAsync(It.IsAny<QuestionComment>(), It.IsAny<ApplicationUser>(), It.IsAny<string>()))
                 .ReturnsAsync(true);
-            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionCommentUpdatedAsync(It.IsAny<QuestionCommentResponse>(), It.IsAny<Guid>()))
-                .Returns(Task.CompletedTask);
+            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionCommentUpdatedAsync(
+                  It.IsAny<QuestionCommentResponse>(),
+                  It.IsAny<Guid>(),
+                  It.IsAny<string>(),
+                  It.IsAny<string>(),
+                  It.IsAny<Guid?>()))
+              .Returns(Task.CompletedTask);
 
             // Act
             var result = await _handler.Handle(command, CancellationToken.None);
@@ -441,7 +509,12 @@ namespace Eduva.Application.Test.Features.Questions.Commands.UpdateQuestionComme
                 c.Content == "Updated content with spaces" &&
                 c.LastModifiedAt.HasValue)), Times.Once);
             _unitOfWorkMock.Verify(x => x.CommitAsync(), Times.Once);
-            _hubNotificationServiceMock.Verify(x => x.NotifyQuestionCommentUpdatedAsync(It.IsAny<QuestionCommentResponse>(), It.IsAny<Guid>()), Times.Once);
+            _hubNotificationServiceMock.Verify(x => x.NotifyQuestionCommentUpdatedAsync(
+                  It.IsAny<QuestionCommentResponse>(),
+                  It.IsAny<Guid>(),
+                  It.IsAny<string>(),
+                  It.IsAny<string>(),
+                  It.IsAny<Guid?>()), Times.Once);
         }
 
         [Test]
@@ -450,6 +523,15 @@ namespace Eduva.Application.Test.Features.Questions.Commands.UpdateQuestionComme
             // Arrange
             var userId = Guid.NewGuid();
             var commentId = Guid.NewGuid();
+            var lessonMaterialId = Guid.NewGuid();
+
+            // Mock lesson material repo
+            var lessonMaterialRepoMock = new Mock<IGenericRepository<LessonMaterial, Guid>>();
+            _unitOfWorkMock.Setup(x => x.GetRepository<LessonMaterial, Guid>())
+                .Returns(lessonMaterialRepoMock.Object);
+            lessonMaterialRepoMock.Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(new LessonMaterial { Id = lessonMaterialId, Title = "Test Lesson" });
+
             var command = new UpdateQuestionCommentCommand
             {
                 Id = commentId,
@@ -464,7 +546,12 @@ namespace Eduva.Application.Test.Features.Questions.Commands.UpdateQuestionComme
                 CreatedByUserId = userId,
                 QuestionId = Guid.NewGuid()
             };
-            var question = new LessonMaterialQuestion { Id = Guid.NewGuid() };
+            var question = new LessonMaterialQuestion
+            {
+                Id = comment.QuestionId,
+                Title = "Test Question",
+                LessonMaterialId = lessonMaterialId
+            };
             var replies = new List<QuestionComment>
             {
                 new() { Id = Guid.NewGuid(), Status = EntityStatus.Active, ParentCommentId = commentId },
@@ -472,13 +559,12 @@ namespace Eduva.Application.Test.Features.Questions.Commands.UpdateQuestionComme
                 new() { Id = Guid.NewGuid(), Status = EntityStatus.Active, ParentCommentId = commentId }
             };
 
-            // Set the replies directly on the comment object
             comment.Replies = replies.Where(r => r.Status == EntityStatus.Active).ToList();
 
             _userRepositoryMock.Setup(x => x.GetByIdAsync(userId))
                 .ReturnsAsync(user);
             _userManagerMock.Setup(x => x.GetRolesAsync(user))
-                .ReturnsAsync(["Student"]);
+                .ReturnsAsync(new List<string> { "Student" });
             _permissionServiceMock.Setup(x => x.GetHighestPriorityRole(It.IsAny<IList<string>>()))
                 .Returns("Student");
             _commentRepositoryMock.Setup(x => x.GetByIdAsync(commentId))
@@ -497,8 +583,13 @@ namespace Eduva.Application.Test.Features.Questions.Commands.UpdateQuestionComme
                 .Returns(true);
             _permissionServiceMock.Setup(x => x.CanUserDeleteCommentAsync(It.IsAny<QuestionComment>(), It.IsAny<ApplicationUser>(), It.IsAny<string>()))
                 .ReturnsAsync(true);
-            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionCommentUpdatedAsync(It.IsAny<QuestionCommentResponse>(), It.IsAny<Guid>()))
-                .Returns(Task.CompletedTask);
+            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionCommentUpdatedAsync(
+                 It.IsAny<QuestionCommentResponse>(),
+                 It.IsAny<Guid>(),
+                 It.IsAny<string>(),
+                 It.IsAny<string>(),
+                 It.IsAny<Guid?>()))
+             .Returns(Task.CompletedTask);
 
             // Act
             var result = await _handler.Handle(command, CancellationToken.None);
@@ -509,6 +600,13 @@ namespace Eduva.Application.Test.Features.Questions.Commands.UpdateQuestionComme
                 Assert.That(result, Is.Not.Null);
                 Assert.That(result.ReplyCount, Is.EqualTo(2)); // Only active replies should be counted
             });
+
+            _hubNotificationServiceMock.Verify(x => x.NotifyQuestionCommentUpdatedAsync(
+                  It.IsAny<QuestionCommentResponse>(),
+                  It.IsAny<Guid>(),
+                  It.IsAny<string>(),
+                  It.IsAny<string>(),
+                  It.IsAny<Guid?>()), Times.Once);
         }
 
         #endregion

@@ -394,8 +394,11 @@ namespace Eduva.Application.Test.Features.Questions.Commands.CreateQuestion
                 .Returns(Task.CompletedTask);
             _unitOfWorkMock.Setup(x => x.CommitAsync())
                 .ReturnsAsync(1);
-            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionCreatedAsync(It.IsAny<QuestionResponse>(), lessonMaterialId))
-                .Returns(Task.CompletedTask);
+            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionCreatedAsync(
+                It.IsAny<QuestionResponse>(),
+                lessonMaterialId,
+                It.IsAny<Guid?>()))
+            .Returns(Task.CompletedTask);
 
             // Act
             var result = await _handler.Handle(command, CancellationToken.None);
@@ -415,7 +418,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.CreateQuestion
             });
             _questionRepositoryMock.Verify(x => x.AddAsync(It.IsAny<LessonMaterialQuestion>()), Times.Once);
             _unitOfWorkMock.Verify(x => x.CommitAsync(), Times.Once);
-            _hubNotificationServiceMock.Verify(x => x.NotifyQuestionCreatedAsync(It.IsAny<QuestionResponse>(), lessonMaterialId), Times.Once);
+            _hubNotificationServiceMock.Verify(x => x.NotifyQuestionCreatedAsync(It.IsAny<QuestionResponse>(), lessonMaterialId, It.IsAny<Guid?>()), Times.Once);
         }
 
         [Test]
@@ -451,7 +454,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.CreateQuestion
                 .Returns(Task.CompletedTask);
             _unitOfWorkMock.Setup(x => x.CommitAsync())
                 .ReturnsAsync(1);
-            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionCreatedAsync(It.IsAny<QuestionResponse>(), lessonMaterialId))
+            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionCreatedAsync(It.IsAny<QuestionResponse>(), lessonMaterialId, It.IsAny<Guid?>()))
                 .Returns(Task.CompletedTask);
 
             // Act
@@ -472,7 +475,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.CreateQuestion
             });
             _questionRepositoryMock.Verify(x => x.AddAsync(It.IsAny<LessonMaterialQuestion>()), Times.Once);
             _unitOfWorkMock.Verify(x => x.CommitAsync(), Times.Once);
-            _hubNotificationServiceMock.Verify(x => x.NotifyQuestionCreatedAsync(It.IsAny<QuestionResponse>(), lessonMaterialId), Times.Once);
+            _hubNotificationServiceMock.Verify(x => x.NotifyQuestionCreatedAsync(It.IsAny<QuestionResponse>(), lessonMaterialId, It.IsAny<Guid?>()), Times.Once);
         }
 
         #endregion

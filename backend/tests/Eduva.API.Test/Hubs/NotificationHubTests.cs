@@ -7,23 +7,23 @@ using System.Security.Claims;
 namespace Eduva.API.Test.Hubs
 {
     [TestFixture]
-    public class QuestionCommentHubTests
+    public class NotificationHubTests
     {
-        private Mock<ILogger<QuestionCommentHub>> _mockLogger;
+        private Mock<ILogger<NotificationHub>> _mockLogger;
         private Mock<HubCallerContext> _mockContext;
         private Mock<IGroupManager> _mockGroups;
-        private QuestionCommentHub _hub;
+        private NotificationHub _hub;
 
         #region Setup and Teardown
 
         [SetUp]
         public void Setup()
         {
-            _mockLogger = new Mock<ILogger<QuestionCommentHub>>();
+            _mockLogger = new Mock<ILogger<NotificationHub>>();
             _mockContext = new Mock<HubCallerContext>();
             _mockGroups = new Mock<IGroupManager>();
 
-            _hub = new QuestionCommentHub(_mockLogger.Object);
+            _hub = new NotificationHub(_mockLogger.Object);
 
             // Setup Hub properties through reflection (since they're protected)
             var contextProperty = typeof(Hub).GetProperty(nameof(Hub.Context));
@@ -179,10 +179,10 @@ namespace Eduva.API.Test.Hubs
 
             // Create user with different claims but missing NameIdentifier
             var claims = new List<Claim>
-    {
-        new Claim(ClaimTypes.Name, "testuser"),
-        new Claim(ClaimTypes.Email, "test@example.com")
-    };
+            {
+                new Claim(ClaimTypes.Name, "testuser"),
+                new Claim(ClaimTypes.Email, "test@example.com")
+            };
             var identity = new ClaimsIdentity(claims);
             var principal = new ClaimsPrincipal(identity);
 
@@ -225,11 +225,11 @@ namespace Eduva.API.Test.Hubs
         public void Constructor_ShouldInitializeLogger()
         {
             // Arrange & Act
-            var hub = new QuestionCommentHub(_mockLogger.Object);
+            var hub = new NotificationHub(_mockLogger.Object);
 
             // Assert
             Assert.That(hub, Is.Not.Null);
-            Assert.That(hub, Is.InstanceOf<QuestionCommentHub>());
+            Assert.That(hub, Is.InstanceOf<NotificationHub>());
 
             // Dispose the local hub instance
             hub.Dispose();
@@ -240,13 +240,11 @@ namespace Eduva.API.Test.Hubs
         {
             // Arrange
             var userId = "user-123";
-            var userName = "testuser";
             var connectionId = "connection-456";
 
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, userId),
-                new Claim(ClaimTypes.Name, userName)
             };
             var identity = new ClaimsIdentity(claims);
             var principal = new ClaimsPrincipal(identity);
@@ -264,8 +262,7 @@ namespace Eduva.API.Test.Hubs
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("[SignalR] User connected") &&
                                                  v.ToString()!.Contains(connectionId) &&
-                                                 v.ToString()!.Contains(userId) &&
-                                                 v.ToString()!.Contains(userName)),
+                                                 v.ToString()!.Contains(userId)),
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);

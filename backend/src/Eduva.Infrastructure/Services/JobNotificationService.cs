@@ -1,5 +1,5 @@
-using Eduva.Application.Interfaces.Services;
 using Eduva.Application.Contracts.Hubs;
+using Eduva.Application.Interfaces.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Eduva.Infrastructure.Services;

@@ -4,13 +4,13 @@ namespace Eduva.Application.Interfaces.Services
 {
     public interface IHubNotificationService
     {
-        Task NotifyQuestionCreatedAsync(QuestionResponse question, Guid lessonMaterialId);
-        Task NotifyQuestionUpdatedAsync(QuestionResponse question, Guid lessonMaterialId);
-        Task NotifyQuestionDeletedAsync(Guid questionId, Guid lessonMaterialId);
+        Task NotifyQuestionCreatedAsync(QuestionResponse question, Guid lessonMaterialId, Guid? executorUserId = null);
+        Task NotifyQuestionUpdatedAsync(QuestionResponse question, Guid lessonMaterialId, Guid? executorUserId = null);
+        Task NotifyQuestionDeletedAsync(QuestionResponse question, Guid lessonMaterialId, Guid? executorUserId = null, List<Guid>? targetUserIds = null);
 
-        Task NotifyQuestionCommentedAsync(QuestionCommentResponse comment, Guid lessonMaterialId);
-        Task NotifyQuestionCommentUpdatedAsync(QuestionCommentResponse comment, Guid lessonMaterialId);
-        Task NotifyQuestionCommentDeletedAsync(Guid commentId, Guid questionId, Guid lessonMaterialId, int deletedRepliesCount = 0);
+        Task NotifyQuestionCommentedAsync(QuestionCommentResponse comment, Guid lessonMaterialId, string title, string lessonMaterialTitle, Guid? executorUserId = null);
+        Task NotifyQuestionCommentUpdatedAsync(QuestionCommentResponse comment, Guid lessonMaterialId, string title, string lessonMaterialTitle, Guid? executorUserId = null);
+        Task NotifyQuestionCommentDeletedAsync(QuestionCommentResponse comment, Guid lessonMaterialId, string title, string lessonMaterialTitle, int deletedRepliesCount = 0, Guid? executorUserId = null, List<Guid>? targetUserIds = null);
 
     }
 }

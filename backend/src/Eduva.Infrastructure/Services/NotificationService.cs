@@ -114,6 +114,8 @@ namespace Eduva.Infrastructure.Services
             _logger.LogInformation("Marked all notifications as read for user: {UserId}", userId);
         }
 
+        #region Notification question/comment
+
         #region FALLBACK LOGIC OLD
 
         public async Task<List<Guid>> GetUsersInLessonAsync(Guid lessonMaterialId, CancellationToken cancellationToken = default)
@@ -204,7 +206,7 @@ namespace Eduva.Infrastructure.Services
             }
         }
 
-        public async Task<List<Guid>> GetUsersForQuestionCommentNotificationAsync(Guid questionId, Guid lessonMaterialId, CancellationToken cancellationToken = default)
+        public async Task<List<Guid>> GetUsersForQuestionCommentNotificationAsync(Guid questionId, Guid lessonMaterialId, Guid? questionCreatorId = null, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -212,11 +214,19 @@ namespace Eduva.Infrastructure.Services
 
                 // 1. Add question creator
                 var questionRepo = _unitOfWork.GetRepository<LessonMaterialQuestion, Guid>();
-                var question = await questionRepo.GetByIdAsync(questionId);
-                if (question != null)
+                if (questionCreatorId.HasValue)
                 {
-                    userIds.Add(question.CreatedByUserId);
-                    _logger.LogInformation("Added question creator for comment notification: {UserId}", question.CreatedByUserId);
+                    userIds.Add(questionCreatorId.Value);
+                    _logger.LogInformation("Added question creator for comment notification: {UserId}", questionCreatorId.Value);
+                }
+                else
+                {
+                    var question = await questionRepo.GetByIdAsync(questionId);
+                    if (question != null)
+                    {
+                        userIds.Add(question.CreatedByUserId);
+                        _logger.LogInformation("Added question creator for comment notification: {UserId}", question.CreatedByUserId);
+                    }
                 }
 
                 // 2. Add lesson creator (teacher)
@@ -253,7 +263,8 @@ namespace Eduva.Infrastructure.Services
             }
         }
 
-        #region Helper Methods
+
+        #region Helper methods question/comment
 
         private async Task AddUsersWhoInteractedWithLessonAsync(Guid lessonMaterialId, HashSet<Guid> userIds)
         {
@@ -438,5 +449,8 @@ namespace Eduva.Infrastructure.Services
         }
 
         #endregion
+
+        #endregion
+
     }
 }

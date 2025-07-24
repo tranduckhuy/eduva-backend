@@ -226,7 +226,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.UpdateQuestion
                 .ReturnsAsync(0);
             _unitOfWorkMock.Setup(x => x.CommitAsync())
                 .ReturnsAsync(1);
-            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionUpdatedAsync(It.IsAny<QuestionResponse>(), lessonMaterialId))
+            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionUpdatedAsync(It.IsAny<QuestionResponse>(), lessonMaterialId, It.IsAny<Guid?>()))
                 .Returns(Task.CompletedTask);
 
             // Act
@@ -247,7 +247,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.UpdateQuestion
             });
             _questionRepositoryMock.Verify(x => x.Update(It.IsAny<LessonMaterialQuestion>()), Times.Once);
             _unitOfWorkMock.Verify(x => x.CommitAsync(), Times.Once);
-            _hubNotificationServiceMock.Verify(x => x.NotifyQuestionUpdatedAsync(It.IsAny<QuestionResponse>(), lessonMaterialId), Times.Once);
+            _hubNotificationServiceMock.Verify(x => x.NotifyQuestionUpdatedAsync(It.IsAny<QuestionResponse>(), lessonMaterialId, It.IsAny<Guid?>()), Times.Once);
         }
 
         #endregion
@@ -370,7 +370,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.UpdateQuestion
                 .ReturnsAsync(5);
             _unitOfWorkMock.Setup(x => x.CommitAsync())
                 .ReturnsAsync(1);
-            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionUpdatedAsync(It.IsAny<QuestionResponse>(), lessonMaterialId))
+            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionUpdatedAsync(It.IsAny<QuestionResponse>(), lessonMaterialId, It.IsAny<Guid?>()))
                 .Returns(Task.CompletedTask);
 
             // Act
@@ -392,7 +392,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.UpdateQuestion
             });
             _questionRepositoryMock.Verify(x => x.Update(It.IsAny<LessonMaterialQuestion>()), Times.Once);
             _unitOfWorkMock.Verify(x => x.CommitAsync(), Times.Once);
-            _hubNotificationServiceMock.Verify(x => x.NotifyQuestionUpdatedAsync(It.IsAny<QuestionResponse>(), lessonMaterialId), Times.Once);
+            _hubNotificationServiceMock.Verify(x => x.NotifyQuestionUpdatedAsync(It.IsAny<QuestionResponse>(), lessonMaterialId, It.IsAny<Guid?>()), Times.Once);
         }
 
         [Test]
@@ -440,7 +440,7 @@ namespace Eduva.Application.Test.Features.Questions.Commands.UpdateQuestion
                 .ReturnsAsync(0);
             _unitOfWorkMock.Setup(x => x.CommitAsync())
                 .ReturnsAsync(1);
-            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionUpdatedAsync(It.IsAny<QuestionResponse>(), lessonMaterialId))
+            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionUpdatedAsync(It.IsAny<QuestionResponse>(), lessonMaterialId, It.IsAny<Guid?>()))
                 .Returns(Task.CompletedTask);
 
             // Act
