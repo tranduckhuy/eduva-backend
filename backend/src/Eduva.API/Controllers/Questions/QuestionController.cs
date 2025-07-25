@@ -50,7 +50,7 @@ namespace Eduva.API.Controllers.Questions
         [HttpGet("my-questions")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         [ProducesResponseType(typeof(ApiResponse<Pagination<QuestionResponse>>), StatusCodes.Status200OK)]
-        [Authorize(Roles = $"{nameof(Role.Student)}, {nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}")]
+        [Authorize(Roles = $"{nameof(Role.Student)}, {nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}, {nameof(Role.SchoolAdmin)}, {nameof(Role.SystemAdmin)}")]
         public async Task<IActionResult> GetMyQuestions([FromQuery] MyQuestionsSpecParam specParam)
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);

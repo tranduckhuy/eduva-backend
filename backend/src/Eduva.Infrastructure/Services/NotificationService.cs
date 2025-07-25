@@ -332,18 +332,18 @@ namespace Eduva.Infrastructure.Services
                     }
 
                     _logger.LogInformation("Found folder: {FolderId}, Type: {FolderType}", folder.Id,
-                        folder.UserId.HasValue ? "Personal" : "Class");
+                        folder.OwnerType == OwnerType.Personal ? "Personal" : "Class");
 
-                    if (folder.UserId.HasValue)
+                    if (folder.OwnerType == OwnerType.Personal)
                     {
                         // Personal folder - add owner
-                        userIds.Add(folder.UserId.Value);
+                        userIds.Add(folder.UserId!.Value);
                         _logger.LogInformation("Added folder owner: {UserId}", folder.UserId.Value);
                     }
-                    else if (folder.ClassId.HasValue)
+                    else if (folder.OwnerType == OwnerType.Class)
                     {
                         // Class folder - add teacher and students with access
-                        await AddClassUsersWithAccessAsync(folder.ClassId.Value, lessonMaterialId, userIds);
+                        await AddClassUsersWithAccessAsync(folder.ClassId!.Value, lessonMaterialId, userIds);
                     }
                 }
             }
@@ -438,7 +438,7 @@ namespace Eduva.Infrastructure.Services
                     .Where(u => u.SchoolId == lesson.SchoolId && u.Status == EntityStatus.Active)
                     .ToList();
 
-                var eligibleRoles = new[] { "Teacher", "SchoolAdmin", "ContentModerator" };
+                var eligibleRoles = new[] { "SchoolAdmin", "ContentModerator" };
                 var eligibleUserIds = new List<Guid>();
 
                 foreach (var user in schoolUsers)

@@ -386,10 +386,11 @@ namespace Eduva.Infrastructure.Test.Services
             var creatorId = Guid.NewGuid();
             var folderId = Guid.NewGuid();
             var folderOwnerId = Guid.NewGuid();
+            var folderClassId = Guid.NewGuid();
 
             var lesson = new LessonMaterial { Id = lessonId, CreatedByUserId = creatorId };
             var folderLesson = new FolderLessonMaterial { Id = Guid.NewGuid(), LessonMaterialId = lessonId, FolderId = folderId };
-            var folder = new Folder { Id = folderId, UserId = folderOwnerId, ClassId = null };
+            var folder = new Folder { Id = folderId, UserId = folderOwnerId, ClassId = folderClassId, OwnerType = OwnerType.Personal };
 
             _lessonRepoMock.Setup(x => x.GetByIdAsync(lessonId)).ReturnsAsync(lesson);
             _questionRepoMock.Setup(x => x.GetAllAsync()).ReturnsAsync([]);
@@ -414,10 +415,11 @@ namespace Eduva.Infrastructure.Test.Services
             var teacherId = Guid.NewGuid();
             var studentId = Guid.NewGuid();
             var folderId = Guid.NewGuid();
+            var folderOwnerId = Guid.NewGuid();
 
             var lesson = new LessonMaterial { Id = lessonId, CreatedByUserId = creatorId };
             var folderLesson = new FolderLessonMaterial { Id = Guid.NewGuid(), LessonMaterialId = lessonId, FolderId = folderId };
-            var folder = new Folder { Id = folderId, ClassId = classId, UserId = null };
+            var folder = new Folder { Id = folderId, ClassId = classId, UserId = folderOwnerId, OwnerType = OwnerType.Class };
 
             var classroom = new Classroom { Id = classId, TeacherId = teacherId };
             var studentClasses = new List<StudentClass>
@@ -461,8 +463,8 @@ namespace Eduva.Infrastructure.Test.Services
                 new FolderLessonMaterial { Id = Guid.NewGuid(), LessonMaterialId = lessonId, FolderId = folderClassId },
                 new FolderLessonMaterial { Id = Guid.NewGuid(), LessonMaterialId = lessonId, FolderId = folderPersonalId }
             };
-            var folderClass = new Folder { Id = folderClassId, ClassId = classId, UserId = null };
-            var folderPersonal = new Folder { Id = folderPersonalId, UserId = folderOwnerId, ClassId = null };
+            var folderClass = new Folder { Id = folderClassId, ClassId = classId, UserId = folderPersonalId, OwnerType = OwnerType.Class };
+            var folderPersonal = new Folder { Id = folderPersonalId, UserId = folderOwnerId, ClassId = folderClassId, OwnerType = OwnerType.Personal };
 
             var classroom = new Classroom { Id = classId, TeacherId = teacherId };
             var studentClasses = new List<StudentClass>
@@ -540,7 +542,7 @@ namespace Eduva.Infrastructure.Test.Services
             var result = await _service.GetUsersInLessonAsync(lessonId);
 
             // Assert
-            Assert.That(result, Does.Contain(teacherId));
+            Assert.That(result, Does.Not.Contain(teacherId));
             Assert.That(result, Does.Contain(adminId));
             Assert.That(result, Does.Contain(moderatorId));
             Assert.That(result, Does.Not.Contain(studentId));
@@ -584,7 +586,7 @@ namespace Eduva.Infrastructure.Test.Services
             var result = await _service.GetUsersInLessonAsync(lessonId);
 
             // Assert
-            Assert.That(result, Contains.Item(teacherId));
+            Assert.That(result, Does.Not.Contain(teacherId));
             Assert.That(result, Does.Not.Contain(studentId));
         }
 

@@ -223,7 +223,7 @@ namespace Eduva.Infrastructure.Services
             await SendCommentNotificationAsync(notification, NotificationTypes.QuestionCommented, user);
 
             // Save the notification to the database for persistence
-            await SaveNotificationToDatabase(NotificationTypes.QuestionCommented, notification, lessonMaterialId, comment.CreatedByUserId, user);
+            await SaveNotificationToDatabase(NotificationTypes.QuestionCommented, notification, lessonMaterialId, null, user);
         }
 
         public async Task NotifyQuestionCommentUpdatedAsync(QuestionCommentResponse comment, Guid lessonMaterialId, string title, string lessonMaterialTitle, ApplicationUser? user = null)
@@ -328,7 +328,7 @@ namespace Eduva.Infrastructure.Services
 
                 // Get target users for comment notification
                 var targetUserIds = await _notificationService.GetUsersForQuestionCommentNotificationAsync(
-                    notification.QuestionId, notification.LessonMaterialId, notification.CreatedByUserId);
+                    notification.QuestionId, notification.LessonMaterialId, null);
 
                 // Exclude the creator from receiving their own notification
                 if (user?.Id != null && user.Id != Guid.Empty)
