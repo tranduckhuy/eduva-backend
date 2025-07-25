@@ -522,11 +522,8 @@ namespace Eduva.Infrastructure.Test.Services
             };
 
             _lessonRepoMock.Setup(x => x.GetByIdAsync(lessonId)).ReturnsAsync(lesson);
-            _questionRepoMock.Setup(x => x.GetAllAsync()).ReturnsAsync([]);
-            _folderLessonRepoMock.Setup(x => x.FirstOrDefaultAsync(
-                It.IsAny<Expression<Func<FolderLessonMaterial, bool>>>(),
-                null,
-                It.IsAny<CancellationToken>())).ReturnsAsync((FolderLessonMaterial?)null);
+            _questionRepoMock.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<LessonMaterialQuestion>());
+            _folderLessonRepoMock.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<FolderLessonMaterial>());
             _userRepoMock.Setup(x => x.GetAllAsync()).ReturnsAsync(schoolUsers);
 
             // Mock roles
@@ -573,11 +570,8 @@ namespace Eduva.Infrastructure.Test.Services
             };
 
             _lessonRepoMock.Setup(x => x.GetByIdAsync(lessonId)).ReturnsAsync(lesson);
-            _questionRepoMock.Setup(x => x.GetAllAsync()).ReturnsAsync([]);
-            _folderLessonRepoMock.Setup(x => x.FirstOrDefaultAsync(
-                It.IsAny<Expression<Func<FolderLessonMaterial, bool>>>(),
-                null,
-                It.IsAny<CancellationToken>())).ReturnsAsync((FolderLessonMaterial?)null);
+            _questionRepoMock.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<LessonMaterialQuestion>());
+            _folderLessonRepoMock.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<FolderLessonMaterial>());
             _userRepoMock.Setup(x => x.GetAllAsync()).ReturnsAsync(schoolUsers);
 
             // Mock roles
@@ -589,6 +583,7 @@ namespace Eduva.Infrastructure.Test.Services
             // Act
             var result = await _service.GetUsersInLessonAsync(lessonId);
 
+            // Assert
             Assert.That(result, Contains.Item(teacherId));
             Assert.That(result, Does.Not.Contain(studentId));
         }
@@ -1177,10 +1172,9 @@ namespace Eduva.Infrastructure.Test.Services
             ];
 
             _lessonRepoMock.Setup(x => x.GetByIdAsync(lessonId)).ReturnsAsync(lesson);
-            _folderLessonRepoMock.Setup(x => x.FirstOrDefaultAsync(
-                It.IsAny<Expression<Func<FolderLessonMaterial, bool>>>(),
-                null,
-                It.IsAny<CancellationToken>())).ReturnsAsync((FolderLessonMaterial?)null);
+
+            _folderLessonRepoMock.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<FolderLessonMaterial>());
+
             _userRepoMock.Setup(x => x.GetAllAsync()).ReturnsAsync(schoolUsers);
 
             _userManagerMock.Setup(x => x.GetRolesAsync(It.Is<ApplicationUser>(u => u.Id == teacherId)))
@@ -1193,6 +1187,7 @@ namespace Eduva.Infrastructure.Test.Services
             // Act
             var result = await _service.GetUsersForNewQuestionNotificationAsync(lessonId);
 
+            // Assert
             Assert.That(result, Has.Count.EqualTo(2));
             Assert.That(result, Contains.Item(teacherId));
             Assert.That(result, Contains.Item(user1Id));
