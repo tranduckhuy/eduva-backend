@@ -6,6 +6,7 @@ using Eduva.Application.Common.Mappings;
 using Eduva.Application.Features.Jobs.Commands.ConfirmJob;
 using Eduva.Application.Features.Jobs.Commands.CreateJob;
 using Eduva.Application.Features.Jobs.Commands.DeleteCompletedJob;
+using Eduva.Application.Features.Jobs.Commands.UpdateJob;
 using Eduva.Application.Features.Jobs.Commands.UpdateJobProgress;
 using Eduva.Application.Features.Jobs.DTOs;
 using Eduva.Application.Features.Jobs.Queries.GetCompletedJobs;
@@ -167,6 +168,32 @@ public class AIJobsController : BaseController<AIJobsController>
             JobId = id,
             UserId = userGuid,
             Permanent = permanent
+        };
+
+        return await HandleRequestAsync(async () =>
+        {
+            await _mediator.Send(command);
+        });
+    }
+
+    // Update job
+    [HttpPut("{id:guid}")]
+    [Authorize]
+    public async Task<IActionResult> UpdateJob(Guid id, [FromForm] UpdateJobRequest request)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userId, out var userGuid))
+        {
+            return Respond(CustomCode.UserIdNotFound);
+        }
+
+        var command = new UpdateJobCommand
+        {
+            Id = id,
+            UserId = userGuid,
+            File = request.File,
+            Topic = request.Topic
+
         };
 
         return await HandleRequestAsync(async () =>

@@ -34,11 +34,8 @@ public class JobResponse
 
 public class UpdateJobRequest
 {
-    public JobStatus? Status { get; set; }
-    public string? ContentBlobName { get; set; }
-    public string? ProductBlobName { get; set; }
-    public int? WordCount { get; set; }
-    public string? FailureReason { get; set; }
+    public List<IFormFile>? File { get; set; }
+    public string Topic { get; set; } = string.Empty;
 }
 
 public class ConfirmJobRequest
