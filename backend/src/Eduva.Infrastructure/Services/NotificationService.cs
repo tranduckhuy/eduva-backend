@@ -412,6 +412,24 @@ namespace Eduva.Infrastructure.Services
                     return;
                 }
 
+                var folderLessonRepo = _unitOfWork.GetRepository<FolderLessonMaterial, Guid>();
+                var folderLessons = await folderLessonRepo.GetAllAsync();
+                var relatedFolders = folderLessons.Where(fl => fl.LessonMaterialId == lesson.Id).ToList();
+
+                if (relatedFolders.Count != 0)
+                {
+                    var folderRepo = _unitOfWork.GetRepository<Folder, Guid>();
+                    foreach (var folderLesson in relatedFolders)
+                    {
+                        var folder = await folderRepo.GetByIdAsync(folderLesson.FolderId);
+                        if (folder != null && folder.ClassId.HasValue)
+                        {
+                            _logger.LogInformation("Lesson is in class folder, not adding school users");
+                            return;
+                        }
+                    }
+                }
+
                 var userRepo = _unitOfWork.GetRepository<ApplicationUser, Guid>();
                 var allUsers = await userRepo.GetAllAsync();
 
