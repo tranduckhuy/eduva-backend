@@ -19,6 +19,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Skip for internal release-please or imgbot branches
+        if:
+          (startsWith(github.head_ref, 'release-please--branches--') || startsWith(github.head_ref, 'imgbot')) &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          echo "Skipping scan for internal bot PR branch: ${{ github.head_ref }}"
+          exit 0
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0

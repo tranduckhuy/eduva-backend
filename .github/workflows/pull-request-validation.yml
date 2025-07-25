@@ -9,7 +9,6 @@ on:
 
 jobs:
   validate_pr:
-    if: (github.base_ref == 'master' || github.base_ref == 'dev') && github.base_ref != 'release-please--branches--master'
     name: PR validation
     runs-on: ubuntu-latest
     permissions:
@@ -19,6 +18,12 @@ jobs:
 
     steps:
       # Check if PR source branch is allowed to target master directly
+      - name: Skip check if from release-please
+        if: startsWith(github.head_ref, 'release-please--branches--')
+        run: |
+          echo "Skipping validation for release-please PR."
+          exit 0
+
       - name: Check if PR is valid
         id: check_branch
         run: |
