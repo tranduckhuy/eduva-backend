@@ -59,6 +59,26 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
         }
 
         [Test]
+        public void Handle_Should_Throw_Forbidden_If_ClassEntity_Is_Null()
+        {
+            var classId = Guid.NewGuid();
+
+            _classRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync((Classroom?)null);
+
+            var query = new GetFoldersWithLessonMaterialsByClassIdQuery(
+                classId,
+                123,
+                Guid.NewGuid(),
+                new List<string> { "Teacher" },
+                null,
+                null
+            );
+
+            Assert.ThrowsAsync<Eduva.Application.Exceptions.Auth.ForbiddenException>(
+                () => _handler.Handle(query, CancellationToken.None));
+        }
+
+        [Test]
         public async Task Handle_Should_Return_Empty_If_Student_Not_Enrolled()
         {
             var classId = Guid.NewGuid();
