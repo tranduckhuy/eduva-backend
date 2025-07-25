@@ -7,7 +7,7 @@
     <UserSecretsId>1e412a77-a3a7-4b78-9903-a6c3c26da1ef</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>..\..</DockerfileContext>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,15 +15,15 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
-    <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.1.0" />
-    <PackageReference Include="RabbitMQ.Client" Version="6.8.1" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0"/>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2"/>
+    <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.1.0"/>
+    <PackageReference Include="RabbitMQ.Client" Version="6.8.1"/>
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Eduva.Application\Eduva.Application.csproj" />
-    <ProjectReference Include="..\Eduva.Infrastructure\Eduva.Infrastructure.csproj" />
+    <ProjectReference Include="..\Eduva.Application\Eduva.Application.csproj"/>
+    <ProjectReference Include="..\Eduva.Infrastructure\Eduva.Infrastructure.csproj"/>
   </ItemGroup>
 
 </Project>
