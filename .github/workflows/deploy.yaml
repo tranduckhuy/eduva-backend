@@ -1,10 +1,8 @@
 name: Deploy Eduva
 
 on:
-  workflow_run:
-    workflows: ["Publish Eduva API Image"]
-    types:
-      - completed
+  release:
+    types: [published]
   workflow_dispatch:
 
 jobs:
@@ -12,12 +10,9 @@ jobs:
     name: Deploy Eduva
     runs-on: self-hosted
 
-    # Only run if the previous workflow run was successful or if manually triggered
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
-
     permissions:
       contents: read
-      packages: write
+      packages: read
 
     defaults:
       run:

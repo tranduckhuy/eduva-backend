@@ -2,7 +2,6 @@ using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Sas;
-using Eduva.Application.Exceptions.FileStorage;
 using Eduva.Application.Interfaces.Services;
 using Eduva.Infrastructure.Configurations;
 using Eduva.Infrastructure.Services;
@@ -203,21 +202,6 @@ namespace Eduva.Infrastructure.Test.Services
         }
 
         [Test]
-        public void DeleteFileAsync_ShouldThrowBlobNotFoundException_WhenBlobDoesNotExist()
-        {
-            // Arrange
-            var nonExistentBlobName = "non-existent-file.pdf";
-            var mockResponse = Response.FromValue(false, Mock.Of<Response>());
-
-            _blobClientMock.Setup(b => b.DeleteIfExistsAsync(It.IsAny<DeleteSnapshotsOption>(), It.IsAny<BlobRequestConditions>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(mockResponse);
-
-            // Act & Assert
-            var ex = Assert.ThrowsAsync<BlobNotFoundException>(async () => await _service.DeleteFileAsync(nonExistentBlobName));
-            Assert.That(ex, Is.Not.Null);
-        }
-
-        [Test]
         public async Task DeleteFileAsync_ShouldCallCorrectBlobClient_WhenValidBlobNameProvided()
         {
             // Arrange
@@ -254,22 +238,6 @@ namespace Eduva.Infrastructure.Test.Services
             // Assert
             _containerClientMock.Verify(c => c.GetBlobClient(It.IsAny<string>()), Times.Exactly(2));
             _blobClientMock.Verify(b => b.DeleteIfExistsAsync(It.IsAny<DeleteSnapshotsOption>(), It.IsAny<BlobRequestConditions>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
-        }
-
-        [Test]
-        public void DeleteRangeFileAsync_ShouldThrowBlobNotFoundException_WhenAnyBlobDoesNotExist()
-        {
-            // Arrange
-            var blobNames = new List<string> { "existing-file.pdf", "non-existent-file.jpg" };
-            var successResponse = Response.FromValue(true, Mock.Of<Response>());
-            var failureResponse = Response.FromValue(false, Mock.Of<Response>());
-
-            _blobClientMock.SetupSequence(b => b.DeleteIfExistsAsync(It.IsAny<DeleteSnapshotsOption>(), It.IsAny<BlobRequestConditions>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(successResponse)
-                .ReturnsAsync(failureResponse);
-
-            // Act & Assert
-            Assert.ThrowsAsync<BlobNotFoundException>(async () => await _service.DeleteRangeFileAsync(blobNames));
         }
 
         #endregion

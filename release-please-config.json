@@ -1,0 +1,15 @@
+{
+  "packages": {
+    ".": {
+      "release-type": "simple",
+      "extra-files": [
+        {
+          "type": "xml",
+          "path": "backend/src/Eduva.API/Eduva.API.csproj",
+          "xpath": "//PropertyGroup/Version"
+        }
+      ]
+    }
+  },
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json"
+}
