@@ -56,7 +56,7 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                         return await _studentClassRepository.HasAccessToMaterialAsync(userId, lessonMaterialId);
                     case "Teacher":
                     case "ContentModerator":
-                        return await _studentClassRepository.TeacherHasAccessToMaterialAsync(userId, lessonMaterialId);
+                        return true;
                     default:
                         return false;
                 }
