@@ -412,12 +412,10 @@ namespace Eduva.Infrastructure.Test.Services
             It.IsAny<CancellationToken>()))
         .ReturnsAsync(targetUsers);
 
-            _mockNotificationService.Setup(s => s.GetUsersForQuestionCommentNotificationAsync(
-                    questionId,
-                    lessonMaterialId,
-                    It.IsAny<Guid>(),
-                    It.IsAny<CancellationToken>()))
-                .ReturnsAsync(targetUsers);
+            _mockNotificationService
+        .Setup(x => x.GetUsersForQuestionCommentNotificationAsync(
+            It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+        .ReturnsAsync(targetUsers);
 
             _mockNotificationService.Setup(s => s.CreateNotificationAsync(
                     It.IsAny<string>(),

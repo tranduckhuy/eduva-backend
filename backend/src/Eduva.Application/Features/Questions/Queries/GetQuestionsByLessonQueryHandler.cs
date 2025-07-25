@@ -111,10 +111,10 @@ namespace Eduva.Application.Features.Questions.Queries
                     break;
 
                 case nameof(Role.Teacher):
-                case nameof(Role.ContentModerator):
                     await ValidateTeacherAccess(userId, lessonMaterialId, studentClassCustomRepo, lessonMaterial);
                     break;
 
+                case nameof(Role.ContentModerator):
                 case nameof(Role.SchoolAdmin):
                 case nameof(Role.SystemAdmin):
                     break;

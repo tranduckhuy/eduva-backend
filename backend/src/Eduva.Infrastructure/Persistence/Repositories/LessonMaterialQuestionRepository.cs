@@ -40,7 +40,7 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                 return false;
             }
 
-            if (userRole == "SchoolAdmin" || userRole == "SystemAdmin")
+            if (userRole == "SchoolAdmin" || userRole == "SystemAdmin" || userRole == "ContentModerator")
             {
                 return true;
             }
@@ -69,17 +69,6 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                     return await _studentClassRepository.HasAccessToMaterialAsync(userId, lessonMaterialId);
 
                 case "Teacher":
-                case "ContentModerator":
-                    var questionOwnerRoles = await _context.UserRoles
-                        .Where(ur => ur.UserId == question.CreatedByUserId)
-                        .Join(_context.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => r.Name)
-                        .ToListAsync();
-
-                    if (!questionOwnerRoles.Contains("Student"))
-                    {
-                        return false;
-                    }
-
                     return await _studentClassRepository.TeacherHasAccessToMaterialAsync(userId, lessonMaterialId);
 
                 default:
