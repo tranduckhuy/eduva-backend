@@ -8,6 +8,7 @@ using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using Microsoft.AspNetCore.Identity;
 using Moq;
+using System.Linq.Expressions;
 
 namespace Eduva.Application.Test.Features.LessonMaterials.Queries
 {
@@ -152,17 +153,30 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
             _userRepoMock.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(user);
             _userManagerMock.Setup(m => m.GetRolesAsync(user)).ReturnsAsync(new List<string> { nameof(Role.SystemAdmin) });
 
-            var approval1 = new LessonMaterialApproval { Id = Guid.NewGuid(), LessonMaterialId = lessonMaterialId, CreatedAt = DateTimeOffset.UtcNow };
-            var approval2 = new LessonMaterialApproval { Id = Guid.NewGuid(), LessonMaterialId = lessonMaterialId, CreatedAt = DateTimeOffset.UtcNow.AddMinutes(-1) };
+            var approval1 = new LessonMaterialApproval
+            {
+                Id = Guid.NewGuid(),
+                LessonMaterialId = lessonMaterialId,
+                CreatedAt = DateTimeOffset.UtcNow
+            };
+            var approval2 = new LessonMaterialApproval
+            {
+                Id = Guid.NewGuid(),
+                LessonMaterialId = lessonMaterialId,
+                CreatedAt = DateTimeOffset.UtcNow.AddMinutes(-1)
+            };
 
-            // Chuỗi truy vấn approval theo CreatedAt giảm dần
-            _approvalRepoMock.SetupSequence(r => r.FirstOrDefaultAsync(
-                It.IsAny<System.Linq.Expressions.Expression<Func<LessonMaterialApproval, bool>>>(),
+            Func<IQueryable<LessonMaterialApproval>, IQueryable<LessonMaterialApproval>>? capturedQuery = null;
+            var approvalsQueue = new Queue<LessonMaterialApproval?>(new[] { approval1, approval2, null });
+
+            _approvalRepoMock.Setup(r => r.FirstOrDefaultAsync(
+                It.IsAny<Expression<Func<LessonMaterialApproval, bool>>>(),
                 It.IsAny<Func<IQueryable<LessonMaterialApproval>, IQueryable<LessonMaterialApproval>>>(),
                 It.IsAny<CancellationToken>()))
-                .ReturnsAsync(approval1)
-                .ReturnsAsync(approval2)
-                .ReturnsAsync((LessonMaterialApproval?)null);
+                .Callback<Expression<Func<LessonMaterialApproval, bool>>,
+                          Func<IQueryable<LessonMaterialApproval>, IQueryable<LessonMaterialApproval>>,
+                          CancellationToken>((expr, func, token) => capturedQuery = func)
+                .ReturnsAsync(() => approvalsQueue.Dequeue());
 
             _mapperMock.Setup(m => m.Map<List<LessonMaterialApprovalResponse>>(It.IsAny<List<LessonMaterialApproval>>()))
                 .Returns((List<LessonMaterialApproval> approvals) =>
@@ -176,6 +190,11 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
                 Assert.That(result[0].Id, Is.EqualTo(approval1.Id));
                 Assert.That(result[1].Id, Is.EqualTo(approval2.Id));
             });
+
+            Assert.That(capturedQuery, Is.Not.Null, "Delegate query should have been captured.");
+            var testData = new List<LessonMaterialApproval> { approval2, approval1 }.AsQueryable();
+            var ordered = capturedQuery!(testData).ToList();
+            Assert.That(ordered[0].CreatedAt, Is.GreaterThanOrEqualTo(ordered[1].CreatedAt), "Should be ordered by CreatedAt descending");
         }
 
         [Test]
