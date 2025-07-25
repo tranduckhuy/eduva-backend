@@ -26,7 +26,7 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Queries
             _validator = new GetPendingLessonMaterialsValidator(_unitOfWorkMock.Object, _userManagerMock.Object);
         }
 
-        private GetPendingLessonMaterialsQuery CreateValidQuery(Guid? userId = null, int? schoolId = null, List<string>? roles = null)
+        private static GetPendingLessonMaterialsQuery CreateValidQuery(Guid? userId = null, int? schoolId = null, List<string>? roles = null)
         {
             return new GetPendingLessonMaterialsQuery(
                 new LessonMaterialSpecParam

@@ -65,7 +65,7 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Specifications
             var param = new LessonMaterialSpecParam { SchoolId = 1 };
             var spec = new PendingLessonMaterialSpecification(param);
 
-            Assert.That(spec.Includes.Count, Is.EqualTo(2));
+            Assert.That(spec.Includes, Has.Count.EqualTo(2));
             Assert.Multiple(() =>
             {
                 Assert.That(spec.Includes[0].ToString(), Does.Contain("CreatedByUser"));

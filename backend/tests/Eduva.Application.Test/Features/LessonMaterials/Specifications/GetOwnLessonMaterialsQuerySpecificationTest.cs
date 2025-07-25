@@ -69,7 +69,7 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Specifications
             var param = new LessonMaterialSpecParam { EntityStatus = EntityStatus.Active };
             var spec = new GetOwnLessonMaterialsQuerySpecification(param, Guid.NewGuid());
 
-            Assert.That(spec.Includes.Count, Is.EqualTo(2));
+            Assert.That(spec.Includes, Has.Count.EqualTo(2));
             Assert.Multiple(() =>
             {
                 Assert.That(spec.Includes[0].ToString(), Does.Contain("CreatedByUser"));
