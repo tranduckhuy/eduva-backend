@@ -36,6 +36,8 @@ namespace Eduva.Application.Features.LessonMaterials.Commands.DeleteLessonMateri
                 throw new LessonMaterialNotFoundException(notFoundIds);
             }
 
+            var deletedLessonMaterialsBlobNames = new List<string>();
+
             foreach (var material in materials)
             {
                 if (material.SchoolId != request.SchoolId)
@@ -48,13 +50,10 @@ namespace Eduva.Application.Features.LessonMaterials.Commands.DeleteLessonMateri
                     throw new ForbiddenException(["You can only delete materials that you created."]);
                 }
 
-                if (request.Permanent && material.Status == EntityStatus.Deleted)
+                if (request.Permanent)
                 {
                     lessonMaterialRepository.Remove(material);
-                    if (!material.IsAIContent)
-                    {
-                        await _storageService.DeleteFileAsync(material.SourceUrl);
-                    }
+                    deletedLessonMaterialsBlobNames.Add(material.SourceUrl);
                 }
                 else
                 {
@@ -64,6 +63,11 @@ namespace Eduva.Application.Features.LessonMaterials.Commands.DeleteLessonMateri
 
                 _logger.LogInformation("User {UserId} deleted lesson material {MaterialId} in school {SchoolId}. Permanent: {Permanent}",
                     request.UserId, material.Id, request.SchoolId, request.Permanent);
+            }
+
+            if (deletedLessonMaterialsBlobNames.Count > 0)
+            {
+                await _storageService.DeleteRangeFileAsync(deletedLessonMaterialsBlobNames, true);
             }
 
             await _unitOfWork.CommitAsync();

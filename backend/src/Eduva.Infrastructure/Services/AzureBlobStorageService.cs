@@ -93,26 +93,23 @@ namespace Eduva.Infrastructure.Services
             return blobClient.GenerateSasUri(sasBuilder).Query;
         }
 
-        public async Task DeleteFileAsync(string blobName)
+        public async Task DeleteFileAsync(string blobName, bool isUrlBased = false)
         {
             var blobClient = _containerClient.GetBlobClient(blobName);
-            var response = await blobClient.DeleteIfExistsAsync();
-            if (!response.Value)
-            {
-                throw new BlobNotFoundException();
-            }
+            await blobClient.DeleteIfExistsAsync();
         }
 
-        public async Task DeleteRangeFileAsync(List<string> blobNames)
+        public async Task DeleteRangeFileAsync(List<string> blobNames, bool isUrlBased = false)
         {
+            if (isUrlBased)
+            {
+                blobNames = blobNames.Select(GetBlobNameFromUrl).ToList();
+            }
+
             foreach (var blobName in blobNames)
             {
                 var blobClient = _containerClient.GetBlobClient(blobName);
-                var response = await blobClient.DeleteIfExistsAsync();
-                if (!response.Value)
-                {
-                    throw new BlobNotFoundException();
-                }
+                await blobClient.DeleteIfExistsAsync();
             }
         }
 
