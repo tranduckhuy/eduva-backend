@@ -206,7 +206,7 @@ namespace Eduva.API.Test.Controllers.FileStorage
         {
             // Arrange
             var blobName = "test-file.pdf";
-            _storageServiceMock.Setup(s => s.DeleteFileAsync(blobName))
+            _storageServiceMock.Setup(s => s.DeleteFileAsync(blobName, false))
                 .Returns(Task.CompletedTask);
 
             // Act
@@ -216,7 +216,7 @@ namespace Eduva.API.Test.Controllers.FileStorage
             var objectResult = result as ObjectResult;
             Assert.That(objectResult, Is.Not.Null);
             Assert.That(objectResult.StatusCode, Is.EqualTo(200));
-            _storageServiceMock.Verify(s => s.DeleteFileAsync(blobName), Times.Once);
+            _storageServiceMock.Verify(s => s.DeleteFileAsync(blobName, false), Times.Once);
         }
 
         [Test]
@@ -224,7 +224,7 @@ namespace Eduva.API.Test.Controllers.FileStorage
         {
             // Arrange
             var blobName = "non-existent-file.pdf";
-            _storageServiceMock.Setup(s => s.DeleteFileAsync(blobName))
+            _storageServiceMock.Setup(s => s.DeleteFileAsync(blobName, false))
                 .ThrowsAsync(new AppException(CustomCode.BlobNotFound));
 
             // Act
@@ -241,7 +241,7 @@ namespace Eduva.API.Test.Controllers.FileStorage
         {
             // Arrange
             var blobName = "test-file.pdf";
-            _storageServiceMock.Setup(s => s.DeleteFileAsync(blobName))
+            _storageServiceMock.Setup(s => s.DeleteFileAsync(blobName, false))
                 .ThrowsAsync(new Exception("Storage service error"));
 
             // Act
