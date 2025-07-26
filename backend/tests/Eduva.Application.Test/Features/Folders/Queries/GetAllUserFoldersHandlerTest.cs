@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Eduva.Application.Common.Models;
 using Eduva.Application.Features.Folders.Queries;
 using Eduva.Application.Features.Folders.Responses;
 using Eduva.Application.Features.Folders.Specifications;
@@ -56,9 +57,12 @@ namespace Eduva.Application.Test.Features.Folders.Queries
                 { folders[0].Id, 5 }
             };
 
-            _folderRepoMock.Setup(r => r.ListAsync(
-                It.IsAny<System.Linq.Expressions.Expression<Func<Folder, bool>>>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(folders);
+            var pagination = new Pagination<Folder>
+            {
+                Data = folders
+            };
+            _folderRepoMock.Setup(r => r.GetWithSpecAsync(It.IsAny<FolderSpecification>()))
+                .ReturnsAsync(pagination);
 
             _mapperMock.Setup(m => m.Map<List<FolderResponse>>(folders)).Returns(folderResponses);
 
@@ -94,9 +98,12 @@ namespace Eduva.Application.Test.Features.Folders.Queries
 
             var counts = new Dictionary<Guid, int>();
 
-            _folderRepoMock.Setup(r => r.ListAsync(
-                It.IsAny<System.Linq.Expressions.Expression<Func<Folder, bool>>>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(folders);
+            var pagination = new Pagination<Folder>
+            {
+                Data = folders
+            };
+            _folderRepoMock.Setup(r => r.GetWithSpecAsync(It.IsAny<FolderSpecification>()))
+                .ReturnsAsync(pagination);
 
             _mapperMock.Setup(m => m.Map<List<FolderResponse>>(folders)).Returns(folderResponses);
 
@@ -190,14 +197,19 @@ namespace Eduva.Application.Test.Features.Folders.Queries
                 new() { Id = folders[0].Id }
             };
 
-            _folderRepoMock.Setup(r => r.ListAsync(
-                It.IsAny<System.Linq.Expressions.Expression<Func<Folder, bool>>>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(folders);
+            var pagination = new Pagination<Folder>
+            {
+                Data = folders
+            };
+
+            _folderRepoMock.Setup(r => r.GetWithSpecAsync(It.IsAny<FolderSpecification>()))
+                .ReturnsAsync(pagination);
 
             _mapperMock.Setup(m => m.Map<List<FolderResponse>>(folders)).Returns(folderResponses);
 
             _unitOfWorkMock.Setup(u => u.GetCustomRepository<ILessonMaterialRepository>())
                 .Returns((ILessonMaterialRepository?)null!);
+
             var result = await _handler.Handle(query, CancellationToken.None);
 
             Assert.That(result, Is.Not.Null);

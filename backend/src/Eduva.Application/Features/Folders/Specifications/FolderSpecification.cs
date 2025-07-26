@@ -98,9 +98,18 @@ namespace Eduva.Application.Features.Folders.Specifications
 
         private void ApplyPaging(FolderSpecParam param)
         {
-            Skip = (param.PageIndex - 1) * param.PageSize;
-            Take = param.PageSize;
+            if (param.IsPagingEnabled)
+            {
+                Skip = (param.PageIndex - 1) * param.PageSize;
+                Take = param.PageSize;
+            }
+            else
+            {
+                Skip = 0;
+                Take = int.MaxValue;
+            }
         }
+
 
         private static Expression<Func<Folder, bool>> CombineWithAnd(
             Expression<Func<Folder, bool>> left,

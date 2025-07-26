@@ -1,8 +1,8 @@
 ﻿using AutoMapper;
 using Eduva.Application.Features.Folders.Responses;
+using Eduva.Application.Features.Folders.Specifications;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
-using Eduva.Domain.Enums;
 using MediatR;
 
 namespace Eduva.Application.Features.Folders.Queries
@@ -25,12 +25,15 @@ namespace Eduva.Application.Features.Folders.Queries
 
         public async Task<List<FolderResponse>> Handle(GetAllUserFoldersQuery request, CancellationToken cancellationToken)
         {
-            var folders = await _folderRepository.ListAsync(
-               f => f.OwnerType == OwnerType.Personal
-                   && f.UserId == request.FolderSpecParam.UserId
-                   && (!request.FolderSpecParam.Status.HasValue || f.Status == request.FolderSpecParam.Status),
-               cancellationToken
-             );
+            var folderSpecParam = request.FolderSpecParam;
+            folderSpecParam.IsPagingEnabled = false;
+
+            var spec = new FolderSpecification(folderSpecParam);
+
+            var folderPagination = await _folderRepository.GetWithSpecAsync(spec);
+
+            var folders = folderPagination?.Data ?? new List<Domain.Entities.Folder>();
+
 
             var data = _mapper.Map<List<FolderResponse>>(folders);
 
