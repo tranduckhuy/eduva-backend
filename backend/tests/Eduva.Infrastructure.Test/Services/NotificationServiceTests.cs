@@ -1401,5 +1401,368 @@ namespace Eduva.Infrastructure.Test.Services
 
         #endregion
 
+        #region DeleteNotificationsByLessonMaterialIdAsync Tests
+
+        [Test]
+        public async Task DeleteNotificationsByLessonMaterialIdAsync_ShouldDeleteRelatedNotifications_WhenFound()
+        {
+            // Arrange
+            var lessonMaterialId = Guid.NewGuid();
+            var notificationId1 = Guid.NewGuid();
+            var notificationId2 = Guid.NewGuid();
+            var userNotificationId1 = Guid.NewGuid();
+            var userNotificationId2 = Guid.NewGuid();
+
+            var notifications = new List<Notification>
+            {
+                new Notification
+                {
+                    Id = notificationId1,
+                    Payload = $"{{\"lessonMaterialId\":\"{lessonMaterialId}\",\"title\":\"Test\"}}"
+                },
+                new Notification
+                {
+                    Id = notificationId2,
+                    Payload = $"{{\"LessonMaterialId\":\"{lessonMaterialId}\",\"content\":\"Test\"}}"
+                }
+            };
+
+            var userNotifications = new List<UserNotification>
+            {
+                new UserNotification { Id = userNotificationId1, NotificationId = notificationId1 },
+                new UserNotification { Id = userNotificationId2, NotificationId = notificationId2 }
+            };
+
+            var notificationRepoMock = new Mock<IGenericRepository<Notification, Guid>>();
+            _unitOfWorkMock.Setup(x => x.GetRepository<Notification, Guid>()).Returns(notificationRepoMock.Object);
+            _unitOfWorkMock.Setup(x => x.GetCustomRepository<IUserNotificationRepository>()).Returns(_userNotificationRepoMock.Object);
+
+            notificationRepoMock.Setup(x => x.FindAsync(It.IsAny<Expression<Func<Notification, bool>>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(notifications);
+
+            _userNotificationRepoMock.Setup(x => x.FindAsync(It.IsAny<Expression<Func<UserNotification, bool>>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(userNotifications);
+
+            notificationRepoMock.Setup(x => x.RemoveRange(It.IsAny<IEnumerable<Notification>>()));
+            _userNotificationRepoMock.Setup(x => x.RemoveRange(It.IsAny<IEnumerable<UserNotification>>()));
+
+            // Act
+            await _service.DeleteNotificationsByLessonMaterialIdAsync(lessonMaterialId);
+
+            // Assert
+            notificationRepoMock.Verify(x => x.RemoveRange(It.Is<IEnumerable<Notification>>(n => n.Count() == 2)), Times.Once);
+            _userNotificationRepoMock.Verify(x => x.RemoveRange(It.Is<IEnumerable<UserNotification>>(un => un.Count() == 2)), Times.Once);
+        }
+
+        [Test]
+        public async Task DeleteNotificationsByLessonMaterialIdAsync_ShouldReturnEarly_WhenNoNotificationsFound()
+        {
+            // Arrange
+            var lessonMaterialId = Guid.NewGuid();
+
+            var notificationRepoMock = new Mock<IGenericRepository<Notification, Guid>>();
+            _unitOfWorkMock.Setup(x => x.GetRepository<Notification, Guid>()).Returns(notificationRepoMock.Object);
+            _unitOfWorkMock.Setup(x => x.GetCustomRepository<IUserNotificationRepository>()).Returns(_userNotificationRepoMock.Object);
+
+            notificationRepoMock.Setup(x => x.FindAsync(It.IsAny<Expression<Func<Notification, bool>>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<Notification>());
+
+            // Act
+            await _service.DeleteNotificationsByLessonMaterialIdAsync(lessonMaterialId);
+
+            // Assert
+            notificationRepoMock.Verify(x => x.RemoveRange(It.IsAny<IEnumerable<Notification>>()), Times.Never);
+            _userNotificationRepoMock.Verify(x => x.RemoveRange(It.IsAny<IEnumerable<UserNotification>>()), Times.Never);
+        }
+
+        [Test]
+        public async Task DeleteNotificationsByLessonMaterialIdAsync_ShouldHandleEmptyPayload()
+        {
+            // Arrange
+            var lessonMaterialId = Guid.NewGuid();
+            var notificationId = Guid.NewGuid();
+
+            var notifications = new List<Notification>
+            {
+                new Notification
+                {
+                    Id = notificationId,
+                    Payload = "" // Empty payload
+                }
+            };
+
+            var notificationRepoMock = new Mock<IGenericRepository<Notification, Guid>>();
+            _unitOfWorkMock.Setup(x => x.GetRepository<Notification, Guid>()).Returns(notificationRepoMock.Object);
+            _unitOfWorkMock.Setup(x => x.GetCustomRepository<IUserNotificationRepository>()).Returns(_userNotificationRepoMock.Object);
+
+            notificationRepoMock.Setup(x => x.FindAsync(It.IsAny<Expression<Func<Notification, bool>>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(notifications);
+
+            // Act
+            await _service.DeleteNotificationsByLessonMaterialIdAsync(lessonMaterialId);
+
+            // Assert
+            notificationRepoMock.Verify(x => x.RemoveRange(It.IsAny<IEnumerable<Notification>>()), Times.Never);
+            _userNotificationRepoMock.Verify(x => x.RemoveRange(It.IsAny<IEnumerable<UserNotification>>()), Times.Never);
+        }
+
+        [Test]
+        public async Task DeleteNotificationsByLessonMaterialIdAsync_ShouldHandleNullPayload()
+        {
+            // Arrange
+            var lessonMaterialId = Guid.NewGuid();
+            var notificationId = Guid.NewGuid();
+
+            var notifications = new List<Notification>
+            {
+                new Notification
+                {
+                    Id = notificationId,
+                    Payload = null! // Null payload
+                }
+            };
+
+            var notificationRepoMock = new Mock<IGenericRepository<Notification, Guid>>();
+            _unitOfWorkMock.Setup(x => x.GetRepository<Notification, Guid>()).Returns(notificationRepoMock.Object);
+            _unitOfWorkMock.Setup(x => x.GetCustomRepository<IUserNotificationRepository>()).Returns(_userNotificationRepoMock.Object);
+
+            notificationRepoMock.Setup(x => x.FindAsync(It.IsAny<Expression<Func<Notification, bool>>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(notifications);
+
+            // Act
+            await _service.DeleteNotificationsByLessonMaterialIdAsync(lessonMaterialId);
+
+            // Assert
+            notificationRepoMock.Verify(x => x.RemoveRange(It.IsAny<IEnumerable<Notification>>()), Times.Never);
+            _userNotificationRepoMock.Verify(x => x.RemoveRange(It.IsAny<IEnumerable<UserNotification>>()), Times.Never);
+        }
+
+        [Test]
+        public async Task DeleteNotificationsByLessonMaterialIdAsync_ShouldHandleInvalidJsonPayload()
+        {
+            // Arrange
+            var lessonMaterialId = Guid.NewGuid();
+            var notificationId = Guid.NewGuid();
+
+            var notifications = new List<Notification>
+            {
+                new Notification
+                {
+                    Id = notificationId,
+                    Payload = "invalid json {"
+                }
+            };
+
+            var notificationRepoMock = new Mock<IGenericRepository<Notification, Guid>>();
+            _unitOfWorkMock.Setup(x => x.GetRepository<Notification, Guid>()).Returns(notificationRepoMock.Object);
+            _unitOfWorkMock.Setup(x => x.GetCustomRepository<IUserNotificationRepository>()).Returns(_userNotificationRepoMock.Object);
+
+            notificationRepoMock.Setup(x => x.FindAsync(It.IsAny<Expression<Func<Notification, bool>>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(notifications);
+
+            // Act
+            await _service.DeleteNotificationsByLessonMaterialIdAsync(lessonMaterialId);
+
+            // Assert
+            notificationRepoMock.Verify(x => x.RemoveRange(It.IsAny<IEnumerable<Notification>>()), Times.Never);
+            _userNotificationRepoMock.Verify(x => x.RemoveRange(It.IsAny<IEnumerable<UserNotification>>()), Times.Never);
+        }
+
+        [Test]
+        public async Task DeleteNotificationsByLessonMaterialIdAsync_ShouldHandleDifferentPropertyNames()
+        {
+            // Arrange
+            var lessonMaterialId = Guid.NewGuid();
+            var notificationId1 = Guid.NewGuid();
+            var notificationId2 = Guid.NewGuid();
+            var notificationId3 = Guid.NewGuid();
+
+            var notifications = new List<Notification>
+            {
+                new Notification
+                {
+                    Id = notificationId1,
+                    Payload = $"{{\"lessonmaterialid\":\"{lessonMaterialId}\",\"title\":\"Test\"}}"
+                },
+                new Notification
+                {
+                    Id = notificationId2,
+                    Payload = $"{{\"lesson_material_id\":\"{lessonMaterialId}\",\"content\":\"Test\"}}"
+                },
+                new Notification
+                {
+                    Id = notificationId3,
+                    Payload = $"{{\"otherProperty\":\"{lessonMaterialId}\",\"title\":\"Test\"}}"
+                }
+            };
+
+            var userNotifications = new List<UserNotification>
+            {
+                new UserNotification { Id = Guid.NewGuid(), NotificationId = notificationId1 },
+                new UserNotification { Id = Guid.NewGuid(), NotificationId = notificationId2 }
+            };
+
+            var notificationRepoMock = new Mock<IGenericRepository<Notification, Guid>>();
+            _unitOfWorkMock.Setup(x => x.GetRepository<Notification, Guid>()).Returns(notificationRepoMock.Object);
+            _unitOfWorkMock.Setup(x => x.GetCustomRepository<IUserNotificationRepository>()).Returns(_userNotificationRepoMock.Object);
+
+            notificationRepoMock.Setup(x => x.FindAsync(It.IsAny<Expression<Func<Notification, bool>>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(notifications);
+
+            _userNotificationRepoMock.Setup(x => x.FindAsync(It.IsAny<Expression<Func<UserNotification, bool>>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(userNotifications);
+
+            notificationRepoMock.Setup(x => x.RemoveRange(It.IsAny<IEnumerable<Notification>>()));
+            _userNotificationRepoMock.Setup(x => x.RemoveRange(It.IsAny<IEnumerable<UserNotification>>()));
+
+            // Act
+            await _service.DeleteNotificationsByLessonMaterialIdAsync(lessonMaterialId);
+
+            // Assert
+            notificationRepoMock.Verify(x => x.RemoveRange(It.Is<IEnumerable<Notification>>(n => n.Count() == 2)), Times.Once);
+            _userNotificationRepoMock.Verify(x => x.RemoveRange(It.Is<IEnumerable<UserNotification>>(un => un.Count() == 2)), Times.Once);
+        }
+
+        [Test]
+        public async Task DeleteNotificationsByLessonMaterialIdAsync_ShouldHandleNoUserNotifications()
+        {
+            // Arrange
+            var lessonMaterialId = Guid.NewGuid();
+            var notificationId = Guid.NewGuid();
+
+            var notifications = new List<Notification>
+            {
+                new Notification
+                {
+                    Id = notificationId,
+                    Payload = $"{{\"lessonMaterialId\":\"{lessonMaterialId}\",\"title\":\"Test\"}}"
+                }
+            };
+
+            var notificationRepoMock = new Mock<IGenericRepository<Notification, Guid>>();
+            _unitOfWorkMock.Setup(x => x.GetRepository<Notification, Guid>()).Returns(notificationRepoMock.Object);
+            _unitOfWorkMock.Setup(x => x.GetCustomRepository<IUserNotificationRepository>()).Returns(_userNotificationRepoMock.Object);
+
+            notificationRepoMock.Setup(x => x.FindAsync(It.IsAny<Expression<Func<Notification, bool>>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(notifications);
+
+            _userNotificationRepoMock.Setup(x => x.FindAsync(It.IsAny<Expression<Func<UserNotification, bool>>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<UserNotification>());
+
+            notificationRepoMock.Setup(x => x.RemoveRange(It.IsAny<IEnumerable<Notification>>()));
+
+            // Act
+            await _service.DeleteNotificationsByLessonMaterialIdAsync(lessonMaterialId);
+
+            // Assert
+            notificationRepoMock.Verify(x => x.RemoveRange(It.Is<IEnumerable<Notification>>(n => n.Count() == 1)), Times.Once);
+            _userNotificationRepoMock.Verify(x => x.RemoveRange(It.IsAny<IEnumerable<UserNotification>>()), Times.Never);
+        }
+
+        [Test]
+        public Task DeleteNotificationsByLessonMaterialIdAsync_ShouldHandleException()
+        {
+            // Arrange
+            var lessonMaterialId = Guid.NewGuid();
+
+            var notificationRepoMock = new Mock<IGenericRepository<Notification, Guid>>();
+            _unitOfWorkMock.Setup(x => x.GetRepository<Notification, Guid>()).Returns(notificationRepoMock.Object);
+            _unitOfWorkMock.Setup(x => x.GetCustomRepository<IUserNotificationRepository>()).Returns(_userNotificationRepoMock.Object);
+
+            notificationRepoMock.Setup(x => x.FindAsync(It.IsAny<Expression<Func<Notification, bool>>>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new Exception("Database error"));
+
+            // Act & Assert
+            var exception = Assert.ThrowsAsync<Exception>(() =>
+                _service.DeleteNotificationsByLessonMaterialIdAsync(lessonMaterialId));
+
+            Assert.That(exception.Message, Is.EqualTo("Database error"));
+            return Task.CompletedTask;
+        }
+
+        [Test]
+        public async Task DeleteNotificationsByLessonMaterialIdAsync_ShouldHandleCaseInsensitiveMatching()
+        {
+            // Arrange
+            var lessonMaterialId = Guid.NewGuid();
+            var notificationId = Guid.NewGuid();
+
+            var notifications = new List<Notification>
+            {
+                new Notification
+                {
+                    Id = notificationId,
+                    Payload = $"{{\"lessonMaterialId\":\"{lessonMaterialId.ToString().ToUpper()}\",\"title\":\"Test\"}}"
+                }
+            };
+
+            var userNotifications = new List<UserNotification>
+            {
+                new UserNotification { Id = Guid.NewGuid(), NotificationId = notificationId }
+            };
+
+            var notificationRepoMock = new Mock<IGenericRepository<Notification, Guid>>();
+            _unitOfWorkMock.Setup(x => x.GetRepository<Notification, Guid>()).Returns(notificationRepoMock.Object);
+            _unitOfWorkMock.Setup(x => x.GetCustomRepository<IUserNotificationRepository>()).Returns(_userNotificationRepoMock.Object);
+
+            notificationRepoMock.Setup(x => x.FindAsync(It.IsAny<Expression<Func<Notification, bool>>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(notifications);
+
+            _userNotificationRepoMock.Setup(x => x.FindAsync(It.IsAny<Expression<Func<UserNotification, bool>>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(userNotifications);
+
+            notificationRepoMock.Setup(x => x.RemoveRange(It.IsAny<IEnumerable<Notification>>()));
+            _userNotificationRepoMock.Setup(x => x.RemoveRange(It.IsAny<IEnumerable<UserNotification>>()));
+
+            // Act
+            await _service.DeleteNotificationsByLessonMaterialIdAsync(lessonMaterialId);
+
+            // Assert
+            notificationRepoMock.Verify(x => x.RemoveRange(It.Is<IEnumerable<Notification>>(n => n.Count() == 1)), Times.Once);
+            _userNotificationRepoMock.Verify(x => x.RemoveRange(It.Is<IEnumerable<UserNotification>>(un => un.Count() == 1)), Times.Once);
+        }
+
+        [Test]
+        public async Task DeleteNotificationsByLessonMaterialIdAsync_ShouldHandleLargeNumberOfNotifications()
+        {
+            // Arrange
+            var lessonMaterialId = Guid.NewGuid();
+            var notifications = new List<Notification>();
+            var userNotifications = new List<UserNotification>();
+
+            for (int i = 0; i < 100; i++)
+            {
+                var notificationId = Guid.NewGuid();
+                notifications.Add(new Notification
+                {
+                    Id = notificationId,
+                    Payload = $"{{\"lessonMaterialId\":\"{lessonMaterialId}\",\"index\":{i}}}"
+                });
+                userNotifications.Add(new UserNotification { Id = Guid.NewGuid(), NotificationId = notificationId });
+            }
+
+            var notificationRepoMock = new Mock<IGenericRepository<Notification, Guid>>();
+            _unitOfWorkMock.Setup(x => x.GetRepository<Notification, Guid>()).Returns(notificationRepoMock.Object);
+            _unitOfWorkMock.Setup(x => x.GetCustomRepository<IUserNotificationRepository>()).Returns(_userNotificationRepoMock.Object);
+
+            notificationRepoMock.Setup(x => x.FindAsync(It.IsAny<Expression<Func<Notification, bool>>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(notifications);
+
+            _userNotificationRepoMock.Setup(x => x.FindAsync(It.IsAny<Expression<Func<UserNotification, bool>>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(userNotifications);
+
+            notificationRepoMock.Setup(x => x.RemoveRange(It.IsAny<IEnumerable<Notification>>()));
+            _userNotificationRepoMock.Setup(x => x.RemoveRange(It.IsAny<IEnumerable<UserNotification>>()));
+
+            // Act
+            await _service.DeleteNotificationsByLessonMaterialIdAsync(lessonMaterialId);
+
+            // Assert
+            notificationRepoMock.Verify(x => x.RemoveRange(It.Is<IEnumerable<Notification>>(n => n.Count() == 100)), Times.Once);
+            _userNotificationRepoMock.Verify(x => x.RemoveRange(It.Is<IEnumerable<UserNotification>>(un => un.Count() == 100)), Times.Once);
+        }
+
+        #endregion
+
     }
 }
