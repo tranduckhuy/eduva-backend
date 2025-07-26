@@ -20,6 +20,7 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
         private Mock<IGenericRepository<LessonMaterial, Guid>> _lessonMaterialRepoMock = null!;
         private Mock<IStorageService> _storageServiceMock = null!;
         private Mock<ILogger<DeleteLessonMaterialHandler>> _loggerMock = null!;
+        private Mock<INotificationService> _notificationServiceMock = null!;
         private DeleteLessonMaterialHandler _handler = null!;
 
         [SetUp]
@@ -29,11 +30,12 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
             _lessonMaterialRepoMock = new Mock<IGenericRepository<LessonMaterial, Guid>>();
             _storageServiceMock = new Mock<IStorageService>();
             _loggerMock = new Mock<ILogger<DeleteLessonMaterialHandler>>();
+            _notificationServiceMock = new Mock<INotificationService>();
 
             _unitOfWorkMock.Setup(u => u.GetRepository<LessonMaterial, Guid>())
                 .Returns(_lessonMaterialRepoMock.Object);
 
-            _handler = new DeleteLessonMaterialHandler(_unitOfWorkMock.Object, _loggerMock.Object, _storageServiceMock.Object);
+            _handler = new DeleteLessonMaterialHandler(_unitOfWorkMock.Object, _loggerMock.Object, _storageServiceMock.Object, _notificationServiceMock.Object);
         }
 
         [Test]
@@ -245,6 +247,62 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
             _lessonMaterialRepoMock.Verify(r => r.Remove(material), Times.Once);
             _lessonMaterialRepoMock.Verify(r => r.Update(It.IsAny<LessonMaterial>()), Times.Never);
             _storageServiceMock.Verify(s => s.DeleteFileAsync(It.IsAny<string>(), false), Times.Never);
+            Assert.That(result, Is.EqualTo(Unit.Value));
+        }
+
+        [Test]
+        public async Task Handle_Should_Call_DeleteNotificationsByLessonMaterialIdAsync_When_Permanent_Delete()
+        {
+            var userId = Guid.NewGuid();
+            var ids = new List<Guid> { Guid.NewGuid() };
+            var material = new LessonMaterial
+            {
+                Id = ids[0],
+                SchoolId = 1,
+                CreatedByUserId = userId,
+                Status = EntityStatus.Deleted,
+                IsAIContent = false,
+                SourceUrl = "file-url"
+            };
+
+            _lessonMaterialRepoMock.Setup(r => r.FindAsync(It.IsAny<Expression<Func<LessonMaterial, bool>>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<LessonMaterial> { material });
+
+            _lessonMaterialRepoMock.Setup(r => r.Remove(material));
+            _storageServiceMock.Setup(s => s.DeleteRangeFileAsync(It.IsAny<List<string>>(), true))
+                .Returns(Task.CompletedTask);
+
+            var notificationServiceMock = new Mock<INotificationService>();
+            notificationServiceMock.Setup(n => n.DeleteNotificationsByLessonMaterialIdAsync(material.Id, It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            _unitOfWorkMock.Setup(u => u.GetRepository<LessonMaterial, Guid>())
+                .Returns(_lessonMaterialRepoMock.Object);
+
+            // Recreate handler with notificationServiceMock
+            _handler = new DeleteLessonMaterialHandler(
+                _unitOfWorkMock.Object,
+                _loggerMock.Object,
+                _storageServiceMock.Object,
+                notificationServiceMock.Object
+            );
+
+            _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(0);
+
+            var cmd = new DeleteLessonMaterialCommand
+            {
+                Ids = ids,
+                UserId = userId,
+                SchoolId = 1,
+                Permanent = true
+            };
+
+            var result = await _handler.Handle(cmd, CancellationToken.None);
+
+            notificationServiceMock.Verify(n => n.DeleteNotificationsByLessonMaterialIdAsync(material.Id, It.IsAny<CancellationToken>()), Times.Once);
+            _lessonMaterialRepoMock.Verify(r => r.Remove(material), Times.Once);
+            _storageServiceMock.Verify(s => s.DeleteRangeFileAsync(It.IsAny<List<string>>(), true), Times.Once);
+            _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Once);
             Assert.That(result, Is.EqualTo(Unit.Value));
         }
     }

@@ -14,14 +14,15 @@ namespace Eduva.Application.Features.LessonMaterials.Commands.DeleteLessonMateri
         private readonly IUnitOfWork _unitOfWork;
         private readonly IStorageService _storageService;
         private readonly ILogger<DeleteLessonMaterialHandler> _logger;
+        private readonly INotificationService _notificationService;
 
-        public DeleteLessonMaterialHandler(IUnitOfWork unitOfWork, ILogger<DeleteLessonMaterialHandler> logger, IStorageService storageService)
+        public DeleteLessonMaterialHandler(IUnitOfWork unitOfWork, ILogger<DeleteLessonMaterialHandler> logger, IStorageService storageService, INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _logger = logger;
             _storageService = storageService;
+            _notificationService = notificationService;
         }
-
 
         public async Task<Unit> Handle(DeleteLessonMaterialCommand request, CancellationToken cancellationToken)
         {
@@ -52,6 +53,8 @@ namespace Eduva.Application.Features.LessonMaterials.Commands.DeleteLessonMateri
 
                 if (request.Permanent)
                 {
+                    await _notificationService.DeleteNotificationsByLessonMaterialIdAsync(material.Id, cancellationToken);
+
                     lessonMaterialRepository.Remove(material);
                     deletedLessonMaterialsBlobNames.Add(material.SourceUrl);
                 }

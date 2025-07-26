@@ -13,6 +13,7 @@ namespace Eduva.Application.Interfaces.Services
         Task<int> GetTotalCountAsync(Guid userId, CancellationToken cancellationToken = default);
         Task MarkAsReadAsync(Guid userNotificationId, CancellationToken cancellationToken = default);
         Task MarkAllAsReadAsync(Guid userId, CancellationToken cancellationToken = default);
+        Task DeleteNotificationsByLessonMaterialIdAsync(Guid lessonMaterialId, CancellationToken cancellationToken = default);
 
         #region Question/Comment Notifications
 
