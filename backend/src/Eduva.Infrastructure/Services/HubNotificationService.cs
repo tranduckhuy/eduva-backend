@@ -58,10 +58,13 @@ namespace Eduva.Infrastructure.Services
                 ActionType = QuestionActionType.Created
             };
 
+            // Save the notification to the database for persistence
+            var notificationId = await SaveNotificationToDatabase(NotificationTypes.QuestionCreated, notification, lessonMaterialId, question.CreatedByUserId, user);
+
+            notification.NotificationId = notificationId;
+
             await SendNotificationAsync(notification, NotificationTypes.QuestionCreated, user);
 
-            // Save the notification to the database for persistence
-            await SaveNotificationToDatabase(NotificationTypes.QuestionCreated, notification, lessonMaterialId, question.CreatedByUserId, user);
         }
 
         public async Task NotifyQuestionUpdatedAsync(QuestionResponse question, Guid lessonMaterialId, ApplicationUser? user = null)
@@ -86,10 +89,12 @@ namespace Eduva.Infrastructure.Services
                 ActionType = QuestionActionType.Updated
             };
 
-            await SendNotificationAsync(notification, NotificationTypes.QuestionUpdated, user);
 
             // Save the notification to the database for persistence
-            await SaveNotificationToDatabase(NotificationTypes.QuestionUpdated, notification, lessonMaterialId, question.CreatedByUserId, user);
+            var notificationId = await SaveNotificationToDatabase(NotificationTypes.QuestionUpdated, notification, lessonMaterialId, question.CreatedByUserId, user);
+            notification.NotificationId = notificationId;
+
+            await SendNotificationAsync(notification, NotificationTypes.QuestionUpdated, user);
         }
 
         public async Task NotifyQuestionDeletedAsync(QuestionResponse question, Guid lessonMaterialId, ApplicationUser? user = null, List<Guid>? targetUserIds = null)
@@ -127,6 +132,10 @@ namespace Eduva.Infrastructure.Services
                     targetUserIds.Remove(user.Id);
                 }
 
+                // Save the notification to the database for persistence
+                var notificationId = await SaveNotificationToDatabase(NotificationTypes.QuestionDeleted, notification, lessonMaterialId, question.CreatedByUserId, user, targetUserIds);
+                notification.NotificationId = notificationId;
+
                 // Send to each user individually
                 foreach (var userId in targetUserIds)
                 {
@@ -136,9 +145,6 @@ namespace Eduva.Infrastructure.Services
                 _logger.LogInformation("[SignalR] Question deleted notification sent successfully! " +
                     "Event: QuestionDeleted, TargetUsers: {UserCount}, QuestionId: {QuestionId}",
                     targetUserIds.Count, question.Id);
-
-                // Save the notification to the database for persistence
-                await SaveNotificationToDatabase(NotificationTypes.QuestionDeleted, notification, lessonMaterialId, question.CreatedByUserId, user, targetUserIds);
             }
             catch (Exception ex)
             {
@@ -183,16 +189,16 @@ namespace Eduva.Infrastructure.Services
                 }
 
                 _logger.LogInformation("[SignalR] Question {ActionType} notification sent successfully! " +
-                    "Event: {EventName}, TargetUsers: {UserCount}, QuestionId: {QuestionId}, LessonTitle: {LessonTitle}",
-                    notification.ActionType.ToString().ToLower(), eventName, targetUserIds.Count,
-                    notification.QuestionId, notification.LessonMaterialTitle);
+                   "NotificationId: {NotificationId}, Event: {EventName}, TargetUsers: {UserCount}, QuestionId: {QuestionId}, LessonTitle: {LessonTitle}",
+                   notification.ActionType.ToString().ToLower(), notification.NotificationId, eventName, targetUserIds.Count,
+                   notification.QuestionId, notification.LessonMaterialTitle);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "[SignalR] Failed to send question {ActionType} notification. " +
-                    "QuestionId: {QuestionId}, LessonId: {LessonId}, Error: {ErrorMessage}",
-                    notification.ActionType.ToString().ToLower(), notification.QuestionId,
-                    notification.LessonMaterialId, ex.Message);
+                   "NotificationId: {NotificationId}, QuestionId: {QuestionId}, LessonId: {LessonId}, Error: {ErrorMessage}",
+                   notification.ActionType.ToString().ToLower(), notification.NotificationId, notification.QuestionId,
+                   notification.LessonMaterialId, ex.Message);
             }
         }
 
@@ -220,10 +226,11 @@ namespace Eduva.Infrastructure.Services
                 ActionType = QuestionActionType.Commented
             };
 
-            await SendCommentNotificationAsync(notification, NotificationTypes.QuestionCommented, user);
-
             // Save the notification to the database for persistence
-            await SaveNotificationToDatabase(NotificationTypes.QuestionCommented, notification, lessonMaterialId, null, user);
+            var notificationId = await SaveNotificationToDatabase(NotificationTypes.QuestionCommented, notification, lessonMaterialId, null, user);
+            notification.NotificationId = notificationId;
+
+            await SendCommentNotificationAsync(notification, NotificationTypes.QuestionCommented, user);
         }
 
         public async Task NotifyQuestionCommentUpdatedAsync(QuestionCommentResponse comment, Guid lessonMaterialId, string title, string lessonMaterialTitle, ApplicationUser? user = null)
@@ -248,11 +255,11 @@ namespace Eduva.Infrastructure.Services
                 IsReply = comment.ParentCommentId.HasValue,
                 ActionType = QuestionActionType.Updated
             };
+            // Save the notification to the database for persistence
+            var notificationId = await SaveNotificationToDatabase(NotificationTypes.QuestionCommentUpdated, notification, lessonMaterialId, comment.CreatedByUserId, user);
+            notification.NotificationId = notificationId;
 
             await SendCommentNotificationAsync(notification, NotificationTypes.QuestionCommentUpdated, user);
-
-            // Save the notification to the database for persistence
-            await SaveNotificationToDatabase(NotificationTypes.QuestionCommentUpdated, notification, lessonMaterialId, comment.CreatedByUserId, user);
         }
 
         public async Task NotifyQuestionCommentDeletedAsync(QuestionCommentResponse comment, Guid lessonMaterialId, string title, string lessonMaterialTitle, int deletedRepliesCount = 0, ApplicationUser? user = null, List<Guid>? targetUserIds = null)
@@ -293,6 +300,10 @@ namespace Eduva.Infrastructure.Services
                     targetUserIds.Remove(user.Id);
                 }
 
+                // Save the notification to the database for persistence
+                var notificationId = await SaveNotificationToDatabase(NotificationTypes.QuestionCommentDeleted, notification, lessonMaterialId, comment.CreatedByUserId, user, targetUserIds);
+                notification.NotificationId = notificationId;
+
                 // Send to each user individually
                 foreach (var userId in targetUserIds)
                 {
@@ -303,9 +314,6 @@ namespace Eduva.Infrastructure.Services
                     "Event: QuestionCommentDeleted, TargetUsers: {UserCount}, CommentId: {CommentId}, " +
                     "QuestionId: {QuestionId}, DeletedReplies: {DeletedReplies}",
                     targetUserIds.Count, comment.Id, comment.QuestionId, deletedRepliesCount);
-
-                // Save the notification to the database for persistence
-                await SaveNotificationToDatabase(NotificationTypes.QuestionCommentDeleted, notification, lessonMaterialId, comment.CreatedByUserId, user, targetUserIds);
             }
             catch (Exception ex)
             {
@@ -414,16 +422,18 @@ namespace Eduva.Infrastructure.Services
                 notification.PerformedByAvatar = performedByUser.AvatarUrl;
             }
 
+            var notificationId = await SaveNotificationToDatabase(eventType, notification, notification.LessonMaterialId, targetUserId, performedByUser, new List<Guid> { targetUserId });
+            notification.NotificationId = notificationId;
+
             await _notificationHub.SendNotificationToUserAsync(targetUserId.ToString(), eventType, notification);
 
-            await SaveNotificationToDatabase(eventType, notification, notification.LessonMaterialId, targetUserId, performedByUser, new List<Guid> { targetUserId });
         }
 
         #endregion
 
         #region Save Notification to Database
 
-        private async Task SaveNotificationToDatabase(string notificationType, object notificationData, Guid lessonMaterialId, Guid? createdUserId = null, ApplicationUser? user = null, List<Guid>? targetUserIds = null)
+        private async Task<Guid> SaveNotificationToDatabase(string notificationType, object notificationData, Guid lessonMaterialId, Guid? createdUserId = null, ApplicationUser? user = null, List<Guid>? targetUserIds = null)
         {
             try
             {
@@ -468,11 +478,15 @@ namespace Eduva.Infrastructure.Services
                 _logger.LogInformation("Saved persistent notification: {NotificationType}, " +
                     "NotificationId: {NotificationId}, TargetUsers: {UserCount}",
                     notificationType, persistentNotification.Id, targetUserIds.Count);
+
+                return persistentNotification.Id;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to save persistent notification: {NotificationType}, Error: {ErrorMessage}, StackTrace: {StackTrace}",
                     notificationType, ex.Message, ex.StackTrace);
+
+                return Guid.Empty;
             }
         }
 
