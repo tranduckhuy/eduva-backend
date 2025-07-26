@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/tranduckhuy/eduva-backend/compare/v1.1.0...v1.2.0) (2025-07-25)
+
+
+### Features
+
+* improve lesson material deletion & fix access control issues ([#403](https://github.com/tranduckhuy/eduva-backend/issues/403)) ([83e7e4e](https://github.com/tranduckhuy/eduva-backend/commit/83e7e4e6968c0bbbd4dca6d3b1074f388a49af7c))
+
 ## [1.1.0](https://github.com/tranduckhuy/eduva-backend/compare/v1.0.0...v1.1.0) (2025-07-25)
 
 
