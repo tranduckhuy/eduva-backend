@@ -78,9 +78,16 @@ namespace Eduva.Application.Features.Questions.Queries
 
                     if (userRole == nameof(Role.Teacher) || userRole == nameof(Role.ContentModerator))
                     {
-                        if (roles.Contains(nameof(Role.Student)) || question.CreatedByUserId == request.CurrentUserId)
+                        if (lesson.Visibility == LessonMaterialVisibility.School)
                         {
                             filteredData.Add(question);
+                        }
+                        else
+                        {
+                            if (roles.Contains(nameof(Role.Student)) || question.CreatedByUserId == request.CurrentUserId)
+                            {
+                                filteredData.Add(question);
+                            }
                         }
                     }
                     else

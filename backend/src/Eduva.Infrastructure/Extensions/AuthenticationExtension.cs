@@ -51,9 +51,10 @@ namespace Eduva.Infrastructure.Extensions
                     )
                 };
 
-                // Add custom token validation for blacklisted tokens
+                // Configure events for token validation and message handling
                 options.Events = new JwtBearerEvents
                 {
+                    // Add custom token validation for blacklisted tokens
                     OnTokenValidated = async context =>
                     {
                         var tokenBlacklistService = context.HttpContext.RequestServices
@@ -96,11 +97,9 @@ namespace Eduva.Infrastructure.Extensions
                                 }
                             }
                         }
-                    }
-                };
+                    },
 
-                options.Events = new JwtBearerEvents
-                {
+                    // Handle message received events for SignalR hubs
                     OnMessageReceived = context =>
                     {
                         var accessToken = context.Request.Query["access_token"];
