@@ -42,12 +42,12 @@ namespace Eduva.Infrastructure.Services
             return notification;
         }
 
-        public async Task CreateUserNotificationsAsync(Guid notificationId, List<Guid> targetUserIds, CancellationToken cancellationToken = default)
+        public async Task<List<Guid>> CreateUserNotificationsAsync(Guid notificationId, List<Guid> targetUserIds, CancellationToken cancellationToken = default)
         {
             if (targetUserIds.Count == 0)
             {
                 _logger.LogWarning("No target users provided for notification: {NotificationId}", notificationId);
-                return;
+                return new List<Guid>();
             }
 
             var userNotificationRepo = _unitOfWork.GetCustomRepository<IUserNotificationRepository>();
@@ -65,6 +65,8 @@ namespace Eduva.Infrastructure.Services
 
             _logger.LogInformation("Created {Count} user notifications for notification: {NotificationId}",
                 userNotifications.Count, notificationId);
+
+            return userNotifications.Select(un => un.Id).ToList();
         }
 
         public async Task<List<UserNotification>> GetUserNotificationsAsync(Guid userId, CancellationToken cancellationToken = default)

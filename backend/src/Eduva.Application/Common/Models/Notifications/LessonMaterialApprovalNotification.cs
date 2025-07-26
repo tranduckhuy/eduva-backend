@@ -4,7 +4,7 @@ namespace Eduva.Application.Common.Models.Notifications
 {
     public class LessonMaterialApprovalNotification
     {
-        public Guid NotificationId { get; set; }
+        public Guid UserNotificationId { get; set; }
         public Guid LessonMaterialId { get; set; }
         public string LessonMaterialTitle { get; set; } = string.Empty;
         public LessonMaterialStatus Status { get; set; }

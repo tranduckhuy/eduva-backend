@@ -4,7 +4,7 @@ namespace Eduva.Application.Common.Models.Notifications
 {
     public class QuestionCommentNotification
     {
-        public Guid NotificationId { get; set; }
+        public Guid UserNotificationId { get; set; }
         public Guid CommentId { get; set; }
         public Guid QuestionId { get; set; }
         public string? Title { get; set; }

@@ -4,7 +4,7 @@ namespace Eduva.Application.Common.Models.Notifications
 {
     public class QuestionNotification
     {
-        public Guid NotificationId { get; set; }
+        public Guid UserNotificationId { get; set; }
         public Guid QuestionId { get; set; }
         public Guid LessonMaterialId { get; set; }
         public string? Title { get; set; }
@@ -25,7 +25,7 @@ namespace Eduva.Application.Common.Models.Notifications
 
     public class QuestionDeleteNotification
     {
-        public Guid NotificationId { get; set; }
+        public Guid UserNotificationId { get; set; }
         public Guid QuestionId { get; set; }
         public string? Title { get; set; }
         public Guid LessonMaterialId { get; set; }
