@@ -9,6 +9,7 @@ using Eduva.Infrastructure.Identity.Interfaces;
 using Eduva.Infrastructure.Identity.Providers;
 using Eduva.Shared.Enums;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -29,6 +30,7 @@ namespace Eduva.Infrastructure.Test.Services
         private Mock<IEmailSender> _emailSender = default!;
         private Mock<ILogger<AuthService>> _logger = default!;
         private Mock<ITokenBlackListService> _tokenService = default!;
+        private Mock<IDistributedCache> _cacheMock = default!;
         private AuthService _authService = default!;
         private const string ValidClientUrl = "https://localhost:9001/api/auth/confirm-email";
 
@@ -41,6 +43,7 @@ namespace Eduva.Infrastructure.Test.Services
             _emailSender = new Mock<IEmailSender>();
             _logger = new Mock<ILogger<AuthService>>();
             _tokenService = new Mock<ITokenBlackListService>();
+            _cacheMock = new Mock<IDistributedCache>();
 
             _userManager.Setup(x => x.AddClaimAsync(It.IsAny<ApplicationUser>(), It.IsAny<Claim>()))
                .ReturnsAsync(IdentityResult.Success);
@@ -75,6 +78,14 @@ namespace Eduva.Infrastructure.Test.Services
             serviceProvider
                 .Setup(sp => sp.GetService(typeof(SixDigitTokenProvider<ApplicationUser>)))
                 .Returns(otpProvider);
+
+            serviceProvider
+                .Setup(sp => sp.GetService(typeof(IDistributedCache)))
+                .Returns(_cacheMock.Object);
+
+            _cacheMock
+                .Setup(c => c.GetAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((byte[]?)null);
 
             _authService = new AuthService(
                 _userManager.Object,
@@ -1104,6 +1115,27 @@ namespace Eduva.Infrastructure.Test.Services
             _emailSender.Verify();
         }
 
+        [Test]
+        public async Task ForgotPasswordAsync_WhenCooldownIsActive_ReturnsSuccessAndDoesNotSendEmail()
+        {
+            // Arrange
+            var email = "cooldown-user@example.com";
+            var cacheKey = $"cooldown:forgot-password:{email}";
+            _cacheMock.Setup(c => c.GetAsync(cacheKey, It.IsAny<CancellationToken>()))
+                      .ReturnsAsync(Encoding.UTF8.GetBytes("active"));
+
+            var dto = new ForgotPasswordRequestDto { Email = email, ClientUrl = "http://test.com" };
+
+            // Act
+            var result = await _authService.ForgotPasswordAsync(dto);
+
+            // Assert
+            Assert.That(result, Is.EqualTo(CustomCode.ResetPasswordEmailSent));
+
+            _userManager.Verify(x => x.GeneratePasswordResetTokenAsync(It.IsAny<ApplicationUser>()), Times.Never());
+            _emailSender.Verify(x => x.SendEmailBrevoHtmlAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never());
+        }
+
         #endregion
 
         // Tests for ResetPasswordAsync method - valid token, user not found, new password same as old, etc.
@@ -1392,6 +1424,32 @@ namespace Eduva.Infrastructure.Test.Services
                 Times.Once);
         }
 
+        [Test]
+        public async Task ResendConfirmationEmailAsync_WhenCooldownIsActive_ReturnsSuccessAndDoesNotSendEmail()
+        {
+            // Arrange
+            var email = "cooldown@example.com";
+            var cacheKey = $"cooldown:resend-confirmation-email:{email}";
+
+            var dummyData = Encoding.UTF8.GetBytes("active");
+            _cacheMock.Setup(c => c.GetAsync(cacheKey, It.IsAny<CancellationToken>()))
+                      .ReturnsAsync(dummyData);
+
+            var dto = new ResendConfirmationEmailRequestDto
+            {
+                Email = email,
+                ClientUrl = ValidClientUrl
+            };
+
+            // Act
+            var result = await _authService.ResendConfirmationEmailAsync(dto);
+
+            // Assert
+            Assert.That(result, Is.EqualTo(CustomCode.ConfirmationEmailSent));
+            _userManager.Verify(x => x.FindByEmailAsync(It.IsAny<string>()), Times.Never());
+            _emailSender.Verify(x => x.SendEmailBrevoHtmlAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never());
+        }
+
         #endregion
 
         // Tests for LogoutAsync method - user not found, expired token, valid token.
@@ -1535,6 +1593,29 @@ namespace Eduva.Infrastructure.Test.Services
             Assert.ThrowsAsync<InvalidCredentialsException>(() => _authService.RequestEnable2FaOtpAsync(dto));
         }
 
+        [Test]
+        public async Task RequestEnable2FaOtpAsync_WhenCooldownIsActive_ReturnsSuccessAndDoesNotSendOtp()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var cacheKey = $"cooldown:enable-2fa:{userId}";
+
+            _cacheMock.Setup(c => c.GetAsync(cacheKey, It.IsAny<CancellationToken>()))
+                      .ReturnsAsync(Encoding.UTF8.GetBytes("active"));
+
+            var dto = new Request2FaDto { UserId = userId, CurrentPassword = "password" };
+
+            // Act
+            var result = await _authService.RequestEnable2FaOtpAsync(dto);
+
+            // Assert
+            Assert.That(result, Is.EqualTo(CustomCode.OtpSentSuccessfully));
+
+            _userManager.Verify(x => x.FindByIdAsync(It.IsAny<string>()), Times.Never());
+            _userManager.Verify(x => x.CheckPasswordAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()), Times.Never());
+            _emailSender.Verify(x => x.SendEmailBrevoHtmlAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never());
+        }
+
         #endregion
 
         // Tests for ConfirmEnable2FaOtpAsync method - valid OTP, user not found, already enabled, etc.
@@ -1660,6 +1741,29 @@ namespace Eduva.Infrastructure.Test.Services
             var result = await _authService.RequestDisable2FaOtpAsync(dto);
 
             Assert.That(result, Is.EqualTo(CustomCode.OtpSentSuccessfully));
+        }
+
+        [Test]
+        public async Task RequestDisable2FaOtpAsync_WhenCooldownIsActive_ReturnsSuccessAndDoesNotSendOtp()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var cacheKey = $"cooldown:disable-2fa:{userId}";
+
+            _cacheMock.Setup(c => c.GetAsync(cacheKey, It.IsAny<CancellationToken>()))
+                      .ReturnsAsync(Encoding.UTF8.GetBytes("active"));
+
+            var dto = new Request2FaDto { UserId = userId, CurrentPassword = "password" };
+
+            // Act
+            var result = await _authService.RequestDisable2FaOtpAsync(dto);
+
+            // Assert
+            Assert.That(result, Is.EqualTo(CustomCode.OtpSentSuccessfully));
+
+            _userManager.Verify(x => x.FindByIdAsync(It.IsAny<string>()), Times.Never());
+            _userManager.Verify(x => x.CheckPasswordAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()), Times.Never());
+            _emailSender.Verify(x => x.SendEmailBrevoHtmlAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never());
         }
 
         #endregion

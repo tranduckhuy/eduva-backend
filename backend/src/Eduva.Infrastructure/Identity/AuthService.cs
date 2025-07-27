@@ -12,6 +12,7 @@ using Eduva.Infrastructure.Identity.Providers;
 using Eduva.Infrastructure.Services;
 using Eduva.Shared.Enums;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.IdentityModel.Tokens.Jwt;
@@ -170,6 +171,13 @@ namespace Eduva.Infrastructure.Identity
 
         private async Task SendOtpEmailMessage(ApplicationUser user, string otp)
         {
+            // Check cooldown for sending OTP email
+            if (!await CheckAndSetCooldownAsync("otp-email", user.Email!))
+            {
+                _logger.LogWarning("OTP email cooldown active for email: {Email}.", user.Email);
+                return; // Return early if cooldown is active
+            }
+
             var basePath = AppContext.BaseDirectory;
             var templatePath = Path.Combine(basePath, "email-templates", "otp-verification.html");
 
@@ -257,6 +265,13 @@ namespace Eduva.Infrastructure.Identity
 
         public async Task<CustomCode> RequestEnable2FaOtpAsync(Request2FaDto request)
         {
+            // Check cooldown for enabling 2FA
+            if (!await CheckAndSetCooldownAsync("enable-2fa", request.UserId.ToString()))
+            {
+                _logger.LogWarning("Enable 2FA cooldown active for user ID: {UserId}.", request.UserId);
+                return CustomCode.OtpSentSuccessfully;
+            }
+
             var user = await _userManager.FindByIdAsync(request.UserId.ToString()) ?? throw new UserNotExistsException();
 
             if (user.TwoFactorEnabled)
@@ -287,8 +302,16 @@ namespace Eduva.Infrastructure.Identity
 
             return await Confirm2FaChangeAsync(user, request.OtpCode, true);
         }
+
         public async Task<CustomCode> RequestDisable2FaOtpAsync(Request2FaDto request)
         {
+            // Check cooldown for disabling 2FA
+            if (!await CheckAndSetCooldownAsync("disable-2fa", request.UserId.ToString()))
+            {
+                _logger.LogWarning("Disable 2FA cooldown active for user ID: {UserId}.", request.UserId);
+                return CustomCode.OtpSentSuccessfully;
+            }
+
             var user = await _userManager.FindByIdAsync(request.UserId.ToString()) ?? throw new UserNotExistsException();
 
             if (!user.TwoFactorEnabled)
@@ -303,10 +326,11 @@ namespace Eduva.Infrastructure.Identity
 
             var otp = await GetOtpProvider().GenerateAsync("OTP", _userManager, user);
 
-            await Send2FaOtpEmailAsync(user, "Tắt xác thực 2 yếu tố - EDUVA", otp);
+            _ = Send2FaOtpEmailAsync(user, "Tắt xác thực 2 yếu tố - EDUVA", otp);
 
             return CustomCode.OtpSentSuccessfully;
         }
+
         public async Task<CustomCode> ConfirmDisable2FaOtpAsync(Confirm2FaDto request)
         {
             var user = await _userManager.FindByIdAsync(request.UserId.ToString()) ?? throw new UserNotExistsException();
@@ -352,6 +376,12 @@ namespace Eduva.Infrastructure.Identity
 
         public async Task<CustomCode> ForgotPasswordAsync(ForgotPasswordRequestDto request)
         {
+            if (!await CheckAndSetCooldownAsync("forgot-password", request.Email))
+            {
+                _logger.LogWarning("Forgot password cooldown active for email: {Email}.", request.Email);
+                return CustomCode.ResetPasswordEmailSent; // Return success but indicate cooldown
+            }
+
             var user = await _userManager.FindByEmailAsync(request.Email) ?? throw new UserNotExistsException();
 
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
@@ -409,6 +439,13 @@ namespace Eduva.Infrastructure.Identity
 
         public async Task<CustomCode> ResendConfirmationEmailAsync(ResendConfirmationEmailRequestDto request)
         {
+            // Check cooldown for resending confirmation email
+            if (!await CheckAndSetCooldownAsync("resend-confirmation-email", request.Email))
+            {
+                _logger.LogWarning("Resend confirmation email cooldown active for email: {Email}.", request.Email);
+                return CustomCode.ConfirmationEmailSent; // Return success but indicate cooldown
+            }
+
             var user = await _userManager.FindByEmailAsync(request.Email) ?? throw new UserNotExistsException();
 
             if (user.EmailConfirmed)
@@ -584,6 +621,27 @@ namespace Eduva.Infrastructure.Identity
         private SixDigitTokenProvider<ApplicationUser> GetOtpProvider()
         {
             return _serviceProvider.GetRequiredService<SixDigitTokenProvider<ApplicationUser>>();
+        }
+
+        // Check cooldown for actions that involve sending emails
+        private async Task<bool> CheckAndSetCooldownAsync(string actionType, string identifier)
+        {
+            var cache = _serviceProvider.GetRequiredService<IDistributedCache>();
+
+            var cacheKey = $"cooldown:{actionType}:{identifier}";
+
+            var cooldownValue = await cache.GetStringAsync(cacheKey);
+            if (!string.IsNullOrEmpty(cooldownValue))
+            {
+                return false;
+            }
+
+            var cacheEntryOptions = new DistributedCacheEntryOptions()
+                .SetAbsoluteExpiration(TimeSpan.FromSeconds(60));
+
+            await cache.SetStringAsync(cacheKey, "active", cacheEntryOptions);
+
+            return true;
         }
     }
 }
