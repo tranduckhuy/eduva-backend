@@ -1,7 +1,9 @@
-﻿using Eduva.Application.Contracts.Hubs;
+﻿using Eduva.Application.Common.Models.Notifications;
+using Eduva.Application.Contracts.Hubs;
 using Eduva.Application.Features.Questions.Responses;
 using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
+using Eduva.Domain.Enums;
 using Eduva.Infrastructure.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -368,6 +370,207 @@ namespace Eduva.Infrastructure.Test.Services
         }
 
         #endregion
+
+        #region NotifyLessonMaterialApprovalAsync Tests
+
+        [Test]
+        public async Task NotifyLessonMaterialApprovalAsync_WithPerformedByUser_ShouldSetUserInfoAndSendNotification()
+        {
+            // Arrange
+            var lessonMaterialId = Guid.NewGuid();
+            var targetUserId = Guid.NewGuid();
+            var performedByUser = new ApplicationUser
+            {
+                Id = Guid.NewGuid(),
+                FullName = "John Doe",
+                AvatarUrl = "https://example.com/avatar.jpg"
+            };
+
+            var notification = new LessonMaterialApprovalNotification
+            {
+                LessonMaterialId = lessonMaterialId,
+                LessonMaterialTitle = "Math Lesson",
+                Status = LessonMaterialStatus.Approved,
+                Feedback = "Great content!"
+            };
+
+            var eventType = "LessonMaterialApproved";
+            var userNotificationId = Guid.NewGuid();
+
+            _mockNotificationService.Setup(x => x.CreateNotificationAsync(eventType, It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new Domain.Entities.Notification { Id = Guid.NewGuid() });
+
+            _mockNotificationService.Setup(x => x.CreateUserNotificationsAsync(It.IsAny<Guid>(), It.IsAny<List<Guid>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([userNotificationId]);
+
+            // Act
+            await _hubNotificationService.NotifyLessonMaterialApprovalAsync(notification, eventType, targetUserId, performedByUser);
+
+            // Assert
+            Assert.Multiple(() =>
+            {
+                Assert.That(notification.PerformedByUserId, Is.EqualTo(performedByUser.Id));
+                Assert.That(notification.PerformedByName, Is.EqualTo(performedByUser.FullName));
+                Assert.That(notification.PerformedByAvatar, Is.EqualTo(performedByUser.AvatarUrl));
+                Assert.That(notification.UserNotificationId, Is.EqualTo(userNotificationId));
+            });
+
+            _mockNotificationService.Verify(x => x.CreateNotificationAsync(eventType, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+            _mockNotificationService.Verify(x => x.CreateUserNotificationsAsync(It.IsAny<Guid>(), It.IsAny<List<Guid>>(), It.IsAny<CancellationToken>()), Times.Once);
+            _mockNotificationHub.Verify(x => x.SendNotificationToUserAsync(targetUserId.ToString(), eventType, notification), Times.Once);
+        }
+
+        [Test]
+        public async Task NotifyLessonMaterialApprovalAsync_WithoutPerformedByUser_ShouldNotSetUserInfo()
+        {
+            // Arrange
+            var lessonMaterialId = Guid.NewGuid();
+            var targetUserId = Guid.NewGuid();
+
+            var notification = new LessonMaterialApprovalNotification
+            {
+                LessonMaterialId = lessonMaterialId,
+                LessonMaterialTitle = "Science Lesson",
+                Status = LessonMaterialStatus.Rejected,
+                Feedback = "Needs improvement"
+            };
+
+            var eventType = "LessonMaterialRejected";
+            var userNotificationId = Guid.NewGuid();
+
+            _mockNotificationService.Setup(x => x.CreateNotificationAsync(eventType, It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new Domain.Entities.Notification { Id = Guid.NewGuid() });
+
+            _mockNotificationService.Setup(x => x.CreateUserNotificationsAsync(It.IsAny<Guid>(), It.IsAny<List<Guid>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([userNotificationId]);
+
+            // Act
+            await _hubNotificationService.NotifyLessonMaterialApprovalAsync(notification, eventType, targetUserId, null);
+
+            // Assert
+            Assert.Multiple(() =>
+            {
+                Assert.That(notification.PerformedByUserId, Is.EqualTo(Guid.Empty));
+                Assert.That(notification.PerformedByName, Is.Null);
+                Assert.That(notification.PerformedByAvatar, Is.Null);
+                Assert.That(notification.UserNotificationId, Is.EqualTo(userNotificationId));
+            });
+
+            _mockNotificationService.Verify(x => x.CreateNotificationAsync(eventType, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+            _mockNotificationService.Verify(x => x.CreateUserNotificationsAsync(It.IsAny<Guid>(), It.IsAny<List<Guid>>(), It.IsAny<CancellationToken>()), Times.Once);
+            _mockNotificationHub.Verify(x => x.SendNotificationToUserAsync(targetUserId.ToString(), eventType, notification), Times.Once);
+        }
+
+        [Test]
+        public async Task NotifyLessonMaterialApprovalAsync_WithEmptyUserNotificationId_ShouldHandleGracefully()
+        {
+            // Arrange
+            var lessonMaterialId = Guid.NewGuid();
+            var targetUserId = Guid.NewGuid();
+
+            var notification = new LessonMaterialApprovalNotification
+            {
+                LessonMaterialId = lessonMaterialId,
+                LessonMaterialTitle = "History Lesson",
+                Status = LessonMaterialStatus.Approved
+            };
+
+            var eventType = "LessonMaterialApproved";
+
+            _mockNotificationService.Setup(x => x.CreateNotificationAsync(eventType, It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new Domain.Entities.Notification { Id = Guid.NewGuid() });
+
+            _mockNotificationService.Setup(x => x.CreateUserNotificationsAsync(It.IsAny<Guid>(), It.IsAny<List<Guid>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([Guid.Empty]);
+
+            // Act
+            await _hubNotificationService.NotifyLessonMaterialApprovalAsync(notification, eventType, targetUserId);
+
+            // Assert
+            Assert.That(notification.UserNotificationId, Is.EqualTo(Guid.Empty));
+
+            _mockNotificationService.Verify(x => x.CreateNotificationAsync(eventType, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+            _mockNotificationService.Verify(x => x.CreateUserNotificationsAsync(It.IsAny<Guid>(), It.IsAny<List<Guid>>(), It.IsAny<CancellationToken>()), Times.Once);
+            _mockNotificationHub.Verify(x => x.SendNotificationToUserAsync(targetUserId.ToString(), eventType, notification), Times.Once);
+        }
+
+        [Test]
+        public async Task NotifyLessonMaterialApprovalAsync_WithEmptyEventType_ShouldHandleGracefully()
+        {
+            // Arrange
+            var lessonMaterialId = Guid.NewGuid();
+            var targetUserId = Guid.NewGuid();
+
+            var notification = new LessonMaterialApprovalNotification
+            {
+                LessonMaterialId = lessonMaterialId,
+                LessonMaterialTitle = "Test Lesson",
+                Status = LessonMaterialStatus.Approved
+            };
+
+            var eventType = string.Empty;
+            var userNotificationId = Guid.NewGuid();
+
+            _mockNotificationService.Setup(x => x.CreateNotificationAsync(eventType, It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new Domain.Entities.Notification { Id = Guid.NewGuid() });
+
+            _mockNotificationService.Setup(x => x.CreateUserNotificationsAsync(It.IsAny<Guid>(), It.IsAny<List<Guid>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([userNotificationId]);
+
+            // Act
+            await _hubNotificationService.NotifyLessonMaterialApprovalAsync(notification, eventType, targetUserId);
+
+            // Assert
+            _mockNotificationService.Verify(x => x.CreateNotificationAsync(eventType, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+            _mockNotificationHub.Verify(x => x.SendNotificationToUserAsync(targetUserId.ToString(), eventType, notification), Times.Once);
+        }
+
+        [Test]
+        public async Task NotifyLessonMaterialApprovalAsync_WithPerformedByUserHavingNullProperties_ShouldHandleGracefully()
+        {
+            // Arrange
+            var lessonMaterialId = Guid.NewGuid();
+            var targetUserId = Guid.NewGuid();
+            var performedByUser = new ApplicationUser
+            {
+                Id = Guid.NewGuid(),
+                FullName = null,
+                AvatarUrl = null!
+            };
+
+            var notification = new LessonMaterialApprovalNotification
+            {
+                LessonMaterialId = lessonMaterialId,
+                LessonMaterialTitle = "Test Lesson",
+                Status = LessonMaterialStatus.Approved
+            };
+
+            var eventType = "LessonMaterialApproved";
+            var userNotificationId = Guid.NewGuid();
+
+            _mockNotificationService.Setup(x => x.CreateNotificationAsync(eventType, It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new Domain.Entities.Notification { Id = Guid.NewGuid() });
+
+            _mockNotificationService.Setup(x => x.CreateUserNotificationsAsync(It.IsAny<Guid>(), It.IsAny<List<Guid>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([userNotificationId]);
+
+            // Act
+            await _hubNotificationService.NotifyLessonMaterialApprovalAsync(notification, eventType, targetUserId, performedByUser);
+
+            // Assert
+            Assert.Multiple(() =>
+            {
+                Assert.That(notification.PerformedByUserId, Is.EqualTo(performedByUser.Id));
+                Assert.That(notification.PerformedByName, Is.Null);
+                Assert.That(notification.PerformedByAvatar, Is.Null);
+            });
+
+            _mockNotificationService.Verify(x => x.CreateNotificationAsync(eventType, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+            _mockNotificationHub.Verify(x => x.SendNotificationToUserAsync(targetUserId.ToString(), eventType, notification), Times.Once);
+        }
+
+        #endregion
+
 
         #region Error Handling Tests
 
