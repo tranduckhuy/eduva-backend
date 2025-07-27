@@ -418,16 +418,19 @@ namespace Eduva.Infrastructure.Test.Services
         .ReturnsAsync(targetUsers);
 
             _mockNotificationService.Setup(s => s.CreateNotificationAsync(
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<CancellationToken>()))
-                .ReturnsAsync(persistentNotification);
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(persistentNotification);
 
             _mockNotificationService.Setup(s => s.CreateUserNotificationsAsync(
-               It.IsAny<Guid>(),
-               It.IsAny<List<Guid>>(),
-               It.IsAny<CancellationToken>()))
-           .Returns(Task.CompletedTask);
+                It.IsAny<Guid>(),
+                It.IsAny<List<Guid>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Guid notificationId, List<Guid> targetUserIds, CancellationToken token) =>
+            {
+                return targetUserIds.Select(_ => Guid.NewGuid()).ToList();
+            });
         }
 
         private void VerifyUserNotificationSent(string userId, string eventName)

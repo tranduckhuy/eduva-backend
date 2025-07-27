@@ -58,10 +58,28 @@ namespace Eduva.Infrastructure.Services
                 ActionType = QuestionActionType.Created
             };
 
-            await SendNotificationAsync(notification, NotificationTypes.QuestionCreated, user);
-
             // Save the notification to the database for persistence
-            await SaveNotificationToDatabase(NotificationTypes.QuestionCreated, notification, lessonMaterialId, question.CreatedByUserId, user);
+            var userNotificationIds = await SaveNotificationToDatabase(NotificationTypes.QuestionCreated, notification, lessonMaterialId, question.CreatedByUserId, user);
+
+            if (userNotificationIds.Count != 0)
+            {
+                foreach (var kvp in userNotificationIds)
+                {
+                    var userId = kvp.Key;
+                    var userNotificationId = kvp.Value;
+
+                    notification.UserNotificationId = userNotificationId;
+
+                    _logger.LogInformation("[SignalR] Sending question created notification - UserId: {UserId}, UserNotificationId: {UserNotificationId}, QuestionId: {QuestionId}",
+              userId, userNotificationId, question.Id);
+
+                    await _notificationHub.SendNotificationToUserAsync(userId.ToString(), NotificationTypes.QuestionCreated, notification);
+                }
+            }
+            else
+            {
+                _logger.LogWarning("No target users found for question created notification. QuestionId: {QuestionId}", question.Id);
+            }
         }
 
         public async Task NotifyQuestionUpdatedAsync(QuestionResponse question, Guid lessonMaterialId, ApplicationUser? user = null)
@@ -86,10 +104,30 @@ namespace Eduva.Infrastructure.Services
                 ActionType = QuestionActionType.Updated
             };
 
-            await SendNotificationAsync(notification, NotificationTypes.QuestionUpdated, user);
 
             // Save the notification to the database for persistence
-            await SaveNotificationToDatabase(NotificationTypes.QuestionUpdated, notification, lessonMaterialId, question.CreatedByUserId, user);
+            var userNotificationIds = await SaveNotificationToDatabase(NotificationTypes.QuestionUpdated, notification, lessonMaterialId, question.CreatedByUserId, user);
+
+            if (userNotificationIds.Count != 0)
+            {
+                foreach (var kvp in userNotificationIds)
+                {
+                    var userId = kvp.Key;
+                    var userNotificationId = kvp.Value;
+
+                    notification.UserNotificationId = userNotificationId;
+
+                    _logger.LogInformation("[SignalR] Sending question updated notification - UserId: {UserId}, UserNotificationId: {UserNotificationId}, QuestionId: {QuestionId}",
+                        userId, userNotificationId, question.Id);
+
+                    await _notificationHub.SendNotificationToUserAsync(userId.ToString(), NotificationTypes.QuestionUpdated, notification);
+                }
+            }
+            else
+            {
+                _logger.LogWarning("No target users found for question updated notification. QuestionId: {QuestionId}", question.Id);
+            }
+
         }
 
         public async Task NotifyQuestionDeletedAsync(QuestionResponse question, Guid lessonMaterialId, ApplicationUser? user = null, List<Guid>? targetUserIds = null)
@@ -119,7 +157,7 @@ namespace Eduva.Infrastructure.Services
 
                 // Get target users for question deletion notification
                 targetUserIds ??= await _notificationService.GetUsersForQuestionCommentNotificationAsync(
-                        question.Id, lessonMaterialId, question.CreatedByUserId);
+                        question.Id, lessonMaterialId, null);
 
                 // Exclude the creator from receiving their own notification
                 if (user?.Id != null && user.Id != Guid.Empty)
@@ -127,72 +165,38 @@ namespace Eduva.Infrastructure.Services
                     targetUserIds.Remove(user.Id);
                 }
 
-                // Send to each user individually
-                foreach (var userId in targetUserIds)
+                // Save the notification to the database for persistence
+                var userNotificationIds = await SaveNotificationToDatabase(NotificationTypes.QuestionDeleted, notification, lessonMaterialId, null, user, targetUserIds);
+
+                if (userNotificationIds.Count != 0)
                 {
-                    await _notificationHub.SendNotificationToUserAsync(userId.ToString(), NotificationTypes.QuestionDeleted, notification);
+                    foreach (var kvp in userNotificationIds)
+                    {
+                        var userId = kvp.Key;
+                        var userNotificationId = kvp.Value;
+
+                        notification.UserNotificationId = userNotificationId;
+
+                        _logger.LogInformation("[SignalR] Sending question deleted notification - UserId: {UserId}, UserNotificationId: {UserNotificationId}, QuestionId: {QuestionId}",
+          userId, userNotificationId, question.Id);
+
+                        await _notificationHub.SendNotificationToUserAsync(userId.ToString(), NotificationTypes.QuestionDeleted, notification);
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("No target users found for question deleted notification. QuestionId: {QuestionId}", question.Id);
                 }
 
                 _logger.LogInformation("[SignalR] Question deleted notification sent successfully! " +
                     "Event: QuestionDeleted, TargetUsers: {UserCount}, QuestionId: {QuestionId}",
-                    targetUserIds.Count, question.Id);
-
-                // Save the notification to the database for persistence
-                await SaveNotificationToDatabase(NotificationTypes.QuestionDeleted, notification, lessonMaterialId, question.CreatedByUserId, user, targetUserIds);
+                    userNotificationIds.Count, question.Id);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "[SignalR] Failed to send question deleted notification. " +
                     "QuestionId: {QuestionId}, LessonId: {LessonId}, Error: {ErrorMessage}",
                     question.Id, lessonMaterialId, ex.Message);
-            }
-        }
-
-        private async Task SendNotificationAsync(QuestionNotification notification, string eventName, ApplicationUser? user = null)
-        {
-            try
-            {
-                _logger.LogInformation("[SignalR] Starting notification for question {ActionType}. " +
-                     "QuestionId: {QuestionId}, LessonId: {LessonId}, " +
-                     "Title: {Title}, LessonTitle: {LessonTitle}, CreatedBy: {CreatedBy}",
-                     notification.ActionType.ToString().ToLower(), notification.QuestionId,
-                     notification.LessonMaterialId, notification.Title,
-                     notification.LessonMaterialTitle, notification.CreatedByName);
-
-                // Get target users for real-time notification
-                List<Guid> targetUserIds;
-                if (eventName == NotificationTypes.QuestionCreated)
-                {
-                    targetUserIds = await _notificationService.GetUsersForNewQuestionNotificationAsync(notification.LessonMaterialId);
-                }
-                else
-                {
-                    targetUserIds = await _notificationService.GetUsersForQuestionCommentNotificationAsync(notification.QuestionId, notification.LessonMaterialId, notification.CreatedByUserId);
-                }
-
-                // Exclude the creator from receiving their own notification
-                if (user?.Id != null && user.Id != Guid.Empty)
-                {
-                    targetUserIds.Remove(user.Id);
-                }
-
-                // Send to each user individually
-                foreach (var userId in targetUserIds)
-                {
-                    await _notificationHub.SendNotificationToUserAsync(userId.ToString(), eventName, notification);
-                }
-
-                _logger.LogInformation("[SignalR] Question {ActionType} notification sent successfully! " +
-                    "Event: {EventName}, TargetUsers: {UserCount}, QuestionId: {QuestionId}, LessonTitle: {LessonTitle}",
-                    notification.ActionType.ToString().ToLower(), eventName, targetUserIds.Count,
-                    notification.QuestionId, notification.LessonMaterialTitle);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "[SignalR] Failed to send question {ActionType} notification. " +
-                    "QuestionId: {QuestionId}, LessonId: {LessonId}, Error: {ErrorMessage}",
-                    notification.ActionType.ToString().ToLower(), notification.QuestionId,
-                    notification.LessonMaterialId, ex.Message);
             }
         }
 
@@ -220,10 +224,28 @@ namespace Eduva.Infrastructure.Services
                 ActionType = QuestionActionType.Commented
             };
 
-            await SendCommentNotificationAsync(notification, NotificationTypes.QuestionCommented, user);
-
             // Save the notification to the database for persistence
-            await SaveNotificationToDatabase(NotificationTypes.QuestionCommented, notification, lessonMaterialId, null, user);
+            var userNotificationIds = await SaveNotificationToDatabase(NotificationTypes.QuestionCommented, notification, lessonMaterialId, null, user);
+
+            if (userNotificationIds.Count != 0)
+            {
+                foreach (var kvp in userNotificationIds)
+                {
+                    var userId = kvp.Key;
+                    var userNotificationId = kvp.Value;
+
+                    notification.UserNotificationId = userNotificationId;
+
+                    _logger.LogInformation("[SignalR] Sending comment created notification - UserId: {UserId}, UserNotificationId: {UserNotificationId}, CommentId: {CommentId}, QuestionId: {QuestionId}",
+         userId, userNotificationId, comment.Id, comment.QuestionId);
+
+                    await _notificationHub.SendNotificationToUserAsync(userId.ToString(), NotificationTypes.QuestionCommented, notification);
+                }
+            }
+            else
+            {
+                _logger.LogWarning("No target users found for comment created notification. CommentId: {CommentId}", comment.Id);
+            }
         }
 
         public async Task NotifyQuestionCommentUpdatedAsync(QuestionCommentResponse comment, Guid lessonMaterialId, string title, string lessonMaterialTitle, ApplicationUser? user = null)
@@ -248,11 +270,28 @@ namespace Eduva.Infrastructure.Services
                 IsReply = comment.ParentCommentId.HasValue,
                 ActionType = QuestionActionType.Updated
             };
-
-            await SendCommentNotificationAsync(notification, NotificationTypes.QuestionCommentUpdated, user);
-
             // Save the notification to the database for persistence
-            await SaveNotificationToDatabase(NotificationTypes.QuestionCommentUpdated, notification, lessonMaterialId, comment.CreatedByUserId, user);
+            var userNotificationIds = await SaveNotificationToDatabase(NotificationTypes.QuestionCommentUpdated, notification, lessonMaterialId, null, user);
+
+            if (userNotificationIds.Count != 0)
+            {
+                foreach (var kvp in userNotificationIds)
+                {
+                    var userId = kvp.Key;
+                    var userNotificationId = kvp.Value;
+
+                    notification.UserNotificationId = userNotificationId;
+
+                    _logger.LogInformation("[SignalR] Sending comment updated notification - UserId: {UserId}, UserNotificationId: {UserNotificationId}, CommentId: {CommentId}, QuestionId: {QuestionId}",
+         userId, userNotificationId, comment.Id, comment.QuestionId);
+
+                    await _notificationHub.SendNotificationToUserAsync(userId.ToString(), NotificationTypes.QuestionCommentUpdated, notification);
+                }
+            }
+            else
+            {
+                _logger.LogWarning("No target users found for comment updated notification. CommentId: {CommentId}", comment.Id);
+            }
         }
 
         public async Task NotifyQuestionCommentDeletedAsync(QuestionCommentResponse comment, Guid lessonMaterialId, string title, string lessonMaterialTitle, int deletedRepliesCount = 0, ApplicationUser? user = null, List<Guid>? targetUserIds = null)
@@ -285,7 +324,7 @@ namespace Eduva.Infrastructure.Services
 
                 // Get target users for comment deletion notification
                 targetUserIds ??= await _notificationService.GetUsersForQuestionCommentNotificationAsync(
-                            comment.QuestionId, lessonMaterialId, comment.CreatedByUserId);
+                            comment.QuestionId, lessonMaterialId, null);
 
                 // Exclude the creator from receiving their own notification
                 if (user?.Id != null && user.Id != Guid.Empty)
@@ -293,19 +332,32 @@ namespace Eduva.Infrastructure.Services
                     targetUserIds.Remove(user.Id);
                 }
 
-                // Send to each user individually
-                foreach (var userId in targetUserIds)
+                // Save the notification to the database for persistence
+                var userNotificationIds = await SaveNotificationToDatabase(NotificationTypes.QuestionCommentDeleted, notification, lessonMaterialId, null, user, targetUserIds);
+                if (userNotificationIds.Count != 0)
                 {
-                    await _notificationHub.SendNotificationToUserAsync(userId.ToString(), NotificationTypes.QuestionCommentDeleted, notification);
+                    foreach (var kvp in userNotificationIds)
+                    {
+                        var userId = kvp.Key;
+                        var userNotificationId = kvp.Value;
+
+                        notification.UserNotificationId = userNotificationId;
+
+                        _logger.LogInformation("[SignalR] Sending comment deleted notification - UserId: {UserId}, UserNotificationId: {UserNotificationId}, CommentId: {CommentId}, QuestionId: {QuestionId}",
+        userId, userNotificationId, comment.Id, comment.QuestionId);
+
+                        await _notificationHub.SendNotificationToUserAsync(userId.ToString(), NotificationTypes.QuestionCommentDeleted, notification);
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("No target users found for comment deleted notification. CommentId: {CommentId}", comment.Id);
                 }
 
                 _logger.LogInformation("[SignalR] Comment deleted notification sent successfully! " +
                     "Event: QuestionCommentDeleted, TargetUsers: {UserCount}, CommentId: {CommentId}, " +
                     "QuestionId: {QuestionId}, DeletedReplies: {DeletedReplies}",
-                    targetUserIds.Count, comment.Id, comment.QuestionId, deletedRepliesCount);
-
-                // Save the notification to the database for persistence
-                await SaveNotificationToDatabase(NotificationTypes.QuestionCommentDeleted, notification, lessonMaterialId, comment.CreatedByUserId, user, targetUserIds);
+                    userNotificationIds.Count, comment.Id, comment.QuestionId, deletedRepliesCount);
             }
             catch (Exception ex)
             {
@@ -315,50 +367,7 @@ namespace Eduva.Infrastructure.Services
             }
         }
 
-        private async Task SendCommentNotificationAsync(QuestionCommentNotification notification, string eventName, ApplicationUser? user = null)
-        {
-            try
-            {
-                _logger.LogInformation("[SignalR] Starting notification for comment {ActionType}. " +
-                     "CommentId: {CommentId}, QuestionId: {QuestionId}, LessonId: {LessonId}, " +
-                     "IsReply: {IsReply}, CreatedBy: {CreatedBy}",
-                     notification.ActionType.ToString().ToLower(), notification.CommentId,
-                     notification.QuestionId, notification.LessonMaterialId,
-                     notification.IsReply, notification.CreatedByName);
-
-                // Get target users for comment notification
-                var targetUserIds = await _notificationService.GetUsersForQuestionCommentNotificationAsync(
-                    notification.QuestionId, notification.LessonMaterialId, null);
-
-                // Exclude the creator from receiving their own notification
-                if (user?.Id != null && user.Id != Guid.Empty)
-                {
-                    targetUserIds.Remove(user.Id);
-                }
-
-                // Send to each user individually
-                foreach (var userId in targetUserIds)
-                {
-                    await _notificationHub.SendNotificationToUserAsync(userId.ToString(), eventName, notification);
-                }
-
-                _logger.LogInformation("[SignalR] Comment {ActionType} notification sent successfully! " +
-                    "Event: {EventName}, TargetUsers: {UserCount}, CommentId: {CommentId}, QuestionId: {QuestionId}",
-                    notification.ActionType.ToString().ToLower(), eventName, targetUserIds.Count,
-                    notification.CommentId, notification.QuestionId);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "[SignalR] Failed to send comment {ActionType} notification. " +
-                    "CommentId: {CommentId}, QuestionId: {QuestionId}, LessonId: {LessonId}, Error: {ErrorMessage}",
-                    notification.ActionType.ToString().ToLower(), notification.CommentId,
-                    notification.QuestionId, notification.LessonMaterialId, ex.Message);
-            }
-        }
-
         #endregion
-
-
 
         #region Helper Methods
 
@@ -414,16 +423,22 @@ namespace Eduva.Infrastructure.Services
                 notification.PerformedByAvatar = performedByUser.AvatarUrl;
             }
 
+            var userNotificationIds = await SaveNotificationToDatabase(eventType, notification, notification.LessonMaterialId, targetUserId, performedByUser, new List<Guid> { targetUserId });
+            var userNotificationId = userNotificationIds.GetValueOrDefault(targetUserId, Guid.Empty);
+            notification.UserNotificationId = userNotificationId;
+
+            _logger.LogInformation("[SignalR] Sending lesson material approval notification - UserId: {UserId}, UserNotificationId: {UserNotificationId}, EventType: {EventType}",
+    targetUserId, userNotificationId, eventType);
+
             await _notificationHub.SendNotificationToUserAsync(targetUserId.ToString(), eventType, notification);
 
-            await SaveNotificationToDatabase(eventType, notification, notification.LessonMaterialId, targetUserId, performedByUser, new List<Guid> { targetUserId });
         }
 
         #endregion
 
         #region Save Notification to Database
 
-        private async Task SaveNotificationToDatabase(string notificationType, object notificationData, Guid lessonMaterialId, Guid? createdUserId = null, ApplicationUser? user = null, List<Guid>? targetUserIds = null)
+        private async Task<Dictionary<Guid, Guid>> SaveNotificationToDatabase(string notificationType, object notificationData, Guid lessonMaterialId, Guid? createdUserId = null, ApplicationUser? user = null, List<Guid>? targetUserIds = null)
         {
             try
             {
@@ -460,19 +475,40 @@ namespace Eduva.Infrastructure.Services
                 }
 
                 // Create user notifications
+                var userNotificationIds = new Dictionary<Guid, Guid>();
+
                 if (targetUserIds.Count != 0)
                 {
-                    await _notificationService.CreateUserNotificationsAsync(persistentNotification.Id, targetUserIds);
+                    var userNotifications = await _notificationService.CreateUserNotificationsAsync(persistentNotification.Id, targetUserIds);
+
+                    if (userNotifications.Count == targetUserIds.Count)
+                    {
+                        for (int i = 0; i < targetUserIds.Count; i++)
+                        {
+                            userNotificationIds[targetUserIds[i]] = userNotifications[i];
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogError("Mismatch between targetUserIds count ({TargetCount}) and userNotifications count ({NotificationCount})",
+                            targetUserIds.Count, userNotifications.Count);
+
+                        return [];
+                    }
                 }
 
                 _logger.LogInformation("Saved persistent notification: {NotificationType}, " +
                     "NotificationId: {NotificationId}, TargetUsers: {UserCount}",
                     notificationType, persistentNotification.Id, targetUserIds.Count);
+
+                return userNotificationIds;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to save persistent notification: {NotificationType}, Error: {ErrorMessage}, StackTrace: {StackTrace}",
                     notificationType, ex.Message, ex.StackTrace);
+
+                return [];
             }
         }
 

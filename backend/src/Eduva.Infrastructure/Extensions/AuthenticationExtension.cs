@@ -63,6 +63,11 @@ namespace Eduva.Infrastructure.Extensions
                         var token = context.Request.Headers["Authorization"]
                             .FirstOrDefault()?.Split(" ").Last();
 
+                        if (string.IsNullOrEmpty(token))
+                        {
+                            return;
+                        }
+
                         // Check if individual token is blacklisted
                         if (!string.IsNullOrEmpty(token) && await tokenBlacklistService.IsTokenBlacklistedAsync(token))
                         {
