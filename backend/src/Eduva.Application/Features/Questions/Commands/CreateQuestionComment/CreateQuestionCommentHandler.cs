@@ -124,7 +124,6 @@ namespace Eduva.Application.Features.Questions.Commands.CreateQuestionComment
                     break;
 
                 case nameof(Role.Teacher):
-                case nameof(Role.ContentModerator):
                     var teacherHasAccess = await studentClassRepo.TeacherHasAccessToMaterialAsync(userId, lessonMaterialId);
                     if (!teacherHasAccess)
                     {
@@ -132,6 +131,7 @@ namespace Eduva.Application.Features.Questions.Commands.CreateQuestionComment
                     }
                     break;
 
+                case nameof(Role.ContentModerator):
                 case nameof(Role.SchoolAdmin):
                 case nameof(Role.SystemAdmin):
                     break;

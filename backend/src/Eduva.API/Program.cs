@@ -105,6 +105,7 @@ builder.Services.AddApplicationIdentity<ApplicationUser>();
 builder.Services.AddJwtAuthentication(builder.Configuration);
 
 builder.Services.AddCustomAuthorizationPolicies();
+builder.Services.AddCustomRateLimiting();
 
 builder.Services.Configure<DataProtectionTokenProviderOptions>(opt =>
 {
@@ -144,6 +145,7 @@ app.UseAuthorization();
 
 // Custom middleware to validate subscription access
 app.UseMiddleware<SubscriptionValidationMiddleware>();
+app.UseRateLimiter();
 
 // Add SignalR Hub mapping
 app.MapHub<NotificationHub>("/hubs/notification");

@@ -486,13 +486,13 @@ namespace Eduva.API.Test.Controllers.Folders
         {
             var validUserId = Guid.NewGuid();
             SetupUser(validUserId.ToString());
-            var param = new FolderSpecParam { PageIndex = 1, PageSize = 10 };
+            var param = new FolderSpecParam { PageIndex = 1, PageSize = 10, IsPagingEnabled = false };
             var folders = new List<FolderResponse> { new FolderResponse { Name = "Test Folder" } };
 
             _mediatorMock.Setup(m => m.Send(It.IsAny<GetAllUserFoldersQuery>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(folders);
 
-            var result = await _controller.GetUserFolders(param, isPaging: false);
+            var result = await _controller.GetUserFolders(param);
             var objectResult = result as ObjectResult;
             Assert.That(objectResult, Is.Not.Null);
             var response = objectResult!.Value as ApiResponse<object>;

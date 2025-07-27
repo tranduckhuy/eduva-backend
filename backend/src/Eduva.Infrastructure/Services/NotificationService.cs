@@ -5,6 +5,7 @@ using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace Eduva.Infrastructure.Services
 {
@@ -41,12 +42,12 @@ namespace Eduva.Infrastructure.Services
             return notification;
         }
 
-        public async Task CreateUserNotificationsAsync(Guid notificationId, List<Guid> targetUserIds, CancellationToken cancellationToken = default)
+        public async Task<List<Guid>> CreateUserNotificationsAsync(Guid notificationId, List<Guid> targetUserIds, CancellationToken cancellationToken = default)
         {
             if (targetUserIds.Count == 0)
             {
                 _logger.LogWarning("No target users provided for notification: {NotificationId}", notificationId);
-                return;
+                return new List<Guid>();
             }
 
             var userNotificationRepo = _unitOfWork.GetCustomRepository<IUserNotificationRepository>();
@@ -64,6 +65,8 @@ namespace Eduva.Infrastructure.Services
 
             _logger.LogInformation("Created {Count} user notifications for notification: {NotificationId}",
                 userNotifications.Count, notificationId);
+
+            return userNotifications.Select(un => un.Id).ToList();
         }
 
         public async Task<List<UserNotification>> GetUserNotificationsAsync(Guid userId, CancellationToken cancellationToken = default)
@@ -112,6 +115,126 @@ namespace Eduva.Infrastructure.Services
             await _unitOfWork.CommitAsync();
 
             _logger.LogInformation("Marked all notifications as read for user: {UserId}", userId);
+        }
+
+        public async Task DeleteNotificationsByLessonMaterialIdAsync(Guid lessonMaterialId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                _logger.LogInformation("Starting to delete notifications for lesson material: {LessonMaterialId}", lessonMaterialId);
+
+                var notificationRepo = _unitOfWork.GetRepository<Notification, Guid>();
+                var userNotificationRepo = _unitOfWork.GetCustomRepository<IUserNotificationRepository>();
+
+                var lessonMaterialIdString = lessonMaterialId.ToString();
+                var candidateNotifications = await notificationRepo
+                    .FindAsync(n => !string.IsNullOrEmpty(n.Payload) &&
+                                   n.Payload.Contains(lessonMaterialIdString),
+                              cancellationToken);
+
+                var relatedNotifications = new List<Notification>();
+
+                foreach (var notification in candidateNotifications)
+                {
+                    if (IsNotificationRelatedToLessonMaterial(notification.Payload, lessonMaterialId))
+                    {
+                        relatedNotifications.Add(notification);
+                    }
+                }
+
+                if (relatedNotifications.Count == 0)
+                {
+                    _logger.LogInformation("No notifications found for lesson material: {LessonMaterialId}", lessonMaterialId);
+                    return;
+                }
+
+                _logger.LogInformation("Found {Count} notifications to delete for lesson material: {LessonMaterialId}",
+                    relatedNotifications.Count, lessonMaterialId);
+
+                // Delete user notifications first
+                var notificationIds = relatedNotifications.Select(n => n.Id).ToList();
+                var userNotificationsToDelete = await userNotificationRepo
+                    .FindAsync(un => notificationIds.Contains(un.NotificationId), cancellationToken);
+
+                if (userNotificationsToDelete.Count != 0)
+                {
+                    userNotificationRepo.RemoveRange(userNotificationsToDelete);
+                    _logger.LogInformation("Marked {Count} user notifications for deletion for lesson material: {LessonMaterialId}",
+                        userNotificationsToDelete.Count, lessonMaterialId);
+                }
+
+                // Delete notifications
+                notificationRepo.RemoveRange(relatedNotifications);
+                _logger.LogInformation("Marked {Count} notifications for deletion for lesson material: {LessonMaterialId}",
+                    relatedNotifications.Count, lessonMaterialId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error marking notifications for deletion for lesson material: {LessonMaterialId}", lessonMaterialId);
+                throw;
+            }
+        }
+
+        private bool IsNotificationRelatedToLessonMaterial(string payload, Guid lessonMaterialId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(payload))
+                    return false;
+
+                using var jsonDoc = JsonDocument.Parse(payload);
+                var root = jsonDoc.RootElement;
+                var targetId = lessonMaterialId.ToString();
+
+                var propertyNames = new[]
+                {
+                    "lessonMaterialId",      // {"lessonMaterialId":"93a67d38-2a76-4890-91ff-838a872747af",...}
+                    "LessonMaterialId",      // Case variation
+                    "lessonmaterialid",      // Lowercase
+                    "lesson_material_id"     // Snake case
+                };
+
+                foreach (var propName in propertyNames)
+                {
+                    if (root.TryGetProperty(propName, out var element))
+                    {
+                        if (element.ValueKind == JsonValueKind.String)
+                        {
+                            var stringValue = element.GetString();
+                            if (!string.IsNullOrEmpty(stringValue) &&
+                                string.Equals(stringValue, targetId, StringComparison.OrdinalIgnoreCase))
+                            {
+                                _logger.LogDebug("Found matching lessonMaterialId in property: {PropertyName}", propName);
+                                return true;
+                            }
+                        }
+                        else if (element.ValueKind == JsonValueKind.Number ||
+                                 element.ValueKind == JsonValueKind.True ||
+                                 element.ValueKind == JsonValueKind.False)
+                        {
+                            var rawValue = element.GetRawText();
+                            if (string.Equals(rawValue, targetId, StringComparison.OrdinalIgnoreCase))
+                            {
+                                _logger.LogDebug("Found matching lessonMaterialId in property: {PropertyName}", propName);
+                                return true;
+                            }
+                        }
+                        // Skip null values
+                    }
+                }
+
+                return false;
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogWarning(ex, "Failed to parse notification payload, treating as unrelated: {Payload}", payload);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Unexpected error parsing notification payload: {Payload}", payload);
+                return false;
+            }
         }
 
         #region Notification question/comment

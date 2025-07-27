@@ -290,7 +290,8 @@ namespace Eduva.Application.Test.Features.Questions.Queries
                 Id = Guid.NewGuid(),
                 Content = "Test Comment",
                 CreatedByUser = new ApplicationUser { Id = Guid.NewGuid(), FullName = "Comment User" },
-                Replies = []
+                Replies = [],
+                ParentComment = null,
             };
             var question = new LessonMaterialQuestion
             {

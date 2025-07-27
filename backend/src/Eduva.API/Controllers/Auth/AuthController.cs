@@ -1,4 +1,5 @@
 ﻿using Eduva.API.Controllers.Base;
+using Eduva.API.Extensions;
 using Eduva.API.Models;
 using Eduva.Application.Features.Auth.DTOs;
 using Eduva.Application.Interfaces.Services;
@@ -6,6 +7,7 @@ using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
 
 namespace Eduva.API.Controllers.Auth
@@ -21,6 +23,7 @@ namespace Eduva.API.Controllers.Auth
         }
 
         [HttpPost("register")]
+        [EnableRateLimiting(RateLimitPolicyNames.RegisterPolicy)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
         {
