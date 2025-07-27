@@ -100,7 +100,8 @@ namespace Eduva.Application.Test.Features.Questions.Commands.CreateQuestionComme
             {
                 QuestionId = questionId,
                 Content = "Test comment",
-                CreatedByUserId = userId
+                CreatedByUserId = userId,
+                ParentCommentId = null,
             };
             var user = new ApplicationUser { Id = userId, SchoolId = 1 };
 

@@ -84,6 +84,7 @@ namespace Eduva.Infrastructure.Extensions
                     FullName = "Huy Tran Duc",
                     PhoneNumber = "0838683869",
                     TotalCredits = 1000,
+                    LockoutEnabled = false,
                 };
 
                 await userManager.CreateAsync(huyAdmin, "Admin11@");
@@ -98,6 +99,7 @@ namespace Eduva.Infrastructure.Extensions
                     FullName = "Quy Nguyen Xuan",
                     PhoneNumber = "0838683868",
                     TotalCredits = 1000,
+                    LockoutEnabled = false
                 };
 
                 await userManager.CreateAsync(quyAdmin, "Admin11@");
@@ -112,6 +114,7 @@ namespace Eduva.Infrastructure.Extensions
                     FullName = "Sang Tran Ngoc",
                     PhoneNumber = "0838683866",
                     TotalCredits = 1000,
+                    LockoutEnabled = false
                 };
 
                 await userManager.CreateAsync(sangAdmin, "Admin11@");
@@ -126,6 +129,7 @@ namespace Eduva.Infrastructure.Extensions
                     FullName = "Huy Dinh Trong",
                     PhoneNumber = "0838683865",
                     TotalCredits = 40,
+                    LockoutEnabled = false
                 };
 
                 await userManager.CreateAsync(huyAdmin2, "Admin11@");
@@ -140,6 +144,7 @@ namespace Eduva.Infrastructure.Extensions
                     FullName = "Dung Nguyen Ngoc",
                     PhoneNumber = "0838683864",
                     TotalCredits = 0,
+                    LockoutEnabled = false
                 };
 
                 await userManager.CreateAsync(dungAdmin, "Admin11@");
@@ -204,7 +209,7 @@ namespace Eduva.Infrastructure.Extensions
                         PaymentStatus = PaymentStatus.Paid,
                         PaymentItemId = 1, // Subscription Plan ID
                         RelatedId = "4a1a1a1a-4a1a-4a1a-4a1a-4a1a1a1a1a1a",
-                        TransactionCode = "TXN-1234567890",
+                        TransactionCode = "1752256235",
                         BillingCycle = BillingCycle.Monthly
 
                     },
@@ -218,7 +223,7 @@ namespace Eduva.Infrastructure.Extensions
                         PaymentStatus = PaymentStatus.Paid,
                         PaymentItemId = 1, // AI Credit Pack ID
                         RelatedId = "3a1a1a1a-1a1a-1a1a-1a1a-1a1a1a1a1a1a",
-                        TransactionCode = "TXN-0987654321"
+                        TransactionCode = "1752291769"
                     }
                 };
 
@@ -285,8 +290,8 @@ namespace Eduva.Infrastructure.Extensions
                     Name = "Toán 10A1",
                     SchoolId = 1,
                     TeacherId = new Guid("4a4a4a4a-4a4a-4a4a-4a4a-4a4a4a4a4a4a"), // Huy Dinh Trong
-                    ClassCode = "TOAN10A1",
-                    BackgroundImageUrl = "https://gstatic.com/classroom/themes/Honors.jpg",
+                    ClassCode = "QBTY3H2E",
+                    BackgroundImageUrl = "https://egverimjijiaqduqcfur.supabase.co/storage/v1/object/public/classroom-images/dai_so.jpg",
                 };
                 context.Classes.Add(classroom);
                 await context.SaveChangesAsync();
@@ -312,7 +317,7 @@ namespace Eduva.Infrastructure.Extensions
                      {
                          Id = new Guid("1a1a1a1a-1a1a-1a1a-1a1a-1a1a1a1a1a1a"),
                          Name = "Toán 10A1 - Bài giảng",
-                         UserId = null,
+                         UserId = new Guid("4a4a4a4a-4a4a-4a4a-4a4a-4a4a4a4a4a4a"),
                          ClassId = new Guid("1a1a1a1a-1a1a-1a1a-1a1a-1a1a1a1a1a1a"), // Toán 10A1
                          OwnerType = OwnerType.Class,
                      },
@@ -338,10 +343,10 @@ namespace Eduva.Infrastructure.Extensions
                     Description = "Bài giảng về các khái niệm cơ bản trong Đại số.",
                     SchoolId = 1,
                     ContentType = ContentType.Video,
-                    SourceUrl = "https://example.com/video.mp4",
+                    SourceUrl = "https://eduva.blob.core.windows.net/eduva-storage/school1/snaptik.vn_41a5f.mp4",
                     CreatedByUserId = new Guid("4a4a4a4a-4a4a-4a4a-4a4a-4a4a4a4a4a4a"), // Huy Dinh Trong
-                    FileSize = 10485760, // 10 MB
-                    Duration = 0,
+                    FileSize = 2023759, // 1.93 MiB
+                    Duration = 4,
                     Visibility = LessonMaterialVisibility.Private,
                     LessonStatus = LessonMaterialStatus.Approved
                 };
