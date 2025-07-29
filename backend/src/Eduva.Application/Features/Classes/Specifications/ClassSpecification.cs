@@ -24,6 +24,7 @@ namespace Eduva.Application.Features.Classes.Specifications
                 (!param.SchoolId.HasValue || c.SchoolId == param.SchoolId) &&
                 (!param.TeacherId.HasValue || c.TeacherId == param.TeacherId) &&
                 (!param.ClassId.HasValue || c.Id == param.ClassId) &&
+                (!param.Status.HasValue || c.Status == param.Status) &&
                 (string.IsNullOrEmpty(param.SearchTerm) || c.Name.ToLower().Contains(param.SearchTerm.ToLower()) ||
                                                            (c.ClassCode != null && c.ClassCode.ToLower().Contains(param.SearchTerm.ToLower())));
 
