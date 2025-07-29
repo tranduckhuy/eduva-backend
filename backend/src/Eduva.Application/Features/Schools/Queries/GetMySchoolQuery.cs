@@ -3,5 +3,5 @@ using MediatR;
 
 namespace Eduva.Application.Features.Schools.Queries
 {
-    public record GetMySchoolQuery(Guid SchoolAdminId) : IRequest<SchoolResponse>;
+    public record GetMySchoolQuery(Guid SchoolAdminId) : IRequest<SchoolDetailResponse>;
 }
