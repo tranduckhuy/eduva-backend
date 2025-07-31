@@ -1,4 +1,5 @@
 ﻿using Eduva.Application.Features.Folders.Queries;
+using Eduva.Application.Features.Folders.Specifications;
 
 namespace Eduva.Application.Test.Features.Folders.Queries
 {
@@ -11,11 +12,16 @@ namespace Eduva.Application.Test.Features.Folders.Queries
             var classId = Guid.NewGuid();
             var userId = Guid.NewGuid();
 
-            var query = new GetAllFoldersByClassIdQuery(classId, userId);
+            var folderSpecParam = new FolderSpecParam
+            {
+                ClassId = classId,
+                UserId = userId
+            };
+            var query = new GetAllFoldersByClassIdQuery(folderSpecParam, userId);
 
             Assert.Multiple(() =>
             {
-                Assert.That(query.ClassId, Is.EqualTo(classId));
+                Assert.That(query.FolderSpecParam.ClassId!.Value, Is.EqualTo(classId));
                 Assert.That(query.UserId, Is.EqualTo(userId));
             });
         }
