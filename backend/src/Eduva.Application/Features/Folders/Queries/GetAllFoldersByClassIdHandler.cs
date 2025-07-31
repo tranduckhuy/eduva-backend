@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Features.Folders.Responses;
+using Eduva.Application.Features.Folders.Specifications;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Domain.Entities;
@@ -32,13 +33,12 @@ namespace Eduva.Application.Features.Folders.Queries
 
         public async Task<IEnumerable<FolderResponse>> Handle(GetAllFoldersByClassIdQuery request, CancellationToken cancellationToken)
         {
-            await CheckClassFolderAccessAsync(request.UserId, request.ClassId);
+            await CheckClassFolderAccessAsync(request.UserId, request.FolderSpecParam.ClassId!.Value);
 
-            var allFolders = await _folderRepository.GetAllAsync();
-            var folders = allFolders.Where(f =>
-                f.OwnerType == OwnerType.Class &&
-                f.ClassId.HasValue &&
-                f.ClassId.Value == request.ClassId).ToList();
+            var spec = new FolderSpecification(request.FolderSpecParam);
+
+            var folderPagination = await _folderRepository.GetWithSpecAsync(spec);
+            var folders = folderPagination?.Data ?? new List<Folder>();
 
             var folderResponses = _mapper.Map<IEnumerable<FolderResponse>>(folders);
 
