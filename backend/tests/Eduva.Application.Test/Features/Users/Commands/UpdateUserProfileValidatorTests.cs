@@ -37,7 +37,7 @@ namespace Eduva.Application.Test.Features.Users.Commands
             var command = new UpdateUserProfileCommand
             {
                 FullName = "John Doe",
-                PhoneNumber = "1234567890",
+                PhoneNumber = "0945433495",
                 AvatarUrl = "https://example.com/avatar.jpg"
             };
 
@@ -62,6 +62,20 @@ namespace Eduva.Application.Test.Features.Users.Commands
         }
 
         [Test]
+        public void Validate_ShouldHaveError_WhenAvatarUrlExceedsMaxLength()
+        {
+            // Arrange
+            var command = new UpdateUserProfileCommand
+            {
+                AvatarUrl = new string('A', 256)
+            };
+            // Act & Assert
+            var result = _validator.TestValidate(command);
+            result.ShouldHaveValidationErrorFor(x => x.AvatarUrl)
+                .WithErrorMessage("Avatar URL must not exceed 255 characters.");
+        }
+
+        [Test]
         public void Validate_ShouldHaveError_WhenPhoneNumberIsInvalid()
         {
             // Arrange
@@ -73,7 +87,7 @@ namespace Eduva.Application.Test.Features.Users.Commands
             // Act & Assert
             var result = _validator.TestValidate(command);
             result.ShouldHaveValidationErrorFor(x => x.PhoneNumber)
-                .WithErrorMessage("Phone number must be between 10 and 15 digits.");
+                .WithErrorMessage("Invalid phone number format");
         }
 
         [Test]
