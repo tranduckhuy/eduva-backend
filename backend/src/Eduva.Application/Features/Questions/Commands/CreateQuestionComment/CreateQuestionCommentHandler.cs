@@ -101,11 +101,17 @@ namespace Eduva.Application.Features.Questions.Commands.CreateQuestionComment
                 throw new AppException(CustomCode.UserNotPartOfSchool);
             }
 
-            await ValidateRoleBasedAccess(user.Id, question.LessonMaterialId, userRole);
+            await ValidateRoleBasedAccess(user.Id, question.LessonMaterialId, userRole, question);
         }
 
-        private async Task ValidateRoleBasedAccess(Guid userId, Guid lessonMaterialId, string userRole)
+        private async Task ValidateRoleBasedAccess(Guid userId, Guid lessonMaterialId, string userRole, LessonMaterialQuestion question)
         {
+
+            if (question.CreatedByUserId == userId)
+            {
+                return;
+            }
+
             var studentClassRepo = _unitOfWork.GetCustomRepository<IStudentClassRepository>();
 
             switch (userRole)
