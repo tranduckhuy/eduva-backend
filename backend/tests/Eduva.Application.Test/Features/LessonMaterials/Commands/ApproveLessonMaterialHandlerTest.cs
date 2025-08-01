@@ -66,6 +66,52 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
         }
 
         [Test]
+        public async Task Handle_ShouldNotSendNotification_WhenModeratorApprovesOwnLesson()
+        {
+            // Arrange
+            var moderatorId = Guid.NewGuid();
+            var lessonId = Guid.NewGuid();
+            var command = new ApproveLessonMaterialCommand
+            {
+                Id = lessonId,
+                ModeratorId = moderatorId,
+                Status = LessonMaterialStatus.Approved
+            };
+            var moderator = new ApplicationUser { Id = moderatorId, SchoolId = 1 };
+            var lesson = new LessonMaterial
+            {
+                Id = lessonId,
+                Status = EntityStatus.Active,
+                LessonStatus = LessonMaterialStatus.Pending,
+                SchoolId = 1,
+                CreatedByUserId = moderatorId // Moderator is the creator
+            };
+
+            _lessonRepoMock.Setup(r => r.GetByIdAsync(lessonId))
+                .ReturnsAsync(lesson);
+            _userRepoMock.Setup(r => r.GetByIdAsync(moderatorId))
+                .ReturnsAsync(moderator);
+            _userManagerMock.Setup(m => m.GetRolesAsync(moderator))
+                .ReturnsAsync(new List<string> { nameof(Role.ContentModerator) });
+            _lessonRepoMock.Setup(r => r.Update(It.IsAny<LessonMaterial>()))
+                .Verifiable();
+            _unitOfWorkMock.Setup(u => u.CommitAsync())
+                .ReturnsAsync(1);
+
+            // Act
+            await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            _hubNotificationServiceMock.Verify(h => h.NotifyLessonMaterialApprovalAsync(
+                It.IsAny<LessonMaterialApprovalNotification>(),
+                NotificationTypes.LessonMaterialApproved,
+                It.IsAny<Guid>(),
+                It.IsAny<ApplicationUser>()),
+                Times.Never);
+            _lessonRepoMock.Verify(r => r.Update(It.IsAny<LessonMaterial>()), Times.Once);
+        }
+
+        [Test]
         public void Handle_Should_Throw_When_Moderator_Not_Found()
         {
             var lessonId = Guid.NewGuid();

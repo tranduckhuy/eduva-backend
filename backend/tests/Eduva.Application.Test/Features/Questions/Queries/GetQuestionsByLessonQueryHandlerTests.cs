@@ -303,6 +303,130 @@ namespace Eduva.Application.Test.Features.Questions.Queries
         #region Teacher Access Validation Tests
 
         [Test]
+        public async Task Handle_ShouldAllowTeacherToAccessQuestions_WhenLessonHasSchoolVisibility()
+        {
+            // Arrange
+            var teacherId = Guid.NewGuid();
+            var lessonId = Guid.NewGuid();
+            var param = new QuestionsByLessonSpecParam();
+            var query = new GetQuestionsByLessonQuery(param, lessonId, teacherId);
+            var teacher = new ApplicationUser { Id = teacherId, SchoolId = 1 };
+            var lesson = new LessonMaterial
+            {
+                Id = lessonId,
+                Status = EntityStatus.Active,
+                LessonStatus = LessonMaterialStatus.Approved,
+                SchoolId = 1,
+                Visibility = LessonMaterialVisibility.School,
+                CreatedByUserId = Guid.NewGuid() // Different creator
+            };
+
+            _userRepositoryMock.Setup(x => x.GetByIdAsync(teacherId))
+                .ReturnsAsync(teacher);
+            _userManagerMock.Setup(x => x.GetRolesAsync(teacher))
+                .ReturnsAsync(["Teacher"]);
+            _permissionServiceMock.Setup(x => x.GetHighestPriorityRole(It.IsAny<IList<string>>()))
+                .Returns("Teacher");
+            _lessonRepositoryMock.Setup(x => x.GetByIdAsync(lessonId))
+                .ReturnsAsync(lesson);
+
+            // Mock repository methods
+            _repositoryMock.Setup(x => x.CountAsync(It.IsAny<Expression<Func<LessonMaterialQuestion, bool>>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(0);
+            _repositoryMock.Setup(x => x.GetWithSpecAsync(It.IsAny<QuestionsByLessonSpecification>()))
+                .ReturnsAsync(new Pagination<LessonMaterialQuestion>
+                {
+                    Data = new List<LessonMaterialQuestion>(),
+                    PageIndex = 1,
+                    PageSize = 10,
+                    Count = 0
+                });
+
+            // Act
+            var result = await _handler.Handle(query, CancellationToken.None);
+
+            // Assert
+            Assert.That(result, Is.Not.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Data, Is.Empty);
+                Assert.That(result.Count, Is.EqualTo(0));
+            });
+        }
+
+        [Test]
+        public void Handle_ShouldThrowTeacherMustHaveActiveClass_WhenTeacherHasNoActiveClassAndLessonIsPrivate()
+        {
+            // Arrange
+            var teacherId = Guid.NewGuid();
+            var lessonId = Guid.NewGuid();
+            var param = new QuestionsByLessonSpecParam();
+            var query = new GetQuestionsByLessonQuery(param, lessonId, teacherId);
+            var teacher = new ApplicationUser { Id = teacherId, SchoolId = 1 };
+            var lesson = new LessonMaterial
+            {
+                Id = lessonId,
+                Status = EntityStatus.Active,
+                LessonStatus = LessonMaterialStatus.Approved,
+                SchoolId = 1,
+                Visibility = LessonMaterialVisibility.Private
+            };
+
+            _userRepositoryMock.Setup(x => x.GetByIdAsync(teacherId))
+                .ReturnsAsync(teacher);
+            _userManagerMock.Setup(x => x.GetRolesAsync(teacher))
+                .ReturnsAsync(["Teacher"]);
+            _permissionServiceMock.Setup(x => x.GetHighestPriorityRole(It.IsAny<IList<string>>()))
+                .Returns("Teacher");
+            _lessonRepositoryMock.Setup(x => x.GetByIdAsync(lessonId))
+                .ReturnsAsync(lesson);
+            _studentClassRepositoryMock.Setup(x => x.TeacherHasActiveClassAsync(teacherId))
+                .ReturnsAsync(false); // Teacher has no active class
+
+            // Act & Assert
+            var ex = Assert.ThrowsAsync<AppException>(async () =>
+                await _handler.Handle(query, CancellationToken.None));
+            Assert.That(ex.StatusCode, Is.EqualTo(CustomCode.TeacherMustHaveActiveClass));
+        }
+
+        [Test]
+        public void Handle_ShouldThrowTeacherNotHaveAccessToMaterial_WhenTeacherHasActiveClassButNoAccessAndLessonIsPrivate()
+        {
+            // Arrange
+            var teacherId = Guid.NewGuid();
+            var lessonId = Guid.NewGuid();
+            var param = new QuestionsByLessonSpecParam();
+            var query = new GetQuestionsByLessonQuery(param, lessonId, teacherId);
+            var teacher = new ApplicationUser { Id = teacherId, SchoolId = 1 };
+            var lesson = new LessonMaterial
+            {
+                Id = lessonId,
+                Status = EntityStatus.Active,
+                LessonStatus = LessonMaterialStatus.Approved,
+                SchoolId = 1,
+                Visibility = LessonMaterialVisibility.Private
+            };
+
+            _userRepositoryMock.Setup(x => x.GetByIdAsync(teacherId))
+                .ReturnsAsync(teacher);
+            _userManagerMock.Setup(x => x.GetRolesAsync(teacher))
+                .ReturnsAsync(["Teacher"]);
+            _permissionServiceMock.Setup(x => x.GetHighestPriorityRole(It.IsAny<IList<string>>()))
+                .Returns("Teacher");
+            _lessonRepositoryMock.Setup(x => x.GetByIdAsync(lessonId))
+                .ReturnsAsync(lesson);
+            _studentClassRepositoryMock.Setup(x => x.TeacherHasActiveClassAsync(teacherId))
+                .ReturnsAsync(true); // Teacher has active class
+            _studentClassRepositoryMock.Setup(x => x.TeacherHasAccessToMaterialAsync(teacherId, lessonId))
+                .ReturnsAsync(false); // But no access to material
+
+            // Act & Assert
+            var ex = Assert.ThrowsAsync<AppException>(async () =>
+                await _handler.Handle(query, CancellationToken.None));
+            Assert.That(ex.StatusCode, Is.EqualTo(CustomCode.TeacherNotHaveAccessToMaterial));
+        }
+
+        [Test]
         public void ValidateTeacherAccess_ShouldNotThrow_WhenLessonMaterialCreatedByTeacher()
         {
             // Arrange
