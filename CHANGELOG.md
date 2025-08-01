@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.0](https://github.com/tranduckhuy/eduva-backend/compare/v1.3.0...v1.4.0) (2025-08-01)
+
+
+### Features
+
+* add rate limiting for ai creation & update database required userId when create folder ([35f0e02](https://github.com/tranduckhuy/eduva-backend/commit/35f0e021a42c95c6ee61b125f05a2a037ef27fec))
+* permanently delete all soft-deleted lesson materials ([#469](https://github.com/tranduckhuy/eduva-backend/issues/469)) ([c28a53f](https://github.com/tranduckhuy/eduva-backend/commit/c28a53fe3968cd923e9a0b43556f6430f2e82812))
+
 ## [1.3.0](https://github.com/tranduckhuy/eduva-backend/compare/v1.2.0...v1.3.0) (2025-07-27)
 
 
