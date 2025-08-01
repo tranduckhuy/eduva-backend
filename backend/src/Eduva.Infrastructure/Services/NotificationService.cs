@@ -460,8 +460,8 @@ namespace Eduva.Infrastructure.Services
                     if (folder.OwnerType == OwnerType.Personal)
                     {
                         // Personal folder - add owner
-                        userIds.Add(folder.UserId!.Value);
-                        _logger.LogInformation("Added folder owner: {UserId}", folder.UserId.Value);
+                        userIds.Add(folder.UserId);
+                        _logger.LogInformation("Added folder owner: {UserId}", folder.UserId);
                     }
                     else if (folder.OwnerType == OwnerType.Class)
                     {

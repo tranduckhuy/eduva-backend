@@ -305,5 +305,35 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
             _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Once);
             Assert.That(result, Is.EqualTo(Unit.Value));
         }
+
+        [Test]
+        public async Task Handle_Should_Delete_All_Deleted_LessonMaterials_When_No_Ids_Provided_And_Permanent()
+        {
+            var userId = Guid.NewGuid();
+            var schoolId = 1;
+            var deletedMaterials = new List<LessonMaterial>
+            {
+                new LessonMaterial { Id = Guid.NewGuid(), SchoolId = schoolId, CreatedByUserId = userId, Status = EntityStatus.Deleted, SourceUrl = "file-url-1" },
+                new LessonMaterial { Id = Guid.NewGuid(), SchoolId = schoolId, CreatedByUserId = userId, Status = EntityStatus.Deleted, SourceUrl = "file-url-2" }
+            };
+            _lessonMaterialRepoMock.Setup(r => r.FindAsync(It.IsAny<Expression<Func<LessonMaterial, bool>>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(deletedMaterials);
+            _lessonMaterialRepoMock.Setup(r => r.Remove(It.IsAny<LessonMaterial>()));
+            _storageServiceMock.Setup(s => s.DeleteRangeFileAsync(It.Is<List<string>>(urls => urls.Count == 2), true))
+                .Returns(Task.CompletedTask);
+            _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(0);
+            var cmd = new DeleteLessonMaterialCommand
+            {
+                UserId = userId,
+                SchoolId = schoolId,
+                Permanent = true,
+                Ids = new List<Guid>()
+            };
+            var result = await _handler.Handle(cmd, CancellationToken.None);
+            _lessonMaterialRepoMock.Verify(r => r.Remove(It.IsAny<LessonMaterial>()), Times.Exactly(deletedMaterials.Count));
+            _storageServiceMock.Verify(s => s.DeleteRangeFileAsync(It.Is<List<string>>(urls => urls.Count == 2), true), Times.Once);
+            _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Once);
+            Assert.That(result, Is.EqualTo(Unit.Value));
+        }
     }
 }

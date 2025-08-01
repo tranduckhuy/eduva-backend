@@ -6,7 +6,7 @@ namespace Eduva.API.Extensions
     public static class RateLimitPolicyNames
     {
         public const string RegisterPolicy = "register-policy";
-        public const string AuthPolicy = "auth-policy";
+        public const string AiJobPolicy = "ai-job-policy";
     }
 
     public static class RateLimitingExtensions
@@ -19,6 +19,15 @@ namespace Eduva.API.Extensions
                 {
                     opt.PermitLimit = 5;
                     opt.Window = TimeSpan.FromMinutes(10);
+                    opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                    opt.QueueLimit = 0;
+                });
+
+                // AI job creation rate limit
+                options.AddFixedWindowLimiter(policyName: "ai-job-policy", opt =>
+                {
+                    opt.PermitLimit = 10;
+                    opt.Window = TimeSpan.FromMinutes(1);
                     opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
                     opt.QueueLimit = 0;
                 });

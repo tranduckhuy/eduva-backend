@@ -8,7 +8,7 @@ namespace Eduva.Infrastructure.Persistence.Configurations
     {
         public void Configure(EntityTypeBuilder<Folder> builder)
         {
-            builder.Property(f => f.UserId).IsRequired(false);
+            builder.Property(f => f.UserId).IsRequired(true);
             builder.Property(f => f.ClassId).IsRequired(false);
 
             builder.Property(f => f.Name)

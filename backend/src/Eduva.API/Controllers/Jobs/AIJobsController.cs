@@ -1,11 +1,12 @@
 using Eduva.API.Attributes;
 using Eduva.API.Controllers.Base;
+using Eduva.API.Extensions;
 using Eduva.API.Mappings;
 using Eduva.API.Models.Jobs;
 using Eduva.Application.Common.Mappings;
 using Eduva.Application.Features.Jobs.Commands.ConfirmJob;
 using Eduva.Application.Features.Jobs.Commands.CreateJob;
-using Eduva.Application.Features.Jobs.Commands.DeleteCompletedJob;
+using Eduva.Application.Features.Jobs.Commands.DeleteJob;
 using Eduva.Application.Features.Jobs.Commands.UpdateJob;
 using Eduva.Application.Features.Jobs.Commands.UpdateJobProgress;
 using Eduva.Application.Features.Jobs.DTOs;
@@ -16,6 +17,7 @@ using Eduva.Shared.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
 
 namespace Eduva.API.Controllers.Jobs;
@@ -37,6 +39,7 @@ public class AIJobsController : BaseController<AIJobsController>
     /// <returns>Job creation response with jobId</returns>
     [HttpPost]
     [Authorize]
+    [EnableRateLimiting(RateLimitPolicyNames.AiJobPolicy)]
     public async Task<IActionResult> CreateJob([FromForm] CreateJobRequest request)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -163,7 +166,7 @@ public class AIJobsController : BaseController<AIJobsController>
             return Respond(CustomCode.UserIdNotFound);
         }
 
-        var command = new DeleteCompletedJobCommand
+        var command = new DeleteJobCommand
         {
             JobId = id,
             UserId = userGuid,

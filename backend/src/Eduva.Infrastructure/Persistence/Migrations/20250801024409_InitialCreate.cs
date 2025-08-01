@@ -343,7 +343,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     JobStatus = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     Topic = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
-                    SourceBlobNames = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    SourceBlobNames = table.Column<string>(type: "text", nullable: false),
                     ContentBlobName = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     VideoOutputBlobName = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     AudioOutputBlobName = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
@@ -377,7 +377,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     Description = table.Column<string>(type: "text", nullable: true),
                     ContentType = table.Column<string>(type: "text", nullable: false),
                     LessonStatus = table.Column<string>(type: "text", nullable: false),
-                    Duration = table.Column<int>(type: "integer", nullable: false),
+                    Duration = table.Column<int>(type: "integer", nullable: true),
                     FileSize = table.Column<int>(type: "integer", nullable: false),
                     IsAIContent = table.Column<bool>(type: "boolean", nullable: false),
                     SourceUrl = table.Column<string>(type: "character varying(2048)", maxLength: 2048, nullable: false),
@@ -462,7 +462,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: true),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     ClassId = table.Column<Guid>(type: "uuid", nullable: true),
                     OwnerType = table.Column<string>(type: "text", nullable: false),
                     Name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
