@@ -174,6 +174,11 @@ namespace Eduva.Application.Features.Questions.Queries
                 return;
             }
 
+            if (lessonMaterial.Visibility == LessonMaterialVisibility.School)
+            {
+                return;
+            }
+
             var hasAccess = await repo.TeacherHasAccessToMaterialAsync(teacherId, lessonMaterialId);
 
             if (!hasAccess)
