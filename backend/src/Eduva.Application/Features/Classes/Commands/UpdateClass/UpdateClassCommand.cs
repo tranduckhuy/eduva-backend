@@ -12,5 +12,6 @@ namespace Eduva.Application.Features.Classes.Commands.UpdateClass
         public Guid TeacherId { get; set; }
 
         public string Name { get; set; } = string.Empty;
+        public string? BackgroundImageUrl { get; set; }
     }
 }

@@ -351,7 +351,19 @@ namespace Eduva.API.Test.Controllers.School
 
             _mediatorMock
                 .Setup(m => m.Send(It.Is<GetMySchoolQuery>(q => q.SchoolAdminId == userId), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new SchoolResponse { Id = 1, Name = "Test School", Status = EntityStatus.Active });
+                .ReturnsAsync(new SchoolDetailResponse
+                {
+                    Id = 1,
+                    Name = "Test School",
+                    Status = EntityStatus.Active,
+                    Address = "a",
+                    SchoolAdminId = new Guid("00000005-0000-4000-8000-000000000005"),
+                    ContactEmail = "sang@gmail.com",
+                    ContactPhone = "0935433495",
+                    SchoolAdminEmail = "quynx@gmail.com",
+                    SchoolAdminFullName = "Quy Nguyen Xuan",
+                    WebsiteUrl = ""
+                });
 
             var result = await _controller.GetCurrentSchool();
 

@@ -1,25 +1,24 @@
 ﻿using Eduva.Application.Exceptions.Auth;
 using Eduva.Application.Exceptions.Job;
 using Eduva.Application.Interfaces;
-using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Enums;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace Eduva.Application.Features.Jobs.Commands.DeleteCompletedJob
+namespace Eduva.Application.Features.Jobs.Commands.DeleteJob
 {
-    public class DeleteCompletedJobHandler : IRequestHandler<DeleteCompletedJobCommand, Unit>
+    public class DeleteJobHandler : IRequestHandler<DeleteJobCommand, Unit>
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly ILogger<DeleteCompletedJobHandler> _logger;
+        private readonly ILogger<DeleteJobHandler> _logger;
 
-        public DeleteCompletedJobHandler(IUnitOfWork unitOfWork, ILogger<DeleteCompletedJobHandler> logger)
+        public DeleteJobHandler(IUnitOfWork unitOfWork, ILogger<DeleteJobHandler> logger)
         {
             _unitOfWork = unitOfWork;
             _logger = logger;
         }
 
-        public async Task<Unit> Handle(DeleteCompletedJobCommand request, CancellationToken cancellationToken)
+        public async Task<Unit> Handle(DeleteJobCommand request, CancellationToken cancellationToken)
         {
             var jobRepository = _unitOfWork.GetRepository<Domain.Entities.Job, Guid>();
             var job = await jobRepository.GetByIdAsync(request.JobId)

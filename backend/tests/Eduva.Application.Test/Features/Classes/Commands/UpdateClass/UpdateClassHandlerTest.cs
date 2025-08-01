@@ -48,10 +48,11 @@ namespace Eduva.Application.Test.Features.Classes.Commands.UpdateClass
             {
                 Id = classId,
                 TeacherId = teacherId,
-                Name = "Old Name"
+                Name = "Old Name",
+                BackgroundImageUrl = "old_image_url.jpg"
             };
             var teacher = new ApplicationUser { Id = teacherId };
-            var command = new UpdateClassCommand { Id = classId, TeacherId = teacherId, Name = "New Name" };
+            var command = new UpdateClassCommand { Id = classId, TeacherId = teacherId, Name = "New Name", BackgroundImageUrl = "new_image_url.jpg" };
 
             _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
             _userRepoMock.Setup(r => r.GetByIdAsync(teacherId)).ReturnsAsync(teacher);
@@ -63,8 +64,12 @@ namespace Eduva.Application.Test.Features.Classes.Commands.UpdateClass
             // Act
             var result = await _handler.Handle(command, CancellationToken.None);
 
-            // Assert
-            Assert.That(classroom.Name, Is.EqualTo("New Name"));
+            Assert.Multiple(() =>
+            {
+                // Assert
+                Assert.That(classroom.Name, Is.EqualTo("New Name"));
+                Assert.That(classroom.BackgroundImageUrl, Is.EqualTo("new_image_url.jpg"));
+            });
             _classroomRepoMock.Verify(r => r.Update(It.Is<Classroom>(c => c.Id == classId && c.Name == "New Name")), Times.Once);
             _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Once);
             Assert.That(result, Is.EqualTo(Unit.Value));
@@ -79,10 +84,11 @@ namespace Eduva.Application.Test.Features.Classes.Commands.UpdateClass
             {
                 Id = classId,
                 TeacherId = Guid.NewGuid(),
-                Name = "Old Name"
+                Name = "Old Name",
+                BackgroundImageUrl = "old_image_url.jpg"
             };
             var admin = new ApplicationUser { Id = adminId };
-            var command = new UpdateClassCommand { Id = classId, TeacherId = adminId, Name = "New Name" };
+            var command = new UpdateClassCommand { Id = classId, TeacherId = adminId, Name = "New Name", BackgroundImageUrl = "new_image_url.jpg" };
 
             _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
             _userRepoMock.Setup(r => r.GetByIdAsync(adminId)).ReturnsAsync(admin);
@@ -93,7 +99,11 @@ namespace Eduva.Application.Test.Features.Classes.Commands.UpdateClass
 
             var result = await _handler.Handle(command, CancellationToken.None);
 
-            Assert.That(classroom.Name, Is.EqualTo("New Name"));
+            Assert.Multiple(() =>
+            {
+                Assert.That(classroom.Name, Is.EqualTo("New Name"));
+                Assert.That(classroom.BackgroundImageUrl, Is.EqualTo("new_image_url.jpg"));
+            });
             _classroomRepoMock.Verify(r => r.Update(It.Is<Classroom>(c => c.Id == classId && c.Name == "New Name")), Times.Once);
             _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Once);
             Assert.That(result, Is.EqualTo(Unit.Value));
@@ -114,8 +124,8 @@ namespace Eduva.Application.Test.Features.Classes.Commands.UpdateClass
         {
             var classId = Guid.NewGuid();
             var teacherId = Guid.NewGuid();
-            var classroom = new Classroom { Id = classId, TeacherId = teacherId, Name = "Old Name" };
-            var command = new UpdateClassCommand { Id = classId, TeacherId = teacherId, Name = "New Name" };
+            var classroom = new Classroom { Id = classId, TeacherId = teacherId, Name = "Old Name", BackgroundImageUrl = "old_image_url.jpg" };
+            var command = new UpdateClassCommand { Id = classId, TeacherId = teacherId, Name = "New Name", BackgroundImageUrl = "new_image_url.jpg" };
 
             _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
             _userRepoMock.Setup(r => r.GetByIdAsync(teacherId)).ReturnsAsync((ApplicationUser?)null);
@@ -129,9 +139,9 @@ namespace Eduva.Application.Test.Features.Classes.Commands.UpdateClass
         {
             var classId = Guid.NewGuid();
             var userId = Guid.NewGuid();
-            var classroom = new Classroom { Id = classId, TeacherId = Guid.NewGuid(), Name = "Old Name" };
+            var classroom = new Classroom { Id = classId, TeacherId = Guid.NewGuid(), Name = "Old Name", BackgroundImageUrl = "old_image_url.jpg" };
             var user = new ApplicationUser { Id = userId };
-            var command = new UpdateClassCommand { Id = classId, TeacherId = userId, Name = "New Name" };
+            var command = new UpdateClassCommand { Id = classId, TeacherId = userId, Name = "New Name", BackgroundImageUrl = "new_image_url.jpg" };
 
             _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
             _userRepoMock.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(user);
@@ -146,9 +156,9 @@ namespace Eduva.Application.Test.Features.Classes.Commands.UpdateClass
         {
             var classId = Guid.NewGuid();
             var teacherId = Guid.NewGuid();
-            var classroom = new Classroom { Id = classId, TeacherId = teacherId, Name = "Old Name" };
+            var classroom = new Classroom { Id = classId, TeacherId = teacherId, Name = "Old Name", BackgroundImageUrl = "old_image_url.jpg" };
             var teacher = new ApplicationUser { Id = teacherId };
-            var command = new UpdateClassCommand { Id = classId, TeacherId = teacherId, Name = "New Name" };
+            var command = new UpdateClassCommand { Id = classId, TeacherId = teacherId, Name = "New Name", BackgroundImageUrl = "new_image_url.jpg" };
 
             _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
             _userRepoMock.Setup(r => r.GetByIdAsync(teacherId)).ReturnsAsync(teacher);
@@ -164,9 +174,9 @@ namespace Eduva.Application.Test.Features.Classes.Commands.UpdateClass
         {
             var classId = Guid.NewGuid();
             var teacherId = Guid.NewGuid();
-            var classroom = new Classroom { Id = classId, TeacherId = teacherId, Name = "Old Name" };
+            var classroom = new Classroom { Id = classId, TeacherId = teacherId, Name = "Old Name", BackgroundImageUrl = "old_image_url.jpg" };
             var teacher = new ApplicationUser { Id = teacherId };
-            var command = new UpdateClassCommand { Id = classId, TeacherId = teacherId, Name = "New Name" };
+            var command = new UpdateClassCommand { Id = classId, TeacherId = teacherId, Name = "New Name", BackgroundImageUrl = "new_image_url.jpg" };
 
             _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
             _userRepoMock.Setup(r => r.GetByIdAsync(teacherId)).ReturnsAsync(teacher);

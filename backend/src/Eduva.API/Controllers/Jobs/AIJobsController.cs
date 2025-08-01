@@ -5,7 +5,7 @@ using Eduva.API.Models.Jobs;
 using Eduva.Application.Common.Mappings;
 using Eduva.Application.Features.Jobs.Commands.ConfirmJob;
 using Eduva.Application.Features.Jobs.Commands.CreateJob;
-using Eduva.Application.Features.Jobs.Commands.DeleteCompletedJob;
+using Eduva.Application.Features.Jobs.Commands.DeleteJob;
 using Eduva.Application.Features.Jobs.Commands.UpdateJob;
 using Eduva.Application.Features.Jobs.Commands.UpdateJobProgress;
 using Eduva.Application.Features.Jobs.DTOs;
@@ -163,7 +163,7 @@ public class AIJobsController : BaseController<AIJobsController>
             return Respond(CustomCode.UserIdNotFound);
         }
 
-        var command = new DeleteCompletedJobCommand
+        var command = new DeleteJobCommand
         {
             JobId = id,
             UserId = userGuid,
