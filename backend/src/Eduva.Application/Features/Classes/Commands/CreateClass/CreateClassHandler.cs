@@ -82,7 +82,7 @@ namespace Eduva.Application.Features.Classes.Commands.CreateClass
                 Name = $"Thư mục lớp {classroom.Name}",
                 ClassId = classroom.Id,
                 OwnerType = OwnerType.Class,
-                UserId = null,
+                UserId = request.TeacherId,
                 Order = 1,
                 Status = EntityStatus.Active,
                 CreatedAt = DateTimeOffset.UtcNow,

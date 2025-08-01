@@ -1,9 +1,9 @@
 ﻿using MediatR;
 using System.Text.Json.Serialization;
 
-namespace Eduva.Application.Features.Jobs.Commands.DeleteCompletedJob
+namespace Eduva.Application.Features.Jobs.Commands.DeleteJob
 {
-    public class DeleteCompletedJobCommand : IRequest<Unit>
+    public class DeleteJobCommand : IRequest<Unit>
     {
         public Guid JobId { get; set; }
         public bool Permanent { get; set; } = false;

@@ -53,6 +53,7 @@ namespace Eduva.Infrastructure.Persistence.Repositories
         {
             return await _context.Folders
                 .Where(f => f.ClassId == classId)
+                .OrderBy(f => f.CreatedAt)
                 .Include(f => f.FolderLessonMaterials)
                     .ThenInclude(flm => flm.LessonMaterial)
                 .ToListAsync();
