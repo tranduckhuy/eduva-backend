@@ -60,6 +60,10 @@ namespace Eduva.Application.Features.Classes.Commands.UpdateClass
 
             // Update only the fields that should be updated
             classroom.Name = request.Name;
+            if (request.BackgroundImageUrl != null)
+            {
+                classroom.BackgroundImageUrl = request.BackgroundImageUrl;
+            }
             classroom.LastModifiedAt = DateTimeOffset.UtcNow;
             classroomRepository.Update(classroom);
 

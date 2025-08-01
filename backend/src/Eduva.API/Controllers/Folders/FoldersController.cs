@@ -107,7 +107,8 @@ namespace Eduva.API.Controllers.Folders
         [HttpGet("class/{classId}")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<FolderResponse>>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetFoldersByClassId(Guid classId)
+        public async Task<IActionResult> GetFoldersByClassId(Guid classId, [FromQuery] string? sortBy,
+            [FromQuery] string? sortDirection)
         {
             var validationResult = CheckModelStateValidity();
             if (validationResult != null)
@@ -119,9 +120,16 @@ namespace Eduva.API.Controllers.Folders
             if (!Guid.TryParse(userId, out var userGuid))
                 return Respond(CustomCode.UserIdNotFound);
 
+            var folderSpecParam = new FolderSpecParam
+            {
+                ClassId = classId,
+                SortBy = sortBy,
+                SortDirection = sortDirection ?? "asc"
+            };
+
             return await HandleRequestAsync(async () =>
             {
-                var query = new GetAllFoldersByClassIdQuery(classId, userGuid);
+                var query = new GetAllFoldersByClassIdQuery(folderSpecParam, userGuid);
                 var folders = await _mediator.Send(query);
                 return (CustomCode.Success, folders);
             });

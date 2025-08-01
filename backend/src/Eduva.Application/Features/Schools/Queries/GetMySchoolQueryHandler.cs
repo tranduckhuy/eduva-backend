@@ -1,5 +1,4 @@
-﻿using Eduva.Application.Common.Mappings;
-using Eduva.Application.Exceptions.Auth;
+﻿using Eduva.Application.Exceptions.Auth;
 using Eduva.Application.Exceptions.School;
 using Eduva.Application.Features.Schools.Responses;
 using Eduva.Application.Interfaces;
@@ -8,7 +7,7 @@ using MediatR;
 
 namespace Eduva.Application.Features.Schools.Queries
 {
-    public class GetMySchoolQueryHandler : IRequestHandler<GetMySchoolQuery, SchoolResponse>
+    public class GetMySchoolQueryHandler : IRequestHandler<GetMySchoolQuery, SchoolDetailResponse>
     {
         private readonly ISchoolRepository _schoolRepo;
         private readonly IUserRepository _userRepo;
@@ -19,7 +18,7 @@ namespace Eduva.Application.Features.Schools.Queries
             _userRepo = unitOfWork.GetCustomRepository<IUserRepository>();
         }
 
-        public async Task<SchoolResponse> Handle(GetMySchoolQuery request, CancellationToken cancellationToken)
+        public async Task<SchoolDetailResponse> Handle(GetMySchoolQuery request, CancellationToken cancellationToken)
         {
             var user = await _userRepo.GetByIdAsync(request.SchoolAdminId) ?? throw new UserNotExistsException();
 
@@ -30,7 +29,21 @@ namespace Eduva.Application.Features.Schools.Queries
 
             var school = await _schoolRepo.GetByIdAsync(user.SchoolId.Value) ?? throw new SchoolNotFoundException();
 
-            return AppMapper<AppMappingProfile>.Mapper.Map<SchoolResponse>(school);
+            var schoolAdmin = await _userRepo.GetSchoolAdminBySchoolIdAsync(school.Id, cancellationToken);
+
+            return new SchoolDetailResponse
+            {
+                Id = school.Id,
+                Name = school.Name,
+                ContactEmail = school.ContactEmail,
+                ContactPhone = school.ContactPhone,
+                Address = school.Address,
+                WebsiteUrl = school.WebsiteUrl,
+                Status = school.Status,
+                SchoolAdminId = schoolAdmin?.Id,
+                SchoolAdminFullName = schoolAdmin?.FullName,
+                SchoolAdminEmail = schoolAdmin?.Email
+            };
         }
     }
 }

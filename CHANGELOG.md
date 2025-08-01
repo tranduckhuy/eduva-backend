@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/tranduckhuy/eduva-backend/compare/v1.2.0...v1.3.0) (2025-07-27)
+
+
+### Features
+
+* implement rate limiting and cooldown for email-related actions & fix notification service to send correct userNotificationId ([#428](https://github.com/tranduckhuy/eduva-backend/issues/428)) ([b042da5](https://github.com/tranduckhuy/eduva-backend/commit/b042da5392315af8f9cfcb1c0f6bd5d0371a21d3))
+
 ## [1.2.0](https://github.com/tranduckhuy/eduva-backend/compare/v1.1.0...v1.2.0) (2025-07-25)
 
 

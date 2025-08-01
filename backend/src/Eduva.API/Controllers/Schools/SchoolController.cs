@@ -97,7 +97,7 @@ namespace Eduva.API.Controllers.Schools
         [HttpGet("current")]
         [Authorize(Roles = nameof(Role.SchoolAdmin))]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
-        [ProducesResponseType(typeof(ApiResponse<SchoolResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<SchoolDetailResponse>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetCurrentSchool()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -106,7 +106,7 @@ namespace Eduva.API.Controllers.Schools
                 return Respond(CustomCode.UserIdNotFound);
             }
 
-            return await HandleRequestAsync<SchoolResponse>(async () =>
+            return await HandleRequestAsync<SchoolDetailResponse>(async () =>
             {
                 var result = await _mediator.Send(new GetMySchoolQuery(schoolAdminId));
                 return (CustomCode.Success, result);

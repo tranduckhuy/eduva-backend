@@ -1,7 +1,8 @@
 ﻿using FluentValidation;
 
 namespace Eduva.Application.Features.Users.Commands
-{    public class UpdateUserProfileValidator : AbstractValidator<UpdateUserProfileCommand>
+{
+    public class UpdateUserProfileValidator : AbstractValidator<UpdateUserProfileCommand>
     {
         public UpdateUserProfileValidator()
         {
@@ -10,10 +11,11 @@ namespace Eduva.Application.Features.Users.Commands
                 .When(x => !string.IsNullOrEmpty(x.FullName));
 
             RuleFor(x => x.PhoneNumber)
-                .Matches(@"^\d{10,15}$").WithMessage("Phone number must be between 10 and 15 digits.")
+                .Matches(@"^((03|05|07|08|09)\d{8}|02\d{9})$").WithMessage("Invalid phone number format")
                 .When(x => !string.IsNullOrEmpty(x.PhoneNumber));
 
             RuleFor(x => x.AvatarUrl)
+                .MaximumLength(255).WithMessage("Avatar URL must not exceed 255 characters.")
                 .Must(url => Uri.IsWellFormedUriString(url, UriKind.Absolute))
                 .WithMessage("Avatar URL must be a valid absolute URL.")
                 .When(x => !string.IsNullOrEmpty(x.AvatarUrl));
