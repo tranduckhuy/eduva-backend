@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/tranduckhuy/eduva-backend/compare/v1.3.0...v1.4.0) (2025-08-01)
+
+
+### Features
+
+* add rate limiting for ai creation & update database required userId when create folder ([35f0e02](https://github.com/tranduckhuy/eduva-backend/commit/35f0e021a42c95c6ee61b125f05a2a037ef27fec))
+
 ## [1.3.0](https://github.com/tranduckhuy/eduva-backend/compare/v1.2.0...v1.3.0) (2025-07-27)
 
 
