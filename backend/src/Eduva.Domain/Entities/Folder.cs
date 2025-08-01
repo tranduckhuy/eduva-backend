@@ -5,7 +5,7 @@ namespace Eduva.Domain.Entities
 {
     public class Folder : BaseTimestampedEntity<Guid>
     {
-        public Guid? UserId { get; set; } = Guid.Empty; // Used only for personal folders
+        public Guid UserId { get; set; } = Guid.Empty;
         public Guid? ClassId { get; set; } = Guid.Empty; // Used only for class folders
         public OwnerType OwnerType { get; set; }
         public string Name { get; set; } = string.Empty;

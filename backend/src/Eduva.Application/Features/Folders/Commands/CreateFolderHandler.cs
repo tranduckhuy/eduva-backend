@@ -104,9 +104,9 @@ namespace Eduva.Application.Features.Folders.Commands
                 await _unitOfWork.CommitAsync();
 
                 // Load navigation properties for correct mapping
-                if (folder.OwnerType == OwnerType.Personal && folder.UserId.HasValue)
+                if (folder.OwnerType == OwnerType.Personal)
                 {
-                    folder.User = await userRepository.GetByIdAsync(folder.UserId.Value);
+                    folder.User = await userRepository.GetByIdAsync(folder.UserId);
                 }
                 else if (folder.OwnerType == OwnerType.Class && folder.ClassId.HasValue)
                 {
