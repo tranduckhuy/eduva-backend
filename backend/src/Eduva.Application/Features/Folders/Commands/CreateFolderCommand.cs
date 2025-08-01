@@ -10,7 +10,7 @@ namespace Eduva.Application.Features.Folders.Commands
         public string Name { get; set; } = string.Empty;
 
         [JsonIgnore]
-        public Guid? UserId { get; set; }
+        public Guid UserId { get; set; }
 
         [JsonPropertyName("classId")]
         public string? ClassIdString { get; set; }

@@ -309,7 +309,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("UserId")
+                    b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
@@ -377,8 +377,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("SourceBlobNames")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("text");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
@@ -430,7 +429,6 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                         .HasColumnType("text");
 
                     b.Property<int?>("Duration")
-                        .IsRequired()
                         .HasColumnType("integer");
 
                     b.Property<int>("FileSize")

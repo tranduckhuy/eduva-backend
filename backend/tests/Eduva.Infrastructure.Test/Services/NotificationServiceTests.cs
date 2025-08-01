@@ -834,7 +834,7 @@ namespace Eduva.Infrastructure.Test.Services
             {
                 Id = folderId,
                 ClassId = classId,
-                UserId = null,
+                UserId = classTeacherId,
                 OwnerType = OwnerType.Class,
                 Name = "Test Folder",
                 Order = 1,
@@ -940,7 +940,7 @@ namespace Eduva.Infrastructure.Test.Services
             {
                 Id = folderId,
                 ClassId = classId,
-                UserId = null,
+                UserId = teacherId,
                 OwnerType = OwnerType.Class,
                 Name = "Test Folder",
                 Order = 1,
@@ -1035,7 +1035,7 @@ namespace Eduva.Infrastructure.Test.Services
             {
                 Id = folderId,
                 ClassId = classId,
-                UserId = null,
+                UserId = teacherId,
                 OwnerType = OwnerType.Class,
                 Name = "Test Folder",
                 Order = 1,
