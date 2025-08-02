@@ -45,7 +45,7 @@ namespace Eduva.Application.Features.Users.Queries
 
             // Create Excel file
             using var package = new ExcelPackage();
-            var worksheet = package.Workbook.Worksheets.Add("Users");
+            var worksheet = package.Workbook.Worksheets.Add("Người dùng");
 
             // Set up headers
             SetupHeaders(worksheet);
