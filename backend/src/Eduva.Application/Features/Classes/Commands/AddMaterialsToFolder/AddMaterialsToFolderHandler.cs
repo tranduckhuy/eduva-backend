@@ -49,8 +49,18 @@ namespace Eduva.Application.Features.Classes.Commands.AddMaterialsToFolder
                 if (material.LessonStatus != LessonMaterialStatus.Approved)
                     throw new AppException(CustomCode.LessonMaterialNotApproved);
 
-                // Check if material belongs to the user
-                if (material.CreatedByUserId != request.CurrentUserId)
+                bool canAddSharedMaterial = false;
+                if (material.Visibility == LessonMaterialVisibility.School)
+                {
+                    var folderClassRepository = _unitOfWork.GetRepository<Classroom, Guid>();
+                    var folderClass = await folderClassRepository.GetByIdAsync(request.ClassId);
+                    if (folderClass != null && material.SchoolId == folderClass.SchoolId)
+                    {
+                        canAddSharedMaterial = true;
+                    }
+                }
+
+                if (material.CreatedByUserId != request.CurrentUserId && !canAddSharedMaterial)
                     throw new AppException(CustomCode.Unauthorized);
 
                 bool existsInAnyFolderOfClass = await folderLessonMaterialRepository.ExistsAsync(flm =>

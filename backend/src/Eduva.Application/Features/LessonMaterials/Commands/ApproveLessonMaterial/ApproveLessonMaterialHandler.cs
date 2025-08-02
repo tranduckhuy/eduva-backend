@@ -82,7 +82,10 @@ namespace Eduva.Application.Features.LessonMaterials.Commands.ApproveLessonMater
                     ? NotificationTypes.LessonMaterialApproved
                     : NotificationTypes.LessonMaterialRejected;
 
-                await _hubNotificationService.NotifyLessonMaterialApprovalAsync(notification, eventType, lesson.CreatedByUserId, moderator);
+                if (lesson.CreatedByUserId != moderator.Id)
+                {
+                    await _hubNotificationService.NotifyLessonMaterialApprovalAsync(notification, eventType, lesson.CreatedByUserId, moderator);
+                }
 
                 return Unit.Value;
             }

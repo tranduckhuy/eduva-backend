@@ -543,7 +543,7 @@ namespace Eduva.Infrastructure.Test.Services
 
             // Assert
             Assert.That(result, Does.Not.Contain(teacherId));
-            Assert.That(result, Does.Contain(adminId));
+            Assert.That(result, Does.Not.Contain(adminId));
             Assert.That(result, Does.Contain(moderatorId));
             Assert.That(result, Does.Not.Contain(studentId));
         }

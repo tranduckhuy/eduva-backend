@@ -436,6 +436,111 @@ namespace Eduva.Application.Test.Features.Questions.Commands.CreateQuestionComme
         #region Teacher Access Validation Tests
 
         [Test]
+        public async Task Handle_ShouldAllowTeacherToCreateComment_WhenLessonHasSchoolVisibility()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var questionId = Guid.NewGuid();
+            var lessonId = Guid.NewGuid();
+            var command = new CreateQuestionCommentCommand
+            {
+                QuestionId = questionId,
+                Content = "Test comment",
+                CreatedByUserId = userId
+            };
+            var user = new ApplicationUser { Id = userId, SchoolId = 1 };
+            var question = new LessonMaterialQuestion
+            {
+                Id = questionId,
+                Status = EntityStatus.Active,
+                LessonMaterialId = lessonId
+            };
+            var lesson = new LessonMaterial
+            {
+                Id = lessonId,
+                Status = EntityStatus.Active,
+                LessonStatus = LessonMaterialStatus.Approved,
+                SchoolId = 1,
+                Visibility = LessonMaterialVisibility.School
+            };
+
+            _userRepositoryMock.Setup(x => x.GetByIdAsync(userId))
+                .ReturnsAsync(user);
+            _userManagerMock.Setup(x => x.GetRolesAsync(user))
+                .ReturnsAsync(["Teacher"]);
+            _permissionServiceMock.Setup(x => x.GetHighestPriorityRole(It.IsAny<IList<string>>()))
+                .Returns("Teacher");
+            _questionRepositoryMock.Setup(x => x.GetByIdAsync(questionId))
+                .ReturnsAsync(question);
+            _lessonRepositoryMock.Setup(x => x.GetByIdAsync(lessonId))
+                .ReturnsAsync(lesson);
+            _commentRepositoryMock.Setup(x => x.AddAsync(It.IsAny<QuestionComment>()))
+                .Returns(Task.CompletedTask);
+            _unitOfWorkMock.Setup(x => x.CommitAsync())
+                .ReturnsAsync(1);
+            _hubNotificationServiceMock.Setup(x => x.NotifyQuestionCommentedAsync(
+                It.IsAny<QuestionCommentResponse>(), lessonId, It.IsAny<string>(), It.IsAny<string>(), user))
+                .Returns(Task.CompletedTask);
+
+            // Act
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.Content, Is.EqualTo("Test comment"));
+            _commentRepositoryMock.Verify(x => x.AddAsync(It.IsAny<QuestionComment>()), Times.Once);
+            _unitOfWorkMock.Verify(x => x.CommitAsync(), Times.Once);
+        }
+
+        [Test]
+        public void Handle_ShouldThrowTeacherNotHaveAccessToMaterial_WhenTeacherHasNoAccessAndLessonIsPrivate()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var questionId = Guid.NewGuid();
+            var lessonId = Guid.NewGuid();
+            var command = new CreateQuestionCommentCommand
+            {
+                QuestionId = questionId,
+                Content = "Test comment",
+                CreatedByUserId = userId
+            };
+            var user = new ApplicationUser { Id = userId, SchoolId = 1 };
+            var question = new LessonMaterialQuestion
+            {
+                Id = questionId,
+                Status = EntityStatus.Active,
+                LessonMaterialId = lessonId
+            };
+            var lesson = new LessonMaterial
+            {
+                Id = lessonId,
+                Status = EntityStatus.Active,
+                LessonStatus = LessonMaterialStatus.Approved,
+                SchoolId = 1,
+                Visibility = LessonMaterialVisibility.Private
+            };
+
+            _userRepositoryMock.Setup(x => x.GetByIdAsync(userId))
+                .ReturnsAsync(user);
+            _userManagerMock.Setup(x => x.GetRolesAsync(user))
+                .ReturnsAsync(["Teacher"]);
+            _permissionServiceMock.Setup(x => x.GetHighestPriorityRole(It.IsAny<IList<string>>()))
+                .Returns("Teacher");
+            _questionRepositoryMock.Setup(x => x.GetByIdAsync(questionId))
+                .ReturnsAsync(question);
+            _lessonRepositoryMock.Setup(x => x.GetByIdAsync(lessonId))
+                .ReturnsAsync(lesson);
+            _studentClassRepositoryMock.Setup(x => x.TeacherHasAccessToMaterialAsync(userId, lessonId))
+                .ReturnsAsync(false);
+
+            // Act & Assert
+            var ex = Assert.ThrowsAsync<AppException>(async () =>
+                await _handler.Handle(command, CancellationToken.None));
+            Assert.That(ex.StatusCode, Is.EqualTo(CustomCode.TeacherNotHaveAccessToMaterial));
+        }
+
+        [Test]
         public void Handle_ShouldThrowTeacherNotHaveAccessToMaterial_WhenTeacherHasNoAccess()
         {
             // Arrange
