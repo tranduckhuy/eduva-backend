@@ -1,3 +1,4 @@
+using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Features.Folders.Commands;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
@@ -415,7 +416,7 @@ namespace Eduva.Application.Test.Features.Folders.Commands
             var cmd = new UpdateFolderOrderCommand { Id = folderId, Order = 2, CurrentUserId = teacherId };
             _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
 
-            Assert.ThrowsAsync<Common.Exceptions.AppException>(() => _handler.Handle(cmd, CancellationToken.None));
+            Assert.ThrowsAsync<AppException>(() => _handler.Handle(cmd, CancellationToken.None));
         }
 
         [Test]
@@ -436,7 +437,7 @@ namespace Eduva.Application.Test.Features.Folders.Commands
                 Id = Guid.NewGuid(),
                 Status = EntityStatus.Active,
                 OwnerType = OwnerType.Personal,
-                UserId = Guid.NewGuid(), // khác user
+                UserId = Guid.NewGuid(), // khï¿½c user
                 Order = 2
             };
 

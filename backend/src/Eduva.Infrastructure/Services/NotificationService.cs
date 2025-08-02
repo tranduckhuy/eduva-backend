@@ -561,7 +561,7 @@ namespace Eduva.Infrastructure.Services
                     .Where(u => u.SchoolId == lesson.SchoolId && u.Status == EntityStatus.Active)
                     .ToList();
 
-                var eligibleRoles = new[] { "SchoolAdmin", "ContentModerator" };
+                var eligibleRoles = new[] { "ContentModerator" };
                 var eligibleUserIds = new List<Guid>();
 
                 foreach (var user in schoolUsers)
