@@ -36,7 +36,7 @@ namespace Eduva.Application.Test.Common.Helpers
         {
             var result = NotificationPayloadHelper.DeserializePayload("[1,2,3]");
             var list = (List<object>)result;
-            Assert.That(list.Count, Is.EqualTo(3));
+            Assert.That(list, Has.Count.EqualTo(3));
         }
 
         [Test]
