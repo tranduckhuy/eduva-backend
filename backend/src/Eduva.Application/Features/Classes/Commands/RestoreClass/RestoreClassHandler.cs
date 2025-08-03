@@ -60,7 +60,7 @@ namespace Eduva.Application.Features.Classes.Commands.RestoreClass
                 // Restore all archived folders in the class
                 var folderRepository = _unitOfWork.GetRepository<Folder, Guid>();
                 var archivedFolders = await folderRepository.FindAsync(f =>
-                    f.ClassId == classroom.Id && f.Status == EntityStatus.Archived);
+                    f.ClassId == classroom.Id && f.Status == EntityStatus.Archived, cancellationToken);
 
                 foreach (var folder in archivedFolders)
                 {

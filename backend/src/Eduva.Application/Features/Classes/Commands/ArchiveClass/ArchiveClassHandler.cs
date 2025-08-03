@@ -57,7 +57,7 @@ namespace Eduva.Application.Features.Classes.Commands.ArchiveClass
 
                 // Archive all folders in the class
                 var folderRepository = _unitOfWork.GetRepository<Folder, Guid>();
-                var folders = await folderRepository.FindAsync(f => f.ClassId == classroom.Id);
+                var folders = await folderRepository.FindAsync(f => f.ClassId == classroom.Id, cancellationToken);
 
                 foreach (var folder in folders)
                 {
@@ -71,14 +71,14 @@ namespace Eduva.Application.Features.Classes.Commands.ArchiveClass
                 var folderIds = folders.Select(f => f.Id).ToList();
 
                 var folderLessonMaterials = await folderLessonMaterialRepository
-                    .FindAsync(flm => folderIds.Contains(flm.FolderId));
+                    .FindAsync(flm => folderIds.Contains(flm.FolderId), cancellationToken);
 
                 var lessonMaterialIds = folderLessonMaterials.Select(flm => flm.LessonMaterialId).Distinct().ToList();
 
                 // Remove all questions from lesson materials in the class
                 var lessonMaterialQuestionRepository = _unitOfWork.GetRepository<LessonMaterialQuestion, Guid>();
                 var questionsToRemove = await lessonMaterialQuestionRepository
-                    .FindAsync(lmq => lessonMaterialIds.Contains(lmq.LessonMaterialId));
+                    .FindAsync(lmq => lessonMaterialIds.Contains(lmq.LessonMaterialId), cancellationToken);
 
                 foreach (var question in questionsToRemove)
                 {
