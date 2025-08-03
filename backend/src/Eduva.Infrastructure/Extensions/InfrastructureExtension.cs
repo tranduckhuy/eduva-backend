@@ -22,9 +22,14 @@ namespace Eduva.Infrastructure.Extensions
     {
         public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddDbContext<AppDbContext>(options =>
-                options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"),
-                    b => b.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName)));
+            services.AddDbContextPool<AppDbContext>(options =>
+                options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"), npgsqlOptions =>
+                {
+                    npgsqlOptions.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName);
+                    npgsqlOptions.CommandTimeout(30);
+                    npgsqlOptions.EnableRetryOnFailure(maxRetryCount: 3);
+                }), poolSize: 10);
+                
             services.AddHealthChecks().Services.AddDbContext<AppDbContext>();
 
             // Add Redis distributed cache

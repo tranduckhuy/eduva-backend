@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.1](https://github.com/tranduckhuy/eduva-backend/compare/v1.4.0...v1.4.1) (2025-08-02)
+
+
+### Bug Fixes
+
+* database connection transient failure and configures logging & add lesson material shared in school into person class & refactor: localize worksheet name and exclude SchoolAdmin from notifications ([#484](https://github.com/tranduckhuy/eduva-backend/issues/484))  ([5772fd7](https://github.com/tranduckhuy/eduva-backend/commit/5772fd70c2f12ee101b8518665de92063765dcad))
+
 ## [1.4.0](https://github.com/tranduckhuy/eduva-backend/compare/v1.3.0...v1.4.0) (2025-08-01)
 
 

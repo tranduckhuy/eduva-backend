@@ -16,6 +16,12 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure logging with timestamp
+builder.Logging.AddSimpleConsole(options =>
+{
+    options.TimestampFormat = "[yyyy-MM-dd HH:mm:ss] ";
+});
+
 // Add services to the container.
 builder.Services.AddControllers();
 
