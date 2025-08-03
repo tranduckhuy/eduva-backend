@@ -1,6 +1,7 @@
 ﻿using Eduva.Application.Exceptions.School;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
+using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Enums;
 using MediatR;
 
@@ -11,12 +12,14 @@ namespace Eduva.Application.Features.Schools.Commands.ArchiveSchool
         private readonly IUnitOfWork _unitOfWork;
         private readonly ISchoolRepository _schoolRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IAuthService _authService;
 
-        public ArchiveSchoolCommandHandler(IUnitOfWork unitOfWork)
+        public ArchiveSchoolCommandHandler(IUnitOfWork unitOfWork, IAuthService authService)
         {
             _unitOfWork = unitOfWork;
             _schoolRepository = _unitOfWork.GetCustomRepository<ISchoolRepository>();
             _userRepository = _unitOfWork.GetCustomRepository<IUserRepository>();
+            _authService = authService;
         }
 
         public async Task<Unit> Handle(ArchiveSchoolCommand request, CancellationToken cancellationToken)
@@ -39,6 +42,8 @@ namespace Eduva.Application.Features.Schools.Commands.ArchiveSchool
                 user.LockoutEnabled = true;
                 user.LockoutEnd = DateTimeOffset.MaxValue;
                 _userRepository.Update(user);
+
+                await _authService.InvalidateAllUserTokensAsync(user.Id.ToString());
             }
 
             await _unitOfWork.CommitAsync();
