@@ -55,10 +55,21 @@ namespace Eduva.Application.Features.Classes.Commands.RestoreClass
                 // Set the class status to active
                 classroom.Status = EntityStatus.Active;
                 classroom.LastModifiedAt = DateTimeOffset.UtcNow;
-
                 classroomRepository.Update(classroom);
-                await _unitOfWork.CommitAsync();
 
+                // Restore all archived folders in the class
+                var folderRepository = _unitOfWork.GetRepository<Folder, Guid>();
+                var archivedFolders = await folderRepository.FindAsync(f =>
+                    f.ClassId == classroom.Id && f.Status == EntityStatus.Archived, cancellationToken);
+
+                foreach (var folder in archivedFolders)
+                {
+                    folder.Status = EntityStatus.Active;
+                    folder.LastModifiedAt = DateTimeOffset.UtcNow;
+                    folderRepository.Update(folder);
+                }
+
+                await _unitOfWork.CommitAsync();
                 return Unit.Value;
             }
             catch (Exception)

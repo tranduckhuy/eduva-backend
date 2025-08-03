@@ -57,6 +57,19 @@ namespace Eduva.Application.Test.Features.Classes.Commands.RestoreClass
             _userRepoMock.Setup(r => r.GetByIdAsync(teacherId)).ReturnsAsync(teacher);
             _userManagerMock.Setup(m => m.GetRolesAsync(teacher)).ReturnsAsync(new List<string> { nameof(Role.Teacher) });
             _classroomRepoMock.Setup(r => r.Update(It.IsAny<Classroom>()));
+
+            // Add mock for folder repository and folder restoration
+            var folderRepoMock = new Mock<IGenericRepository<Folder, Guid>>();
+            var archivedFolders = new List<Folder>
+            {
+                new() { Id = Guid.NewGuid(), ClassId = classId, Status = EntityStatus.Archived },
+                new() { Id = Guid.NewGuid(), ClassId = classId, Status = EntityStatus.Archived }
+            };
+            folderRepoMock.Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Folder, bool>>>(), default))
+                .ReturnsAsync(archivedFolders);
+            folderRepoMock.Setup(r => r.Update(It.IsAny<Folder>()));
+
+            _unitOfWorkMock.Setup(u => u.GetRepository<Folder, Guid>()).Returns(folderRepoMock.Object);
             _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
 
             // Act
@@ -65,6 +78,7 @@ namespace Eduva.Application.Test.Features.Classes.Commands.RestoreClass
             // Assert
             Assert.That(classroom.Status, Is.EqualTo(EntityStatus.Active));
             _classroomRepoMock.Verify(r => r.Update(It.Is<Classroom>(c => c.Id == classId && c.Status == EntityStatus.Active)), Times.Once);
+            folderRepoMock.Verify(r => r.Update(It.Is<Folder>(f => f.Status == EntityStatus.Active)), Times.Exactly(archivedFolders.Count));
             _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Once);
             Assert.That(result, Is.EqualTo(Unit.Value));
         }
@@ -184,6 +198,19 @@ namespace Eduva.Application.Test.Features.Classes.Commands.RestoreClass
             _userRepoMock.Setup(r => r.GetByIdAsync(adminId)).ReturnsAsync(admin);
             _userManagerMock.Setup(m => m.GetRolesAsync(admin)).ReturnsAsync(new List<string> { nameof(Role.SchoolAdmin) });
             _classroomRepoMock.Setup(r => r.Update(It.IsAny<Classroom>()));
+
+            // Add mock for folder repository and folder restoration
+            var folderRepoMock = new Mock<IGenericRepository<Folder, Guid>>();
+            var archivedFolders = new List<Folder>
+            {
+                new Folder { Id = Guid.NewGuid(), ClassId = classId, Status = EntityStatus.Archived },
+                new Folder { Id = Guid.NewGuid(), ClassId = classId, Status = EntityStatus.Archived }
+            };
+            folderRepoMock.Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Folder, bool>>>(), default))
+                .ReturnsAsync(archivedFolders);
+            folderRepoMock.Setup(r => r.Update(It.IsAny<Folder>()));
+
+            _unitOfWorkMock.Setup(u => u.GetRepository<Folder, Guid>()).Returns(folderRepoMock.Object);
             _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
 
             // Act
@@ -192,8 +219,126 @@ namespace Eduva.Application.Test.Features.Classes.Commands.RestoreClass
             // Assert
             Assert.That(classroom.Status, Is.EqualTo(EntityStatus.Active));
             _classroomRepoMock.Verify(r => r.Update(It.Is<Classroom>(c => c.Id == classId && c.Status == EntityStatus.Active)), Times.Once);
+            folderRepoMock.Verify(r => r.Update(It.Is<Folder>(f => f.Status == EntityStatus.Active)), Times.Exactly(archivedFolders.Count));
             _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Once);
             Assert.That(result, Is.EqualTo(Unit.Value));
+        }
+
+        [Test]
+        public async Task Handle_Should_Restore_Class_When_SystemAdmin()
+        {
+            // Arrange
+            var classId = Guid.NewGuid();
+            var adminId = Guid.NewGuid();
+            var classroom = new Classroom
+            {
+                Id = classId,
+                TeacherId = Guid.NewGuid(),
+                Status = EntityStatus.Archived
+            };
+            var admin = new ApplicationUser { Id = adminId };
+
+            var command = new RestoreClassCommand { Id = classId, TeacherId = adminId };
+
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+            _userRepoMock.Setup(r => r.GetByIdAsync(adminId)).ReturnsAsync(admin);
+            _userManagerMock.Setup(m => m.GetRolesAsync(admin)).ReturnsAsync(new List<string> { nameof(Role.SystemAdmin) });
+            _classroomRepoMock.Setup(r => r.Update(It.IsAny<Classroom>()));
+
+            // Add mock for folder repository
+            var folderRepoMock = new Mock<IGenericRepository<Folder, Guid>>();
+            var archivedFolders = new List<Folder>
+            {
+                new() { Id = Guid.NewGuid(), ClassId = classId, Status = EntityStatus.Archived }
+            };
+            folderRepoMock.Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Folder, bool>>>(), default))
+                .ReturnsAsync(archivedFolders);
+            folderRepoMock.Setup(r => r.Update(It.IsAny<Folder>()));
+
+            _unitOfWorkMock.Setup(u => u.GetRepository<Folder, Guid>()).Returns(folderRepoMock.Object);
+            _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
+
+            // Act
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            Assert.That(classroom.Status, Is.EqualTo(EntityStatus.Active));
+            _classroomRepoMock.Verify(r => r.Update(It.Is<Classroom>(c => c.Id == classId && c.Status == EntityStatus.Active)), Times.Once);
+            folderRepoMock.Verify(r => r.Update(It.Is<Folder>(f => f.Status == EntityStatus.Active)), Times.Exactly(archivedFolders.Count));
+            _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Once);
+            Assert.That(result, Is.EqualTo(Unit.Value));
+        }
+
+        [Test]
+        public async Task Handle_Should_Restore_Class_When_No_Archived_Folders()
+        {
+            // Arrange
+            var classId = Guid.NewGuid();
+            var teacherId = Guid.NewGuid();
+            var classroom = new Classroom
+            {
+                Id = classId,
+                TeacherId = teacherId,
+                Status = EntityStatus.Archived
+            };
+            var teacher = new ApplicationUser { Id = teacherId };
+
+            var command = new RestoreClassCommand { Id = classId, TeacherId = teacherId };
+
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+            _userRepoMock.Setup(r => r.GetByIdAsync(teacherId)).ReturnsAsync(teacher);
+            _userManagerMock.Setup(m => m.GetRolesAsync(teacher)).ReturnsAsync(new List<string> { nameof(Role.Teacher) });
+            _classroomRepoMock.Setup(r => r.Update(It.IsAny<Classroom>()));
+
+            // Mock empty folder list
+            var folderRepoMock = new Mock<IGenericRepository<Folder, Guid>>();
+            folderRepoMock.Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Folder, bool>>>(), default))
+                .ReturnsAsync(new List<Folder>());
+
+            _unitOfWorkMock.Setup(u => u.GetRepository<Folder, Guid>()).Returns(folderRepoMock.Object);
+            _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
+
+            // Act
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            Assert.That(classroom.Status, Is.EqualTo(EntityStatus.Active));
+            _classroomRepoMock.Verify(r => r.Update(It.Is<Classroom>(c => c.Id == classId && c.Status == EntityStatus.Active)), Times.Once);
+            folderRepoMock.Verify(r => r.Update(It.IsAny<Folder>()), Times.Never);
+            _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Once);
+            Assert.That(result, Is.EqualTo(Unit.Value));
+        }
+
+        [Test]
+        public void Handle_Should_Throw_When_Folder_Repository_Fails()
+        {
+            // Arrange
+            var classId = Guid.NewGuid();
+            var teacherId = Guid.NewGuid();
+            var classroom = new Classroom
+            {
+                Id = classId,
+                TeacherId = teacherId,
+                Status = EntityStatus.Archived
+            };
+            var teacher = new ApplicationUser { Id = teacherId };
+            var command = new RestoreClassCommand { Id = classId, TeacherId = teacherId };
+
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+            _userRepoMock.Setup(r => r.GetByIdAsync(teacherId)).ReturnsAsync(teacher);
+            _userManagerMock.Setup(m => m.GetRolesAsync(teacher)).ReturnsAsync(new List<string> { nameof(Role.Teacher) });
+            _classroomRepoMock.Setup(r => r.Update(It.IsAny<Classroom>()));
+
+            // Mock folder repository to throw exception
+            var folderRepoMock = new Mock<IGenericRepository<Folder, Guid>>();
+            folderRepoMock.Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Folder, bool>>>(), default))
+                .ThrowsAsync(new Exception("Folder DB error"));
+
+            _unitOfWorkMock.Setup(u => u.GetRepository<Folder, Guid>()).Returns(folderRepoMock.Object);
+
+            // Act & Assert
+            var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, CancellationToken.None));
+            Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.ClassRestoreFailed));
         }
     }
 }
