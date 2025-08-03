@@ -45,20 +45,53 @@ namespace Eduva.Application.Features.Classes.Commands.ArchiveClass
             bool isTeacherOfClass = classroom.TeacherId == request.TeacherId;
             bool isAdmin = userRoles.Contains(nameof(Role.SystemAdmin)) || userRoles.Contains(nameof(Role.SchoolAdmin));
 
-            // Only allow the teacher of the class or admins to archive the class
             if (!isTeacherOfClass && !isAdmin)
-            {
                 throw new AppException(CustomCode.NotTeacherOfClass);
-            }
+
             try
             {
-                // Set the class status to archived
+                // Archive class
                 classroom.Status = EntityStatus.Archived;
                 classroom.LastModifiedAt = DateTimeOffset.UtcNow;
-
                 classroomRepository.Update(classroom);
-                await _unitOfWork.CommitAsync();
 
+                // Archive all folders in the class
+                var folderRepository = _unitOfWork.GetRepository<Folder, Guid>();
+                var folders = await folderRepository.FindAsync(f => f.ClassId == classroom.Id);
+
+                foreach (var folder in folders)
+                {
+                    folder.Status = EntityStatus.Archived;
+                    folder.LastModifiedAt = DateTimeOffset.UtcNow;
+                    folderRepository.Update(folder);
+                }
+
+                // Get all lesson materials in class folders
+                var folderLessonMaterialRepository = _unitOfWork.GetRepository<FolderLessonMaterial, int>();
+                var folderIds = folders.Select(f => f.Id).ToList();
+
+                var folderLessonMaterials = await folderLessonMaterialRepository
+                    .FindAsync(flm => folderIds.Contains(flm.FolderId));
+
+                var lessonMaterialIds = folderLessonMaterials.Select(flm => flm.LessonMaterialId).Distinct().ToList();
+
+                // Remove all questions from lesson materials in the class
+                var lessonMaterialQuestionRepository = _unitOfWork.GetRepository<LessonMaterialQuestion, Guid>();
+                var questionsToRemove = await lessonMaterialQuestionRepository
+                    .FindAsync(lmq => lessonMaterialIds.Contains(lmq.LessonMaterialId));
+
+                foreach (var question in questionsToRemove)
+                {
+                    lessonMaterialQuestionRepository.Remove(question);
+                }
+
+                // Remove all lesson materials from class folders
+                foreach (var folderLessonMaterial in folderLessonMaterials)
+                {
+                    folderLessonMaterialRepository.Remove(folderLessonMaterial);
+                }
+
+                await _unitOfWork.CommitAsync();
                 return Unit.Value;
             }
             catch (Exception)

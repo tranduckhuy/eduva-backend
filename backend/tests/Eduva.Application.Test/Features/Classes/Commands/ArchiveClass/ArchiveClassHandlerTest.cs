@@ -7,6 +7,7 @@ using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using Microsoft.AspNetCore.Identity;
 using Moq;
+using System.Linq.Expressions;
 
 namespace Eduva.Application.Test.Features.Classes.Commands.ArchiveClass
 {
@@ -17,6 +18,9 @@ namespace Eduva.Application.Test.Features.Classes.Commands.ArchiveClass
         private Mock<UserManager<ApplicationUser>> _userManagerMock = null!;
         private Mock<IClassroomRepository> _classroomRepoMock = null!;
         private Mock<IGenericRepository<ApplicationUser, Guid>> _userRepoMock = null!;
+        private Mock<IGenericRepository<Folder, Guid>> _folderRepoMock = null!;
+        private Mock<IGenericRepository<FolderLessonMaterial, int>> _folderLessonMaterialRepoMock = null!;
+        private Mock<IGenericRepository<LessonMaterialQuestion, Guid>> _lessonMaterialQuestionRepoMock = null!;
         private ArchiveClassHandler _handler = null!;
 
         [SetUp]
@@ -27,11 +31,20 @@ namespace Eduva.Application.Test.Features.Classes.Commands.ArchiveClass
                 Mock.Of<IUserStore<ApplicationUser>>(), null!, null!, null!, null!, null!, null!, null!, null!);
             _classroomRepoMock = new Mock<IClassroomRepository>();
             _userRepoMock = new Mock<IGenericRepository<ApplicationUser, Guid>>();
+            _folderRepoMock = new Mock<IGenericRepository<Folder, Guid>>();
+            _folderLessonMaterialRepoMock = new Mock<IGenericRepository<FolderLessonMaterial, int>>();
+            _lessonMaterialQuestionRepoMock = new Mock<IGenericRepository<LessonMaterialQuestion, Guid>>();
 
             _unitOfWorkMock.Setup(u => u.GetCustomRepository<IClassroomRepository>())
                 .Returns(_classroomRepoMock.Object);
             _unitOfWorkMock.Setup(u => u.GetRepository<ApplicationUser, Guid>())
                 .Returns(_userRepoMock.Object);
+            _unitOfWorkMock.Setup(u => u.GetRepository<Folder, Guid>())
+                .Returns(_folderRepoMock.Object);
+            _unitOfWorkMock.Setup(u => u.GetRepository<FolderLessonMaterial, int>())
+                .Returns(_folderLessonMaterialRepoMock.Object);
+            _unitOfWorkMock.Setup(u => u.GetRepository<LessonMaterialQuestion, Guid>())
+                .Returns(_lessonMaterialQuestionRepoMock.Object);
 
             _handler = new ArchiveClassHandler(_unitOfWorkMock.Object, _userManagerMock.Object);
         }
@@ -55,7 +68,22 @@ namespace Eduva.Application.Test.Features.Classes.Commands.ArchiveClass
             _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
             _userRepoMock.Setup(r => r.GetByIdAsync(teacherId)).ReturnsAsync(teacher);
             _userManagerMock.Setup(m => m.GetRolesAsync(teacher)).ReturnsAsync(new List<string> { nameof(Role.Teacher) });
+
+            // Bổ sung setup cho các phương thức Update và Remove
+            _classroomRepoMock.Setup(r => r.Update(It.IsAny<Classroom>()));
+            _folderRepoMock.Setup(r => r.Update(It.IsAny<Folder>()));
+            _folderLessonMaterialRepoMock.Setup(r => r.Remove(It.IsAny<FolderLessonMaterial>()));
+            _lessonMaterialQuestionRepoMock.Setup(r => r.Remove(It.IsAny<LessonMaterialQuestion>()));
+
             _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
+
+            // Setup folder and lesson material mocks to return empty lists
+            _folderRepoMock.Setup(r => r.FindAsync(It.IsAny<Expression<Func<Folder, bool>>>(), default))
+                .ReturnsAsync(new List<Folder>());
+            _folderLessonMaterialRepoMock.Setup(r => r.FindAsync(It.IsAny<Expression<Func<FolderLessonMaterial, bool>>>(), default))
+                .ReturnsAsync(new List<FolderLessonMaterial>());
+            _lessonMaterialQuestionRepoMock.Setup(r => r.FindAsync(It.IsAny<Expression<Func<LessonMaterialQuestion, bool>>>(), default))
+                .ReturnsAsync(new List<LessonMaterialQuestion>());
 
             // Act
             var result = await _handler.Handle(command, CancellationToken.None);
@@ -87,6 +115,14 @@ namespace Eduva.Application.Test.Features.Classes.Commands.ArchiveClass
             _userRepoMock.Setup(r => r.GetByIdAsync(adminId)).ReturnsAsync(admin);
             _userManagerMock.Setup(m => m.GetRolesAsync(admin)).ReturnsAsync(new List<string> { nameof(Role.SystemAdmin) });
             _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
+
+            // Setup folder and lesson material mocks to return empty lists
+            _folderRepoMock.Setup(r => r.FindAsync(It.IsAny<Expression<Func<Folder, bool>>>(), default))
+                .ReturnsAsync(new List<Folder>());
+            _folderLessonMaterialRepoMock.Setup(r => r.FindAsync(It.IsAny<Expression<Func<FolderLessonMaterial, bool>>>(), default))
+                .ReturnsAsync(new List<FolderLessonMaterial>());
+            _lessonMaterialQuestionRepoMock.Setup(r => r.FindAsync(It.IsAny<Expression<Func<LessonMaterialQuestion, bool>>>(), default))
+                .ReturnsAsync(new List<LessonMaterialQuestion>());
 
             // Act
             var result = await _handler.Handle(command, CancellationToken.None);
@@ -203,6 +239,51 @@ namespace Eduva.Application.Test.Features.Classes.Commands.ArchiveClass
             // Act & Assert
             var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, CancellationToken.None));
             Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.ClassArchiveFailed));
+        }
+
+        [Test]
+        public async Task Handle_ShouldArchiveClass_WhenUserIsSchoolAdmin()
+        {
+            // Arrange
+            var classId = Guid.NewGuid();
+            var adminId = Guid.NewGuid();
+            var classroom = new Classroom
+            {
+                Id = classId,
+                TeacherId = Guid.NewGuid(),
+                Status = EntityStatus.Active
+            };
+            var admin = new ApplicationUser { Id = adminId };
+
+            var command = new ArchiveClassCommand { Id = classId, TeacherId = adminId };
+
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+            _userRepoMock.Setup(r => r.GetByIdAsync(adminId)).ReturnsAsync(admin);
+            _userManagerMock.Setup(m => m.GetRolesAsync(admin)).ReturnsAsync(new List<string> { nameof(Role.SchoolAdmin) });
+
+            _classroomRepoMock.Setup(r => r.Update(It.IsAny<Classroom>()));
+            _folderRepoMock.Setup(r => r.Update(It.IsAny<Folder>()));
+            _folderLessonMaterialRepoMock.Setup(r => r.Remove(It.IsAny<FolderLessonMaterial>()));
+            _lessonMaterialQuestionRepoMock.Setup(r => r.Remove(It.IsAny<LessonMaterialQuestion>()));
+
+            _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
+
+            // Setup folder and lesson material mocks to return empty lists
+            _folderRepoMock.Setup(r => r.FindAsync(It.IsAny<Expression<Func<Folder, bool>>>(), default))
+                .ReturnsAsync(new List<Folder>());
+            _folderLessonMaterialRepoMock.Setup(r => r.FindAsync(It.IsAny<Expression<Func<FolderLessonMaterial, bool>>>(), default))
+                .ReturnsAsync(new List<FolderLessonMaterial>());
+            _lessonMaterialQuestionRepoMock.Setup(r => r.FindAsync(It.IsAny<Expression<Func<LessonMaterialQuestion, bool>>>(), default))
+                .ReturnsAsync(new List<LessonMaterialQuestion>());
+
+            // Act
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            Assert.That(classroom.Status, Is.EqualTo(EntityStatus.Archived));
+            _classroomRepoMock.Verify(r => r.Update(It.Is<Classroom>(c => c.Id == classId && c.Status == EntityStatus.Archived)), Times.Once);
+            _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Once);
+            Assert.That(result, Is.EqualTo(MediatR.Unit.Value));
         }
     }
 }
