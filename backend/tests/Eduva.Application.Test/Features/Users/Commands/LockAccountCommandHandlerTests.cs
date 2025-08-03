@@ -2,6 +2,7 @@
 using Eduva.Application.Exceptions.Auth;
 using Eduva.Application.Features.Users.Commands;
 using Eduva.Application.Interfaces;
+using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
@@ -18,6 +19,7 @@ public class LockAccountCommandHandlerTests
 {
     private Mock<IUnitOfWork> _unitOfWorkMock = default!;
     private Mock<UserManager<ApplicationUser>> _userManagerMock = default!;
+    private Mock<IAuthService> _authServiceMock = default!;
     private LockAccountCommandHandler _handler = default!;
 
     #region Helper Methods
@@ -47,12 +49,78 @@ public class LockAccountCommandHandlerTests
             Mock.Of<ILogger<UserManager<ApplicationUser>>>()
         );
 
-        _handler = new LockAccountCommandHandler(_unitOfWorkMock.Object, _userManagerMock.Object);
+        _authServiceMock = new Mock<IAuthService>();
+
+        _handler = new LockAccountCommandHandler(_unitOfWorkMock.Object, _userManagerMock.Object, _authServiceMock.Object);
     }
 
     #endregion
 
     #region LockAccountCommandHandler Tests 
+
+    [Test]
+    public void Should_Throw_When_SchoolAdmin_Tries_To_Lock_User_From_Different_School()
+    {
+        var targetUser = CreateUser(Guid.NewGuid());
+        var executorUser = CreateUser(Guid.NewGuid());
+
+        // Set different school IDs
+        targetUser.SchoolId = 1;
+        executorUser.SchoolId = 2;
+
+        var command = new LockAccountCommand(targetUser.Id, executorUser.Id);
+
+        _userManagerMock.Setup(x => x.FindByIdAsync(command.UserId.ToString())).ReturnsAsync(targetUser);
+        _userManagerMock.Setup(x => x.FindByIdAsync(command.ExecutorId.ToString())).ReturnsAsync(executorUser);
+
+        _userManagerMock.Setup(x => x.GetRolesAsync(targetUser))
+            .ReturnsAsync([Role.Teacher.ToString()]);
+
+        _userManagerMock.Setup(x => x.GetRolesAsync(executorUser))
+            .ReturnsAsync([Role.SchoolAdmin.ToString()]);
+
+        var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, CancellationToken.None));
+        Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.Forbidden));
+    }
+
+    [Test]
+    public async Task Should_Lock_User_Successfully_When_SchoolAdmin_Locks_User_From_Same_School()
+    {
+        var targetUser = CreateUser(Guid.NewGuid());
+        var executorUser = CreateUser(Guid.NewGuid());
+
+        // Set same school ID
+        targetUser.SchoolId = 1;
+        executorUser.SchoolId = 1;
+
+        var command = new LockAccountCommand(targetUser.Id, executorUser.Id);
+
+        _userManagerMock.Setup(x => x.FindByIdAsync(command.UserId.ToString())).ReturnsAsync(targetUser);
+        _userManagerMock.Setup(x => x.FindByIdAsync(command.ExecutorId.ToString())).ReturnsAsync(executorUser);
+
+        _userManagerMock.Setup(x => x.GetRolesAsync(targetUser))
+            .ReturnsAsync([Role.Teacher.ToString()]);
+
+        _userManagerMock.Setup(x => x.GetRolesAsync(executorUser))
+            .ReturnsAsync([Role.SchoolAdmin.ToString()]);
+
+        _userManagerMock.Setup(x => x.UpdateAsync(targetUser))
+            .ReturnsAsync(IdentityResult.Success);
+
+        _authServiceMock.Setup(x => x.InvalidateAllUserTokensAsync(targetUser.Id.ToString()))
+            .Returns(Task.CompletedTask);
+
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        _userManagerMock.Verify(x => x.UpdateAsync(It.Is<ApplicationUser>(
+            u => u.LockoutEnabled && u.LockoutEnd == DateTimeOffset.MaxValue && u.Status == EntityStatus.Inactive)), Times.Once);
+
+        _authServiceMock.Verify(x => x.InvalidateAllUserTokensAsync(targetUser.Id.ToString()), Times.Once);
+
+        _unitOfWorkMock.Verify(x => x.CommitAsync(), Times.Once);
+
+        Assert.That(result, Is.EqualTo(Unit.Value));
+    }
 
     [Test]
     public async Task Should_Lock_User_When_LockoutEnd_Is_Expired()
@@ -73,12 +141,17 @@ public class LockAccountCommandHandlerTests
         _userManagerMock.Setup(x => x.UpdateAsync(targetUser))
             .ReturnsAsync(IdentityResult.Success);
 
+        _authServiceMock.Setup(x => x.InvalidateAllUserTokensAsync(targetUser.Id.ToString()))
+            .Returns(Task.CompletedTask);
+
         var result = await _handler.Handle(command, CancellationToken.None);
 
         Assert.That(result, Is.EqualTo(Unit.Value));
         _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<ApplicationUser>()), Times.Once);
+        _authServiceMock.Verify(x => x.InvalidateAllUserTokensAsync(targetUser.Id.ToString()), Times.Once);
         _unitOfWorkMock.Verify(x => x.CommitAsync(), Times.Once);
     }
+
 
     [Test]
     public void Should_Throw_When_SelfLocking()
@@ -176,10 +249,15 @@ public class LockAccountCommandHandlerTests
         _userManagerMock.Setup(x => x.UpdateAsync(targetUser))
             .ReturnsAsync(IdentityResult.Success);
 
+        _authServiceMock.Setup(x => x.InvalidateAllUserTokensAsync(targetUser.Id.ToString()))
+            .Returns(Task.CompletedTask);
+
         var result = await _handler.Handle(command, CancellationToken.None);
 
         _userManagerMock.Verify(x => x.UpdateAsync(It.Is<ApplicationUser>(
             u => u.LockoutEnabled && u.LockoutEnd == DateTimeOffset.MaxValue && u.Status == EntityStatus.Inactive)), Times.Once);
+
+        _authServiceMock.Verify(x => x.InvalidateAllUserTokensAsync(targetUser.Id.ToString()), Times.Once);
 
         _unitOfWorkMock.Verify(x => x.CommitAsync(), Times.Once);
 

@@ -2,6 +2,7 @@
 using Eduva.Application.Features.Schools.Commands.ArchiveSchool;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
+using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using MediatR;
@@ -15,6 +16,7 @@ namespace Eduva.Application.Test.Features.Schools.Commands.ArchiveSchool
         private Mock<IUnitOfWork> _unitOfWorkMock = null!;
         private Mock<ISchoolRepository> _schoolRepoMock = null!;
         private Mock<IUserRepository> _userRepoMock = null!;
+        private Mock<IAuthService> _authServiceMock = null!;
         private ArchiveSchoolCommandHandler _handler = null!;
 
         #region ArchiveSchoolCommandHandlerTests Setup
@@ -25,6 +27,7 @@ namespace Eduva.Application.Test.Features.Schools.Commands.ArchiveSchool
             _unitOfWorkMock = new Mock<IUnitOfWork>();
             _schoolRepoMock = new Mock<ISchoolRepository>();
             _userRepoMock = new Mock<IUserRepository>();
+            _authServiceMock = new Mock<IAuthService>();
 
             _unitOfWorkMock.Setup(u => u.GetCustomRepository<ISchoolRepository>())
                 .Returns(_schoolRepoMock.Object);
@@ -32,7 +35,7 @@ namespace Eduva.Application.Test.Features.Schools.Commands.ArchiveSchool
             _unitOfWorkMock.Setup(u => u.GetCustomRepository<IUserRepository>())
                 .Returns(_userRepoMock.Object);
 
-            _handler = new ArchiveSchoolCommandHandler(_unitOfWorkMock.Object);
+            _handler = new ArchiveSchoolCommandHandler(_unitOfWorkMock.Object, _authServiceMock.Object);
         }
 
         #endregion
@@ -64,6 +67,13 @@ namespace Eduva.Application.Test.Features.Schools.Commands.ArchiveSchool
             _unitOfWorkMock.Setup(u => u.CommitAsync())
                 .ReturnsAsync(1);
 
+            // Setup IAuthService for each user
+            foreach (var user in users)
+            {
+                _authServiceMock.Setup(x => x.InvalidateAllUserTokensAsync(user.Id.ToString()))
+                    .Returns(Task.CompletedTask);
+            }
+
             var command = new ArchiveSchoolCommand(school.Id);
 
             // Act
@@ -89,6 +99,13 @@ namespace Eduva.Application.Test.Features.Schools.Commands.ArchiveSchool
 
             _schoolRepoMock.Verify(r => r.Update(It.IsAny<School>()), Times.Once);
             _userRepoMock.Verify(r => r.Update(It.IsAny<ApplicationUser>()), Times.Exactly(users.Count));
+
+            // Verify that InvalidateAllUserTokensAsync was called for each user
+            foreach (var user in users)
+            {
+                _authServiceMock.Verify(x => x.InvalidateAllUserTokensAsync(user.Id.ToString()), Times.Once);
+            }
+
             _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Once);
         }
 
