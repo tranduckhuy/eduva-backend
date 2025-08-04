@@ -38,14 +38,16 @@ namespace Eduva.Application.Features.Folders.Commands
                 var classRepository = _unitOfWork.GetRepository<Classroom, Guid>();
                 var classroom = await classRepository.GetByIdAsync(request.ClassId.Value);
 
-                if (classroom != null && classroom.TeacherId == request.CurrentUserId)
+                if (classroom != null
+                    && classroom.TeacherId == request.CurrentUserId
+                    && classroom.Status == EntityStatus.Active) // Only allow if class is active
                 {
-                    // If class exists and user is the teacher of the class -> create class folder
+                    // If class exists, user is the teacher, and class is active -> create class folder
                     request.OwnerType = OwnerType.Class;
                 }
                 else
                 {
-                    // If class doesn't exist or user is not the teacher -> create personal folder
+                    // If class doesn't exist, user is not the teacher, or class is not active -> create personal folder
                     request.ClassId = null;
                 }
             }
