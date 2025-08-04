@@ -1,5 +1,6 @@
 ﻿using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
+using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using Eduva.Infrastructure.Services;
@@ -30,12 +31,14 @@ namespace Eduva.Infrastructure.Test.Services
         private Mock<IGenericRepository<ApplicationUser, Guid>> _userRepoMock;
         private Mock<UserManager<ApplicationUser>> _userManagerMock;
         private NotificationService _service;
+        private Mock<IQuestionPermissionService> _permissionServiceMock = null!;
 
         [SetUp]
         public void SetUp()
         {
             _unitOfWorkMock = new Mock<IUnitOfWork>();
             _loggerMock = new Mock<ILogger<NotificationService>>();
+            _permissionServiceMock = new Mock<IQuestionPermissionService>();
             _notificationRepoMock = new Mock<INotificationRepository>();
             _userNotificationRepoMock = new Mock<IUserNotificationRepository>();
             _lessonRepoMock = new Mock<IGenericRepository<LessonMaterial, Guid>>();
@@ -53,7 +56,7 @@ namespace Eduva.Infrastructure.Test.Services
                 null!, null!, null!, null!, null!, null!, null!, null!);
 
             SetupRepositoryMocks();
-            _service = new NotificationService(_unitOfWorkMock.Object, _loggerMock.Object, _userManagerMock.Object);
+            _service = new NotificationService(_unitOfWorkMock.Object, _loggerMock.Object, _userManagerMock.Object, _permissionServiceMock.Object);
         }
 
         private void SetupRepositoryMocks()
@@ -154,7 +157,14 @@ namespace Eduva.Infrastructure.Test.Services
                 Mock.Of<IUserStore<ApplicationUser>>(), null!, null!, null!, null!, null!, null!, null!, null!
             );
 
-            var service = new NotificationService(unitOfWorkMock.Object, loggerMock.Object, userManagerMock.Object);
+            var permissionServiceMock = new Mock<IQuestionPermissionService>();
+
+            var service = new NotificationService(
+                unitOfWorkMock.Object,
+                loggerMock.Object,
+                userManagerMock.Object,
+                permissionServiceMock.Object
+            );
 
             // Act
             var result = await service.GetUserNotificationsAsync(userId);
@@ -1261,9 +1271,34 @@ namespace Eduva.Infrastructure.Test.Services
                 new() { Id = Guid.NewGuid(), QuestionId = Guid.NewGuid(), CreatedByUserId = Guid.NewGuid(), Status = EntityStatus.Active } // Different question
             };
 
+            // Mock users
+            var questionCreator = new ApplicationUser { Id = questionCreatorId };
+            var commenter1 = new ApplicationUser { Id = commenter1Id };
+            var commenter2 = new ApplicationUser { Id = commenter2Id };
+
             _questionRepoMock.Setup(x => x.GetByIdAsync(questionId)).ReturnsAsync(question);
             _lessonRepoMock.Setup(x => x.GetByIdAsync(lessonId)).ReturnsAsync(lesson);
             _commentRepoMock.Setup(x => x.GetAllAsync()).ReturnsAsync(comments);
+
+            // Mock user repository
+            var userRepoMock = new Mock<IGenericRepository<ApplicationUser, Guid>>();
+            userRepoMock.Setup(x => x.GetByIdAsync(questionCreatorId)).ReturnsAsync(questionCreator);
+            userRepoMock.Setup(x => x.GetByIdAsync(commenter1Id)).ReturnsAsync(commenter1);
+            userRepoMock.Setup(x => x.GetByIdAsync(commenter2Id)).ReturnsAsync(commenter2);
+
+            _unitOfWorkMock.Setup(x => x.GetRepository<ApplicationUser, Guid>()).Returns(userRepoMock.Object);
+
+            // Mock HasAccessToMaterialAsync for all users
+            _studentClassCustomRepoMock.Setup(x => x.HasAccessToMaterialAsync(questionCreatorId, lessonId)).ReturnsAsync(true);
+            _studentClassCustomRepoMock.Setup(x => x.HasAccessToMaterialAsync(commenter1Id, lessonId)).ReturnsAsync(true);
+            _studentClassCustomRepoMock.Setup(x => x.HasAccessToMaterialAsync(commenter2Id, lessonId)).ReturnsAsync(true);
+
+            // Mock GetRolesAsync for commenters (assuming they are students)
+            _userManagerMock.Setup(x => x.GetRolesAsync(commenter1)).ReturnsAsync(new List<string> { "Student" });
+            _userManagerMock.Setup(x => x.GetRolesAsync(commenter2)).ReturnsAsync(new List<string> { "Student" });
+
+            // Mock GetHighestPriorityRole
+            _permissionServiceMock.Setup(x => x.GetHighestPriorityRole(It.IsAny<IList<string>>())).Returns("Student");
 
             // Act
             var result = await _service.GetUsersForQuestionCommentNotificationAsync(questionId, lessonId);
@@ -1331,9 +1366,33 @@ namespace Eduva.Infrastructure.Test.Services
                 new() { Id = Guid.NewGuid(), QuestionId = questionId, CreatedByUserId = inactiveCommenterId, Status = EntityStatus.Deleted }
             };
 
+            // Mock users
+            var questionCreator = new ApplicationUser { Id = questionCreatorId };
+            var activeCommenter = new ApplicationUser { Id = activeCommenterId };
+            var inactiveCommenter = new ApplicationUser { Id = inactiveCommenterId };
+
             _questionRepoMock.Setup(x => x.GetByIdAsync(questionId)).ReturnsAsync(question);
             _lessonRepoMock.Setup(x => x.GetByIdAsync(lessonId)).ReturnsAsync(lesson);
             _commentRepoMock.Setup(x => x.GetAllAsync()).ReturnsAsync(comments);
+
+            // Mock user repository
+            var userRepoMock = new Mock<IGenericRepository<ApplicationUser, Guid>>();
+            userRepoMock.Setup(x => x.GetByIdAsync(questionCreatorId)).ReturnsAsync(questionCreator);
+            userRepoMock.Setup(x => x.GetByIdAsync(activeCommenterId)).ReturnsAsync(activeCommenter);
+            userRepoMock.Setup(x => x.GetByIdAsync(inactiveCommenterId)).ReturnsAsync(inactiveCommenter);
+
+            _unitOfWorkMock.Setup(x => x.GetRepository<ApplicationUser, Guid>()).Returns(userRepoMock.Object);
+
+            // Mock HasAccessToMaterialAsync for users with access
+            _studentClassCustomRepoMock.Setup(x => x.HasAccessToMaterialAsync(questionCreatorId, lessonId)).ReturnsAsync(true);
+            _studentClassCustomRepoMock.Setup(x => x.HasAccessToMaterialAsync(activeCommenterId, lessonId)).ReturnsAsync(true);
+
+            // Mock GetRolesAsync for commenters (assuming they are students)
+            _userManagerMock.Setup(x => x.GetRolesAsync(activeCommenter)).ReturnsAsync(new List<string> { "Student" });
+            _userManagerMock.Setup(x => x.GetRolesAsync(inactiveCommenter)).ReturnsAsync(new List<string> { "Student" });
+
+            // Mock GetHighestPriorityRole
+            _permissionServiceMock.Setup(x => x.GetHighestPriorityRole(It.IsAny<IList<string>>())).Returns("Student");
 
             // Act
             var result = await _service.GetUsersForQuestionCommentNotificationAsync(questionId, lessonId);

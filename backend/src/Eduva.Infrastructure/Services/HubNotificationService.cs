@@ -4,7 +4,6 @@ using Eduva.Application.Features.Questions.Responses;
 using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Constants;
 using Eduva.Domain.Entities;
-using Eduva.Domain.Enums;
 using Microsoft.Extensions.Logging;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -47,15 +46,11 @@ namespace Eduva.Infrastructure.Services
                 LessonMaterialId = lessonMaterialId,
                 Title = question.Title,
                 LessonMaterialTitle = question.LessonMaterialTitle,
-                Content = question.Content,
                 CreatedAt = question.CreatedAt,
-                LastModifiedAt = question.LastModifiedAt,
                 CreatedByUserId = question.CreatedByUserId,
                 CreatedByName = question.CreatedByName,
                 CreatedByAvatar = question.CreatedByAvatar,
                 CreatedByRole = question.CreatedByRole,
-                CommentCount = question.CommentCount,
-                ActionType = QuestionActionType.Created
             };
 
             // Save the notification to the database for persistence
@@ -90,9 +85,7 @@ namespace Eduva.Infrastructure.Services
                 LessonMaterialId = lessonMaterialId,
                 Title = question.Title,
                 LessonMaterialTitle = question.LessonMaterialTitle,
-                Content = question.Content,
                 CreatedAt = question.CreatedAt,
-                LastModifiedAt = question.LastModifiedAt,
                 CreatedByUserId = question.CreatedByUserId,
                 PerformedByUserId = user?.Id ?? Guid.Empty,
                 PerformedByName = user?.FullName,
@@ -100,8 +93,6 @@ namespace Eduva.Infrastructure.Services
                 CreatedByName = question.CreatedByName,
                 CreatedByAvatar = question.CreatedByAvatar,
                 CreatedByRole = question.CreatedByRole,
-                CommentCount = question.CommentCount,
-                ActionType = QuestionActionType.Updated
             };
 
 
@@ -145,8 +136,7 @@ namespace Eduva.Infrastructure.Services
                 CreatedByName = question.CreatedByName,
                 CreatedByAvatar = question.CreatedByAvatar,
                 CreatedByRole = question.CreatedByRole,
-                DeletedAt = DateTimeOffset.UtcNow,
-                ActionType = QuestionActionType.Deleted
+                DeletedAt = DateTimeOffset.UtcNow
             };
 
             try
@@ -213,15 +203,11 @@ namespace Eduva.Infrastructure.Services
                 Title = title,
                 LessonMaterialId = lessonMaterialId,
                 LessonMaterialTitle = lessonMaterialTitle,
-                Content = comment.Content,
                 CreatedAt = comment.CreatedAt,
                 CreatedByUserId = comment.CreatedByUserId,
                 CreatedByName = comment.CreatedByName,
                 CreatedByAvatar = comment.CreatedByAvatar,
                 CreatedByRole = comment.CreatedByRole,
-                ParentCommentId = comment.ParentCommentId,
-                IsReply = comment.ParentCommentId.HasValue,
-                ActionType = QuestionActionType.Commented
             };
 
             // Save the notification to the database for persistence
@@ -257,7 +243,6 @@ namespace Eduva.Infrastructure.Services
                 Title = title,
                 LessonMaterialId = lessonMaterialId,
                 LessonMaterialTitle = lessonMaterialTitle,
-                Content = comment.Content,
                 CreatedAt = comment.CreatedAt,
                 CreatedByUserId = comment.CreatedByUserId,
                 PerformedByUserId = user?.Id ?? Guid.Empty,
@@ -266,10 +251,8 @@ namespace Eduva.Infrastructure.Services
                 CreatedByName = comment.CreatedByName,
                 CreatedByAvatar = comment.CreatedByAvatar,
                 CreatedByRole = comment.CreatedByRole,
-                ParentCommentId = comment.ParentCommentId,
-                IsReply = comment.ParentCommentId.HasValue,
-                ActionType = QuestionActionType.Updated
             };
+
             // Save the notification to the database for persistence
             var userNotificationIds = await SaveNotificationToDatabase(NotificationTypes.QuestionCommentUpdated, notification, lessonMaterialId, null, user);
 
@@ -304,7 +287,6 @@ namespace Eduva.Infrastructure.Services
                 LessonMaterialId = lessonMaterialId,
                 LessonMaterialTitle = lessonMaterialTitle,
                 DeletedAt = DateTimeOffset.UtcNow,
-                DeletedRepliesCount = deletedRepliesCount,
                 CreatedByUserId = comment.CreatedByUserId,
                 PerformedByUserId = user?.Id ?? Guid.Empty,
                 PerformedByName = user?.FullName,
@@ -312,7 +294,6 @@ namespace Eduva.Infrastructure.Services
                 CreatedByName = comment.CreatedByName,
                 CreatedByAvatar = comment.CreatedByAvatar,
                 CreatedByRole = comment.CreatedByRole,
-                ActionType = QuestionActionType.Deleted
             };
 
             try
