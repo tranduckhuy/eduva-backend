@@ -113,8 +113,6 @@ namespace Eduva.Application.Features.Questions.Commands.CreateQuestionComment
             }
 
             var studentClassRepo = _unitOfWork.GetCustomRepository<IStudentClassRepository>();
-            var lessonRepo = _unitOfWork.GetRepository<LessonMaterial, Guid>();
-            var lesson = await lessonRepo.GetByIdAsync(lessonMaterialId);
 
             switch (userRole)
             {
