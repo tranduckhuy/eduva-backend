@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.2](https://github.com/tranduckhuy/eduva-backend/compare/v1.4.1...v1.4.2) (2025-08-04)
+
+
+### Bug Fixes
+
+* handle archive class will also archive folders and delete lesson materials ([#494](https://github.com/tranduckhuy/eduva-backend/issues/494)) ([e168ddd](https://github.com/tranduckhuy/eduva-backend/commit/e168dddfd7c427072f18b14f347d565a1ee1fd90))
+
 ## [1.4.1](https://github.com/tranduckhuy/eduva-backend/compare/v1.4.0...v1.4.1) (2025-08-02)
 
 
