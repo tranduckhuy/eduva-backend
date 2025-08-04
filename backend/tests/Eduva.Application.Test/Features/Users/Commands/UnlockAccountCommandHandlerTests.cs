@@ -55,6 +55,69 @@ public class UnlockAccountCommandHandlerTests
     #region UnlockAccountCommandHandler Tests
 
     [Test]
+    public void Should_Throw_When_SchoolAdmin_Tries_To_Unlock_User_From_Different_School()
+    {
+        var targetUser = CreateUser(Guid.NewGuid());
+        var executorUser = CreateUser(Guid.NewGuid());
+
+        // Set different school IDs
+        targetUser.SchoolId = 1;
+        executorUser.SchoolId = 2;
+
+        var command = new UnlockAccountCommand(targetUser.Id, executorUser.Id);
+
+        _userManagerMock.Setup(x => x.FindByIdAsync(command.UserId.ToString())).ReturnsAsync(targetUser);
+        _userManagerMock.Setup(x => x.FindByIdAsync(command.ExecutorId.ToString())).ReturnsAsync(executorUser);
+
+        _userManagerMock.Setup(x => x.GetRolesAsync(targetUser))
+            .ReturnsAsync([Role.Teacher.ToString()]);
+
+        _userManagerMock.Setup(x => x.GetRolesAsync(executorUser))
+            .ReturnsAsync([Role.SchoolAdmin.ToString()]);
+
+        var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, CancellationToken.None));
+        Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.Forbidden));
+    }
+
+    [Test]
+    public async Task Should_Unlock_User_Successfully_When_SchoolAdmin_Unlocks_User_From_Same_School()
+    {
+        var targetUser = CreateUser(Guid.NewGuid());
+        var executorUser = CreateUser(Guid.NewGuid());
+
+        // Set same school ID
+        targetUser.SchoolId = 1;
+        executorUser.SchoolId = 1;
+
+        // Set user as locked
+        targetUser.LockoutEnd = DateTimeOffset.UtcNow.AddDays(1);
+        targetUser.LockoutEnabled = true;
+
+        var command = new UnlockAccountCommand(targetUser.Id, executorUser.Id);
+
+        _userManagerMock.Setup(x => x.FindByIdAsync(command.UserId.ToString())).ReturnsAsync(targetUser);
+        _userManagerMock.Setup(x => x.FindByIdAsync(command.ExecutorId.ToString())).ReturnsAsync(executorUser);
+
+        _userManagerMock.Setup(x => x.GetRolesAsync(targetUser))
+            .ReturnsAsync([Role.Teacher.ToString()]);
+
+        _userManagerMock.Setup(x => x.GetRolesAsync(executorUser))
+            .ReturnsAsync([Role.SchoolAdmin.ToString()]);
+
+        _userManagerMock.Setup(x => x.UpdateAsync(targetUser))
+            .ReturnsAsync(IdentityResult.Success);
+
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        _userManagerMock.Verify(x => x.UpdateAsync(It.Is<ApplicationUser>(
+            u => !u.LockoutEnabled && u.LockoutEnd == null && u.Status == EntityStatus.Active)), Times.Once);
+
+        _unitOfWorkMock.Verify(x => x.CommitAsync(), Times.Once);
+
+        Assert.That(result, Is.EqualTo(Unit.Value));
+    }
+
+    [Test]
     public void Should_Throw_When_Lockout_Expired_And_User_NotLocked()
     {
         var targetUser = CreateUser(Guid.NewGuid());

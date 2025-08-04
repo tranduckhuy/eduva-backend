@@ -1,6 +1,7 @@
 ﻿using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Exceptions.Auth;
 using Eduva.Application.Interfaces;
+using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
@@ -13,11 +14,16 @@ namespace Eduva.Application.Features.Users.Commands
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IAuthService _authService;
 
-        public LockAccountCommandHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
+        public LockAccountCommandHandler(
+               IUnitOfWork unitOfWork,
+               UserManager<ApplicationUser> userManager,
+               IAuthService authService)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
+            _authService = authService;
         }
 
         public async Task<Unit> Handle(LockAccountCommand request, CancellationToken cancellationToken)
@@ -42,6 +48,14 @@ namespace Eduva.Application.Features.Users.Commands
                 throw new AppException(CustomCode.Forbidden);
             }
 
+            if (isExecutorSchoolAdmin)
+            {
+                if (executorUser.SchoolId != targetUser.SchoolId)
+                {
+                    throw new AppException(CustomCode.Forbidden);
+                }
+            }
+
             if (targetUser.LockoutEnd.HasValue && targetUser.LockoutEnd > DateTimeOffset.UtcNow)
             {
                 throw new AppException(CustomCode.UserAlreadyLocked);
@@ -56,6 +70,8 @@ namespace Eduva.Application.Features.Users.Commands
             {
                 throw new AppException(CustomCode.SystemError);
             }
+
+            await _authService.InvalidateAllUserTokensAsync(targetUser.Id.ToString());
 
             await _unitOfWork.CommitAsync();
             return Unit.Value;

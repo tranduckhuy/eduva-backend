@@ -1,7 +1,7 @@
+using Eduva.Domain.Entities;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
-using Eduva.Domain.Entities;
 
 namespace Eduva.Infrastructure.Services
 {

@@ -47,6 +47,14 @@ namespace Eduva.Application.Features.Users.Commands
                 throw new AppException(CustomCode.Forbidden);
             }
 
+            if (isExecutorSchoolAdmin)
+            {
+                if (executorUser.SchoolId != targetUser.SchoolId)
+                {
+                    throw new AppException(CustomCode.Forbidden);
+                }
+            }
+
             var isLocked = targetUser.LockoutEnd.HasValue && targetUser.LockoutEnd > DateTimeOffset.UtcNow;
             if (!isLocked)
             {
