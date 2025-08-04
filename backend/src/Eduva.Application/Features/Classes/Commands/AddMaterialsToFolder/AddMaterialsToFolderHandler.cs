@@ -21,16 +21,31 @@ namespace Eduva.Application.Features.Classes.Commands.AddMaterialsToFolder
 
         public async Task<bool> Handle(AddMaterialsToFolderCommand request, CancellationToken cancellationToken)
         {
-            // Validate folder exists
             var folderRepository = _unitOfWork.GetRepository<Folder, Guid>();
             var folder = await folderRepository.GetByIdAsync(request.FolderId);
             if (folder == null)
             {
                 throw new AppException(CustomCode.FolderNotFound);
             }
-            if (folder.ClassId != request.ClassId)
+
+            Classroom? classroom = null;
+            if (folder.OwnerType == OwnerType.Class && folder.ClassId.HasValue)
             {
-                throw new AppException(CustomCode.Unauthorized);
+                var classRepository = _unitOfWork.GetRepository<Classroom, Guid>();
+                classroom = await classRepository.GetByIdAsync(folder.ClassId.Value);
+                if (classroom == null)
+                {
+                    throw new AppException(CustomCode.ClassNotFound);
+                }
+                if (classroom.Status != EntityStatus.Active)
+                {
+                    throw new AppException(CustomCode.ClassNotActive);
+                }
+
+                if (request.ClassId != Guid.Empty && folder.ClassId != request.ClassId)
+                {
+                    throw new AppException(CustomCode.Unauthorized);
+                }
             }
 
             // Check access permission
@@ -46,29 +61,27 @@ namespace Eduva.Application.Features.Classes.Commands.AddMaterialsToFolder
                 if (material == null)
                     throw new AppException(CustomCode.LessonMaterialNotFound);
 
-                if (material.LessonStatus != LessonMaterialStatus.Approved)
+                if (material.LessonStatus != LessonMaterialStatus.Approved || material.Status != EntityStatus.Active)
                     throw new AppException(CustomCode.LessonMaterialNotApproved);
 
                 bool canAddSharedMaterial = false;
-                if (material.Visibility == LessonMaterialVisibility.School)
+                if (classroom != null && material.Visibility == LessonMaterialVisibility.School && material.SchoolId == classroom.SchoolId)
                 {
-                    var folderClassRepository = _unitOfWork.GetRepository<Classroom, Guid>();
-                    var folderClass = await folderClassRepository.GetByIdAsync(request.ClassId);
-                    if (folderClass != null && material.SchoolId == folderClass.SchoolId)
-                    {
-                        canAddSharedMaterial = true;
-                    }
+                    canAddSharedMaterial = true;
                 }
 
                 if (material.CreatedByUserId != request.CurrentUserId && !canAddSharedMaterial)
                     throw new AppException(CustomCode.Unauthorized);
 
-                bool existsInAnyFolderOfClass = await folderLessonMaterialRepository.ExistsAsync(flm =>
-                    flm.LessonMaterialId == materialId &&
-                    flm.Folder.ClassId == request.ClassId);
+                if (classroom != null)
+                {
+                    bool existsInAnyFolderOfClass = await folderLessonMaterialRepository.ExistsAsync(flm =>
+                        flm.LessonMaterialId == materialId &&
+                        flm.Folder.ClassId == classroom.Id);
 
-                if (existsInAnyFolderOfClass)
-                    throw new AppException(CustomCode.LessonMaterialAlreadyExistsInClassFolder);
+                    if (existsInAnyFolderOfClass)
+                        throw new AppException(CustomCode.LessonMaterialAlreadyExistsInClassFolder);
+                }
 
                 // Check if material is already in this folder
                 bool alreadyInFolder = await folderLessonMaterialRepository.ExistsAsync(flm =>
