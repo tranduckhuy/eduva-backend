@@ -1,6 +1,7 @@
 using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Interfaces;
 using Eduva.Domain.Entities;
+using Eduva.Domain.Enums;
 using Eduva.Shared.Enums;
 using MediatR;
 
@@ -22,6 +23,11 @@ namespace Eduva.Application.Features.Classes.Commands.RemoveStudentsFromClass
             if (classroom == null)
             {
                 throw new AppException(CustomCode.ClassNotFound);
+            }
+
+            if (classroom.Status != EntityStatus.Active)
+            {
+                throw new AppException(CustomCode.ClassAlreadyArchived);
             }
 
             var hasPermission = await CheckPermission(request, classroom);

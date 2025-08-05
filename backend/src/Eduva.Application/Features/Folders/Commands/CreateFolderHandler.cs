@@ -45,6 +45,12 @@ namespace Eduva.Application.Features.Folders.Commands
                     // If class exists, user is the teacher, and class is active -> create class folder
                     request.OwnerType = OwnerType.Class;
                 }
+                else if (classroom != null
+                    && classroom.TeacherId == request.CurrentUserId
+                    && classroom.Status == EntityStatus.Archived)
+                {
+                    throw new AppException(CustomCode.ClassAlreadyArchived);
+                }
                 else
                 {
                     // If class doesn't exist, user is not the teacher, or class is not active -> create personal folder

@@ -31,6 +31,11 @@ namespace Eduva.Application.Features.Classes.Commands.ResetClassCode
             var classroom = await classroomRepository.GetByIdAsync(request.Id)
                 ?? throw new AppException(CustomCode.ClassNotFound);
 
+            if (classroom.Status != EntityStatus.Active)
+            {
+                throw new AppException(CustomCode.ClassAlreadyArchived);
+            }
+
             // Get the current user
             var userRepository = _unitOfWork.GetRepository<ApplicationUser, Guid>();
             var currentUser = await userRepository.GetByIdAsync(request.TeacherId)
@@ -65,6 +70,7 @@ namespace Eduva.Application.Features.Classes.Commands.ResetClassCode
             {
                 throw new AppException(CustomCode.ClassCodeDuplicate);
             }
+
             // Update class with new class code
             classroom.ClassCode = newClassCode;
             classroom.LastModifiedAt = DateTimeOffset.UtcNow;

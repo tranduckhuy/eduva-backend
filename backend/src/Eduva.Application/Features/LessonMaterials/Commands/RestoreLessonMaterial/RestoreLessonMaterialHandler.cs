@@ -48,6 +48,8 @@ namespace Eduva.Application.Features.LessonMaterials.Commands.RestoreLessonMater
 
             try
             {
+                var allFolderLessonMaterials = await folderLessonMaterialRepo.GetAllAsync();
+                
                 foreach (var lm in toRestore)
                 {
                     if (!await HasPermissionToRestoreLessonMaterial(lm, user))
@@ -56,16 +58,20 @@ namespace Eduva.Application.Features.LessonMaterials.Commands.RestoreLessonMater
                     lm.Status = EntityStatus.Active;
                     lessonMaterialRepo.Update(lm);
 
-                    var exists = (await folderLessonMaterialRepo.GetAllAsync())
-                        .Any(flm => flm.FolderId == folder.Id && flm.LessonMaterialId == lm.Id);
-                    if (!exists)
+                    var existingRelations = allFolderLessonMaterials
+                        .Where(flm => flm.LessonMaterialId == lm.Id)
+                        .ToList();
+                    
+                    foreach (var relation in existingRelations)
                     {
-                        await folderLessonMaterialRepo.AddAsync(new FolderLessonMaterial
-                        {
-                            FolderId = folder.Id,
-                            LessonMaterialId = lm.Id
-                        });
+                        folderLessonMaterialRepo.Remove(relation);
                     }
+
+                    await folderLessonMaterialRepo.AddAsync(new FolderLessonMaterial
+                    {
+                        FolderId = folder.Id,
+                        LessonMaterialId = lm.Id
+                    });
                 }
 
                 await _unitOfWork.CommitAsync();

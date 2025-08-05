@@ -336,7 +336,7 @@ namespace Eduva.Application.Test.Features.Folders.Commands
             var classId = Guid.NewGuid();
             var cmd = new RenameFolderCommand { Id = folderId, Name = "ClassFolderRename", CurrentUserId = userId };
             var folder = new Folder { Id = folderId, Name = "OldClassName", Status = EntityStatus.Active, OwnerType = OwnerType.Class, ClassId = classId };
-            var classroom = new Classroom { Id = classId, TeacherId = userId };
+            var classroom = new Classroom { Id = classId, TeacherId = userId, Status = EntityStatus.Active };
             var user = new ApplicationUser { Id = userId };
 
             _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
@@ -349,7 +349,8 @@ namespace Eduva.Application.Test.Features.Folders.Commands
                 .ReturnsAsync(new List<string> { nameof(Role.Teacher) });
 
             await _handler.Handle(cmd, CancellationToken.None);
-            _classRepoMock.Verify(r => r.GetByIdAsync(classId), Times.Once);
+
+            _classRepoMock.Verify(r => r.GetByIdAsync(classId), Times.Exactly(2));
         }
 
 
@@ -366,7 +367,7 @@ namespace Eduva.Application.Test.Features.Folders.Commands
             _folderRepoMock.Setup(r => r.ExistsAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Folder, bool>>>())).ReturnsAsync(false);
 
             var ex = Assert.Throws<AppException>(() => _handler.Handle(cmd, CancellationToken.None).GetAwaiter().GetResult());
-            Assert.That(ex?.StatusCode, Is.EqualTo(CustomCode.Forbidden).Or.EqualTo(CustomCode.FolderUpdateFailed));
+            Assert.That(ex?.StatusCode, Is.EqualTo(CustomCode.ClassNotFound));
             _classRepoMock.Verify(r => r.GetByIdAsync(classId), Times.Once);
         }
 
@@ -378,7 +379,7 @@ namespace Eduva.Application.Test.Features.Folders.Commands
             var classId = Guid.NewGuid();
             var cmd = new RenameFolderCommand { Id = folderId, Name = "TeacherClassRename", CurrentUserId = userId };
             var folder = new Folder { Id = folderId, Name = "OldClassName", Status = EntityStatus.Active, OwnerType = OwnerType.Class, ClassId = classId };
-            var classroom = new Classroom { Id = classId, TeacherId = userId };
+            var classroom = new Classroom { Id = classId, TeacherId = userId, Status = EntityStatus.Active };
 
             // Mock user object
             var user = new ApplicationUser { Id = userId };
@@ -394,9 +395,9 @@ namespace Eduva.Application.Test.Features.Folders.Commands
 
             await _handler.Handle(cmd, CancellationToken.None);
             _folderRepoMock.Verify(r => r.Update(It.Is<Folder>(f => f.Name == "TeacherClassRename")), Times.Once);
-            _classRepoMock.Verify(r => r.GetByIdAsync(classId), Times.Once);
-        }
 
+            _classRepoMock.Verify(r => r.GetByIdAsync(classId), Times.Exactly(2));
+        }
 
         [Test]
         public async Task Handle_Rename_ClassFolder_Checks_UserRepository_For_Admin()
