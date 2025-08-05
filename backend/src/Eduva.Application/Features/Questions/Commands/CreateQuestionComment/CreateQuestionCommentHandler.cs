@@ -113,8 +113,6 @@ namespace Eduva.Application.Features.Questions.Commands.CreateQuestionComment
             }
 
             var studentClassRepo = _unitOfWork.GetCustomRepository<IStudentClassRepository>();
-            var lessonRepo = _unitOfWork.GetRepository<LessonMaterial, Guid>();
-            var lesson = await lessonRepo.GetByIdAsync(lessonMaterialId);
 
             switch (userRole)
             {
@@ -132,19 +130,6 @@ namespace Eduva.Application.Features.Questions.Commands.CreateQuestionComment
                     break;
 
                 case nameof(Role.Teacher):
-
-                    if (lesson?.Visibility == LessonMaterialVisibility.School)
-                    {
-                        return;
-                    }
-
-                    var teacherHasAccess = await studentClassRepo.TeacherHasAccessToMaterialAsync(userId, lessonMaterialId);
-                    if (!teacherHasAccess)
-                    {
-                        throw new AppException(CustomCode.TeacherNotHaveAccessToMaterial);
-                    }
-                    break;
-
                 case nameof(Role.ContentModerator):
                 case nameof(Role.SchoolAdmin):
                 case nameof(Role.SystemAdmin):

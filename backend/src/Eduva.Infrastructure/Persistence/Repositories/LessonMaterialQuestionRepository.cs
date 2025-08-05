@@ -1,6 +1,5 @@
 ﻿using Eduva.Application.Interfaces.Repositories;
 using Eduva.Domain.Entities;
-using Eduva.Domain.Enums;
 using Eduva.Infrastructure.Persistence.DbContext;
 using Microsoft.EntityFrameworkCore;
 
@@ -70,13 +69,7 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                     return await _studentClassRepository.HasAccessToMaterialAsync(userId, lessonMaterialId);
 
                 case "Teacher":
-
-                    if (question.LessonMaterial.Visibility == LessonMaterialVisibility.School)
-                    {
-                        return true;
-                    }
-
-                    return await _studentClassRepository.TeacherHasAccessToMaterialAsync(userId, lessonMaterialId);
+                    return true;
 
                 default:
                     return false;

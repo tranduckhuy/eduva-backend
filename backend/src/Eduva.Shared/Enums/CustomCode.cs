@@ -180,6 +180,7 @@ namespace Eduva.Shared.Enums
         TeacherMustHaveActiveClass = 4819,
         TeacherNotHaveAccessToMaterial = 4820,
         TeacherClassNotInOwnSchool = 4821,
+        QuestionNotAccessible = 4831,
 
         // Comment Errors
         CommentNotFound = 4822,

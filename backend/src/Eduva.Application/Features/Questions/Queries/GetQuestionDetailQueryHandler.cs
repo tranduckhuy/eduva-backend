@@ -56,7 +56,7 @@ namespace Eduva.Application.Features.Questions.Queries
 
             if (!hasAccess)
             {
-                throw new AppException(CustomCode.QuestionNotFound);
+                throw new AppException(CustomCode.QuestionNotAccessible);
             }
         }
 
