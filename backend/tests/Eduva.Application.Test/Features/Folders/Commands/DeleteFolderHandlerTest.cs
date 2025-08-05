@@ -117,20 +117,31 @@ namespace Eduva.Application.Test.Features.Folders.Commands
         public async Task Handle_Should_Delete_Class_Folder_And_Links()
         {
             var folderId = Guid.NewGuid();
+            var classId = Guid.NewGuid();
             var folder = new Folder
             {
                 Id = folderId,
                 Status = EntityStatus.Archived,
                 OwnerType = OwnerType.Class,
+                ClassId = classId,
                 FolderLessonMaterials = new List<FolderLessonMaterial>
-                {
-                    new FolderLessonMaterial { Id = Guid.NewGuid(), FolderId = folderId, LessonMaterialId = Guid.NewGuid() },
-                    new FolderLessonMaterial { Id = Guid.NewGuid(), FolderId = folderId, LessonMaterialId = Guid.NewGuid() }
-                }
+        {
+            new FolderLessonMaterial { Id = Guid.NewGuid(), FolderId = folderId, LessonMaterialId = Guid.NewGuid() },
+            new FolderLessonMaterial { Id = Guid.NewGuid(), FolderId = folderId, LessonMaterialId = Guid.NewGuid() }
+        }
             };
+
+            var classroom = new Classroom
+            {
+                Id = classId,
+                Status = EntityStatus.Active,
+                SchoolId = 1
+            };
+
             var command = new DeleteFolderCommand { Id = folderId, CurrentUserId = Guid.NewGuid() };
 
             _folderRepoMock.Setup(r => r.GetFolderWithMaterialsAsync(folderId)).ReturnsAsync(folder);
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
             _userRepoMock.Setup(r => r.GetByIdAsync(command.CurrentUserId)).ReturnsAsync(new ApplicationUser { Id = command.CurrentUserId });
             _userManagerMock.Setup(m => m.GetRolesAsync(It.IsAny<ApplicationUser>())).ReturnsAsync(new List<string> { nameof(Role.SystemAdmin) });
             _folderLessonMaterialRepoMock.Setup(r => r.Remove(It.IsAny<FolderLessonMaterial>()));
@@ -228,11 +239,12 @@ namespace Eduva.Application.Test.Features.Folders.Commands
             {
                 Id = folderId,
                 Status = EntityStatus.Archived,
-                OwnerType = OwnerType.Class,
+                OwnerType = OwnerType.Personal,
+                UserId = Guid.NewGuid(),
                 FolderLessonMaterials = new List<FolderLessonMaterial>
-                {
-                    new FolderLessonMaterial { Id = Guid.NewGuid(), FolderId = folderId, LessonMaterialId = Guid.NewGuid() }
-                }
+        {
+            new FolderLessonMaterial { Id = Guid.NewGuid(), FolderId = folderId, LessonMaterialId = Guid.NewGuid() }
+        }
             };
             var command = new DeleteFolderCommand { Id = folderId, CurrentUserId = Guid.NewGuid() };
 
@@ -240,6 +252,7 @@ namespace Eduva.Application.Test.Features.Folders.Commands
             _userRepoMock.Setup(r => r.GetByIdAsync(command.CurrentUserId)).ReturnsAsync(new ApplicationUser { Id = command.CurrentUserId });
             _userManagerMock.Setup(m => m.GetRolesAsync(It.IsAny<ApplicationUser>())).ReturnsAsync(new List<string> { nameof(Role.SystemAdmin) });
             _folderLessonMaterialRepoMock.Setup(r => r.RemoveRange(It.IsAny<IEnumerable<FolderLessonMaterial>>())).Throws(new Exception("DB error"));
+
             var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, CancellationToken.None));
             Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.FolderDeleteFailed));
         }

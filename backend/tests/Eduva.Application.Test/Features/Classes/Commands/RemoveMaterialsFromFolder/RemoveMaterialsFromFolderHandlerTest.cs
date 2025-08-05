@@ -153,6 +153,14 @@ namespace Eduva.Application.Test.Features.Classes.Commands.RemoveMaterialsFromFo
             var folderId = Guid.NewGuid();
             var classId = Guid.NewGuid();
             var folder = new Folder { Id = folderId, ClassId = classId, OwnerType = OwnerType.Class };
+
+            var classroom = new Classroom
+            {
+                Id = classId,
+                Status = EntityStatus.Active,
+                SchoolId = 1
+            };
+
             var command = new RemoveMaterialsFromFolderCommand
             {
                 FolderId = folderId,
@@ -160,7 +168,9 @@ namespace Eduva.Application.Test.Features.Classes.Commands.RemoveMaterialsFromFo
                 MaterialIds = new List<Guid> { Guid.NewGuid() },
                 CurrentUserId = Guid.NewGuid()
             };
+
             _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
             _userManagerMock.Setup(u => u.FindByIdAsync(command.CurrentUserId.ToString())).ReturnsAsync((ApplicationUser?)null);
 
             var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, CancellationToken.None));

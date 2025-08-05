@@ -220,16 +220,17 @@ namespace Eduva.Application.Test.Features.LessonMaterials.Commands
             _userManagerMock.Setup(m => m.GetRolesAsync(user)).ReturnsAsync(new List<string> { "Teacher" });
 
             _lessonMaterialRepoMock.Setup(r => r.Update(lessonMaterial));
-            _folderLessonMaterialRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<FolderLessonMaterial>
-            {
-                new FolderLessonMaterial { FolderId = folderId, LessonMaterialId = lessonMaterialId }
-            });
+            var existingRelation = new FolderLessonMaterial { FolderId = folderId, LessonMaterialId = lessonMaterialId };
+            _folderLessonMaterialRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<FolderLessonMaterial> { existingRelation });
+            _folderLessonMaterialRepoMock.Setup(r => r.Remove(existingRelation));
+            _folderLessonMaterialRepoMock.Setup(r => r.AddAsync(It.IsAny<FolderLessonMaterial>())).Returns(Task.CompletedTask);
             _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(0);
 
             var result = await _handler.Handle(cmd, CancellationToken.None);
 
             _lessonMaterialRepoMock.Verify(r => r.Update(lessonMaterial), Times.Once);
-            _folderLessonMaterialRepoMock.Verify(r => r.AddAsync(It.IsAny<FolderLessonMaterial>()), Times.Never);
+            _folderLessonMaterialRepoMock.Verify(r => r.Remove(existingRelation), Times.Once);
+            _folderLessonMaterialRepoMock.Verify(r => r.AddAsync(It.Is<FolderLessonMaterial>(flm => flm.FolderId == folderId && flm.LessonMaterialId == lessonMaterialId)), Times.Once);
             _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Once);
             Assert.Multiple(() =>
             {

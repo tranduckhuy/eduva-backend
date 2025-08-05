@@ -14,6 +14,7 @@ namespace Eduva.Application.Features.Folders.Commands
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<RenameFolderHandler> _logger;
         private readonly UserManager<ApplicationUser> _userManager;
+
         public RenameFolderHandler(IUnitOfWork unitOfWork, ILogger<RenameFolderHandler> logger, UserManager<ApplicationUser> userManager)
         {
             _unitOfWork = unitOfWork;
@@ -25,14 +26,29 @@ namespace Eduva.Application.Features.Folders.Commands
         {
             var folderRepository = _unitOfWork.GetRepository<Folder, Guid>();
 
-            // Retrieve folder
             var folder = await folderRepository.GetByIdAsync(request.Id);
-            if (folder == null || folder.Status != EntityStatus.Active)
+            if (folder == null)
             {
                 throw new AppException(CustomCode.FolderNotFound);
             }
 
-            // Verify ownership and permissions
+            if (folder.OwnerType == OwnerType.Class && folder.ClassId.HasValue)
+            {
+                var classRepository = _unitOfWork.GetRepository<Classroom, Guid>();
+                var classroom = await classRepository.GetByIdAsync(folder.ClassId.Value);
+
+                if (classroom == null)
+                    throw new AppException(CustomCode.ClassNotFound);
+
+                if (classroom.Status != EntityStatus.Active)
+                    throw new AppException(CustomCode.ClassAlreadyArchived);
+            }
+
+            if (folder.Status != EntityStatus.Active)
+            {
+                throw new AppException(CustomCode.FolderNotFound);
+            }
+
             bool hasPermission = await HasPermissionToUpdateFolder(folder, request.CurrentUserId);
             if (!hasPermission)
             {
@@ -95,6 +111,11 @@ namespace Eduva.Application.Features.Folders.Commands
                     return false;
 
                 var roles = await _userManager.GetRolesAsync(user);
+
+                if (roles.Contains(nameof(Role.SystemAdmin)))
+                {
+                    return true;
+                }
 
                 if ((roles.Contains(nameof(Role.Teacher)) || roles.Contains(nameof(Role.ContentModerator))) && classroom.TeacherId == userId)
                 {
