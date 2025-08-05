@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/tranduckhuy/eduva-backend/compare/v1.4.2...v1.5.0) (2025-08-05)
+
+
+### Features
+
+* Enhances job processing and file handling & only change status class and folder (archived) when archive class ([#503](https://github.com/tranduckhuy/eduva-backend/issues/503)) ([44364e5](https://github.com/tranduckhuy/eduva-backend/commit/44364e5b336bed5228345604f237df60bf989167))
+
 ## [1.4.2](https://github.com/tranduckhuy/eduva-backend/compare/v1.4.1...v1.4.2) (2025-08-04)
 
 
