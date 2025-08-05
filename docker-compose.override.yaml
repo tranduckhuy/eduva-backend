@@ -32,6 +32,7 @@ services:
       - JwtSettings__ValidIssuer=${JWT_VALID_ISSUER}
       - JwtSettings__ValidAudience=${JWT_VALID_AUDIENCE}
       - JwtSettings__ExpiryInSecond=${JWT_EXPIRY_IN_SECONDS}
+      - WorkerApiKey=${WORKER_API_KEY}
       - EmailConfiguration__ApiKey=${EMAIL_API_KEY}
       - EmailConfiguration__From=${EMAIL_FROM}
       - EmailConfiguration__SmtpServer=${EMAIL_SMTP_SERVER}
@@ -49,13 +50,14 @@ services:
       - PayOS__PAYOS_API_KEY=${PAYOS_API_KEY}
       - PayOS__PAYOS_CHECKSUM_KEY=${PAYOS_CHECKSUM_KEY}
       - RabbitMQ__ConnectionUri=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@eduva-rabbitmq:5672
-      - RabbitMQ__QueueName=${RABBITMQ_QUEUE_NAME}
       - RabbitMQ__ExchangeName=${RABBITMQ_EXCHANGE_NAME}
-      - RabbitMQ__RoutingKey=${RABBITMQ_ROUTING_KEY}
+      - RabbitMQ__QueueNames__GenerateContent=${CONTENT_QUEUE_NAME}
+      - RabbitMQ__QueueNames__CreateProduct=${PRODUCT_QUEUE_NAME}
+      - RabbitMQ__RoutingKeys__GenerateContent=${CONTENT_ROUTING_KEY}
+      - RabbitMQ__RoutingKeys__CreateProduct=${PRODUCT_ROUTING_KEY}
       - RabbitMQ__DeadLetterQueueName=${RABBITMQ_DLQ_NAME}
       - RabbitMQ__DeadLetterExchange=${RABBITMQ_DEAD_LETTER_EXCHANGE}
       - RabbitMQ__DeadLetterRoutingKey=${RABBITMQ_DLQ_ROUTING_KEY}
-      - WorkerApiKey=${WORKER_API_KEY}
     depends_on:
       - redis
       - rabbitmq

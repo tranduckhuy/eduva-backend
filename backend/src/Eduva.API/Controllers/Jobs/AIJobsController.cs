@@ -40,18 +40,25 @@ public class AIJobsController : BaseController<AIJobsController>
     [HttpPost]
     [Authorize]
     [EnableRateLimiting(RateLimitPolicyNames.AiJobPolicy)]
+    [RequestSizeLimit(20_000_000)] // 20MB
     public async Task<IActionResult> CreateJob([FromForm] CreateJobRequest request)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var hasFiles = Request.HasFormContentType && Request.Form.Files.Any();
 
-        if (!Guid.TryParse(userId, out var id))
+        if (request?.File == null || request.File.Count == 0)
         {
-            return Respond(CustomCode.UserIdNotFound);
+            if (hasFiles)
+                return Respond(CustomCode.ModelInvalid, null, ["Files are too large (max 20MB allowed)."]);
+            else
+                return Respond(CustomCode.FileIsRequired);
         }
+
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+            return Respond(CustomCode.UserIdNotFound);
 
         var command = new CreateJobCommand
         {
-            UserId = id,
+            UserId = userId,
             File = request.File,
             Topic = request.Topic
         };
@@ -182,21 +189,28 @@ public class AIJobsController : BaseController<AIJobsController>
     // Update job
     [HttpPut("{id:guid}")]
     [Authorize]
+    [RequestSizeLimit(20_000_000)] // 20MB
     public async Task<IActionResult> UpdateJob(Guid id, [FromForm] UpdateJobRequest request)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!Guid.TryParse(userId, out var userGuid))
+        var hasFiles = Request.HasFormContentType && Request.Form.Files.Any();
+
+        if (request?.File == null || request.File.Count == 0)
         {
-            return Respond(CustomCode.UserIdNotFound);
+            if (hasFiles)
+                return Respond(CustomCode.ModelInvalid, null, ["Files are too large (max 20MB allowed)."]);
+            else
+                return Respond(CustomCode.FileIsRequired);
         }
+
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+            return Respond(CustomCode.UserIdNotFound);
 
         var command = new UpdateJobCommand
         {
             Id = id,
-            UserId = userGuid,
+            UserId = userId,
             File = request.File,
             Topic = request.Topic
-
         };
 
         return await HandleRequestAsync(async () =>

@@ -1,3 +1,4 @@
+using Eduva.Application.Features.Jobs.DTOs;
 using Eduva.Application.Interfaces.Services;
 using Eduva.Infrastructure.Configurations;
 using Microsoft.Extensions.Logging;
@@ -72,26 +73,38 @@ public class RabbitMQService : IRabbitMQService, IDisposable
         }
 
         // Declare main queue with optional DLX arguments
-        _channel.QueueDeclare(
-            queue: _configuration.QueueName,
-            durable: true,
-            exclusive: false,
-            autoDelete: false,
-            arguments: queueArguments);
+        foreach (var kvp in _configuration.QueueNames)
+        {
+            var taskType = kvp.Key;
+            var queueName = kvp.Value;
+            var routingKey = _configuration.RoutingKeys[taskType];
 
-        // Bind the queue to the exchange with the routing key
-        _channel.QueueBind(
-            queue: _configuration.QueueName,
-            exchange: _configuration.ExchangeName,
-            routingKey: _configuration.RoutingKey);
+            _channel.QueueDeclare(
+                queue: queueName,
+                durable: true,
+                exclusive: false,
+                autoDelete: false,
+                arguments: queueArguments);
+
+            _channel.QueueBind(
+                queue: queueName,
+                exchange: _configuration.ExchangeName,
+                routingKey: routingKey);
+        }
 
         _channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
 
         _logger.LogInformation("RabbitMQ connection established successfully");
     }
 
-    async Task IRabbitMQService.PublishAsync<T>(T message, string? routingKey)
+    async Task IRabbitMQService.PublishAsync<T>(T message, TaskType taskType)
     {
+        if (!_configuration.RoutingKeys.TryGetValue(taskType, out var routingKey))
+        {
+            _logger.LogError("No routing key configured for task type: {TaskType}", taskType);
+            return;
+        }
+
         var jsonMessage = JsonConvert.SerializeObject(message, new JsonSerializerSettings
         {
             ContractResolver = new CamelCasePropertyNamesContractResolver()
@@ -106,12 +119,11 @@ public class RabbitMQService : IRabbitMQService, IDisposable
 
         _channel.BasicPublish(
             exchange: _configuration.ExchangeName,
-            routingKey: routingKey ?? _configuration.RoutingKey,
+            routingKey: routingKey,
             basicProperties: properties,
             body: body);
 
-        _logger.LogInformation("Message published to RabbitMQ with routing key: {RoutingKey}", routingKey);
-
+        _logger.LogInformation("Published message to RabbitMQ with routing key: {RoutingKey}", routingKey);
         await Task.CompletedTask;
     }
 

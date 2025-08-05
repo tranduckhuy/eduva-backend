@@ -99,7 +99,7 @@ public class UpdateJobCommandHandler : IRequestHandler<UpdateJobCommand, Unit>
         };
 
         // Publish message to RabbitMQ
-        await _rabbitMQService.PublishAsync(generateContentMessage);
+        await _rabbitMQService.PublishAsync(generateContentMessage, TaskType.GenerateContent);
 
         _logger.LogInformation("Job {JobId} created successfully for content generation with topic '{Topic}'",
             job.Id, request.Topic);

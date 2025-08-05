@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Eduva.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250801024409_InitialCreate")]
+    [Migration("20250805083734_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -377,6 +377,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
 
                     b.Property<DateTimeOffset?>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PreviewContent")
+                        .HasColumnType("text");
 
                     b.Property<string>("SourceBlobNames")
                         .IsRequired()
