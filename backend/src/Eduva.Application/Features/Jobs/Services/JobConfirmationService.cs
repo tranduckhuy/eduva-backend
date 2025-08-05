@@ -87,7 +87,7 @@ namespace Eduva.Application.Features.Jobs.Services
                 VoiceConfig = request.VoiceConfig
             };
 
-            await _rabbitMQService.PublishAsync(message);
+            await _rabbitMQService.PublishAsync(message, TaskType.CreateProduct);
         }
 
         private async Task NotifyUserAsync(Job job, CancellationToken cancellationToken)

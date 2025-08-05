@@ -26,6 +26,7 @@ public class JobResponse
     public string? ContentBlobName { get; set; }
     public string? VideoOutputBlobName { get; set; }
     public string? AudioOutputBlobName { get; set; }
+    public string? PreviewContent { get; set; }
     public int? WordCount { get; set; }
     public string? FailureReason { get; set; }
     public DateTimeOffset CreatedAt { get; set; }

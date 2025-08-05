@@ -19,7 +19,7 @@ namespace Eduva.Application.Features.Jobs.Specifications
             Criteria = job =>
                 (job.UserId == userId) &&
                 (string.IsNullOrEmpty(param.SearchTerm) || job.Topic.ToLower().Contains(param.SearchTerm.ToLower())) &&
-                (job.JobStatus == JobStatus.Completed);
+                (job.JobStatus == JobStatus.Completed || job.AudioOutputBlobName != null || job.VideoOutputBlobName != null);
 
             if (!string.IsNullOrEmpty(param.SortBy))
             {

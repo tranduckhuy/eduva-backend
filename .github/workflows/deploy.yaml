@@ -39,6 +39,7 @@ jobs:
           echo "JWT_VALID_ISSUER=${{ secrets.JWT_VALID_ISSUER }}" >> .env
           echo "JWT_VALID_AUDIENCE=${{ secrets.JWT_VALID_AUDIENCE }}" >> .env
           echo "JWT_EXPIRY_IN_SECONDS=${{ secrets.JWT_EXPIRY_IN_SECONDS }}" >> .env
+          echo "WORKER_API_KEY=${{ secrets.WORKER_API_KEY }}" >> .env
           echo "EMAIL_API_KEY=${{ secrets.EMAIL_API_KEY }}" >> .env
           echo "EMAIL_FROM=${{ secrets.EMAIL_FROM }}" >> .env
           echo "EMAIL_SMTP_SERVER=${{ secrets.EMAIL_SMTP_SERVER }}" >> .env
@@ -57,13 +58,14 @@ jobs:
           echo "PAYOS_CHECKSUM_KEY=${{ secrets.PAYOS_CHECKSUM_KEY }}" >> .env
           echo "RABBITMQ_DEFAULT_USER=${{ secrets.RABBITMQ_DEFAULT_USER }}" >> .env
           echo "RABBITMQ_DEFAULT_PASS=${{ secrets.RABBITMQ_DEFAULT_PASS }}" >> .env
-          echo "RABBITMQ_QUEUE_NAME=${{ secrets.RABBITMQ_QUEUE_NAME }}" >> .env
           echo "RABBITMQ_EXCHANGE_NAME=${{ secrets.RABBITMQ_EXCHANGE_NAME }}" >> .env
-          echo "RABBITMQ_ROUTING_KEY=${{ secrets.RABBITMQ_ROUTING_KEY }}" >> .env
+          echo "CONTENT_QUEUE_NAME=${{ secrets.CONTENT_QUEUE_NAME }}" >> .env
+          echo "PRODUCT_QUEUE_NAME=${{ secrets.PRODUCT_QUEUE_NAME }}" >> .env
+          echo "CONTENT_ROUTING_KEY=${{ secrets.CONTENT_ROUTING_KEY }}" >> .env
+          echo "PRODUCT_ROUTING_KEY=${{ secrets.PRODUCT_ROUTING_KEY }}" >> .env
           echo "RABBITMQ_DLQ_NAME=${{ secrets.RABBITMQ_DLQ_NAME }}" >> .env
           echo "RABBITMQ_DEAD_LETTER_EXCHANGE=${{ secrets.RABBITMQ_DEAD_LETTER_EXCHANGE }}" >> .env
           echo "RABBITMQ_DLQ_ROUTING_KEY=${{ secrets.RABBITMQ_DLQ_ROUTING_KEY }}" >> .env
-          echo "WORKER_API_KEY=${{ secrets.WORKER_API_KEY }}" >> .env
 
       - name: Deploy with Docker Compose
         run: |
