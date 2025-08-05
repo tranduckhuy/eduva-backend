@@ -14,12 +14,14 @@ namespace Eduva.Infrastructure.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<NotificationService> _logger;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IQuestionPermissionService _permissionService;
 
-        public NotificationService(IUnitOfWork unitOfWork, ILogger<NotificationService> logger, UserManager<ApplicationUser> userManager)
+        public NotificationService(IUnitOfWork unitOfWork, ILogger<NotificationService> logger, UserManager<ApplicationUser> userManager, IQuestionPermissionService permissionService)
         {
             _unitOfWork = unitOfWork;
             _logger = logger;
             _userManager = userManager;
+            _permissionService = permissionService;
         }
 
         public async Task<Notification> CreateNotificationAsync(string type, string payload, CancellationToken cancellationToken = default)
@@ -334,21 +336,30 @@ namespace Eduva.Infrastructure.Services
             try
             {
                 var userIds = new HashSet<Guid>();
+                var studentClassCustomRepo = _unitOfWork.GetCustomRepository<IStudentClassRepository>();
 
                 // 1. Add question creator
                 var questionRepo = _unitOfWork.GetRepository<LessonMaterialQuestion, Guid>();
                 if (questionCreatorId.HasValue)
                 {
-                    userIds.Add(questionCreatorId.Value);
-                    _logger.LogInformation("Added question creator for comment notification: {UserId}", questionCreatorId.Value);
+                    var hasAccess = await studentClassCustomRepo.HasAccessToMaterialAsync(questionCreatorId.Value, lessonMaterialId);
+                    if (hasAccess)
+                    {
+                        userIds.Add(questionCreatorId.Value);
+                        _logger.LogInformation("Added question creator for comment notification: {UserId}", questionCreatorId.Value);
+                    }
                 }
                 else
                 {
                     var question = await questionRepo.GetByIdAsync(questionId);
                     if (question != null)
                     {
-                        userIds.Add(question.CreatedByUserId);
-                        _logger.LogInformation("Added question creator for comment notification: {UserId}", question.CreatedByUserId);
+                        var hasAccess = await studentClassCustomRepo.HasAccessToMaterialAsync(question.CreatedByUserId, lessonMaterialId);
+                        if (hasAccess)
+                        {
+                            userIds.Add(question.CreatedByUserId);
+                            _logger.LogInformation("Added question creator for comment notification: {UserId}", question.CreatedByUserId);
+                        }
                     }
                 }
 
@@ -368,7 +379,25 @@ namespace Eduva.Infrastructure.Services
 
                 foreach (var comment in questionComments)
                 {
-                    userIds.Add(comment.CreatedByUserId);
+                    var commenter = await _unitOfWork.GetRepository<ApplicationUser, Guid>().GetByIdAsync(comment.CreatedByUserId);
+                    if (commenter != null)
+                    {
+                        var commenterRoles = await _userManager.GetRolesAsync(commenter);
+                        var commenterRole = _permissionService.GetHighestPriorityRole(commenterRoles);
+
+                        if (commenterRole == nameof(Role.Teacher) || commenterRole == nameof(Role.ContentModerator))
+                        {
+                            userIds.Add(comment.CreatedByUserId);
+                        }
+                        else
+                        {
+                            var hasAccess = await studentClassCustomRepo.HasAccessToMaterialAsync(comment.CreatedByUserId, lessonMaterialId);
+                            if (hasAccess)
+                            {
+                                userIds.Add(comment.CreatedByUserId);
+                            }
+                        }
+                    }
                 }
 
                 var result = userIds.ToList();
@@ -385,7 +414,6 @@ namespace Eduva.Infrastructure.Services
                 return await GetUsersInLessonAsync(lessonMaterialId, cancellationToken);
             }
         }
-
 
         #region Helper methods question/comment
 
@@ -483,7 +511,7 @@ namespace Eduva.Infrastructure.Services
                 var classRepo = _unitOfWork.GetRepository<Classroom, Guid>();
                 var classroom = await classRepo.GetByIdAsync(classId);
 
-                if (classroom == null)
+                if (classroom == null || classroom.Status != EntityStatus.Active)
                 {
                     return;
                 }

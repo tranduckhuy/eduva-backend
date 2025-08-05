@@ -3,7 +3,6 @@ using Eduva.Application.Contracts.Hubs;
 using Eduva.Application.Features.Questions.Responses;
 using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
-using Eduva.Domain.Enums;
 using Eduva.Infrastructure.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -390,8 +389,6 @@ namespace Eduva.Infrastructure.Test.Services
             {
                 LessonMaterialId = lessonMaterialId,
                 LessonMaterialTitle = "Math Lesson",
-                Status = LessonMaterialStatus.Approved,
-                Feedback = "Great content!"
             };
 
             var eventType = "LessonMaterialApproved";
@@ -431,8 +428,6 @@ namespace Eduva.Infrastructure.Test.Services
             {
                 LessonMaterialId = lessonMaterialId,
                 LessonMaterialTitle = "Science Lesson",
-                Status = LessonMaterialStatus.Rejected,
-                Feedback = "Needs improvement"
             };
 
             var eventType = "LessonMaterialRejected";
@@ -450,7 +445,7 @@ namespace Eduva.Infrastructure.Test.Services
             // Assert
             Assert.Multiple(() =>
             {
-                Assert.That(notification.PerformedByUserId, Is.EqualTo(Guid.Empty));
+                Assert.That(notification.PerformedByUserId, Is.Null);
                 Assert.That(notification.PerformedByName, Is.Null);
                 Assert.That(notification.PerformedByAvatar, Is.Null);
                 Assert.That(notification.UserNotificationId, Is.EqualTo(userNotificationId));
@@ -472,7 +467,6 @@ namespace Eduva.Infrastructure.Test.Services
             {
                 LessonMaterialId = lessonMaterialId,
                 LessonMaterialTitle = "History Lesson",
-                Status = LessonMaterialStatus.Approved
             };
 
             var eventType = "LessonMaterialApproved";
@@ -505,7 +499,6 @@ namespace Eduva.Infrastructure.Test.Services
             {
                 LessonMaterialId = lessonMaterialId,
                 LessonMaterialTitle = "Test Lesson",
-                Status = LessonMaterialStatus.Approved
             };
 
             var eventType = string.Empty;
@@ -542,7 +535,6 @@ namespace Eduva.Infrastructure.Test.Services
             {
                 LessonMaterialId = lessonMaterialId,
                 LessonMaterialTitle = "Test Lesson",
-                Status = LessonMaterialStatus.Approved
             };
 
             var eventType = "LessonMaterialApproved";

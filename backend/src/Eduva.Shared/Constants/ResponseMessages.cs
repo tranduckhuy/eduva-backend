@@ -334,7 +334,9 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status403Forbidden, Message = "You do not have access to this lesson material through your classes." } },
             { CustomCode.TeacherClassNotInOwnSchool, new MessageDetail {
                 HttpCode = StatusCodes.Status403Forbidden, Message = "Teacher classes must belong to your own school." } },
-
+            { CustomCode.QuestionNotAccessible, new MessageDetail {
+                HttpCode = StatusCodes.Status403Forbidden, Message = "This question belongs to a student and you don't have any class to view it" } },
+            
              // Comment Errors
             { CustomCode.CommentNotFound, new MessageDetail {
                 HttpCode = StatusCodes.Status404NotFound, Message = "Comment not found" } },

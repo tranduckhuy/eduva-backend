@@ -80,7 +80,7 @@ namespace Eduva.Application.Test.Features.Questions.Queries
             // Act & Assert
             var ex = Assert.ThrowsAsync<AppException>(async () =>
                 await _handler.Handle(query, CancellationToken.None));
-            Assert.That(ex.StatusCode, Is.EqualTo(CustomCode.QuestionNotFound));
+            Assert.That(ex.StatusCode, Is.EqualTo(CustomCode.QuestionNotAccessible));
         }
 
         [Test]

@@ -73,8 +73,6 @@ namespace Eduva.Application.Features.LessonMaterials.Commands.ApproveLessonMater
                 {
                     LessonMaterialId = lesson.Id,
                     LessonMaterialTitle = lesson.Title,
-                    Status = lesson.LessonStatus,
-                    Feedback = request.Feedback,
                     ApprovedAt = DateTimeOffset.UtcNow
                 };
 

@@ -1,4 +1,4 @@
-using Eduva.API.Adapters;
+﻿using Eduva.API.Adapters;
 using Eduva.API.Extensions;
 using Eduva.API.Hubs;
 using Eduva.API.Middlewares;
@@ -9,6 +9,7 @@ using Eduva.Infrastructure.Extensions;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
@@ -130,6 +131,15 @@ builder.Services.AddSignalR(options =>
     options.ClientTimeoutInterval = TimeSpan.FromMinutes(1);
 });
 
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.Limits.MaxRequestBodySize = 50 * 1024 * 1024;
+});
+
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 50 * 1024 * 1024;
+});
 
 var app = builder.Build();
 

@@ -55,8 +55,21 @@ namespace Eduva.Application.Test.Features.Classes.Commands.AddMaterialsToFolder
             var materialId = Guid.NewGuid();
 
             var folder = new Folder { Id = folderId, ClassId = classId, OwnerType = OwnerType.Class };
-            var material = new LessonMaterial { Id = materialId, CreatedByUserId = userId, LessonStatus = LessonMaterialStatus.Approved };
+            var material = new LessonMaterial
+            {
+                Id = materialId,
+                CreatedByUserId = userId,
+                LessonStatus = LessonMaterialStatus.Approved,
+                Status = EntityStatus.Active
+            };
             var user = new ApplicationUser { Id = userId };
+
+            var classroom = new Classroom
+            {
+                Id = classId,
+                Status = EntityStatus.Active,
+                SchoolId = 1
+            };
 
             var command = new AddMaterialsToFolderCommand
             {
@@ -67,9 +80,12 @@ namespace Eduva.Application.Test.Features.Classes.Commands.AddMaterialsToFolder
             };
 
             _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
+
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+
             _lessonMaterialRepoMock.Setup(r => r.GetByIdAsync(materialId)).ReturnsAsync(material);
             _folderLessonMaterialRepoMock.Setup(r => r.ExistsAsync(It.IsAny<Expression<Func<FolderLessonMaterial, bool>>>()))
-    .ReturnsAsync(false);
+                .ReturnsAsync(false);
             _userManagerMock.Setup(u => u.FindByIdAsync(userId.ToString())).ReturnsAsync(user);
             _userManagerMock.Setup(u => u.GetRolesAsync(user)).ReturnsAsync(new List<string> { nameof(Role.SystemAdmin) });
             _folderLessonMaterialRepoMock.Setup(r => r.AddAsync(It.IsAny<FolderLessonMaterial>())).Returns(Task.CompletedTask);
@@ -107,19 +123,29 @@ namespace Eduva.Application.Test.Features.Classes.Commands.AddMaterialsToFolder
         public void Handle_ShouldThrow_WhenFolderClassIdMismatch()
         {
             // Arrange
-            var folder = new Folder { Id = Guid.NewGuid(), ClassId = Guid.NewGuid(), OwnerType = OwnerType.Class };
+            var classId1 = Guid.NewGuid();
+            var classId2 = Guid.NewGuid();
+            var folder = new Folder { Id = Guid.NewGuid(), ClassId = classId1, OwnerType = OwnerType.Class };
+
+            var classroom = new Classroom
+            {
+                Id = classId1,
+                Status = EntityStatus.Active,
+                SchoolId = 1
+            };
+
             var command = new AddMaterialsToFolderCommand
             {
                 FolderId = folder.Id,
-                ClassId = Guid.NewGuid(), // khác với folder.ClassId
+                ClassId = classId2,
                 MaterialIds = new List<Guid> { Guid.NewGuid() },
                 CurrentUserId = Guid.NewGuid()
             };
             _folderRepoMock.Setup(r => r.GetByIdAsync(folder.Id)).ReturnsAsync(folder);
-
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId1)).ReturnsAsync(classroom);
             // Act & Assert
             var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, CancellationToken.None));
-            Assert.That(ex!.Message, Is.EqualTo(CustomCode.Unauthorized.ToString()));
+            Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.Unauthorized));
         }
 
         [Test]
@@ -133,6 +159,13 @@ namespace Eduva.Application.Test.Features.Classes.Commands.AddMaterialsToFolder
 
             var folder = new Folder { Id = folderId, ClassId = classId, OwnerType = OwnerType.Class };
 
+            var classroom = new Classroom
+            {
+                Id = classId,
+                Status = EntityStatus.Active,
+                SchoolId = 1
+            };
+
             var command = new AddMaterialsToFolderCommand
             {
                 FolderId = folderId,
@@ -142,13 +175,16 @@ namespace Eduva.Application.Test.Features.Classes.Commands.AddMaterialsToFolder
             };
 
             _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
+
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+
             _userManagerMock.Setup(u => u.FindByIdAsync(userId.ToString())).ReturnsAsync(new ApplicationUser { Id = userId });
             _userManagerMock.Setup(u => u.GetRolesAsync(It.IsAny<ApplicationUser>())).ReturnsAsync(new List<string> { nameof(Role.SystemAdmin) });
             _lessonMaterialRepoMock.Setup(r => r.GetByIdAsync(materialId)).ReturnsAsync((LessonMaterial?)null);
 
             // Act & Assert
             var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, CancellationToken.None));
-            Assert.That(ex!.Message, Does.Contain("Lesson material not found"));
+            Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.LessonMaterialNotFound));
         }
 
         [Test]
@@ -161,7 +197,20 @@ namespace Eduva.Application.Test.Features.Classes.Commands.AddMaterialsToFolder
             var materialId = Guid.NewGuid();
 
             var folder = new Folder { Id = folderId, ClassId = classId, OwnerType = OwnerType.Class };
-            var material = new LessonMaterial { Id = materialId, CreatedByUserId = Guid.NewGuid(), LessonStatus = LessonMaterialStatus.Approved };
+            var material = new LessonMaterial
+            {
+                Id = materialId,
+                CreatedByUserId = Guid.NewGuid(),
+                LessonStatus = LessonMaterialStatus.Approved,
+                Status = EntityStatus.Active
+            };
+
+            var classroom = new Classroom
+            {
+                Id = classId,
+                Status = EntityStatus.Active,
+                SchoolId = 1
+            };
 
             var command = new AddMaterialsToFolderCommand
             {
@@ -172,13 +221,14 @@ namespace Eduva.Application.Test.Features.Classes.Commands.AddMaterialsToFolder
             };
 
             _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
             _userManagerMock.Setup(u => u.FindByIdAsync(userId.ToString())).ReturnsAsync(new ApplicationUser { Id = userId });
-            _userManagerMock.Setup(u => u.GetRolesAsync(It.IsAny<ApplicationUser>())).ReturnsAsync(new List<string> { nameof(Role.SystemAdmin) });
+            _userManagerMock.Setup(u => u.GetRolesAsync(It.IsAny<ApplicationUser>())).ReturnsAsync(new List<string> { nameof(Role.Student) });
             _lessonMaterialRepoMock.Setup(r => r.GetByIdAsync(materialId)).ReturnsAsync(material);
 
             // Act & Assert
             var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, CancellationToken.None));
-            Assert.That(ex!.Message, Is.EqualTo(CustomCode.Unauthorized.ToString()));
+            Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.Unauthorized));
         }
 
         [Test]
@@ -191,8 +241,21 @@ namespace Eduva.Application.Test.Features.Classes.Commands.AddMaterialsToFolder
             var materialId = Guid.NewGuid();
 
             var folder = new Folder { Id = folderId, ClassId = classId, OwnerType = OwnerType.Class };
-            var material = new LessonMaterial { Id = materialId, CreatedByUserId = userId, LessonStatus = LessonMaterialStatus.Approved };
+            var material = new LessonMaterial
+            {
+                Id = materialId,
+                CreatedByUserId = userId,
+                LessonStatus = LessonMaterialStatus.Approved,
+                Status = EntityStatus.Active
+            };
             var user = new ApplicationUser { Id = userId };
+
+            var classroom = new Classroom
+            {
+                Id = classId,
+                Status = EntityStatus.Active,
+                SchoolId = 1
+            };
 
             var command = new AddMaterialsToFolderCommand
             {
@@ -203,9 +266,12 @@ namespace Eduva.Application.Test.Features.Classes.Commands.AddMaterialsToFolder
             };
 
             _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
+
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+
             _lessonMaterialRepoMock.Setup(r => r.GetByIdAsync(materialId)).ReturnsAsync(material);
             _folderLessonMaterialRepoMock.Setup(r => r.ExistsAsync(It.IsAny<Expression<Func<FolderLessonMaterial, bool>>>()))
-    .ReturnsAsync(true);
+                .ReturnsAsync(true);
             _userManagerMock.Setup(u => u.FindByIdAsync(userId.ToString())).ReturnsAsync(user);
             _userManagerMock.Setup(u => u.GetRolesAsync(user)).ReturnsAsync(new List<string> { nameof(Role.SystemAdmin) });
             _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
@@ -238,7 +304,7 @@ namespace Eduva.Application.Test.Features.Classes.Commands.AddMaterialsToFolder
 
             // Act & Assert
             var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, CancellationToken.None));
-            Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.UserNotExists));
+            Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.ClassNotFound));
         }
 
         [Test]
@@ -486,11 +552,11 @@ namespace Eduva.Application.Test.Features.Classes.Commands.AddMaterialsToFolder
 
             // Act & Assert
             var ex = Assert.ThrowsAsync<AppException>(() => _handler.Handle(command, CancellationToken.None));
-            Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.LessonMaterialNotApproved));
+            Assert.That(ex!.StatusCode, Is.EqualTo(CustomCode.ClassNotFound));
         }
 
         [Test]
-        public void Handle_ShouldAllowAccess_WhenFolderClassIdMatch()
+        public async Task Handle_ShouldAllowAccess_WhenFolderClassIdMatch()
         {
             // Arrange
             var userId = Guid.NewGuid();
@@ -499,8 +565,21 @@ namespace Eduva.Application.Test.Features.Classes.Commands.AddMaterialsToFolder
             var materialId = Guid.NewGuid();
 
             var folder = new Folder { Id = folderId, ClassId = classId, OwnerType = OwnerType.Class };
-            var material = new LessonMaterial { Id = materialId, CreatedByUserId = userId, LessonStatus = LessonMaterialStatus.Approved };
+            var material = new LessonMaterial
+            {
+                Id = materialId,
+                CreatedByUserId = userId,
+                LessonStatus = LessonMaterialStatus.Approved,
+                Status = EntityStatus.Active
+            };
             var user = new ApplicationUser { Id = userId };
+
+            var classroom = new Classroom
+            {
+                Id = classId,
+                Status = EntityStatus.Active,
+                SchoolId = 1
+            };
 
             var command = new AddMaterialsToFolderCommand
             {
@@ -511,6 +590,9 @@ namespace Eduva.Application.Test.Features.Classes.Commands.AddMaterialsToFolder
             };
 
             _folderRepoMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
+
+            _classroomRepoMock.Setup(r => r.GetByIdAsync(classId)).ReturnsAsync(classroom);
+
             _lessonMaterialRepoMock.Setup(r => r.GetByIdAsync(materialId)).ReturnsAsync(material);
             _folderLessonMaterialRepoMock.Setup(r => r.ExistsAsync(It.IsAny<Expression<Func<FolderLessonMaterial, bool>>>()))
                 .ReturnsAsync(false);
@@ -519,9 +601,9 @@ namespace Eduva.Application.Test.Features.Classes.Commands.AddMaterialsToFolder
             _folderLessonMaterialRepoMock.Setup(r => r.AddAsync(It.IsAny<FolderLessonMaterial>())).Returns(Task.CompletedTask);
             _unitOfWorkMock.Setup(u => u.CommitAsync()).ReturnsAsync(1);
 
-            var result = _handler.Handle(command, CancellationToken.None);
-
-            Assert.DoesNotThrowAsync(() => result);
+            // Act & Assert
+            var result = await _handler.Handle(command, CancellationToken.None);
+            Assert.That(result, Is.True);
         }
 
         [Test]
@@ -538,12 +620,6 @@ namespace Eduva.Application.Test.Features.Classes.Commands.AddMaterialsToFolder
                 Id = folderId,
                 OwnerType = OwnerType.Personal,
                 UserId = anotherUserId
-            };
-            var material = new LessonMaterial
-            {
-                Id = materialId,
-                CreatedByUserId = userId,
-                LessonStatus = LessonMaterialStatus.Approved
             };
             var user = new ApplicationUser { Id = userId };
 

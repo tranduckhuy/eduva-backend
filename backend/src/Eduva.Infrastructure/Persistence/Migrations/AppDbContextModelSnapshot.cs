@@ -375,6 +375,9 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset?>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("PreviewContent")
+                        .HasColumnType("text");
+
                     b.Property<string>("SourceBlobNames")
                         .IsRequired()
                         .HasColumnType("text");

@@ -6,7 +6,7 @@ namespace Eduva.Application.Features.Jobs.DTOs;
 public class JobMessage
 {
     public Guid JobId { get; set; }
-    public string TaskType { get; set; } = string.Empty;
+    public TaskType TaskType { get; set; }
 }
 
 public class GenerateContentMessage : JobMessage
@@ -22,8 +22,9 @@ public class CreateProductMessage : JobMessage
     public VoiceConfigDto VoiceConfig { get; set; } = default!;
 }
 
-public static class TaskType
+public enum TaskType
 {
-    public const string GenerateContent = "generate_content";
-    public const string CreateProduct = "create_product";
+    GenerateContent = 0,
+    CreateProduct = 1,
 }
+
