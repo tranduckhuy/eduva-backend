@@ -77,6 +77,7 @@ public class AIJobsController : BaseController<AIJobsController>
         {
             JobId = id,
             JobStatus = request.JobStatus,
+            Title = request.Title,
             ContentBlobName = request.ContentBlobName,
             VideoOutputBlobName = request.VideoOutputBlobName,
             AudioOutputBlobName = request.AudioOutputBlobName,
