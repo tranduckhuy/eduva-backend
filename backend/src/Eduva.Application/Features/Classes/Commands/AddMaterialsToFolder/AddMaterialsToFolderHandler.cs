@@ -1,4 +1,4 @@
-﻿using Eduva.Application.Common.Exceptions;
+using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Interfaces;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;

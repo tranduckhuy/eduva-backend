@@ -1,4 +1,4 @@
-﻿using Eduva.Application.Exceptions.Job;
+using Eduva.Application.Exceptions.Job;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Application.Interfaces.Services;
@@ -31,6 +31,7 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
     private readonly IStorageService _storageService;
 
     private const int WORDS_PER_MINUTE = 250;
+    private const string DEFAULT_ERROR_MESSAGE = "Có lỗi xảy ra trong quá trình tạo nội dung. Vui lòng thử lại sau.";
 
     public UpdateJobProgressCommandHandler(
         IUnitOfWork unitOfWork,
@@ -73,7 +74,7 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
         }
 
         if (!string.IsNullOrEmpty(request.FailureReason))
-            job.FailureReason = request.FailureReason;
+            job.FailureReason = DEFAULT_ERROR_MESSAGE + " " + request.FailureReason;
 
         if (!string.IsNullOrEmpty(request.PreviewContent))
             job.PreviewContent = request.PreviewContent;
@@ -107,7 +108,7 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
             job.ContentBlobName,
             VideoOutputBlobNameUrl = videoOutputBlobNameUrl,
             AudioOutputBlobNameUrl = audioOutputBlobNameUrl,
-            job.FailureReason,
+            FailureReason = job.FailureReason ?? DEFAULT_ERROR_MESSAGE,
             job.LastModifiedAt
         };
 
