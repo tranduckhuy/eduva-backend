@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.3](https://github.com/tranduckhuy/eduva-backend/compare/v1.5.2...v1.5.3) (2025-08-06)
+
+
+### Bug Fixes
+
+* **ai-job:** notification still sends default FailureReason ([#510](https://github.com/tranduckhuy/eduva-backend/issues/510)) ([361adb8](https://github.com/tranduckhuy/eduva-backend/commit/361adb84a3be94208f5ec8893c14a7c19e5d2c06))
+
 ## [1.5.2](https://github.com/tranduckhuy/eduva-backend/compare/v1.5.1...v1.5.2) (2025-08-06)
 
 
