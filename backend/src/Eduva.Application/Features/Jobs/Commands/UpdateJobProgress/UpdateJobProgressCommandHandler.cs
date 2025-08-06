@@ -1,4 +1,4 @@
-﻿using Eduva.Application.Exceptions.Job;
+using Eduva.Application.Exceptions.Job;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Application.Interfaces.Services;
@@ -13,6 +13,7 @@ public class UpdateJobProgressCommand : IRequest<Unit>
 {
     public Guid JobId { get; set; }
     public JobStatus JobStatus { get; set; }
+    public string? Title { get; set; }
     public int? WordCount { get; set; }
     public decimal? ActualDuration { get; set; }
     public string? PreviewContent { get; set; }
@@ -98,7 +99,8 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
         {
             JobId = job.Id,
             Status = job.JobStatus,
-            PreviewContent = request.PreviewContent ?? DEFAULT_ERROR_MESSAGE,
+            request.Title,
+            request.PreviewContent,
             AudioCost = audioCost,
             VideoCost = videoCost,
             EstimatedDurationMinutes = estimatedDurationMinutes,

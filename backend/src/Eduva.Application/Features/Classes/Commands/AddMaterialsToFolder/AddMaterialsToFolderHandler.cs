@@ -1,4 +1,4 @@
-﻿using Eduva.Application.Common.Exceptions;
+using Eduva.Application.Common.Exceptions;
 using Eduva.Application.Interfaces;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
@@ -39,7 +39,7 @@ namespace Eduva.Application.Features.Classes.Commands.AddMaterialsToFolder
                 }
                 if (classroom.Status != EntityStatus.Active)
                 {
-                    throw new AppException(CustomCode.ClassNotActive);
+                    throw new AppException(CustomCode.ClassAlreadyArchived);
                 }
 
                 if (request.ClassId != Guid.Empty && folder.ClassId != request.ClassId)
