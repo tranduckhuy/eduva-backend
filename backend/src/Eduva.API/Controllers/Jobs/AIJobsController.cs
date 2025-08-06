@@ -40,9 +40,12 @@ public class AIJobsController : BaseController<AIJobsController>
     [HttpPost]
     [Authorize]
     [EnableRateLimiting(RateLimitPolicyNames.AiJobPolicy)]
-    [RequestSizeLimit(20_000_000)] // 20MB
+    [RequestSizeLimit(20971520)] // 20MB limit for file uploads
     public async Task<IActionResult> CreateJob([FromForm] CreateJobRequest request)
     {
+        if (CheckModelStateValidity() is not null)
+            return CheckModelStateValidity();
+
         if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
             return Respond(CustomCode.UserIdNotFound);
 
@@ -179,9 +182,12 @@ public class AIJobsController : BaseController<AIJobsController>
     // Update job
     [HttpPut("{id:guid}")]
     [Authorize]
-    [RequestSizeLimit(20_000_000)] // 20MB
+    [RequestSizeLimit(20971520)] // 20MB
     public async Task<IActionResult> UpdateJob(Guid id, [FromForm] UpdateJobRequest request)
     {
+        if (CheckModelStateValidity() is not null)
+            return CheckModelStateValidity();
+
         if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
             return Respond(CustomCode.UserIdNotFound);
 
