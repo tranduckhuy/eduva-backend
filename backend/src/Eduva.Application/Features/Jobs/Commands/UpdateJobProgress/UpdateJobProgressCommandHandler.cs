@@ -30,7 +30,6 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
     private readonly IStorageService _storageService;
 
     private const int WORDS_PER_MINUTE = 250;
-    private const string DEFAULT_ERROR_MESSAGE = "Có lỗi xảy ra trong quá trình tạo nội dung. Vui lòng thử lại sau.";
 
     public UpdateJobProgressCommandHandler(
         IUnitOfWork unitOfWork,
@@ -73,7 +72,7 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
         }
 
         if (!string.IsNullOrEmpty(request.FailureReason))
-            job.FailureReason = DEFAULT_ERROR_MESSAGE + " " + request.FailureReason;
+            job.FailureReason = request.FailureReason;
 
         if (!string.IsNullOrEmpty(request.PreviewContent))
             job.PreviewContent = request.PreviewContent;
@@ -98,7 +97,7 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
         {
             JobId = job.Id,
             Status = job.JobStatus,
-            PreviewContent = request.PreviewContent ?? DEFAULT_ERROR_MESSAGE,
+            request.PreviewContent,
             AudioCost = audioCost,
             VideoCost = videoCost,
             EstimatedDurationMinutes = estimatedDurationMinutes,
@@ -106,7 +105,7 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
             job.ContentBlobName,
             VideoOutputBlobNameUrl = videoOutputBlobNameUrl,
             AudioOutputBlobNameUrl = audioOutputBlobNameUrl,
-            FailureReason = job.FailureReason ?? DEFAULT_ERROR_MESSAGE,
+            job.FailureReason,
             job.LastModifiedAt
         };
 

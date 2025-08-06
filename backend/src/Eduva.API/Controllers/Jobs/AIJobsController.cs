@@ -43,11 +43,6 @@ public class AIJobsController : BaseController<AIJobsController>
     [RequestSizeLimit(20_000_000)] // 20MB
     public async Task<IActionResult> CreateJob([FromForm] CreateJobRequest request)
     {
-        if (request?.File == null || request.File.Count == 0)
-        {
-            return Respond(CustomCode.FileIsRequired);
-        }
-
         if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
             return Respond(CustomCode.UserIdNotFound);
 
@@ -187,11 +182,6 @@ public class AIJobsController : BaseController<AIJobsController>
     [RequestSizeLimit(20_000_000)] // 20MB
     public async Task<IActionResult> UpdateJob(Guid id, [FromForm] UpdateJobRequest request)
     {
-        if (request?.File == null || request.File.Count == 0)
-        {
-            return Respond(CustomCode.FileIsRequired);
-        }
-
         if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
             return Respond(CustomCode.UserIdNotFound);
 
