@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.2](https://github.com/tranduckhuy/eduva-backend/compare/v1.5.1...v1.5.2) (2025-08-06)
+
+
+### Bug Fixes
+
+* **ai-job:** limit uploaded file size to 20MB when creating job ([#508](https://github.com/tranduckhuy/eduva-backend/issues/508)) ([035e36f](https://github.com/tranduckhuy/eduva-backend/commit/035e36f0bc5a91adbf2f078d3eed85c73626d780))
+
 ## [1.5.1](https://github.com/tranduckhuy/eduva-backend/compare/v1.5.0...v1.5.1) (2025-08-06)
 
 
