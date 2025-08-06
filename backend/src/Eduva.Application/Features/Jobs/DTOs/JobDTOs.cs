@@ -49,6 +49,7 @@ public class UpdateJobProgressRequest
 {
     public JobStatus JobStatus { get; set; }
     public int? WordCount { get; set; }
+    public string? Title { get; set; }
     public decimal? ActualDuration { get; set; }
     public string? ContentBlobName { get; set; }
     public string? PreviewContent { get; set; }

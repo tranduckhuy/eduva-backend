@@ -108,7 +108,7 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
             job.ContentBlobName,
             VideoOutputBlobNameUrl = videoOutputBlobNameUrl,
             AudioOutputBlobNameUrl = audioOutputBlobNameUrl,
-            FailureReason = job.FailureReason ?? DEFAULT_ERROR_MESSAGE,
+            FailureReason = job.JobStatus == JobStatus.Failed ? job.FailureReason : null,
             job.LastModifiedAt
         };
 
