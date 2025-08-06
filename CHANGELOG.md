@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.1](https://github.com/tranduckhuy/eduva-backend/compare/v1.5.0...v1.5.1) (2025-08-06)
+
+
+### Bug Fixes
+
+* Do not allow teachers to perform anything on the class Archived and fix restore folder & enhance(ai-job): add title to notification response ([f0fa5b3](https://github.com/tranduckhuy/eduva-backend/commit/f0fa5b3af8afcba3b132272e5f64f9faadd14239))
+
 ## [1.5.0](https://github.com/tranduckhuy/eduva-backend/compare/v1.4.2...v1.5.0) (2025-08-05)
 
 
