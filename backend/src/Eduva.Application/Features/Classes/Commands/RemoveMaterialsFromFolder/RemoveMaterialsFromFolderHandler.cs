@@ -27,6 +27,18 @@ namespace Eduva.Application.Features.Classes.Commands.RemoveMaterialsFromFolder
             if (folder == null)
                 throw new AppException(CustomCode.FolderNotFound);
 
+            if (folder.OwnerType == OwnerType.Class && folder.ClassId.HasValue)
+            {
+                var classRepository = _unitOfWork.GetRepository<Classroom, Guid>();
+                var classroom = await classRepository.GetByIdAsync(folder.ClassId.Value);
+
+                if (classroom == null)
+                    throw new AppException(CustomCode.ClassNotFound);
+
+                if (classroom.Status != EntityStatus.Active)
+                    throw new AppException(CustomCode.ClassAlreadyArchived);
+            }
+
             // Check access permission
             await CheckFolderAccessAsync(folder, request.CurrentUserId);
 
