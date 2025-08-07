@@ -69,8 +69,11 @@ namespace Eduva.Application.Test.Features.Classes.Specifications
             };
 
             var spec = new StudentClassSpecification(param);
-            Assert.That(spec.Criteria, Is.Not.Null);
-            Assert.That(spec.OrderBy, Is.Not.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(spec.Criteria, Is.Not.Null);
+                Assert.That(spec.OrderBy, Is.Not.Null);
+            });
         }
 
         [Test]
