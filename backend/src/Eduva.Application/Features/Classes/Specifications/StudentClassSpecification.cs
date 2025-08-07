@@ -147,7 +147,10 @@ namespace Eduva.Application.Features.Classes.Specifications
                 "classcode" => GetOrderByFunc(sc => sc.Class.ClassCode ?? string.Empty, isDescending),
                 "status" => GetOrderByFunc(sc => sc.Class.Status, isDescending),
                 "studentname" => GetOrderByFunc(sc => sc.Student != null ? sc.Student.FullName ?? string.Empty : string.Empty, isDescending),
-                _ => GetOrderByFunc(sc => sc.EnrolledAt, isDescending)
+                "enrolledat" => GetOrderByFunc(sc => sc.EnrolledAt, isDescending),
+                "createdat" => GetOrderByFunc(sc => sc.Class.CreatedAt, isDescending),
+                "lastmodifiedat" => GetOrderByFunc(sc => sc.Class.LastModifiedAt, isDescending),
+                _ => GetOrderByFunc(sc => sc.EnrolledAt, isDescending),
             };
         }
 
