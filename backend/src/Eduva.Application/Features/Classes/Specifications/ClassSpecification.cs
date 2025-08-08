@@ -33,13 +33,22 @@ namespace Eduva.Application.Features.Classes.Specifications
 
             if (!string.IsNullOrEmpty(param.SortBy))
             {
-                bool isDescending = param.SortDirection.Equals("desc", StringComparison.OrdinalIgnoreCase);
+                bool isDescending = !string.IsNullOrEmpty(param.SortDirection) && 
+                   param.SortDirection.Equals("desc", StringComparison.OrdinalIgnoreCase);
 
                 OrderBy = param.SortBy.ToLower() switch
                 {
                     "name" => isDescending
                         ? q => q.OrderByDescending(c => c.Name)
                         : q => q.OrderBy(c => c.Name),
+
+                    "lastmodifiedat" => isDescending
+                       ? q => q.OrderByDescending(c => c.LastModifiedAt)
+                       : q => q.OrderBy(c => c.LastModifiedAt),
+
+                    "createdat" => isDescending
+                        ? q => q.OrderByDescending(c => c.CreatedAt)
+                        : q => q.OrderBy(c => c.CreatedAt),
 
                     _ => isDescending
                         ? q => q.OrderByDescending(c => c.CreatedAt)
