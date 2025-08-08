@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.4](https://github.com/tranduckhuy/eduva-backend/compare/v1.5.3...v1.5.4) (2025-08-08)
+
+
+### Bug Fixes
+
+* support sorting by lastmodifiedat, createdat, enrolledat in class ([#513](https://github.com/tranduckhuy/eduva-backend/issues/513)) ([7418d00](https://github.com/tranduckhuy/eduva-backend/commit/7418d002c58e9684a4f373870f251bea64d39f8a))
+
 ## [1.5.3](https://github.com/tranduckhuy/eduva-backend/compare/v1.5.2...v1.5.3) (2025-08-06)
 
 
