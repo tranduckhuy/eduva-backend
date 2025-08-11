@@ -55,6 +55,7 @@ public class SubscriptionMaintenanceServiceTest
         _serviceProviderMock.Setup(sp => sp.GetService(typeof(IUnitOfWork))).Returns(_unitOfWorkMock.Object);
         _serviceProviderMock.Setup(sp => sp.GetService(typeof(IEmailSender))).Returns(_emailSenderMock.Object);
         _serviceProviderMock.Setup(sp => sp.GetService(typeof(IStorageService))).Returns(_storageServiceMock.Object);
+        _serviceProviderMock.Setup(sp => sp.GetService(typeof(ISystemConfigHelper))).Returns(_systemConfigHelperMock.Object);
 
         // Setup unit of work to return mocked repositories
         _unitOfWorkMock.Setup(uow => uow.GetCustomRepository<ISchoolSubscriptionRepository>())
@@ -95,8 +96,8 @@ public class SubscriptionMaintenanceServiceTest
         };
         // Total: 1.2GB, exceeds 1GB limit, should delete 600MB file to get under limit
 
-        _schoolSubscriptionRepoMock.Setup(repo => repo.FindAsync(
-                It.IsAny<System.Linq.Expressions.Expression<Func<SchoolSubscription, bool>>>(),
+        _schoolSubscriptionRepoMock.Setup(repo => repo.GetAllActiveSchoolSubscriptionsExceedingStorageLimitAsync(
+                It.IsAny<DateTimeOffset>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<SchoolSubscription> { subscription });
 
