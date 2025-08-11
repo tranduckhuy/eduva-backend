@@ -75,6 +75,10 @@ namespace Eduva.Application.Features.Users.Queries
                 {
                     filteredUsers = filteredUsers.Where(u => u.Status == request.Status.Value).ToList();
                 }
+                else
+                {
+                    filteredUsers = filteredUsers.Where(u => u.Status != EntityStatus.Deleted).ToList();
+                }
 
                 if (!string.IsNullOrWhiteSpace(request.SearchTerm))
                 {
@@ -112,6 +116,10 @@ namespace Eduva.Application.Features.Users.Queries
                 if (request.Status.HasValue)
                 {
                     allUsers = allUsers.Where(u => u.Status == request.Status.Value).ToList();
+                }
+                else
+                {
+                    allUsers = allUsers.Where(u => u.Status != EntityStatus.Deleted).ToList();
                 }
 
                 if (!string.IsNullOrWhiteSpace(request.SearchTerm))
