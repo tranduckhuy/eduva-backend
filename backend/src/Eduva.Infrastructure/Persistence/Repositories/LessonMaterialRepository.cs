@@ -275,5 +275,15 @@ namespace Eduva.Infrastructure.Persistence.Repositories
 
             return query;
         }
+
+        public async Task<List<LessonMaterial>> GetLessonMaterialsBySchoolOrderedByFileSizeAsync(int schoolId, CancellationToken cancellationToken = default)
+        {
+            return await _context.LessonMaterials
+                .Where(lm => lm.SchoolId == schoolId && 
+                            lm.Status == EntityStatus.Active &&
+                            !string.IsNullOrEmpty(lm.SourceUrl))
+                .OrderByDescending(lm => lm.FileSize)
+                .ToListAsync(cancellationToken);
+        }
     }
 }

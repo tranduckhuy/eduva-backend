@@ -513,7 +513,7 @@ namespace Eduva.Infrastructure.Identity
 
             var expiry = TokenHelper.GetTokenExpiry(accessToken);
 
-            if (expiry > DateTime.UtcNow)
+            if (expiry > DateTimeOffset.UtcNow)
             {
                 await _tokenBlackListService.BlacklistTokenAsync(accessToken, expiry);
             }

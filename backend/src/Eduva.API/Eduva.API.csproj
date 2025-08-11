@@ -26,4 +26,11 @@
     <ProjectReference Include="..\Eduva.Infrastructure\Eduva.Infrastructure.csproj"/>
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="..\Eduva.Infrastructure\Configurations\Email\Templates\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>email-templates\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+    </Content>
+  </ItemGroup>
+
 </Project>

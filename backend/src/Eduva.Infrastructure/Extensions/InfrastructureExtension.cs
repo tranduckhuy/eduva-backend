@@ -111,6 +111,7 @@ namespace Eduva.Infrastructure.Extensions
 
             // Background Services
             services.AddHostedService<JobMaintenanceService>();
+            services.AddHostedService<SubscriptionMaintenanceService>();
 
             // Add SignalR
             services.AddSignalR();

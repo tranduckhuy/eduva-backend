@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <title>Thông Báo Sắp Hết Hạn Gói Subscription</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f6f8;font-family:Arial,sans-serif;color:#333;font-weight:normal;">
+    <table width="100%" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+            <td align="center" style="padding:40px 0;">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color:#fff;border-radius:8px;padding:30px;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="text-align:center;padding-bottom:20px;color:#777;font-size:12px;">
+                            EDUVA - Học, Học Nữa, Học Mãi
+                        </td>
+                    </tr>
+                    <!-- Body -->
+                    <tr>
+                        <td style="text-align:center;padding: 0 20px;">
+                            <h1 style="font-size:24px;margin:0 0 20px;color:#333;font-weight:bold;">
+                                Gói Đăng Ký Sắp Hết Hạn
+                            </h1>
+                            <p style="font-size:16px;line-height:1.5;margin:0 0 30px;">
+                                Xin chào <strong>{{school_admin_name}}</strong>,<br />
+                                Gói đăng ký của trường <strong>{{school_name}}</strong> sẽ hết hạn vào ngày 
+                                <strong>{{expiry_date}}</strong>.
+                                <br /><br />
+                                Sau ngày này, dịch vụ sẽ bị giới hạn cho đến khi bạn gia hạn.
+                            </p>
+                            <div style="text-align:center;margin-bottom:30px;">
+                                <a href="{{package_info_link}}"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   style="display:inline-block;padding:14px 28px;border-radius:6px;
+                                   font-size:16px;color:#ffffff;background-color:#007bff;
+                                   text-decoration:none;font-weight:bold;">
+                                    Xem Thông Tin Gói
+                                </a>
+                            </div>
+                            <p style="font-size:16px;line-height:1.5;">
+                                Email này chỉ mang tính nhắc nhở. Bạn có thể gia hạn sau khi gói hết hạn.
+                            </p>
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td style="text-align:center;color:#777;font-size:12px;padding-top:40px;">
+                            &copy; {{current_year}} EDUVA - Nền tảng hỗ trợ tạo bài giảng đa phương tiện.
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
