@@ -102,6 +102,7 @@ namespace Eduva.API.Controllers.Classes
         [HttpGet("teaching")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         [ProducesResponseType(typeof(ApiResponse<Pagination<ClassResponse>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<List<ClassResponse>>), StatusCodes.Status200OK)]
         [Authorize(Roles = $"{nameof(Role.Teacher)}, {nameof(Role.ContentModerator)}")]
         public async Task<IActionResult> GetTeacherClasses([FromQuery] ClassSpecParam classSpecParam)
         {
@@ -119,7 +120,13 @@ namespace Eduva.API.Controllers.Classes
             {
                 var query = new GetTeacherClassesQuery(classSpecParam, teacherId);
                 var result = await _mediator.Send(query);
-                return (CustomCode.Success, result);
+
+                if (!classSpecParam.IsPagingEnabled && result is Pagination<ClassResponse> paged)
+                {
+                    return (CustomCode.Success, (object)paged.Data.ToList());
+                }
+
+                return (CustomCode.Success, (object)result);
             });
         }
 
