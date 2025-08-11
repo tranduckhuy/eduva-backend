@@ -1,5 +1,6 @@
 ﻿using Eduva.Application.Common.Specifications;
 using Eduva.Domain.Entities;
+using Eduva.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
@@ -30,7 +31,7 @@ namespace Eduva.Application.Features.Users.Specifications
 
             return u =>
                 (param.SchoolId == null || u.SchoolId == param.SchoolId) &&
-                (param.Status == null || u.Status == param.Status) &&
+                (param.Status == null ? u.Status != EntityStatus.Deleted : u.Status == param.Status) &&
                 (string.IsNullOrWhiteSpace(loweredSearch) ||
                     EF.Functions.Like((u.FullName ?? "").ToLower(), $"%{loweredSearch}%") ||
                     EF.Functions.Like((u.Email ?? "").ToLower(), $"%{loweredSearch}%"));

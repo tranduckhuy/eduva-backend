@@ -21,7 +21,7 @@ namespace Eduva.Infrastructure.Persistence.Repositories
         public async Task<List<ApplicationUser>> GetUsersBySchoolIdAsync(int schoolId, CancellationToken cancellationToken = default)
         {
             return await _context.Users
-                .Where(u => u.SchoolId == schoolId)
+                .Where(u => u.SchoolId == schoolId && u.Status != EntityStatus.Deleted) // exclude Deleted by default
                 .ToListAsync(cancellationToken);
         }
 

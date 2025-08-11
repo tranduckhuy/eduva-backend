@@ -5,6 +5,7 @@ using Eduva.Application.Features.Users.Responses;
 using Eduva.Application.Features.Users.Specifications;
 using Eduva.Application.Interfaces;
 using Eduva.Domain.Entities;
+using Eduva.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 
@@ -40,6 +41,10 @@ namespace Eduva.Application.Features.Users.Queries
                 if (request.Param.Status.HasValue)
                 {
                     query = query.Where(u => u.Status == request.Param.Status.Value);
+                }
+                else
+                {
+                    query = query.Where(u => u.Status != EntityStatus.Deleted);
                 }
 
                 if (!string.IsNullOrWhiteSpace(request.Param.SearchTerm))

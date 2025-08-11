@@ -47,7 +47,7 @@ namespace Eduva.Application.Test.Features.Users.Queries
             _userRepositoryMock.Setup(r => r.GetByIdWithSchoolAsync(schoolAdminId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((ApplicationUser?)null);
 
-            var request = new ExportUsersQuery(new ExportUsersRequest { Role = Role.Student }, schoolAdminId);
+            var request = new ExportUsersQuery(new ExportUsersRequest { Role = Role.Student, Status = EntityStatus.Deleted }, schoolAdminId);
 
             // Act & Assert
             var ex = Assert.ThrowsAsync<Eduva.Application.Common.Exceptions.AppException>(
