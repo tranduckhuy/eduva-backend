@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/tranduckhuy/eduva-backend/compare/v1.5.4...v1.6.0) (2025-08-11)
+
+
+### Features
+
+* Implements subscription maintenance service  ([#516](https://github.com/tranduckhuy/eduva-backend/issues/516)) ([51fefe4](https://github.com/tranduckhuy/eduva-backend/commit/51fefe4619c6c30ea2b2f1faa5d26ce118a0d6c7))
+
 ## [1.5.4](https://github.com/tranduckhuy/eduva-backend/compare/v1.5.3...v1.5.4) (2025-08-08)
 
 
