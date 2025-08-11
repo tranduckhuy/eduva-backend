@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.6.0](https://github.com/tranduckhuy/eduva-backend/compare/v1.5.4...v1.6.0) (2025-08-11)
+
+
+### Features
+
+* Implements subscription maintenance service  ([#516](https://github.com/tranduckhuy/eduva-backend/issues/516)) ([51fefe4](https://github.com/tranduckhuy/eduva-backend/commit/51fefe4619c6c30ea2b2f1faa5d26ce118a0d6c7))
+
+## [1.5.4](https://github.com/tranduckhuy/eduva-backend/compare/v1.5.3...v1.5.4) (2025-08-08)
+
+
+### Bug Fixes
+
+* support sorting by lastmodifiedat, createdat, enrolledat in class ([#513](https://github.com/tranduckhuy/eduva-backend/issues/513)) ([7418d00](https://github.com/tranduckhuy/eduva-backend/commit/7418d002c58e9684a4f373870f251bea64d39f8a))
+
+## [1.5.3](https://github.com/tranduckhuy/eduva-backend/compare/v1.5.2...v1.5.3) (2025-08-06)
+
+
+### Bug Fixes
+
+* **ai-job:** notification still sends default FailureReason ([#510](https://github.com/tranduckhuy/eduva-backend/issues/510)) ([361adb8](https://github.com/tranduckhuy/eduva-backend/commit/361adb84a3be94208f5ec8893c14a7c19e5d2c06))
+
+## [1.5.2](https://github.com/tranduckhuy/eduva-backend/compare/v1.5.1...v1.5.2) (2025-08-06)
+
+
+### Bug Fixes
+
+* **ai-job:** limit uploaded file size to 20MB when creating job ([#508](https://github.com/tranduckhuy/eduva-backend/issues/508)) ([035e36f](https://github.com/tranduckhuy/eduva-backend/commit/035e36f0bc5a91adbf2f078d3eed85c73626d780))
+
 ## [1.5.1](https://github.com/tranduckhuy/eduva-backend/compare/v1.5.0...v1.5.1) (2025-08-06)
 
 

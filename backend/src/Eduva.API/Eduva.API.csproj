@@ -7,7 +7,7 @@
     <UserSecretsId>1e412a77-a3a7-4b78-9903-a6c3c26da1ef</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>..\..</DockerfileContext>
-    <Version>1.5.1</Version>
+    <Version>1.6.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
