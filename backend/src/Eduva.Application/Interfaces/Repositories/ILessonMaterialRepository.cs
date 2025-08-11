@@ -24,5 +24,7 @@ namespace Eduva.Application.Interfaces.Repositories
 
         Task<IReadOnlyList<LessonMaterial>> GetLessonMaterialsByFolderForStudentAsync(Guid folderId, Guid studentId,
             int schoolId, LessonMaterialFilterOptions? filterOptions = null, CancellationToken cancellationToken = default);
+
+        Task<List<LessonMaterial>> GetLessonMaterialsBySchoolOrderedByFileSizeAsync(int schoolId, CancellationToken cancellationToken = default);
     }
 }

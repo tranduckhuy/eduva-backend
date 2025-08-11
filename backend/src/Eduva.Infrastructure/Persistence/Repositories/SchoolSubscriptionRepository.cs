@@ -88,5 +88,61 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                 throw new KeyNotFoundException($"No subscription found for school ID {schoolId}.");
             }
         }
+
+        public async Task<List<SchoolSubscription>> GetSubscriptionsExpiringBetweenAsync(DateTimeOffset startDate, DateTimeOffset endDate, CancellationToken cancellationToken = default)
+        {
+            return await _context.SchoolSubscriptions
+                .Include(s => s.Plan)
+                .Include(s => s.School)
+                .Where(s => s.SubscriptionStatus == SubscriptionStatus.Active &&
+                           s.EndDate >= startDate &&
+                           s.EndDate <= endDate)
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<List<SchoolSubscription>> GetSubscriptionsExpiredOnDateAsync(DateTimeOffset startDate, DateTimeOffset endDate, CancellationToken cancellationToken = default)
+        {
+            return await _context.SchoolSubscriptions
+                .Include(s => s.Plan)
+                .Include(s => s.School)
+                .Where(s => s.SubscriptionStatus == SubscriptionStatus.Active &&
+                           s.EndDate >= startDate &&
+                           s.EndDate < endDate)
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<List<SchoolSubscription>> GetSubscriptionsExpiredBeforeAsync(DateTimeOffset beforeDate, CancellationToken cancellationToken = default)
+        {
+            var schoolsWithActiveSubscriptions = await _context.SchoolSubscriptions
+                .Where(s => s.SubscriptionStatus == SubscriptionStatus.Active)
+                .Select(s => s.SchoolId)
+                .ToListAsync(cancellationToken);
+
+            // First, get the latest expired subscription for each school without Include
+            var latestExpiredSubscriptionIds = await _context.SchoolSubscriptions
+                .Where(s => s.SubscriptionStatus == SubscriptionStatus.Expired &&
+                           !schoolsWithActiveSubscriptions.Contains(s.SchoolId))
+                .GroupBy(s => s.SchoolId)
+                .Select(g => g.OrderByDescending(s => s.EndDate).First().Id)
+                .ToListAsync(cancellationToken);
+
+            // Then, get the full subscription details with Include for those IDs that meet the date criteria
+            return await _context.SchoolSubscriptions
+                .Include(s => s.Plan)
+                .Include(s => s.School)
+                .Where(s => latestExpiredSubscriptionIds.Contains(s.Id) && s.EndDate < beforeDate)
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<List<SchoolSubscription>> GetAllActiveSchoolSubscriptionsExceedingStorageLimitAsync
+            (DateTimeOffset dataCleanupDate, CancellationToken cancellationToken = default)
+        {
+            return await _context.SchoolSubscriptions
+                .Include(s => s.Plan)
+                .Include(s => s.School)
+                .Where(s => s.SubscriptionStatus == SubscriptionStatus.Active &&
+                            s.StartDate < dataCleanupDate)
+                .ToListAsync(cancellationToken);
+        }
     }
 }

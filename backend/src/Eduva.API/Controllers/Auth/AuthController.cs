@@ -31,6 +31,7 @@ namespace Eduva.API.Controllers.Auth
         }
 
         [HttpPost("login")]
+        [EnableRateLimiting(RateLimitPolicyNames.LoginPolicy)]
         [ProducesResponseType(typeof(ApiResponse<AuthResultDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
         {
@@ -116,6 +117,7 @@ namespace Eduva.API.Controllers.Auth
         }
 
         [HttpPost("forgot-password")]
+        [EnableRateLimiting(RateLimitPolicyNames.ForgotPasswordPolicy)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto dto)
         {
