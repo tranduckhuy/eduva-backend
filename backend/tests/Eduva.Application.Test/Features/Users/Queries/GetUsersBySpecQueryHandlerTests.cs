@@ -54,6 +54,21 @@ public class GetUsersBySpecQueryHandlerTests
     #region GetUsersBySpecQueryHandler Tests
 
     [Test]
+    public async Task Should_Exclude_Deleted_By_Default_With_Role()
+    {
+        var param = new UserSpecParam { Role = Role.Student };
+        var users = new List<ApplicationUser> {
+              new() { Id = Guid.NewGuid(), Status = EntityStatus.Active },
+              new() { Id = Guid.NewGuid(), Status = EntityStatus.Deleted }
+          };
+        _userManagerMock.Setup(m => m.GetUsersInRoleAsync("Student")).ReturnsAsync(users);
+        foreach (var u in users) _userManagerMock.Setup(m => m.GetRolesAsync(u)).ReturnsAsync(new List<string> { "Student" });
+
+        var result = await _handler.Handle(new GetUsersBySpecQuery(param), CancellationToken.None);
+        Assert.That(result.Data.All(u => u.Status != EntityStatus.Deleted));
+    }
+
+    [Test]
     public async Task Should_Filter_By_Status_With_Role()
     {
         // Arrange
