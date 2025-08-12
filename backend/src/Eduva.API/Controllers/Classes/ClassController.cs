@@ -116,6 +116,12 @@ namespace Eduva.API.Controllers.Classes
             if (!Guid.TryParse(userId, out var teacherId))
                 return Respond(CustomCode.UserIdNotFound);
 
+            if (!classSpecParam.IsPagingEnabled)
+            {
+                classSpecParam.PageSize = int.MaxValue;
+                classSpecParam.PageIndex = 1;
+            }
+
             return await HandleRequestAsync(async () =>
             {
                 var query = new GetTeacherClassesQuery(classSpecParam, teacherId);

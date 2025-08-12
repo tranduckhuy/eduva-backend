@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.6.2](https://github.com/tranduckhuy/eduva-backend/compare/v1.6.1...v1.6.2) (2025-08-12)
+
+
+### Bug Fixes
+
+* only count LM has status is Active & IsPagingEnabled get all class ([#523](https://github.com/tranduckhuy/eduva-backend/issues/523)) ([20ed914](https://github.com/tranduckhuy/eduva-backend/commit/20ed9140593e4425aac04b60f30d80e2af3a2380))
+
+## [1.6.1](https://github.com/tranduckhuy/eduva-backend/compare/v1.6.0...v1.6.1) (2025-08-11)
+
+
+### Bug Fixes
+
+* **auth:** add missing SegmentsPerWindow setting in rate limiting config ([#519](https://github.com/tranduckhuy/eduva-backend/issues/519)) ([5da0110](https://github.com/tranduckhuy/eduva-backend/commit/5da01101413c30d6cf93cb39e32ca45bbd7c44fe))
+
 ## [1.6.0](https://github.com/tranduckhuy/eduva-backend/compare/v1.5.4...v1.6.0) (2025-08-11)
 
 
