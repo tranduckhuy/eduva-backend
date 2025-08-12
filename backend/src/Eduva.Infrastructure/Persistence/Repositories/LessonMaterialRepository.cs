@@ -103,13 +103,13 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                 return 0;
 
             var count = await _context.FolderLessonMaterials
-        .Where(flm => folderIds.Contains(flm.FolderId))
-        .Join(_context.LessonMaterials,
-            flm => flm.LessonMaterialId,
-            lm => lm.Id,
-            (flm, lm) => new { FolderId = flm.FolderId, IsApproved = lm.LessonStatus == LessonMaterialStatus.Approved })
-        .Where(x => x.IsApproved)
-        .CountAsync(cancellationToken);
+                .Where(flm => folderIds.Contains(flm.FolderId))
+                .Join(_context.LessonMaterials,
+                    flm => flm.LessonMaterialId,
+                    lm => lm.Id,
+                    (flm, lm) => new { FolderId = flm.FolderId, IsApproved = lm.LessonStatus == LessonMaterialStatus.Approved, IsActive = lm.Status == EntityStatus.Active })
+                .Where(x => x.IsApproved && x.IsActive)
+                .CountAsync(cancellationToken);
 
             return count;
         }
@@ -129,8 +129,8 @@ namespace Eduva.Infrastructure.Persistence.Repositories
                 .Join(_context.LessonMaterials,
                     flm => flm.LessonMaterialId,
                     lm => lm.Id,
-                    (flm, lm) => new { FolderId = flm.FolderId, IsApproved = lm.LessonStatus == LessonMaterialStatus.Approved })
-                .Where(x => x.IsApproved)
+                    (flm, lm) => new { FolderId = flm.FolderId, IsApproved = lm.LessonStatus == LessonMaterialStatus.Approved, IsActive = lm.Status == EntityStatus.Active })
+                .Where(x => x.IsApproved && x.IsActive)
                 .GroupBy(x => x.FolderId)
                 .Select(g => new { FolderId = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.FolderId, x => x.Count, cancellationToken);
@@ -279,7 +279,7 @@ namespace Eduva.Infrastructure.Persistence.Repositories
         public async Task<List<LessonMaterial>> GetLessonMaterialsBySchoolOrderedByFileSizeAsync(int schoolId, CancellationToken cancellationToken = default)
         {
             return await _context.LessonMaterials
-                .Where(lm => lm.SchoolId == schoolId && 
+                .Where(lm => lm.SchoolId == schoolId &&
                             lm.Status == EntityStatus.Active &&
                             !string.IsNullOrEmpty(lm.SourceUrl))
                 .OrderByDescending(lm => lm.FileSize)
