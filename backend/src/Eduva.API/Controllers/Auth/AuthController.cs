@@ -31,7 +31,6 @@ namespace Eduva.API.Controllers.Auth
         }
 
         [HttpPost("login")]
-        [EnableRateLimiting(RateLimitPolicyNames.LoginPolicy)]
         [ProducesResponseType(typeof(ApiResponse<AuthResultDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
         {
