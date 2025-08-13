@@ -78,6 +78,7 @@ namespace Eduva.API.Controllers.Classes
         [HttpGet]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         [ProducesResponseType(typeof(ApiResponse<Pagination<ClassResponse>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<List<ClassResponse>>), StatusCodes.Status200OK)]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
         public async Task<IActionResult> GetClasses([FromQuery] ClassSpecParam classSpecParam)
         {
@@ -91,11 +92,23 @@ namespace Eduva.API.Controllers.Classes
             if (!Guid.TryParse(userId, out var userGuid))
                 return Respond(CustomCode.UserIdNotFound);
 
+            if (!classSpecParam.IsPagingEnabled)
+            {
+                classSpecParam.PageSize = int.MaxValue;
+                classSpecParam.PageIndex = 1;
+            }
+
             return await HandleRequestAsync(async () =>
             {
                 var query = new GetClassesQuery(classSpecParam, userGuid);
                 var result = await _mediator.Send(query);
-                return (CustomCode.Success, result);
+
+                if (!classSpecParam.IsPagingEnabled && result is Pagination<ClassResponse> paged)
+                {
+                    return (CustomCode.Success, (object)paged.Data.ToList());
+                }
+
+                return (CustomCode.Success, (object)result);
             });
         }
 
@@ -139,6 +152,7 @@ namespace Eduva.API.Controllers.Classes
         [HttpGet("enrollment")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         [ProducesResponseType(typeof(ApiResponse<Pagination<StudentClassResponse>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<List<StudentClassResponse>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetMyClasses([FromQuery] StudentClassSpecParam specParam)
         {
             var validationResult = CheckModelStateValidity();
@@ -151,13 +165,24 @@ namespace Eduva.API.Controllers.Classes
             if (!Guid.TryParse(userId, out var studentId))
                 return Respond(CustomCode.UserIdNotFound);
 
-            // Create query with spec params
+            if (!specParam.IsPagingEnabled)
+            {
+                specParam.PageSize = int.MaxValue;
+                specParam.PageIndex = 1;
+            }
+
             var query = new GetStudentClassesQuery(specParam, studentId);
 
             return await HandleRequestAsync(async () =>
             {
                 var result = await _mediator.Send(query);
-                return (CustomCode.Success, result);
+
+                if (!specParam.IsPagingEnabled && result is Pagination<StudentClassResponse> paged)
+                {
+                    return (CustomCode.Success, (object)paged.Data.ToList());
+                }
+
+                return (CustomCode.Success, (object)result);
             });
         }
 
@@ -186,6 +211,7 @@ namespace Eduva.API.Controllers.Classes
         [HttpGet("{id}/students")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         [ProducesResponseType(typeof(ApiResponse<Pagination<StudentClassResponse>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<List<StudentClassResponse>>), StatusCodes.Status200OK)]
         [Authorize(Policy = "EducatorOnly")]
         public async Task<IActionResult> GetAllStudentsInClass(Guid id, [FromQuery] StudentClassSpecParam studentClassSpecParam)
         {
@@ -199,11 +225,23 @@ namespace Eduva.API.Controllers.Classes
             if (!Guid.TryParse(userId, out var requesterId))
                 return Respond(CustomCode.UserIdNotFound);
 
+            if (!studentClassSpecParam.IsPagingEnabled)
+            {
+                studentClassSpecParam.PageSize = int.MaxValue;
+                studentClassSpecParam.PageIndex = 1;
+            }
+
             return await HandleRequestAsync(async () =>
             {
                 var query = new GetAllStudentsInClassQuery(id, studentClassSpecParam, requesterId);
                 var result = await _mediator.Send(query);
-                return (CustomCode.Success, result);
+
+                if (!studentClassSpecParam.IsPagingEnabled && result is Pagination<StudentClassResponse> paged)
+                {
+                    return (CustomCode.Success, (object)paged.Data.ToList());
+                }
+
+                return (CustomCode.Success, (object)result);
             });
         }
 
