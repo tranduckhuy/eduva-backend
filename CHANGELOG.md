@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/tranduckhuy/eduva-backend/compare/v1.6.2...v1.7.0) (2025-08-13)
+
+
+### Features
+
+* adds language support to AI jobs & fix: paging get user folder, response folder ([#527](https://github.com/tranduckhuy/eduva-backend/issues/527)) ([64af27f](https://github.com/tranduckhuy/eduva-backend/commit/64af27fd61b470ca024650b803fe9bcd9a0052e4))
+
 ## [1.6.2](https://github.com/tranduckhuy/eduva-backend/compare/v1.6.1...v1.6.2) (2025-08-12)
 
 
