@@ -83,6 +83,7 @@ namespace Eduva.API.Controllers.Folders
         [HttpGet]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         [ProducesResponseType(typeof(ApiResponse<Pagination<FolderResponse>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<List<FolderResponse>>), StatusCodes.Status200OK)]
         [Authorize(Roles = $"{nameof(Role.SystemAdmin)},{nameof(Role.SchoolAdmin)}")]
         public async Task<IActionResult> GetFolders([FromQuery] FolderSpecParam folderSpecParam)
         {
@@ -96,18 +97,32 @@ namespace Eduva.API.Controllers.Folders
             if (!Guid.TryParse(userId, out var userGuid))
                 return Respond(CustomCode.UserIdNotFound);
 
+            if (!folderSpecParam.IsPagingEnabled)
+            {
+                folderSpecParam.PageSize = int.MaxValue;
+                folderSpecParam.PageIndex = 1;
+            }
+
             return await HandleRequestAsync(async () =>
             {
                 var query = new GetFoldersQuery(folderSpecParam, userGuid);
                 var result = await _mediator.Send(query);
-                return (CustomCode.Success, result);
+
+                if (!folderSpecParam.IsPagingEnabled && result is Pagination<FolderResponse> paged)
+                {
+                    return (CustomCode.Success, (object)paged.Data.ToList());
+                }
+
+                return (CustomCode.Success, (object)result);
             });
         }
 
         [HttpGet("class/{classId}")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
-        [ProducesResponseType(typeof(ApiResponse<IEnumerable<FolderResponse>>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetFoldersByClassId(Guid classId, [FromQuery] string? sortBy,
+        [ProducesResponseType(typeof(ApiResponse<List<FolderResponse>>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetFoldersByClassId(
+            Guid classId,
+            [FromQuery] string? sortBy,
             [FromQuery] string? sortDirection)
         {
             var validationResult = CheckModelStateValidity();
@@ -124,14 +139,17 @@ namespace Eduva.API.Controllers.Folders
             {
                 ClassId = classId,
                 SortBy = sortBy,
-                SortDirection = sortDirection ?? "asc"
+                SortDirection = sortDirection ?? "asc",
+                IsPagingEnabled = false,
+                PageSize = int.MaxValue,
+                PageIndex = 1
             };
 
             return await HandleRequestAsync(async () =>
             {
                 var query = new GetAllFoldersByClassIdQuery(folderSpecParam, userGuid);
                 var folders = await _mediator.Send(query);
-                return (CustomCode.Success, folders);
+                return (CustomCode.Success, folders is List<FolderResponse> list ? list : folders.ToList());
             });
         }
 
