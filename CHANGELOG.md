@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.1](https://github.com/tranduckhuy/eduva-backend/compare/v1.7.0...v1.7.1) (2025-08-14)
+
+
+### Bug Fixes
+
+* **cronjob:** ensures correct date handling for subscriptions ([#529](https://github.com/tranduckhuy/eduva-backend/issues/529)) ([8b6387b](https://github.com/tranduckhuy/eduva-backend/commit/8b6387b500473540246026ebcc716f7b83e78cfd))
+
 ## [1.7.0](https://github.com/tranduckhuy/eduva-backend/compare/v1.6.2...v1.7.0) (2025-08-13)
 
 
