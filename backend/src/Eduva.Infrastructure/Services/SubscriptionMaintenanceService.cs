@@ -29,16 +29,7 @@ public class SubscriptionMaintenanceService : BackgroundService
         {
             try
             {
-                TimeZoneInfo vietnamTimeZone;
-
-                try
-                {
-                    vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
-                }
-                catch (TimeZoneNotFoundException)
-                {
-                    vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
-                }
+                TimeZoneInfo vietnamTimeZone = Common.Helper.GetVietnamTimeZone();
 
                 var utcNow = DateTime.UtcNow;
                 var vietnamNow = TimeZoneInfo.ConvertTimeFromUtc(utcNow, vietnamTimeZone);
@@ -94,7 +85,6 @@ public class SubscriptionMaintenanceService : BackgroundService
         _logger.LogInformation("Subscription Maintenance Service stopped");
     }
 
-
     private async Task PerformMaintenanceAsync(CancellationToken cancellationToken)
     {
         using var scope = _serviceProvider.CreateScope();
@@ -114,8 +104,10 @@ public class SubscriptionMaintenanceService : BackgroundService
             var schoolRepo = unitOfWork.GetRepository<School, int>();
             var lessonMaterialRepo = unitOfWork.GetCustomRepository<ILessonMaterialRepository>();
 
-            var now = new DateTimeOffset(DateTime.UtcNow.Date, TimeSpan.Zero);
-            var warningDate = now.AddDays(_warningDaysBefore + 1).AddTicks(-1).ToOffset(TimeSpan.Zero);
+            TimeZoneInfo vietnamTimeZone = Common.Helper.GetVietnamTimeZone();
+
+            var now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamTimeZone).Date;
+            var warningDate = now.AddDays(_warningDaysBefore + 1).AddTicks(-1);
             var dataCleanupDate = now.AddDays(-_dataRetentionDays);
 
             // 1. Send warning emails for subscriptions expiring soon
@@ -339,11 +331,17 @@ public class SubscriptionMaintenanceService : BackgroundService
             return;
         }
 
+        // Get Vietnam timezone for date formatting
+        TimeZoneInfo vietnamTimeZone = Common.Helper.GetVietnamTimeZone();
+
+        // Convert EndDate to Vietnam time for display
+        var expiryDateVietnam = TimeZoneInfo.ConvertTime(subscription.EndDate, vietnamTimeZone);
+
         var template = await File.ReadAllTextAsync(templatePath);
         var htmlContent = template
             .Replace("{{school_admin_name}}", schoolAdmin.FullName ?? schoolAdmin.Email)
             .Replace("{{school_name}}", school.Name)
-            .Replace("{{expiry_date}}", subscription.EndDate.ToString("dd/MM/yyyy"))
+            .Replace("{{expiry_date}}", expiryDateVietnam.ToString("dd/MM/yyyy"))
             .Replace("{{package_info_link}}", packageInfoUrl)
             .Replace("{{current_year}}", DateTimeOffset.UtcNow.Year.ToString());
 
@@ -369,14 +367,20 @@ public class SubscriptionMaintenanceService : BackgroundService
             return;
         }
 
-        var template = await File.ReadAllTextAsync(templatePath);
-        var deleteDate = subscription.EndDate.AddDays(_dataRetentionDays);
+        // Get Vietnam timezone for date formatting
+        TimeZoneInfo vietnamTimeZone = Common.Helper.GetVietnamTimeZone();
 
+        // Convert dates to Vietnam time for display
+        var expiryDateVietnam = TimeZoneInfo.ConvertTime(subscription.EndDate, vietnamTimeZone);
+        var deleteDate = subscription.EndDate.AddDays(_dataRetentionDays);
+        var deleteDateVietnam = TimeZoneInfo.ConvertTime(deleteDate, vietnamTimeZone);
+
+        var template = await File.ReadAllTextAsync(templatePath);
         var htmlContent = template
             .Replace("{{school_admin_name}}", schoolAdmin.FullName ?? schoolAdmin.Email)
             .Replace("{{school_name}}", school.Name)
-            .Replace("{{expiry_date}}", subscription.EndDate.ToString("dd/MM/yyyy"))
-            .Replace("{{delete_date}}", deleteDate.ToString("dd/MM/yyyy"))
+            .Replace("{{expiry_date}}", expiryDateVietnam.ToString("dd/MM/yyyy"))
+            .Replace("{{delete_date}}", deleteDateVietnam.ToString("dd/MM/yyyy"))
             .Replace("{{renew_link}}", packageInfoUrl)
             .Replace("{{current_year}}", DateTimeOffset.UtcNow.Year.ToString());
 

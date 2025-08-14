@@ -32,7 +32,7 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
     private readonly IStorageService _storageService;
 
     private const int WORDS_PER_MINUTE = 250;
-    private const int WORDS_PER_MINUTE_FOR_ENGLISH = 170;
+    private const int WORDS_PER_MINUTE_FOR_ENGLISH = 150;
     private const string DEFAULT_LANGUAGE = "vietnamese";
     private const string DEFAULT_ERROR_MESSAGE = "Có lỗi xảy ra trong quá trình tạo nội dung. Vui lòng thử lại sau.";
 
