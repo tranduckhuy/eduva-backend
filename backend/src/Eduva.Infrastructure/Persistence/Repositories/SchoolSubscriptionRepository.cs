@@ -90,29 +90,38 @@ namespace Eduva.Infrastructure.Persistence.Repositories
         }
 
         public async Task<List<SchoolSubscription>> GetSubscriptionsExpiringBetweenAsync(DateTimeOffset startDate, DateTimeOffset endDate, CancellationToken cancellationToken = default)
+
         {
+            var startUtc = startDate.UtcDateTime;
+            var endUtc = endDate.UtcDateTime;
+
             return await _context.SchoolSubscriptions
                 .Include(s => s.Plan)
                 .Include(s => s.School)
                 .Where(s => s.SubscriptionStatus == SubscriptionStatus.Active &&
-                           s.EndDate >= startDate &&
-                           s.EndDate <= endDate)
+                           s.EndDate >= startUtc &&
+                           s.EndDate <= endUtc)
                 .ToListAsync(cancellationToken);
         }
 
         public async Task<List<SchoolSubscription>> GetSubscriptionsExpiredOnDateAsync(DateTimeOffset startDate, DateTimeOffset endDate, CancellationToken cancellationToken = default)
         {
+            var startUtc = startDate.UtcDateTime;
+            var endUtc = endDate.UtcDateTime;
+
             return await _context.SchoolSubscriptions
                 .Include(s => s.Plan)
                 .Include(s => s.School)
                 .Where(s => s.SubscriptionStatus == SubscriptionStatus.Active &&
-                           s.EndDate >= startDate &&
-                           s.EndDate < endDate)
+                           s.EndDate >= startUtc &&
+                           s.EndDate < endUtc)
                 .ToListAsync(cancellationToken);
         }
 
         public async Task<List<SchoolSubscription>> GetSubscriptionsExpiredBeforeAsync(DateTimeOffset beforeDate, CancellationToken cancellationToken = default)
         {
+            var beforeDateUtc = beforeDate.UtcDateTime;
+
             var schoolsWithActiveSubscriptions = await _context.SchoolSubscriptions
                 .Where(s => s.SubscriptionStatus == SubscriptionStatus.Active)
                 .Select(s => s.SchoolId)
@@ -130,18 +139,20 @@ namespace Eduva.Infrastructure.Persistence.Repositories
             return await _context.SchoolSubscriptions
                 .Include(s => s.Plan)
                 .Include(s => s.School)
-                .Where(s => latestExpiredSubscriptionIds.Contains(s.Id) && s.EndDate < beforeDate)
+                .Where(s => latestExpiredSubscriptionIds.Contains(s.Id) && s.EndDate < beforeDateUtc)
                 .ToListAsync(cancellationToken);
         }
 
         public async Task<List<SchoolSubscription>> GetAllActiveSchoolSubscriptionsExceedingStorageLimitAsync
             (DateTimeOffset dataCleanupDate, CancellationToken cancellationToken = default)
         {
+            var dataCleanupDateUTC = dataCleanupDate.UtcDateTime;
+
             return await _context.SchoolSubscriptions
                 .Include(s => s.Plan)
                 .Include(s => s.School)
                 .Where(s => s.SubscriptionStatus == SubscriptionStatus.Active &&
-                            s.StartDate < dataCleanupDate)
+                            s.StartDate < dataCleanupDateUTC)
                 .ToListAsync(cancellationToken);
         }
     }
