@@ -106,9 +106,7 @@ public class SubscriptionMaintenanceService : BackgroundService
 
             TimeZoneInfo vietnamTimeZone = Common.Helper.GetVietnamTimeZone();
 
-            var utcAt2AM = DateTime.UtcNow.Date.AddHours(19).AddDays(-1); // 2 AM Vietnam time is 19:00 UTC the previous day
-
-            var now = TimeZoneInfo.ConvertTimeFromUtc(utcAt2AM, vietnamTimeZone).Date;
+            var now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamTimeZone).Date;
             var warningDate = now.AddDays(_warningDaysBefore + 1).AddTicks(-1);
             var dataCleanupDate = now.AddDays(-_dataRetentionDays);
 

@@ -289,8 +289,6 @@ namespace Eduva.Infrastructure.Persistence.Repositories
         {
             var threshold = DateTimeOffset.UtcNow.AddDays(-30);
 
-            var list = await _context.LessonMaterials.ToListAsync(cancellationToken);
-
             return await _context.LessonMaterials
                 .Where(lm => lm.Status == EntityStatus.Deleted && lm.LastModifiedAt < threshold)
                 .ToListAsync(cancellationToken);
