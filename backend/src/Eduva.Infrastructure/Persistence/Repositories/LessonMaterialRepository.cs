@@ -280,9 +280,17 @@ namespace Eduva.Infrastructure.Persistence.Repositories
         {
             return await _context.LessonMaterials
                 .Where(lm => lm.SchoolId == schoolId &&
-                            lm.Status == EntityStatus.Active &&
-                            !string.IsNullOrEmpty(lm.SourceUrl))
+                            !string.IsNullOrEmpty(lm.SourceUrl) && lm.FileSize > 0)
                 .OrderByDescending(lm => lm.FileSize)
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<List<LessonMaterial>> GetDeletedMaterialsOlderThan30DaysAsync(CancellationToken cancellationToken = default)
+        {
+            var threshold = DateTimeOffset.UtcNow.AddDays(-30);
+
+            return await _context.LessonMaterials
+                .Where(lm => lm.Status == EntityStatus.Deleted && lm.LastModifiedAt < threshold)
                 .ToListAsync(cancellationToken);
         }
     }

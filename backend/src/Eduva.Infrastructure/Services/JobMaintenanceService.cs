@@ -13,7 +13,7 @@ public class JobMaintenanceService : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<JobMaintenanceService> _logger;
-    private readonly TimeSpan _maintenanceInterval = TimeSpan.FromHours(1); // Run every hour
+    private readonly TimeSpan _maintenanceInterval = TimeSpan.FromHours(24); // Run every hour
     private readonly TimeSpan _jobExpirationThreshold = TimeSpan.FromHours(24); // 24 hours
 
     public JobMaintenanceService(IServiceProvider serviceProvider, ILogger<JobMaintenanceService> logger)
