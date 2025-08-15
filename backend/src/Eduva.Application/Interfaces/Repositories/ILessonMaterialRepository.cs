@@ -26,5 +26,7 @@ namespace Eduva.Application.Interfaces.Repositories
             int schoolId, LessonMaterialFilterOptions? filterOptions = null, CancellationToken cancellationToken = default);
 
         Task<List<LessonMaterial>> GetLessonMaterialsBySchoolOrderedByFileSizeAsync(int schoolId, CancellationToken cancellationToken = default);
+
+        Task<List<LessonMaterial>> GetDeletedMaterialsOlderThan30DaysAsync(CancellationToken cancellationToken = default);
     }
 }

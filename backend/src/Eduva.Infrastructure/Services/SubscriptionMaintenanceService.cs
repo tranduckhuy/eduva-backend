@@ -106,9 +106,14 @@ public class SubscriptionMaintenanceService : BackgroundService
 
             TimeZoneInfo vietnamTimeZone = Common.Helper.GetVietnamTimeZone();
 
-            var now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamTimeZone).Date;
+            var utcAt2AM = DateTime.UtcNow.Date.AddHours(19).AddDays(-1); // 2 AM Vietnam time is 19:00 UTC the previous day
+
+            var now = TimeZoneInfo.ConvertTimeFromUtc(utcAt2AM, vietnamTimeZone).Date;
             var warningDate = now.AddDays(_warningDaysBefore + 1).AddTicks(-1);
             var dataCleanupDate = now.AddDays(-_dataRetentionDays);
+
+            _logger.LogInformation("Current date in Vietnam time: {CurrentDate}, Warning date: {WarningDate}, Data cleanup date: {DataCleanupDate}",
+                now.ToString("yyyy-MM-dd"), warningDate.ToString("yyyy-MM-dd"), dataCleanupDate.ToString("yyyy-MM-dd"));
 
             // 1. Send warning emails for subscriptions expiring soon
             await SendExpirationWarningEmailsAsync(schoolSubscriptionRepo, userRepo, schoolRepo, emailSender, now, warningDate, packageInfoUrl, cancellationToken);
@@ -121,6 +126,9 @@ public class SubscriptionMaintenanceService : BackgroundService
 
             // 4. Clean up lesson materials for subscriptions expired more than 14 days
             await CleanupExpiredSubscriptionDataAsync(schoolSubscriptionRepo, lessonMaterialRepo, storageService, unitOfWork, dataCleanupDate, cancellationToken);
+
+            // 5. Permanently delete old lesson materials that are marked as deleted for more than 30 days
+            await DeleteOldLessonMaterialsAsync(lessonMaterialRepo, storageService, unitOfWork, cancellationToken);
 
             _logger.LogInformation("Subscription maintenance cycle completed successfully");
         }
@@ -144,6 +152,13 @@ public class SubscriptionMaintenanceService : BackgroundService
         {
             // Get subscriptions that will expire in the warning period
             var startDate = now.AddDays(1);
+
+            _logger.LogInformation("Checking for subscriptions expiring between {StartDate} and {WarningDate}",
+                startDate.ToString("yyyy-MM-dd"), warningDate.ToString("yyyy-MM-dd"));
+
+            _logger.LogInformation("UTC for start date: {UtcStartDate}, Warning date: {UtcWarningDate}",
+                startDate.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss"), warningDate.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss"));
+
             var subscriptionsNearExpiry = await schoolSubscriptionRepo.GetSubscriptionsExpiringBetweenAsync(startDate, warningDate, cancellationToken);
 
             _logger.LogInformation("Found {Count} subscriptions expiring within {Days} days", subscriptionsNearExpiry.Count, _warningDaysBefore);
@@ -197,6 +212,10 @@ public class SubscriptionMaintenanceService : BackgroundService
         try
         {
             var endDate = now.AddDays(1);
+
+            _logger.LogInformation("HandleExpiredSubscriptionsAsync UTC for start date: {UtcStartDate}, Warning date: {UtcWarningDate}",
+                now.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss"), endDate.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss"));
+
             var expiredToday = await schoolSubscriptionRepo.GetSubscriptionsExpiredOnDateAsync(now, endDate, cancellationToken);
 
             _logger.LogInformation("Found {Count} subscriptions that expired today", expiredToday.Count);
@@ -205,6 +224,9 @@ public class SubscriptionMaintenanceService : BackgroundService
             {
                 try
                 {
+                    _logger.LogInformation("Processing expired subscription {SubscriptionId} for school {SchoolId}, Expiry Date: {ExpiryDate}",
+                        subscription.Id, subscription.SchoolId, subscription.EndDate.ToString("yyyy-MM-dd HH:mm:ss"));
+
                     // Get school admin
                     var schoolAdmin = await userRepo.GetSchoolAdminBySchoolIdAsync(subscription.SchoolId, cancellationToken);
 
@@ -498,5 +520,34 @@ public class SubscriptionMaintenanceService : BackgroundService
     public async Task PerformMaintenanceForTestingAsync(CancellationToken cancellationToken = default)
     {
         await PerformMaintenanceAsync(cancellationToken);
+    }
+
+    // Delete all lesson materials have deleted status that are older than 30 days permanently
+    public async Task DeleteOldLessonMaterialsAsync(
+        ILessonMaterialRepository lessonMaterialRepo,
+        IStorageService storageService,
+        IUnitOfWork unitOfWork,
+        CancellationToken cancellationToken = default)
+    {
+        var oldMaterials = await lessonMaterialRepo.GetDeletedMaterialsOlderThan30DaysAsync(cancellationToken);
+
+        var blobsToDelete = new List<string>();
+
+        foreach (var oldMaterial in oldMaterials)
+        {
+            blobsToDelete.Add(oldMaterial.SourceUrl);
+        }
+
+        lessonMaterialRepo.RemoveRange(oldMaterials);
+
+        await unitOfWork.CommitAsync();
+
+        if (blobsToDelete.Count > 0)
+        {
+            await storageService.DeleteRangeFileAsync(blobsToDelete, true);
+        }
+
+        _logger.LogInformation("Permanently deleted {Count} old lesson materials older than 30 days", oldMaterials.Count);
+
     }
 }
