@@ -41,6 +41,9 @@ public class JobConfiguration : IEntityTypeConfiguration<Job>
         builder.Property(j => j.AudioOutputBlobName)
             .HasMaxLength(500);
 
+        builder.Property(j => j.EstimatedDurationMinutes)
+            .HasPrecision(18, 2);
+
         builder.Property(j => j.FailureReason)
             .HasMaxLength(1000);
 

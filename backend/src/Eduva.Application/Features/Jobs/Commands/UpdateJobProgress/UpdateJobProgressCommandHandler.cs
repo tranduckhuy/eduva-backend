@@ -15,6 +15,7 @@ public class UpdateJobProgressCommand : IRequest<Unit>
     public JobStatus JobStatus { get; set; }
     public string? Title { get; set; }
     public int? WordCount { get; set; }
+    public string? Language { get; set; }
     public decimal? ActualDuration { get; set; }
     public string? PreviewContent { get; set; }
     public string? ContentBlobName { get; set; }
@@ -31,6 +32,8 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
     private readonly IStorageService _storageService;
 
     private const int WORDS_PER_MINUTE = 250;
+    private const int WORDS_PER_MINUTE_FOR_ENGLISH = 150;
+    private const string DEFAULT_LANGUAGE = "vietnamese";
     private const string DEFAULT_ERROR_MESSAGE = "Có lỗi xảy ra trong quá trình tạo nội dung. Vui lòng thử lại sau.";
 
     public UpdateJobProgressCommandHandler(
@@ -82,14 +85,29 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
         var audioCost = 0;
         var videoCost = 0;
         var estimatedDurationMinutes = 0m;
+        var wordsPerMinute = WORDS_PER_MINUTE;
+
+        if (!string.IsNullOrEmpty(request.Language))
+        {
+            if (request.Language.Equals(DEFAULT_LANGUAGE))
+            {
+                request.Language = "Tiếng Việt";
+            }
+            else
+            {
+                wordsPerMinute = WORDS_PER_MINUTE_FOR_ENGLISH;
+                request.Language = "Tiếng Anh";
+            }
+        }
 
         // Calculate credit costs based on estimated duration
         if (request.JobStatus == JobStatus.ContentGenerated && request.WordCount.HasValue)
         {
-            (estimatedDurationMinutes, audioCost, videoCost) = await CalculateCreditCostAsync(request.WordCount.Value);
+            (estimatedDurationMinutes, audioCost, videoCost) = await CalculateCreditCostAsync(request.WordCount.Value, wordsPerMinute);
 
             job.AudioCost = audioCost;
             job.VideoCost = videoCost;
+            job.EstimatedDurationMinutes = estimatedDurationMinutes;
         }
 
         _unitOfWork.GetRepository<Job, Guid>().Update(job);
@@ -101,6 +119,7 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
             Status = job.JobStatus,
             request.Title,
             request.PreviewContent,
+            request.Language,
             AudioCost = audioCost,
             VideoCost = videoCost,
             EstimatedDurationMinutes = estimatedDurationMinutes,
@@ -121,7 +140,7 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
         return Unit.Value;
     }
 
-    private async Task<(decimal estimatedDurationMinutes, int audioCost, int videoCost)> CalculateCreditCostAsync(int wordCount)
+    private async Task<(decimal estimatedDurationMinutes, int audioCost, int videoCost)> CalculateCreditCostAsync(int wordCount, int wordsPerMinute = WORDS_PER_MINUTE)
     {
         var aiServicePricingRepository = _unitOfWork.GetRepository<AIServicePricing, int>();
 
@@ -140,7 +159,7 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
             throw new InvalidOperationException("Audio or Video pricing not found.");
         }
 
-        var estimatedDurationMinutes = (decimal)wordCount / WORDS_PER_MINUTE;
+        var estimatedDurationMinutes = (decimal)wordCount / wordsPerMinute;
 
         var audioCost = (int)Math.Ceiling(estimatedDurationMinutes * audioPricing.PricePerMinuteCredits);
         var videoCost = (int)Math.Ceiling(estimatedDurationMinutes * videoPricing.PricePerMinuteCredits);

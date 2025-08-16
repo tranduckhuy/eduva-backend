@@ -20,6 +20,7 @@ public class Job : BaseTimestampedEntity<Guid>
     public string? VideoOutputBlobName { get; set; }
     public string? AudioOutputBlobName { get; set; }
     public string? PreviewContent { get; set; }
+    public decimal? EstimatedDurationMinutes { get; set; }
     public int AudioCost { get; set; } = 0;
     public int VideoCost { get; set; } = 0;
     public int? WordCount { get; set; }

@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.7.3](https://github.com/tranduckhuy/eduva-backend/compare/v1.7.2...v1.7.3) (2025-08-16)
+
+
+### Bug Fixes
+
+* fixes subscription expiry and duration calculation ([#533](https://github.com/tranduckhuy/eduva-backend/issues/533)) ([adc6753](https://github.com/tranduckhuy/eduva-backend/commit/adc6753b9356c2222b1f9cc5ad6ecc3c1ebf7e94))
+
+## [1.7.2](https://github.com/tranduckhuy/eduva-backend/compare/v1.7.1...v1.7.2) (2025-08-15)
+
+
+### Bug Fixes
+
+* fix subscription date and data maintenance ([#531](https://github.com/tranduckhuy/eduva-backend/issues/531)) ([eaeaa24](https://github.com/tranduckhuy/eduva-backend/commit/eaeaa24ab6b17dab17d1903c7a6e496850fcaee9))
+
+## [1.7.1](https://github.com/tranduckhuy/eduva-backend/compare/v1.7.0...v1.7.1) (2025-08-14)
+
+
+### Bug Fixes
+
+* **cronjob:** ensures correct date handling for subscriptions ([#529](https://github.com/tranduckhuy/eduva-backend/issues/529)) ([8b6387b](https://github.com/tranduckhuy/eduva-backend/commit/8b6387b500473540246026ebcc716f7b83e78cfd))
+
+## [1.7.0](https://github.com/tranduckhuy/eduva-backend/compare/v1.6.2...v1.7.0) (2025-08-13)
+
+
+### Features
+
+* adds language support to AI jobs & fix: paging get user folder, response folder ([#527](https://github.com/tranduckhuy/eduva-backend/issues/527)) ([64af27f](https://github.com/tranduckhuy/eduva-backend/commit/64af27fd61b470ca024650b803fe9bcd9a0052e4))
+
 ## [1.6.2](https://github.com/tranduckhuy/eduva-backend/compare/v1.6.1...v1.6.2) (2025-08-12)
 
 

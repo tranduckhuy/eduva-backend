@@ -27,7 +27,17 @@
 
 Eduva Backend is the core service for the AI-powered learning material management system. It provides APIs and backend logic for managing educational content, automating the generation of audio/video lessons, and supporting high school teachers in their teaching process.
 
-<img src="documents/eduva-screenshot.png" alt="Screenshot of AI lesson generation page" />
+#### 🧠 AI Lesson Generation Page
+
+![Screenshot of AI lesson generation page](documents/eduva-screenshot-ai.png)
+
+#### 🏫 School Dashboard
+
+![Screenshot of school dashboard page](documents/eduva-screenshot-school-dashboard.png)
+
+#### 📚 Lesson Management
+
+![Screenshot of lesson management page](documents/eduva-screenshot-lesson-management.png)
 
 <a name="installation"></a>
 
@@ -57,7 +67,9 @@ cd eduva-backend/backend
 
 ### Environment Setup
 
-See [documents/environment-setup.md](documents/environment-setup.md) for detailed environment configuration and setup instructions.
+- Copy `.env.example` to `.env` and fill in your environment variables for local development or Docker Compose.
+- For .NET local development, use the .NET Secret Manager to store sensitive values in `secrets.json` (see [documents/environment-setup.md](documents/environment-setup.md) for details and example structure).
+- **Do not commit `.env` or `secrets.json` with real credentials to source control.**
 
 <a name="running-the-application"></a>
 
@@ -68,6 +80,12 @@ cd backend/src/Eduva.API
 dotnet restore
 dotnet build
 dotnet run
+```
+
+Or with Docker Compose:
+
+```bash
+docker-compose -f docker-compose.yaml -f docker-compose.override.yaml up --build
 ```
 
 <a name="project-structure"></a>
@@ -94,3 +112,5 @@ backend/
 <a name="license"></a>
 
 ## License
+
+See [LICENSE](LICENSE) for details.
