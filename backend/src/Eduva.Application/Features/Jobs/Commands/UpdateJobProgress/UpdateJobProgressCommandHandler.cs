@@ -107,6 +107,7 @@ public class UpdateJobProgressCommandHandler : IRequestHandler<UpdateJobProgress
 
             job.AudioCost = audioCost;
             job.VideoCost = videoCost;
+            job.EstimatedDurationMinutes = estimatedDurationMinutes;
         }
 
         _unitOfWork.GetRepository<Job, Guid>().Update(job);

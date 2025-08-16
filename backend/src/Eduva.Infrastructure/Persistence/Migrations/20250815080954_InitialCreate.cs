@@ -348,6 +348,7 @@ namespace Eduva.Infrastructure.Persistence.Migrations
                     VideoOutputBlobName = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     AudioOutputBlobName = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     PreviewContent = table.Column<string>(type: "text", nullable: true),
+                    EstimatedDurationMinutes = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
                     AudioCost = table.Column<int>(type: "integer", nullable: false),
                     VideoCost = table.Column<int>(type: "integer", nullable: false),
                     WordCount = table.Column<int>(type: "integer", nullable: true),
