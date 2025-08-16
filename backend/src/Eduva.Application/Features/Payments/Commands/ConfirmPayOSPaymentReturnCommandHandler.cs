@@ -77,7 +77,7 @@ namespace Eduva.Application.Features.Payments.Commands
                 oldSub.EndDate = DateTimeOffset.UtcNow;
             }
 
-            var now = DateTimeOffset.UtcNow;
+            var now = DateTimeOffset.UtcNow.Date.AddHours(12); // Set to 12:00 PM UTC to avoid timezone issues
             var newSub = new SchoolSubscription
             {
                 StartDate = now,

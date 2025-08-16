@@ -96,7 +96,7 @@ namespace Eduva.API.Middlewares
             }
 
             var now = DateTimeOffset.UtcNow.Date;
-            bool expired = subscription.SubscriptionStatus == SubscriptionStatus.Expired || subscription.EndDate.Date < now;
+            bool expired = subscription.SubscriptionStatus == SubscriptionStatus.Expired || subscription.EndDate.Date <= now;
             bool withinGracePeriod = expired && subscription.EndDate.Date.AddDays(14) >= now;
 
             if (expired)
