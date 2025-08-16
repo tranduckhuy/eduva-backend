@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.3](https://github.com/tranduckhuy/eduva-backend/compare/v1.7.2...v1.7.3) (2025-08-16)
+
+
+### Bug Fixes
+
+* fixes subscription expiry and duration calculation ([#533](https://github.com/tranduckhuy/eduva-backend/issues/533)) ([adc6753](https://github.com/tranduckhuy/eduva-backend/commit/adc6753b9356c2222b1f9cc5ad6ecc3c1ebf7e94))
+
 ## [1.7.2](https://github.com/tranduckhuy/eduva-backend/compare/v1.7.1...v1.7.2) (2025-08-15)
 
 
