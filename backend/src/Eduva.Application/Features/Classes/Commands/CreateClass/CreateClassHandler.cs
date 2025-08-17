@@ -19,8 +19,12 @@ namespace Eduva.Application.Features.Classes.Commands.CreateClass
         {
             _unitOfWork = unitOfWork;
         }
+
         public async Task<ClassResponse> Handle(CreateClassCommand request, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrWhiteSpace(request.Name))
+                throw new AppException(CustomCode.ProvidedInformationIsInValid);
+
             var classroomRepository = _unitOfWork.GetCustomRepository<IClassroomRepository>();
 
             // Check if the school exists and is active
@@ -31,15 +35,17 @@ namespace Eduva.Application.Features.Classes.Commands.CreateClass
             {
                 throw new AppException(CustomCode.SchoolNotFound);
             }
+
             if (school.Status != EntityStatus.Active)
             {
                 throw new AppException(CustomCode.CannotCreateClassForInactiveSchool);
             }
 
-            // Check if the class name already exists for this teacher
+            // Check if the class name already exists for this teacher (ignore case and whitespace)
+            string normalizedName = request.Name.Trim().ToLower();
             bool classExistsForTeacher = await classroomRepository.ExistsAsync(c =>
                 c.TeacherId == request.TeacherId &&
-                c.Name.ToLower() == request.Name.ToLower());
+                c.Name.Trim().ToLower() == normalizedName);
             if (classExistsForTeacher)
             {
                 throw new AppException(CustomCode.ClassNameAlreadyExistsForTeacher);

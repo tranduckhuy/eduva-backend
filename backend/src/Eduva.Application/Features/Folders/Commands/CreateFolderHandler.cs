@@ -21,6 +21,9 @@ namespace Eduva.Application.Features.Folders.Commands
 
         public async Task<FolderResponse> Handle(CreateFolderCommand request, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrWhiteSpace(request.Name))
+                throw new AppException(CustomCode.ProvidedInformationIsInValid);
+
             // Default to personal folder
             request.OwnerType = OwnerType.Personal;
             request.UserId = request.CurrentUserId;
@@ -28,9 +31,7 @@ namespace Eduva.Application.Features.Folders.Commands
             var userRepository = _unitOfWork.GetRepository<ApplicationUser, Guid>();
             var user = await userRepository.GetByIdAsync(request.CurrentUserId);
             if (user == null)
-            {
                 throw new AppException(CustomCode.UserIdNotFound);
-            }
 
             // If classId is provided and not empty, check if a class folder can be created
             if (request.ClassId.HasValue && request.ClassId.Value != Guid.Empty)
@@ -40,7 +41,7 @@ namespace Eduva.Application.Features.Folders.Commands
 
                 if (classroom != null
                     && classroom.TeacherId == request.CurrentUserId
-                    && classroom.Status == EntityStatus.Active) // Only allow if class is active
+                    && classroom.Status == EntityStatus.Active)
                 {
                     // If class exists, user is the teacher, and class is active -> create class folder
                     request.OwnerType = OwnerType.Class;
@@ -63,14 +64,15 @@ namespace Eduva.Application.Features.Folders.Commands
                 request.ClassId = null;
             }
 
-            // Check for duplicate folder name within the same scope
+            // Check for duplicate folder name within the same scope (ignore case and whitespace)
             var folderRepository = _unitOfWork.GetCustomRepository<IFolderRepository>();
+            string normalizedName = request.Name.Trim().ToLower();
             bool folderExists = false;
 
             if (request.OwnerType == OwnerType.Personal)
             {
                 folderExists = await folderRepository.ExistsAsync(f =>
-                    f.Name == request.Name &&
+                    f.Name.Trim().ToLower() == normalizedName &&
                     f.OwnerType == OwnerType.Personal &&
                     f.UserId == request.UserId &&
                     f.Status == EntityStatus.Active);
@@ -78,16 +80,14 @@ namespace Eduva.Application.Features.Folders.Commands
             else if (request.OwnerType == OwnerType.Class)
             {
                 folderExists = await folderRepository.ExistsAsync(f =>
-                    f.Name == request.Name &&
+                    f.Name.Trim().ToLower() == normalizedName &&
                     f.OwnerType == OwnerType.Class &&
                     f.ClassId == request.ClassId &&
                     f.Status == EntityStatus.Active);
             }
 
             if (folderExists)
-            {
                 throw new AppException(CustomCode.FolderNameAlreadyExists);
-            }
 
             // Get the next order number
             int nextOrder = await folderRepository.GetMaxOrderAsync(request.UserId, request.ClassId) + 1;
@@ -107,7 +107,6 @@ namespace Eduva.Application.Features.Folders.Commands
 
             try
             {
-                // Save folder first
                 await folderRepository.AddAsync(folder);
                 await _unitOfWork.CommitAsync();
 
@@ -122,7 +121,6 @@ namespace Eduva.Application.Features.Folders.Commands
                     folder.Class = await classRepository.GetByIdAsync(folder.ClassId.Value);
                 }
 
-                // Map to response with loaded navigation properties
                 return AppMapper<AppMappingProfile>.Mapper.Map<FolderResponse>(folder);
             }
             catch (Exception)
