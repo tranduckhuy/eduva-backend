@@ -265,14 +265,14 @@ namespace Eduva.Infrastructure.Identity
 
         public async Task<CustomCode> RequestEnable2FaOtpAsync(Request2FaDto request)
         {
+            var user = await _userManager.FindByIdAsync(request.UserId.ToString()) ?? throw new UserNotExistsException();
+
             // Check cooldown for enabling 2FA
             if (!await CheckAndSetCooldownAsync("enable-2fa", request.UserId.ToString()))
             {
                 _logger.LogWarning("Enable 2FA cooldown active for user ID: {UserId}.", request.UserId);
                 return CustomCode.OtpSentSuccessfully;
             }
-
-            var user = await _userManager.FindByIdAsync(request.UserId.ToString()) ?? throw new UserNotExistsException();
 
             if (user.TwoFactorEnabled)
             {
@@ -305,14 +305,14 @@ namespace Eduva.Infrastructure.Identity
 
         public async Task<CustomCode> RequestDisable2FaOtpAsync(Request2FaDto request)
         {
+            var user = await _userManager.FindByIdAsync(request.UserId.ToString()) ?? throw new UserNotExistsException();
+
             // Check cooldown for disabling 2FA
             if (!await CheckAndSetCooldownAsync("disable-2fa", request.UserId.ToString()))
             {
                 _logger.LogWarning("Disable 2FA cooldown active for user ID: {UserId}.", request.UserId);
                 return CustomCode.OtpSentSuccessfully;
             }
-
-            var user = await _userManager.FindByIdAsync(request.UserId.ToString()) ?? throw new UserNotExistsException();
 
             if (!user.TwoFactorEnabled)
             {
@@ -376,13 +376,13 @@ namespace Eduva.Infrastructure.Identity
 
         public async Task<CustomCode> ForgotPasswordAsync(ForgotPasswordRequestDto request)
         {
+            var user = await _userManager.FindByEmailAsync(request.Email) ?? throw new UserNotExistsException();
+
             if (!await CheckAndSetCooldownAsync("forgot-password", request.Email))
             {
                 _logger.LogWarning("Forgot password cooldown active for email: {Email}.", request.Email);
                 return CustomCode.ResetPasswordEmailSent; // Return success but indicate cooldown
             }
-
-            var user = await _userManager.FindByEmailAsync(request.Email) ?? throw new UserNotExistsException();
 
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
 
@@ -439,14 +439,14 @@ namespace Eduva.Infrastructure.Identity
 
         public async Task<CustomCode> ResendConfirmationEmailAsync(ResendConfirmationEmailRequestDto request)
         {
+            var user = await _userManager.FindByEmailAsync(request.Email) ?? throw new UserNotExistsException();
+
             // Check cooldown for resending confirmation email
             if (!await CheckAndSetCooldownAsync("resend-confirmation-email", request.Email))
             {
                 _logger.LogWarning("Resend confirmation email cooldown active for email: {Email}.", request.Email);
                 return CustomCode.ConfirmationEmailSent; // Return success but indicate cooldown
             }
-
-            var user = await _userManager.FindByEmailAsync(request.Email) ?? throw new UserNotExistsException();
 
             if (user.EmailConfirmed)
             {
