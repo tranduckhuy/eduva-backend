@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.7.4](https://github.com/tranduckhuy/eduva-backend/compare/v1.7.3...v1.7.4) (2025-08-17)
+
+
+### Bug Fixes
+
+* AI-Generated lesson can save multiple times ([#542](https://github.com/tranduckhuy/eduva-backend/issues/542)) ([7dabab2](https://github.com/tranduckhuy/eduva-backend/commit/7dabab251ff2f87fc7a5ef2ccfe06e6b48de8a7d))
+* duplicate name class and folder  ([#540](https://github.com/tranduckhuy/eduva-backend/issues/540)) ([5f63632](https://github.com/tranduckhuy/eduva-backend/commit/5f63632aa3fba9290854fa50fc9b0e02cea67eb7))
+
 ## [1.7.3](https://github.com/tranduckhuy/eduva-backend/compare/v1.7.2...v1.7.3) (2025-08-16)
 
 
