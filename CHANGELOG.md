@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.5](https://github.com/tranduckhuy/eduva-backend/compare/v1.7.4...v1.7.5) (2025-08-17)
+
+
+### Bug Fixes
+
+* ensures user existence before 2FA/Password actions ([#543](https://github.com/tranduckhuy/eduva-backend/issues/543)) ([47cb889](https://github.com/tranduckhuy/eduva-backend/commit/47cb8897ad7c6aa83a9ba76e03fe410edf9a81c8))
+
 ## [1.7.4](https://github.com/tranduckhuy/eduva-backend/compare/v1.7.3...v1.7.4) (2025-08-17)
 
 
