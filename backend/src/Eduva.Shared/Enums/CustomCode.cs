@@ -198,6 +198,7 @@ namespace Eduva.Shared.Enums
         LessonMaterialNotApproved = 4852,
         ReasonIsRequiredWhenRejectingLessonMaterial = 4853,
         LessonMaterialRestoreFailed = 4854,
+        AILessonMaterialAlreadySaved = 4856,
 
         // Storage Quota Errors
         StorageQuotaExceeded = 4900,

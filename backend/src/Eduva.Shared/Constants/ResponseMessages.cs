@@ -370,6 +370,8 @@ namespace Eduva.Shared.Constants
                 HttpCode = StatusCodes.Status400BadRequest, Message = "The folder must be a personal folder and in Active status." }},
             { CustomCode.LessonMaterialAlreadyExistsInClassFolder, new MessageDetail {
                 HttpCode = StatusCodes.Status400BadRequest, Message = "The lesson material already exists in another folder of this class." }},
+            { CustomCode.AILessonMaterialAlreadySaved, new MessageDetail {
+                HttpCode = StatusCodes.Status400BadRequest, Message = "AI-generated lesson material has already been saved." }},
 
             // Storage Quota Errors
             { CustomCode.StorageQuotaExceeded, new MessageDetail {

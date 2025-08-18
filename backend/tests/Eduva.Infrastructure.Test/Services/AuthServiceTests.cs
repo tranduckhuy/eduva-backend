@@ -1126,6 +1126,10 @@ namespace Eduva.Infrastructure.Test.Services
 
             var dto = new ForgotPasswordRequestDto { Email = email, ClientUrl = "http://test.com" };
 
+            // Setup user manager to return a valid user
+            var user = new ApplicationUser { Email = email };
+            _userManager.Setup(x => x.FindByEmailAsync(email)).ReturnsAsync(user);
+
             // Act
             var result = await _authService.ForgotPasswordAsync(dto);
 
@@ -1441,12 +1445,16 @@ namespace Eduva.Infrastructure.Test.Services
                 ClientUrl = ValidClientUrl
             };
 
+            // Setup user manager to return a valid user
+            var user = new ApplicationUser { Email = email, EmailConfirmed = false };
+            _userManager.Setup(x => x.FindByEmailAsync(email)).ReturnsAsync(user);
+
             // Act
             var result = await _authService.ResendConfirmationEmailAsync(dto);
 
             // Assert
             Assert.That(result, Is.EqualTo(CustomCode.ConfirmationEmailSent));
-            _userManager.Verify(x => x.FindByEmailAsync(It.IsAny<string>()), Times.Never());
+            _userManager.Verify(x => x.FindByEmailAsync(It.IsAny<string>()), Times.Once());
             _emailSender.Verify(x => x.SendEmailBrevoHtmlAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never());
         }
 
@@ -1605,13 +1613,17 @@ namespace Eduva.Infrastructure.Test.Services
 
             var dto = new Request2FaDto { UserId = userId, CurrentPassword = "password" };
 
+            // Setup user manager to return a valid user
+            var user = new ApplicationUser { Id = userId, TwoFactorEnabled = false };
+            _userManager.Setup(x => x.FindByIdAsync(userId.ToString())).ReturnsAsync(user);
+
             // Act
             var result = await _authService.RequestEnable2FaOtpAsync(dto);
 
             // Assert
             Assert.That(result, Is.EqualTo(CustomCode.OtpSentSuccessfully));
 
-            _userManager.Verify(x => x.FindByIdAsync(It.IsAny<string>()), Times.Never());
+            _userManager.Verify(x => x.FindByIdAsync(It.IsAny<string>()), Times.Once());
             _userManager.Verify(x => x.CheckPasswordAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()), Times.Never());
             _emailSender.Verify(x => x.SendEmailBrevoHtmlAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never());
         }
@@ -1755,13 +1767,18 @@ namespace Eduva.Infrastructure.Test.Services
 
             var dto = new Request2FaDto { UserId = userId, CurrentPassword = "password" };
 
+            // Setup user manager to return a valid user
+            var user = new ApplicationUser { TwoFactorEnabled = true };
+            _userManager.Setup(x => x.FindByIdAsync(It.IsAny<string>())).ReturnsAsync(user);
+            _userManager.Setup(x => x.CheckPasswordAsync(user, It.IsAny<string>())).ReturnsAsync(true);
+
             // Act
             var result = await _authService.RequestDisable2FaOtpAsync(dto);
 
             // Assert
             Assert.That(result, Is.EqualTo(CustomCode.OtpSentSuccessfully));
 
-            _userManager.Verify(x => x.FindByIdAsync(It.IsAny<string>()), Times.Never());
+            _userManager.Verify(x => x.FindByIdAsync(It.IsAny<string>()), Times.Once());
             _userManager.Verify(x => x.CheckPasswordAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()), Times.Never());
             _emailSender.Verify(x => x.SendEmailBrevoHtmlAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never());
         }

@@ -1,9 +1,11 @@
-﻿using Eduva.Application.Common.Mappings;
+﻿using Eduva.Application.Common.Exceptions;
+using Eduva.Application.Common.Mappings;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
 using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
+using Eduva.Shared.Enums;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -28,6 +30,25 @@ namespace Eduva.Application.Features.LessonMaterials.Commands.CreateLessonMateri
             var folderLessonMaterialRepository = _unitOfWork.GetRepository<FolderLessonMaterial, int>();
 
             var createdLessonMaterials = new List<LessonMaterial>();
+
+            // Get AI-generated materials from request if any
+            var aiSourceUrls = request.LessonMaterials
+                .Where(m => m.IsAIContent)
+                .Select(m => m.SourceUrl)
+                .ToList();
+
+            if (aiSourceUrls.Count > 0)
+            {
+                var exists = await lessonMaterialRepository.ExistsAsync(
+                    m => m.IsAIContent && m.SchoolId == request.SchoolId && aiSourceUrls.Contains(m.SourceUrl));
+
+                if (exists)
+                {
+                    _logger.LogWarning("Duplicate AI-generated lesson material detected (SourceUrl already exists).");
+                    throw new AppException(CustomCode.AILessonMaterialAlreadySaved,
+                        ["AI-generated material with the same SourceUrl already exists."]);
+                }
+            }
 
             try
             {

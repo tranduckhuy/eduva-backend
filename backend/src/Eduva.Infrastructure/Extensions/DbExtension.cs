@@ -343,7 +343,7 @@ namespace Eduva.Infrastructure.Extensions
                     Description = "Bài giảng về các khái niệm cơ bản trong Đại số.",
                     SchoolId = 1,
                     ContentType = ContentType.Video,
-                    SourceUrl = "https://eduva.blob.core.windows.net/eduva-storage/school1/snaptik.vn_41a5f.mp4",
+                    SourceUrl = "https://eduva.blob.core.windows.net/eduva-storage/ai-product/product_feba7765-872a-4ede-9d06-6f4a8e82c6fe_20250817_062440.mp4",
                     CreatedByUserId = new Guid("4a4a4a4a-4a4a-4a4a-4a4a-4a4a4a4a4a4a"), // Huy Dinh Trong
                     FileSize = 2023759, // 1.93 MiB
                     Duration = 4,
