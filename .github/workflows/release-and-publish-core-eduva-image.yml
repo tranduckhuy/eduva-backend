@@ -44,18 +44,11 @@ jobs:
         uses: aquasecurity/trivy-action@0.32.0
         with:
           image-ref: "eduva-api:${{ github.sha }}"
-          format: "sarif"
-          output: "trivy-results.sarif"
+          format: "table"
           exit-code: "1"
           ignore-unfixed: true
           vuln-type: "os,library"
           severity: "HIGH,CRITICAL"
-
-      - name: Upload Trivy scan results to GitHub Security tab
-        if: always()
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: "trivy-results.sarif"
 
   release:
     name: Create Release
