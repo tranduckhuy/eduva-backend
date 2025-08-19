@@ -5,5 +5,6 @@ namespace Eduva.Application.Interfaces.Services
     public interface IPayOSService
     {
         Task<CreatePaymentResult> CreatePaymentLinkAsync(PaymentData data);
+        Task<PaymentLinkInformation> GetPaymentLinkInformationAsync(long orderCode);
     }
 }
