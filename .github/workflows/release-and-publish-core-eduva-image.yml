@@ -21,6 +21,9 @@ jobs:
   build-and-scan:
     name: Build & Scan Docker Image
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     outputs:
       scan_passed: ${{ steps.trivy.outcome }}
 
