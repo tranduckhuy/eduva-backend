@@ -1,5 +1,6 @@
 using Eduva.API.Attributes;
 using Eduva.API.Controllers.Base;
+using Eduva.API.Extensions;
 using Eduva.API.Models;
 using Eduva.Application.Common.Constants;
 using Eduva.Application.Common.Exceptions;
@@ -33,7 +34,7 @@ namespace Eduva.API.Controllers.Folders
 
         [HttpPost]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
-        [Authorize(Policy = "EducatorOnly")]
+        [Authorize(Policy = AuthorizationPolicyNames.EducatorOnly)]
         public async Task<IActionResult> CreateFolder([FromBody] CreateFolderCommand command)
         {
             try
@@ -211,7 +212,7 @@ namespace Eduva.API.Controllers.Folders
 
         [HttpPut("{id}/rename")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
-        [Authorize(Policy = "EducatorOnly")]
+        [Authorize(Policy = AuthorizationPolicyNames.EducatorOnly)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> RenameFolder(Guid id, [FromBody] RenameFolderCommand command)
         {
@@ -232,7 +233,7 @@ namespace Eduva.API.Controllers.Folders
 
         [HttpPut("{id}/order")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
-        [Authorize(Policy = "EducatorOnly")]
+        [Authorize(Policy = AuthorizationPolicyNames.EducatorOnly)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateFolderOrder(Guid id, [FromBody] UpdateFolderOrderCommand command)
         {
@@ -252,7 +253,7 @@ namespace Eduva.API.Controllers.Folders
         }
         [HttpPut("{id}/archive")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
-        [Authorize(Policy = "EducatorOnly")]
+        [Authorize(Policy = AuthorizationPolicyNames.EducatorOnly)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> ArchiveFolder(Guid id)
         {
@@ -281,7 +282,7 @@ namespace Eduva.API.Controllers.Folders
         }
         [HttpPut("{id}/restore")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
-        [Authorize(Policy = "EducatorOnly")]
+        [Authorize(Policy = AuthorizationPolicyNames.EducatorOnly)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> RestoreFolder(Guid id)
         {
@@ -311,7 +312,7 @@ namespace Eduva.API.Controllers.Folders
 
         [HttpDelete("{id}")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
-        [Authorize(Policy = "EducatorOnly")]
+        [Authorize(Policy = AuthorizationPolicyNames.EducatorOnly)]
         [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
         public async Task<IActionResult> DeleteFolder(Guid id)
         {
@@ -396,7 +397,7 @@ namespace Eduva.API.Controllers.Folders
         [HttpDelete("{folderId}/lesson-materials")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
         [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
-        [Authorize(Policy = "EducatorOnly")]
+        [Authorize(Policy = AuthorizationPolicyNames.EducatorOnly)]
         public async Task<IActionResult> RemoveMaterialsFromFolderPerson(Guid folderId, [FromBody] List<Guid> materialIds)
         {
             var validationResult = CheckModelStateValidity();
@@ -423,7 +424,7 @@ namespace Eduva.API.Controllers.Folders
 
         [HttpDelete("user")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
-        [Authorize(Policy = "EducatorOnly")]
+        [Authorize(Policy = AuthorizationPolicyNames.EducatorOnly)]
         [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
         public async Task<IActionResult> DeletePersonFolder([FromBody] List<Guid>? folderIds = null)
         {

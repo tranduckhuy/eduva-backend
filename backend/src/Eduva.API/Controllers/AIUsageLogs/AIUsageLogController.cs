@@ -1,4 +1,5 @@
 ﻿using Eduva.API.Controllers.Base;
+using Eduva.API.Extensions;
 using Eduva.Application.Features.AIUsageLogs.Queries;
 using Eduva.Application.Features.AIUsageLogs.Specifications;
 using Eduva.Shared.Enums;
@@ -21,7 +22,7 @@ namespace Eduva.API.Controllers.AIUsageLogs
 
         // Get AI usage logs for the authenticated user
         [HttpGet]
-        [Authorize(Policy = "EducatorOnly")]
+        [Authorize(Policy = AuthorizationPolicyNames.EducatorOnly)]
         public async Task<IActionResult> GetAIUsageLogs([FromQuery] AIUsageLogSpecParam request)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);

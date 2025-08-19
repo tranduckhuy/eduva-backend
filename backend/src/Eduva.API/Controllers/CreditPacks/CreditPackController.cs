@@ -1,4 +1,5 @@
 ﻿using Eduva.API.Controllers.Base;
+using Eduva.API.Extensions;
 using Eduva.API.Models;
 using Eduva.Application.Common.Models;
 using Eduva.Application.Features.AICreditPacks.Commands.ActivateCreditPacks;
@@ -30,7 +31,7 @@ namespace Eduva.API.Controllers.CreditPacks
         }
 
         [HttpGet]
-        [Authorize(Policy = "EducatorOnly")]
+        [Authorize(Policy = AuthorizationPolicyNames.EducatorOnly)]
         [ProducesResponseType(typeof(ApiResponse<Pagination<AICreditPackResponse>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAICreditPacks([FromQuery] AICreditPackSpecParam specParam)
         {
@@ -42,7 +43,7 @@ namespace Eduva.API.Controllers.CreditPacks
         }
 
         [HttpGet("{id}")]
-        [Authorize(Policy = "EducatorOnly")]
+        [Authorize(Policy = AuthorizationPolicyNames.EducatorOnly)]
         [ProducesResponseType(typeof(ApiResponse<AICreditPackResponse>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAICreditPackById(int id)
         {
