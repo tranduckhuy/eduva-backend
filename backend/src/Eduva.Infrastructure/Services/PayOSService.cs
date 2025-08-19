@@ -17,5 +17,10 @@ namespace Eduva.Infrastructure.Services
         {
             return _payOS.createPaymentLink(data);
         }
+
+        public Task<PaymentLinkInformation> GetPaymentLinkInformationAsync(long orderCode)
+        {
+            return _payOS.getPaymentLinkInformation(orderCode);
+        }
     }
 }

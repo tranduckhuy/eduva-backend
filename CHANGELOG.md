@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.7.6](https://github.com/tranduckhuy/eduva-backend/compare/v1.7.5...v1.7.6) (2025-08-19)
+
+
+### Bug Fixes
+
+* enhance security with `Trivy` scan and refactor authorization policies ([b638ea0](https://github.com/tranduckhuy/eduva-backend/commit/b638ea067c990b77d91cd272ddac1f7cc879e6f3))
+* Enhance security with Trivy scan and refactor authorization policies ([#545](https://github.com/tranduckhuy/eduva-backend/issues/545)) ([b5d2d9a](https://github.com/tranduckhuy/eduva-backend/commit/b5d2d9a1f15e37c616617e0aa9a54d87fdbc03f3))
+* **security:** bump WebSocketProtocol to 5.1.3 ([840eb45](https://github.com/tranduckhuy/eduva-backend/commit/840eb45063ebaa8ee62e138c162cb9880e0273be))
+
 ## [1.7.5](https://github.com/tranduckhuy/eduva-backend/compare/v1.7.4...v1.7.5) (2025-08-17)
 
 

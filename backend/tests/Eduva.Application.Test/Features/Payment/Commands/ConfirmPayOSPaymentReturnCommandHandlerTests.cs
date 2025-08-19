@@ -8,9 +8,11 @@ using Eduva.Application.Exceptions.SubscriptionPlan;
 using Eduva.Application.Features.Payments.Commands;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
+using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using Moq;
+using Net.payOS.Types;
 
 namespace Eduva.Application.Test.Features.Payment.Commands;
 
@@ -18,6 +20,7 @@ namespace Eduva.Application.Test.Features.Payment.Commands;
 public class ConfirmPayOSPaymentReturnCommandHandlerTests
 {
     private Mock<IUnitOfWork> _unitOfWorkMock = default!;
+    private Mock<IPayOSService> _payOSServiceMock = default!;
     private Mock<IPaymentTransactionRepository> _transactionRepoMock = default!;
     private Mock<ISchoolRepository> _schoolRepoMock = default!;
     private Mock<ISubscriptionPlanRepository> _planRepoMock = default!;
@@ -26,7 +29,6 @@ public class ConfirmPayOSPaymentReturnCommandHandlerTests
     private Mock<IGenericRepository<UserCreditTransaction, Guid>> _creditTransactionRepoMock = default!;
     private Mock<IGenericRepository<ApplicationUser, Guid>> _userRepoMock = default!;
     private Mock<IGenericRepository<AICreditPack, int>> _creditPackGenericRepoMock = default!;
-
 
     private ConfirmPayOSPaymentReturnCommandHandler _handler = default!;
     private Guid _userId = Guid.NewGuid();
@@ -38,6 +40,7 @@ public class ConfirmPayOSPaymentReturnCommandHandlerTests
     public void Setup()
     {
         _unitOfWorkMock = new Mock<IUnitOfWork>();
+        _payOSServiceMock = new Mock<IPayOSService>();
         _transactionRepoMock = new Mock<IPaymentTransactionRepository>();
         _schoolRepoMock = new Mock<ISchoolRepository>();
         _planRepoMock = new Mock<ISubscriptionPlanRepository>();
@@ -54,11 +57,25 @@ public class ConfirmPayOSPaymentReturnCommandHandlerTests
         _unitOfWorkMock.Setup(u => u.GetCustomRepository<IAICreditPackRepository>()).Returns(_creditPackRepoMock.Object);
         _unitOfWorkMock.Setup(u => u.GetRepository<UserCreditTransaction, Guid>()).Returns(_creditTransactionRepoMock.Object);
         _unitOfWorkMock.Setup(u => u.GetRepository<ApplicationUser, Guid>()).Returns(_userRepoMock.Object);
-        _creditPackGenericRepoMock = new Mock<IGenericRepository<AICreditPack, int>>();
         _unitOfWorkMock.Setup(x => x.GetRepository<AICreditPack, int>()).Returns(_creditPackGenericRepoMock.Object);
 
+        _handler = new ConfirmPayOSPaymentReturnCommandHandler(_unitOfWorkMock.Object, _payOSServiceMock.Object);
+    }
 
-        _handler = new ConfirmPayOSPaymentReturnCommandHandler(_unitOfWorkMock.Object);
+    private static PaymentLinkInformation CreateMockPaymentInfo(string status)
+    {
+        return new PaymentLinkInformation(
+            id: "test-id",
+            orderCode: 123456,
+            amount: 100000,
+            amountPaid: 100000,
+            amountRemaining: 0,
+            status: status,
+            createdAt: DateTime.UtcNow.ToString(),
+            transactions: new List<Transaction>(),
+            cancellationReason: null,
+            canceledAt: null
+        );
     }
 
     #endregion
@@ -84,13 +101,16 @@ public class ConfirmPayOSPaymentReturnCommandHandlerTests
             PaymentStatus = PaymentStatus.Pending,
             PaymentPurpose = PaymentPurpose.SchoolSubscription,
             PaymentItemId = 1,
-            Amount = 999999, // not equal to PriceMonthly
+            Amount = 999999,
             BillingCycle = BillingCycle.Yearly
         };
 
         var school = new School { Id = 1, Status = EntityStatus.Active };
         var plan = new SubscriptionPlan { Id = 1, PriceMonthly = 100000 };
         var oldSub = new SchoolSubscription { Id = Guid.NewGuid(), SubscriptionStatus = SubscriptionStatus.Expired };
+
+        var paymentInfo = CreateMockPaymentInfo("PAID");
+        _payOSServiceMock.Setup(x => x.GetPaymentLinkInformationAsync(22)).ReturnsAsync(paymentInfo);
 
         _transactionRepoMock.Setup(x => x.GetByTransactionCodeAsync("22", It.IsAny<CancellationToken>())).ReturnsAsync(transaction);
         _schoolRepoMock.Setup(x => x.GetByUserIdAsync(_userId)).ReturnsAsync(school);
@@ -101,6 +121,7 @@ public class ConfirmPayOSPaymentReturnCommandHandlerTests
         await _handler.Handle(request, CancellationToken.None);
 
         _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Exactly(2));
+        _payOSServiceMock.Verify(x => x.GetPaymentLinkInformationAsync(22), Times.Once);
     }
 
     [Test]
@@ -146,13 +167,13 @@ public class ConfirmPayOSPaymentReturnCommandHandlerTests
     }
 
     [Test]
-    public void Handle_ShouldThrow_WhenPaymentFailed()
+    public void Handle_ShouldThrow_WhenPayOSStatusNotPaid()
     {
         // Arrange
         var request = new ConfirmPayOSPaymentReturnCommand
         {
-            Code = "99",
-            Status = "FAILED",
+            Code = "00",
+            Status = "PAID",
             OrderCode = 1,
             Id = "txn"
         };
@@ -165,6 +186,41 @@ public class ConfirmPayOSPaymentReturnCommandHandlerTests
             UserId = _userId,
             TransactionCode = "1"
         };
+
+        var paymentInfo = CreateMockPaymentInfo("FAILED");
+        _payOSServiceMock.Setup(x => x.GetPaymentLinkInformationAsync(1)).ReturnsAsync(paymentInfo);
+
+        _transactionRepoMock
+            .Setup(x => x.GetByTransactionCodeAsync("1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(transaction);
+
+        Assert.ThrowsAsync<PaymentFailedException>(() => _handler.Handle(request, CancellationToken.None));
+
+        _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Once);
+    }
+
+    [Test]
+    public void Handle_ShouldThrow_WhenPayOSApiCallFails()
+    {
+        var request = new ConfirmPayOSPaymentReturnCommand
+        {
+            Code = "00",
+            Status = "PAID",
+            OrderCode = 1,
+            Id = "txn"
+        };
+
+        var transaction = new PaymentTransaction
+        {
+            Id = Guid.NewGuid(),
+            PaymentStatus = PaymentStatus.Pending,
+            PaymentPurpose = PaymentPurpose.CreditPackage,
+            UserId = _userId,
+            TransactionCode = "1"
+        };
+
+        _payOSServiceMock.Setup(x => x.GetPaymentLinkInformationAsync(1))
+            .ThrowsAsync(new Exception("PayOS API error"));
 
         _transactionRepoMock
             .Setup(x => x.GetByTransactionCodeAsync("1", It.IsAny<CancellationToken>()))
@@ -201,16 +257,19 @@ public class ConfirmPayOSPaymentReturnCommandHandlerTests
         var plan = new SubscriptionPlan { Id = 1, PriceMonthly = 100000 };
         var oldSub = new SchoolSubscription { Id = new Guid("1a1a1a1a-1a1a-1a1a-1a1a-1a1a1a1a1a1a"), SubscriptionStatus = SubscriptionStatus.Active };
 
+        var paymentInfo = CreateMockPaymentInfo("PAID");
+        _payOSServiceMock.Setup(x => x.GetPaymentLinkInformationAsync(1)).ReturnsAsync(paymentInfo);
+
         _transactionRepoMock.Setup(x => x.GetByTransactionCodeAsync("1", It.IsAny<CancellationToken>())).ReturnsAsync(transaction);
         _schoolRepoMock.Setup(x => x.GetByUserIdAsync(_userId)).ReturnsAsync(school);
         _planRepoMock.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(plan);
         _subRepoMock.Setup(x => x.GetLatestPaidBySchoolIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(oldSub);
         _subRepoMock.Setup(x => x.AddAsync(It.IsAny<SchoolSubscription>())).Returns(Task.CompletedTask);
 
-
         await _handler.Handle(request, CancellationToken.None);
 
         _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Exactly(2));
+        _payOSServiceMock.Verify(x => x.GetPaymentLinkInformationAsync(1), Times.Once);
     }
 
     [Test]
@@ -237,6 +296,9 @@ public class ConfirmPayOSPaymentReturnCommandHandlerTests
         var pack = new AICreditPack { Id = 10, Credits = 100, BonusCredits = 50 };
         var user = new ApplicationUser { Id = _userId, TotalCredits = 0 };
 
+        var paymentInfo = CreateMockPaymentInfo("PAID");
+        _payOSServiceMock.Setup(x => x.GetPaymentLinkInformationAsync(9)).ReturnsAsync(paymentInfo);
+
         _transactionRepoMock.Setup(x => x.GetByTransactionCodeAsync("9", It.IsAny<CancellationToken>())).ReturnsAsync(transaction);
         _creditPackRepoMock.Setup(x => x.GetByIdAsync(10)).ReturnsAsync(pack);
         _creditTransactionRepoMock.Setup(x => x.AddAsync(It.IsAny<UserCreditTransaction>())).Returns(Task.CompletedTask);
@@ -247,6 +309,7 @@ public class ConfirmPayOSPaymentReturnCommandHandlerTests
 
         Assert.That(user.TotalCredits, Is.EqualTo(150));
         _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Exactly(3));
+        _payOSServiceMock.Verify(x => x.GetPaymentLinkInformationAsync(9), Times.Once);
     }
 
     [Test]
@@ -267,6 +330,9 @@ public class ConfirmPayOSPaymentReturnCommandHandlerTests
             OrderCode = 888,
             Id = "invalid"
         };
+
+        var paymentInfo = CreateMockPaymentInfo("PAID");
+        _payOSServiceMock.Setup(x => x.GetPaymentLinkInformationAsync(888)).ReturnsAsync(paymentInfo);
 
         _transactionRepoMock
             .Setup(x => x.GetByTransactionCodeAsync("888", It.IsAny<CancellationToken>()))
@@ -296,6 +362,9 @@ public class ConfirmPayOSPaymentReturnCommandHandlerTests
             BillingCycle = BillingCycle.Monthly
         };
 
+        var paymentInfo = CreateMockPaymentInfo("PAID");
+        _payOSServiceMock.Setup(x => x.GetPaymentLinkInformationAsync(9999)).ReturnsAsync(paymentInfo);
+
         _transactionRepoMock.Setup(x => x.GetByTransactionCodeAsync("9999", It.IsAny<CancellationToken>())).ReturnsAsync(transaction);
         _schoolRepoMock.Setup(x => x.GetByUserIdAsync(_userId)).ReturnsAsync((School?)null);
 
@@ -322,6 +391,9 @@ public class ConfirmPayOSPaymentReturnCommandHandlerTests
             OrderCode = 888,
             Id = "txn"
         };
+
+        var paymentInfo = CreateMockPaymentInfo("PAID");
+        _payOSServiceMock.Setup(x => x.GetPaymentLinkInformationAsync(888)).ReturnsAsync(paymentInfo);
 
         _transactionRepoMock.Setup(r => r.GetByTransactionCodeAsync("888", It.IsAny<CancellationToken>())).ReturnsAsync(transaction);
         _schoolRepoMock.Setup(s => s.GetByUserIdAsync(_userId)).ReturnsAsync(new School { Id = 1 });
@@ -350,9 +422,11 @@ public class ConfirmPayOSPaymentReturnCommandHandlerTests
             Id = "txn"
         };
 
+        var paymentInfo = CreateMockPaymentInfo("PAID");
+        _payOSServiceMock.Setup(x => x.GetPaymentLinkInformationAsync(111)).ReturnsAsync(paymentInfo);
+
         _transactionRepoMock.Setup(r => r.GetByTransactionCodeAsync("111", It.IsAny<CancellationToken>())).ReturnsAsync(transaction);
-        _creditPackRepoMock.Setup(p => p.GetByIdAsync(123)).ReturnsAsync((AICreditPack?)null);
-        _creditPackGenericRepoMock.Setup(x => x.GetByIdAsync(10)).ReturnsAsync((AICreditPack?)null);
+        _creditPackGenericRepoMock.Setup(x => x.GetByIdAsync(123)).ReturnsAsync((AICreditPack?)null);
 
         Assert.ThrowsAsync<AICreditPackNotFoundException>(() => _handler.Handle(request, CancellationToken.None));
     }
@@ -360,7 +434,6 @@ public class ConfirmPayOSPaymentReturnCommandHandlerTests
     [Test]
     public void Handle_ShouldThrow_WhenUserNotFound()
     {
-        // Arrange
         var request = new ConfirmPayOSPaymentReturnCommand
         {
             Code = "00",
@@ -380,6 +453,9 @@ public class ConfirmPayOSPaymentReturnCommandHandlerTests
             Amount = 100000
         };
 
+        var paymentInfo = CreateMockPaymentInfo("PAID");
+        _payOSServiceMock.Setup(x => x.GetPaymentLinkInformationAsync(9)).ReturnsAsync(paymentInfo);
+
         _transactionRepoMock
             .Setup(x => x.GetByTransactionCodeAsync("9", It.IsAny<CancellationToken>()))
             .ReturnsAsync(transaction);
@@ -397,11 +473,9 @@ public class ConfirmPayOSPaymentReturnCommandHandlerTests
             .Setup(x => x.GetByIdAsync(_userId))
             .ReturnsAsync((ApplicationUser?)null);
 
-        // Act & Assert
         Assert.ThrowsAsync<UserNotExistsException>(() =>
             _handler.Handle(request, CancellationToken.None));
     }
 
     #endregion
-
 }
