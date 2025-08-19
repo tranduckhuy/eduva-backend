@@ -6,18 +6,66 @@ on:
       - master
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: write
   issues: write
   pull-requests: write
+  security-events: write
+  packages: write
 
 jobs:
+  build-and-scan:
+    name: Build & Scan Docker Image
+    runs-on: ubuntu-latest
+    outputs:
+      scan_passed: ${{ steps.trivy.outcome }}
+
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Image for scanning
+        run: |
+          cp ./backend/src/Eduva.API/Dockerfile .
+          docker buildx build . \
+            --tag eduva-api:${{ github.sha }} \
+            --platform=linux/amd64 \
+            --load
+
+      - name: Run Trivy vulnerability scanner
+        id: trivy
+        uses: aquasecurity/trivy-action@0.32.0
+        with:
+          image-ref: "eduva-api:${{ github.sha }}"
+          format: "sarif"
+          output: "trivy-results.sarif"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "HIGH,CRITICAL"
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: "trivy-results.sarif"
+
   release:
     name: Create Release
     runs-on: ubuntu-latest
+    needs: build-and-scan
+    if: ${{ needs.build-and-scan.outputs.scan_passed == 'success' }}
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
+
     steps:
       - name: Release with release-please
         id: release
@@ -28,15 +76,16 @@ jobs:
           manifest-file: .release-please-manifest.json
 
   publish:
-    name: Publish Eduva API Docker Image
-    needs: release
-    if: ${{ needs.release.outputs.release_created == 'true' }}
+    name: Publish Docker Image
     runs-on: ubuntu-latest
+    needs: [release, build-and-scan]
+    if: ${{ needs.release.outputs.release_created == 'true' }}
     permissions:
       contents: read
       packages: write
+
     steps:
-      - name: Checkout
+      - name: Checkout repository code
         uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
@@ -49,31 +98,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.32.0
-        with:
-          image-ref: "eduva-api:${{ needs.release.outputs.tag_name }}"
-          format: "sarif"
-          output: "trivy-results.sarif"
-          exit-code: "1" # Fail the job if vulnerabilities are found
-          ignore-unfixed: true
-          vuln-type: "os,library"
-          severity: "HIGH,CRITICAL"
-
-      - name: Upload Trivy scan results to GitHub Security tab
-        if: always()
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: "trivy-results.sarif"
-
-      - name: Push Docker Image
-        if: success()
+      - name: Build & Push Docker Image
         run: |
           cp ./backend/src/Eduva.API/Dockerfile .
           VERSION=${{ needs.release.outputs.tag_name }}
           echo "Using version $VERSION"
           docker buildx build . \
-            --tag ghcr.io/${{ github.repository_owner }}/eduva-api:$VERSION \
+            --tag ghcr.io/${{ github.repository_owner }}/eduva-api:${VERSION} \
             --tag ghcr.io/${{ github.repository_owner }}/eduva-api:latest \
             --platform=linux/amd64 \
             --push
