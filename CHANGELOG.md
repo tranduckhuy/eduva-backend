@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.7](https://github.com/tranduckhuy/eduva-backend/compare/v1.7.6...v1.7.7) (2025-08-19)
+
+
+### Bug Fixes
+
+* **payments:** harden PayOS return by verifying status via PayOS API ([#552](https://github.com/tranduckhuy/eduva-backend/issues/552)) ([cb9446a](https://github.com/tranduckhuy/eduva-backend/commit/cb9446ac4f55e69cfc33873494bd8ea322297924))
+
 ## [1.7.6](https://github.com/tranduckhuy/eduva-backend/compare/v1.7.5...v1.7.6) (2025-08-19)
 
 
