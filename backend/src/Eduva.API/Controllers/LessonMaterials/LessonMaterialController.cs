@@ -1,5 +1,6 @@
 using Eduva.API.Attributes;
 using Eduva.API.Controllers.Base;
+using Eduva.API.Extensions;
 using Eduva.API.Mappings;
 using Eduva.API.Models;
 using Eduva.API.Models.LessonMaterials;
@@ -69,7 +70,7 @@ namespace Eduva.API.Controllers.LessonMaterials
         [HttpPost]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
-        [Authorize(Policy = "EducatorOnly")]
+        [Authorize(Policy = AuthorizationPolicyNames.EducatorOnly)]
         public async Task<IActionResult> CreateLessonMaterial([FromBody] CreateLessonMaterialCommand command)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -238,7 +239,7 @@ namespace Eduva.API.Controllers.LessonMaterials
         [HttpPut("{id:guid}")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
-        [Authorize(Policy = "EducatorOnly")]
+        [Authorize(Policy = AuthorizationPolicyNames.EducatorOnly)]
         public async Task<IActionResult> UpdateLessonMaterial(Guid id, [FromBody] UpdateLessonMaterialCommand command)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -259,7 +260,7 @@ namespace Eduva.API.Controllers.LessonMaterials
         // Get own lesson materials by status with pagination
         [HttpGet("me")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
-        [Authorize(Policy = "EducatorOnly")]
+        [Authorize(Policy = AuthorizationPolicyNames.EducatorOnly)]
         public async Task<IActionResult> GetOwnLessonMaterialsByStatus([FromQuery] GetOwnLessonMaterialsRequest request)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -287,7 +288,7 @@ namespace Eduva.API.Controllers.LessonMaterials
 
         // Delete lesson material by id
         [HttpDelete]
-        [Authorize(Policy = "EducatorOnly")]
+        [Authorize(Policy = AuthorizationPolicyNames.EducatorOnly)]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<IActionResult> DeleteLessonMaterial([FromBody] DeleteLessonMaterialCommand command)
@@ -314,7 +315,7 @@ namespace Eduva.API.Controllers.LessonMaterials
         }
 
         [HttpGet("approvals")]
-        [Authorize(Policy = "EducatorOnly")]
+        [Authorize(Policy = AuthorizationPolicyNames.EducatorOnly)]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         public async Task<IActionResult> GetLessonMaterialApprovals([FromQuery] GetLessonMaterialApprovalsRequest request)
         {
@@ -350,7 +351,7 @@ namespace Eduva.API.Controllers.LessonMaterials
         }
 
         [HttpGet("{lessonMaterialId:guid}/approvals")]
-        [Authorize(Policy = "EducatorOnly")]
+        [Authorize(Policy = AuthorizationPolicyNames.EducatorOnly)]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
         public async Task<IActionResult> GetLessonMaterialApprovalsById([FromRoute] Guid lessonMaterialId)
         {
