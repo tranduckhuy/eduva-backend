@@ -54,6 +54,13 @@ namespace Eduva.Application.Features.Payments.Commands
                 throw new PaymentFailedException();
             }
 
+            if (request.Code != "00" || request.Status != "PAID")
+            {
+                transaction.PaymentStatus = PaymentStatus.Failed;
+                await _unitOfWork.CommitAsync();
+                throw new PaymentFailedException();
+            }
+
             switch (transaction.PaymentPurpose)
             {
                 case PaymentPurpose.SchoolSubscription:

@@ -62,7 +62,7 @@ public class ConfirmPayOSPaymentReturnCommandHandlerTests
         _handler = new ConfirmPayOSPaymentReturnCommandHandler(_unitOfWorkMock.Object, _payOSServiceMock.Object);
     }
 
-    private PaymentLinkInformation CreateMockPaymentInfo(string status)
+    private static PaymentLinkInformation CreateMockPaymentInfo(string status)
     {
         return new PaymentLinkInformation(
             id: "test-id",
@@ -169,6 +169,7 @@ public class ConfirmPayOSPaymentReturnCommandHandlerTests
     [Test]
     public void Handle_ShouldThrow_WhenPayOSStatusNotPaid()
     {
+        // Arrange
         var request = new ConfirmPayOSPaymentReturnCommand
         {
             Code = "00",
