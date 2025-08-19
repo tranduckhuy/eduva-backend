@@ -148,6 +148,7 @@ public class ConfirmPayOSPaymentReturnCommandHandlerTests
     [Test]
     public void Handle_ShouldThrow_WhenPaymentFailed()
     {
+        // Arrange
         var request = new ConfirmPayOSPaymentReturnCommand
         {
             Code = "99",
@@ -156,7 +157,22 @@ public class ConfirmPayOSPaymentReturnCommandHandlerTests
             Id = "txn"
         };
 
+        var transaction = new PaymentTransaction
+        {
+            Id = Guid.NewGuid(),
+            PaymentStatus = PaymentStatus.Pending,
+            PaymentPurpose = PaymentPurpose.CreditPackage,
+            UserId = _userId,
+            TransactionCode = "1"
+        };
+
+        _transactionRepoMock
+            .Setup(x => x.GetByTransactionCodeAsync("1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(transaction);
+
         Assert.ThrowsAsync<PaymentFailedException>(() => _handler.Handle(request, CancellationToken.None));
+
+        _unitOfWorkMock.Verify(u => u.CommitAsync(), Times.Once);
     }
 
     [Test]

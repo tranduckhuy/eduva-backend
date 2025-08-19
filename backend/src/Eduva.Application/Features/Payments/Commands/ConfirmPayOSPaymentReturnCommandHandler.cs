@@ -24,18 +24,20 @@ namespace Eduva.Application.Features.Payments.Commands
 
         public async Task<Unit> Handle(ConfirmPayOSPaymentReturnCommand request, CancellationToken cancellationToken)
         {
-            if (request.Code != "00" || request.Status != "PAID")
-            {
-                throw new PaymentFailedException();
-            }
-
             var transactionRepo = _unitOfWork.GetCustomRepository<IPaymentTransactionRepository>();
             var transaction = await transactionRepo.GetByTransactionCodeAsync(request.OrderCode.ToString(), cancellationToken)
                 ?? throw new PaymentTransactionNotFoundException();
 
-            if (transaction.PaymentStatus == PaymentStatus.Paid)
+            if (transaction.PaymentStatus != PaymentStatus.Pending)
             {
                 throw new PaymentAlreadyConfirmedException();
+            }
+
+            if (request.Code != "00" || request.Status != "PAID")
+            {
+                transaction.PaymentStatus = PaymentStatus.Failed;
+                await _unitOfWork.CommitAsync();
+                throw new PaymentFailedException();
             }
 
             switch (transaction.PaymentPurpose)
