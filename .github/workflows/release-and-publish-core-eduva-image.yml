@@ -15,7 +15,7 @@ permissions:
   issues: write
   pull-requests: write
   security-events: write
-  packages: write
+  actions: read
 
 jobs:
   build-and-scan:
