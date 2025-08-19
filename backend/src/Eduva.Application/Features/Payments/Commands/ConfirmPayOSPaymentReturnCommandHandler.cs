@@ -7,6 +7,7 @@ using Eduva.Application.Exceptions.SchoolSubscription;
 using Eduva.Application.Exceptions.SubscriptionPlan;
 using Eduva.Application.Interfaces;
 using Eduva.Application.Interfaces.Repositories;
+using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Entities;
 using Eduva.Domain.Enums;
 using MediatR;
@@ -16,10 +17,12 @@ namespace Eduva.Application.Features.Payments.Commands
     public class ConfirmPayOSPaymentReturnCommandHandler : IRequestHandler<ConfirmPayOSPaymentReturnCommand, Unit>
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IPayOSService _payOSService;
 
-        public ConfirmPayOSPaymentReturnCommandHandler(IUnitOfWork unitOfWork)
+        public ConfirmPayOSPaymentReturnCommandHandler(IUnitOfWork unitOfWork, IPayOSService payOSService)
         {
             _unitOfWork = unitOfWork;
+            _payOSService = payOSService;
         }
 
         public async Task<Unit> Handle(ConfirmPayOSPaymentReturnCommand request, CancellationToken cancellationToken)
@@ -32,8 +35,19 @@ namespace Eduva.Application.Features.Payments.Commands
             {
                 throw new PaymentAlreadyConfirmedException();
             }
+            try
+            {
+                var paymentInfo = await _payOSService.GetPaymentLinkInformationAsync(request.OrderCode);
 
-            if (request.Code != "00" || request.Status != "PAID")
+                if (paymentInfo.status != "PAID")
+                {
+                    transaction.PaymentStatus = PaymentStatus.Failed;
+                    await _unitOfWork.CommitAsync();
+                    throw new PaymentFailedException();
+                }
+
+            }
+            catch (Exception ex) when (!(ex is PaymentFailedException))
             {
                 transaction.PaymentStatus = PaymentStatus.Failed;
                 await _unitOfWork.CommitAsync();
