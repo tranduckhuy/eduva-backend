@@ -1,4 +1,5 @@
 using Eduva.API.Controllers.Base;
+using Eduva.API.Extensions;
 using Eduva.Application.Features.SystemConfigs;
 using Eduva.Application.Interfaces.Services;
 using Eduva.Domain.Enums;
@@ -38,7 +39,7 @@ namespace Eduva.API.Controllers.SystemConfigs
         /// Update an existing system configuration
         /// </summary>
         [HttpPut("{key}")]
-        [Authorize(Roles = $"{nameof(Role.SystemAdmin)}")]
+        [Authorize(Policy = AuthorizationPolicyNames.AdminOnly)]
         public async Task<IActionResult> UpdateAsync(string key, [FromBody] UpdateSystemConfigDto updateDto)
         {
             updateDto.Key = key; // Ensure consistency between route and body

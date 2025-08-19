@@ -1,5 +1,6 @@
 ﻿using Eduva.API.Attributes;
 using Eduva.API.Controllers.Base;
+using Eduva.API.Extensions;
 using Eduva.API.Models.FileStorage;
 using Eduva.Application.Common.Constants;
 using Eduva.Application.Interfaces.Services;
@@ -25,7 +26,7 @@ namespace Eduva.API.Controllers.FileStorage
 
         [HttpPost("upload-tokens-with-quota")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadWrite)]
-        [Authorize(Policy = "EducatorOnly")]
+        [Authorize(Policy = AuthorizationPolicyNames.EducatorOnly)]
         public async Task<IActionResult> GenerateUploadSasTokenWithQuota([FromBody] GenerateUploadTokensRequest request)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -73,7 +74,7 @@ namespace Eduva.API.Controllers.FileStorage
 
         [HttpGet("storage-quota")]
         [SubscriptionAccess(SubscriptionAccessLevel.ReadOnly)]
-        [Authorize(Policy = "EducatorOnly")]
+        [Authorize(Policy = AuthorizationPolicyNames.EducatorOnly)]
         public async Task<IActionResult> GetStorageQuota()
         {
             var schoolIdClaim = User.FindFirstValue(ClaimConstants.SchoolId);
